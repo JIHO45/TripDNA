@@ -11,7 +11,7 @@ import SwiftUI
 struct TripDNAApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }

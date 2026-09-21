@@ -1,0 +1,77 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific state
+xcuserdata/
+*.xcuserstate
+*.xcsettings
+*.xccheckout
+
+# Xcode build artifacts
+DerivedData/
+build/
+*.xcresult
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+Secrets.swift
+GoogleService-Info.plist
+AuthKey_*.p8
+*.p12
+*.mobileprovision
+
+# Local databases and runtime-generated files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.store
+*.store-shm
+*.store-wal
+
+# Proprietary TripDNA taste-axis specifications, algorithms, and seed data
+/README.md
+/Spec/
+/TripDNA/App/RootView.swift
+/TripDNA/Application/LedgerServices.swift
+/TripDNA/Application/OnboardingAndWrappedServices.swift
+/TripDNA/Application/RecommendationService.swift
+/TripDNA/Application/UTVReplayService.swift
+/TripDNA/Domain/DomainModels.swift
+/TripDNA/Domain/Repositories.swift
+/TripDNA/Fingerprint/AxisNarrative.swift
+/TripDNA/Fingerprint/FingerprintDetailView.swift
+/TripDNA/Home/HomeRedesignView.swift
+/TripDNA/Home/HomeView.swift
+/TripDNA/Home/HomeViewModel.swift
+/TripDNA/Infrastructure/InMemoryRepositories.swift
+/TripDNA/Infrastructure/SeedDataDecoder.swift
+/TripDNA/Infrastructure/SwiftDataStore.swift
+/TripDNA/Onboarding/OnboardingFlowView.swift
+/TripDNA/Onboarding/OnboardingViewModel.swift
+/TripDNA/Onboarding/QuizQuestionCatalog.swift
+/TripDNA/Ranking/RankingBoardView.swift
+/TripDNA/Ranking/RankingViewModel.swift
+/TripDNA/Recommendation/RecommendationViewModel.swift
+/TripDNA/Resources/countries.json
+/TripDNA/Resources/tagVocabulary.json
+/TripDNA/Trip/EvaluationViewModel.swift
+/TripDNA/UI/DomainLabels.swift
+/TripDNA/UI/SharedComponents.swift
+/TripDNA/Wrapped/WrappedShareCardView.swift
+/TripDNA/Wrapped/WrappedStoryView.swift
+/TripDNA/Wrapped/WrappedViewModel.swift
+/TripDNATests/TripDNATests.swift
+
+# Temporary files
+*.tmp
+*.swp
+*~

@@ -27,7 +27,7 @@ struct OnboardingQuizView: View {
             if viewModel.isMiniQuiz {
                 Text("부족한 취향만 확인하고 있어요")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .padding(.top, DNASpacing.sm)
             }
 
@@ -71,7 +71,7 @@ struct OnboardingQuizView: View {
             Spacer()
             Text(question.prompt)
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DNASpacing.lg)
 
@@ -104,7 +104,7 @@ struct OnboardingQuizView: View {
         }
     }
 
-    /// 탭 즉시 글로우 피드백을 주고 0.3초 뒤 자동으로 다음 문항으로 넘어간다.
+    /// 탭 즉시 체크 표시를 보여주고 0.3초 뒤 자동으로 다음 문항으로 넘어간다.
     private func choose(_ option: QuizOption) {
         guard selectedOptionID == nil else { return }
         selectedOptionID = option.id
@@ -135,7 +135,7 @@ struct OnboardingQuizView: View {
             VStack(spacing: 6) {
                 Text("여행에서 가장 끌리는 걸\n3개 골라주세요")
                     .font(.title3.bold())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.dnaTextPrimary)
                     .multilineTextAlignment(.center)
                 Text("1개만 골라도 지문을 만들 수 있어요")
                     .font(.caption)
@@ -158,7 +158,7 @@ struct OnboardingQuizView: View {
             if let message = viewModel.errorMessage {
                 Text(message)
                     .font(.caption)
-                    .foregroundStyle(Color.dnaCoral)
+                    .foregroundStyle(Color.dnaError)
             }
             Spacer()
             DNABottomCTA {
@@ -166,7 +166,7 @@ struct OnboardingQuizView: View {
                     Task { await viewModel.finishQuiz(dependencies, session: session) }
                 } label: {
                     if viewModel.isSubmitting {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Color.dnaCanvas)
                     } else {
                         Text("내 지문 만들기")
                     }

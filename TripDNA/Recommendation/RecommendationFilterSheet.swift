@@ -10,7 +10,10 @@ struct RecommendationFilterSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: DNASpacing.lg) {
+                VStack(alignment: .leading, spacing: DNASpacing.xl) {
+                    Text("이번 여행에 맞춰")
+                        .font(.title.weight(.regular))
+                        .foregroundStyle(Color.dnaTextPrimary)
                     filterSection(
                         title: "여행 시기",
                         caption: "여러 계절을 고를 수 있어요. 시즌 적합 데이터가 준비되면 후보에 반영돼요."
@@ -51,8 +54,7 @@ struct RecommendationFilterSheet: View {
                             ForEach(BudgetLevel.allCases) { budget in
                                 DNATagChip(
                                     title: budget.labelKo,
-                                    isSelected: viewModel.filter.budget == budget,
-                                    accent: .dnaAmber
+                                    isSelected: viewModel.filter.budget == budget
                                 ) {
                                     toggleOptional(\.budget, to: budget)
                                 }
@@ -63,9 +65,11 @@ struct RecommendationFilterSheet: View {
                     departureSection
                 }
                 .padding(DNASpacing.lg)
-                .padding(.bottom, 96)
+                .padding(.bottom, DNASpacing.sm)
             }
             .dnaBackground()
+            .navigationTitle("추천 조건")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -81,7 +85,9 @@ struct RecommendationFilterSheet: View {
                         Image(systemName: "xmark")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color.dnaSlate)
+                            .frame(width: 44, height: 44)
                     }
+                    .accessibilityLabel("닫기")
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -113,7 +119,7 @@ struct RecommendationFilterSheet: View {
                         .font(.title3)
                     Text(CountryCatalog.name(for: code))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
                 } else {
                     Image(systemName: "questionmark.circle")
                         .foregroundStyle(Color.dnaSlate)
@@ -148,7 +154,7 @@ struct RecommendationFilterSheet: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             content()
             if let caption {
                 Text(caption)

@@ -328,25 +328,13 @@ struct FlowChips: View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
             ForEach(ids, id: \.self) { tagID in
                 let isSelected = selected.contains(tagID)
-                Text(TagCatalog.labelKo(for: tagID))
-                    .font(.caption)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        isSelected ? Color.dnaCoral.opacity(0.2) : Color.white.opacity(0.06),
-                        in: Capsule()
-                    )
-                    .overlay(
-                        Capsule().strokeBorder(isSelected ? Color.dnaCoral.opacity(0.6) : Color.dnaHairline, lineWidth: 1)
-                    )
-                    .foregroundStyle(isSelected ? Color.dnaCoral : .white)
-                    .onTapGesture {
-                        if isSelected {
-                            selected.remove(tagID)
-                        } else {
-                            selected.insert(tagID)
-                        }
+                DNATagChip(title: TagCatalog.labelKo(for: tagID), isSelected: isSelected) {
+                    if isSelected {
+                        selected.remove(tagID)
+                    } else {
+                        selected.insert(tagID)
                     }
+                }
             }
         }
     }

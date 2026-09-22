@@ -53,7 +53,7 @@ struct EvaluationView: View {
                 VStack(spacing: DNASpacing.sm) {
                     Text("\(viewModel.trip?.titleKo ?? "여행"), 어땠나요?")
                         .font(.title.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
                         .multilineTextAlignment(.center)
                     Text("약 30초면 충분해요")
                         .font(.subheadline)
@@ -134,7 +134,7 @@ struct EvaluationView: View {
             Spacer()
             Text("이 여행, 얼마나 좋았나요?")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             DNASatisfactionEmojiRow(
                 satisfaction: Binding(
                     get: { viewModel.satisfaction },
@@ -157,7 +157,7 @@ struct EvaluationView: View {
             Spacer()
             Text("다시 가고 싶나요?")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             VStack(spacing: DNASpacing.sm) {
                 DNAChoiceCard(text: "또 가고 싶어요", isSelected: viewModel.revisitAnswer == .yes) {
                     viewModel.revisitAnswer = .yes
@@ -185,13 +185,12 @@ struct EvaluationView: View {
             Spacer()
             Text("가장 좋았던 나라는?")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             DNAFlowLayout(spacing: 10) {
                 ForEach(viewModel.uniqueCountryCodes, id: \.self) { code in
                     DNATagChip(
                         title: CountryCatalog.name(for: code),
-                        isSelected: viewModel.bestLegCountryCode == code,
-                        accent: .dnaTeal
+                        isSelected: viewModel.bestLegCountryCode == code
                     ) {
                         viewModel.bestLegCountryCode = code
                         viewModel.advance()
@@ -210,7 +209,7 @@ struct EvaluationView: View {
             Spacer()
             Text("둘 중 어느 여행이\n더 좋았나요?")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
                 .multilineTextAlignment(.center)
 
             if let trip = viewModel.trip, let anchor = viewModel.comparisonAnchor {
@@ -256,20 +255,16 @@ struct EvaluationView: View {
         VStack(spacing: 8) {
             Image(systemName: "airplane.departure")
                 .font(.title2)
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 100)
                 .background(
-                    LinearGradient(
-                        colors: [.dnaIndigo.opacity(0.4), .dnaTeal.opacity(0.25)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
+                    Color.dnaSurface2,
                     in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
                 )
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
             Text(subtitle)
@@ -287,7 +282,7 @@ struct EvaluationView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     Text("좋았던 걸 골라주세요")
                         .font(.title3.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("최대 5개 · 없어도 괜찮아요")
                         .font(.caption)
@@ -317,7 +312,7 @@ struct EvaluationView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     Text("그 좋았던 건\n어느 나라에서였나요?")
                         .font(.title3.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
                     Text("전체 여행에서 느낀 것이면 '전체 여행에서'를 골라주세요.")
                         .font(.caption)
                         .foregroundStyle(Color.dnaSlate)
@@ -326,20 +321,18 @@ struct EvaluationView: View {
                         VStack(alignment: .leading, spacing: DNASpacing.sm) {
                             Text(tag.labelKo)
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.dnaTextPrimary)
                             DNAFlowLayout(spacing: 8) {
                                 DNATagChip(
                                     title: "전체 여행에서",
-                                    isSelected: viewModel.tagLegAttribution[tag.id] == nil,
-                                    accent: .dnaIndigo
+                                    isSelected: viewModel.tagLegAttribution[tag.id] == nil
                                 ) {
                                     viewModel.setAttribution(tagID: tag.id, countryCode: nil)
                                 }
                                 ForEach(viewModel.uniqueCountryCodes, id: \.self) { code in
                                     DNATagChip(
                                         title: CountryCatalog.name(for: code),
-                                        isSelected: viewModel.tagLegAttribution[tag.id] == code,
-                                        accent: .dnaTeal
+                                        isSelected: viewModel.tagLegAttribution[tag.id] == code
                                     ) {
                                         viewModel.setAttribution(tagID: tag.id, countryCode: code)
                                     }
@@ -368,7 +361,7 @@ struct EvaluationView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     Text("아쉬웠던 점이 있나요?")
                         .font(.title3.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
                     Text("최대 3개 · 선택 사항이에요")
                         .font(.caption)
                         .foregroundStyle(Color.dnaSlate)
@@ -383,7 +376,7 @@ struct EvaluationView: View {
                     if let message = viewModel.errorMessage {
                         Text(message)
                             .font(.caption)
-                            .foregroundStyle(Color.dnaCoral)
+                            .foregroundStyle(Color.dnaError)
                     }
                 }
                 .padding(DNASpacing.lg)
@@ -393,7 +386,7 @@ struct EvaluationView: View {
                     Task { await viewModel.submit(dependencies: dependencies, session: session) }
                 } label: {
                     if viewModel.isSubmitting {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Color.dnaCanvas)
                     } else {
                         Text("평가 완료")
                     }
@@ -419,8 +412,7 @@ struct EvaluationView: View {
                         : (!selected && viewModel.negativeTagIDs.count >= 3)
                     DNATagChip(
                         title: tag.labelKo,
-                        isSelected: selected,
-                        accent: isPositive ? .dnaTeal : .dnaAmber
+                        isSelected: selected
                     ) {
                         if isPositive {
                             viewModel.togglePositive(tag.id)
@@ -441,11 +433,11 @@ struct EvaluationView: View {
         VStack(spacing: DNASpacing.md) {
             Spacer()
             ProgressView()
-                .tint(Color.dnaTeal)
+                .tint(Color.dnaTextSecondary)
                 .scaleEffect(1.2)
             Text("지문에 반영하는 중")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             Spacer()
         }
     }
@@ -454,14 +446,14 @@ struct EvaluationView: View {
         VStack(spacing: DNASpacing.lg) {
             Spacer()
             ZStack {
-                Circle().fill(Color.dnaTeal.opacity(0.16)).frame(width: 88, height: 88)
+                Circle().fill(Color.dnaSurface2).frame(width: 88, height: 88)
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaTextPrimary)
             }
             Text("평가가 반영됐어요")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
 
             if let delta = viewModel.deltaAxes {
                 let moved = TasteAxis.allCases.filter { abs(delta[$0]) >= 0.02 }
@@ -474,7 +466,7 @@ struct EvaluationView: View {
                         ForEach(TasteAxis.allCases, id: \.self) { axis in
                             let value = delta[axis]
                             HStack {
-                                Text(axis.shortLabelKo).foregroundStyle(.white)
+                                Text(axis.shortLabelKo).foregroundStyle(Color.dnaTextPrimary)
                                 Spacer()
                                 Text(String(format: "%+.2f", value))
                                     .foregroundStyle(abs(value) >= 0.02

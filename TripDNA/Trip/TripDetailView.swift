@@ -122,6 +122,9 @@ struct TripDetailView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     heroSection(trip)
                     legsSection(trip)
+                    if trip.status == .planned && dependencies.affiliateActivitiesEnabled {
+                        activitiesSection(trip)
+                    }
                     infoSection(trip)
                 }
                 .padding(DNASpacing.lg)
@@ -457,6 +460,11 @@ struct TripDetailView: View {
                         Text(CountryCatalog.name(for: leg.countryCode))
                             .font(.subheadline)
                             .foregroundStyle(.white)
+                        if !leg.cities.isEmpty {
+                            Text(leg.cities.joined(separator: " · "))
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.78))
+                        }
                         Text(legDateRange(leg))
                             .font(.caption2)
                             .foregroundStyle(Color.dnaSlate)
@@ -484,6 +492,29 @@ struct TripDetailView: View {
                     .font(.caption2)
                     .foregroundStyle(Color.dnaSlate)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func activitiesSection(_ trip: Trip) -> some View {
+        let links = dependencies.affiliateLinkService.links(for: trip)
+        if links.isEmpty {
+            SectionCard(title: "출발 전 뭐 할까") {
+                VStack(alignment: .leading, spacing: DNASpacing.sm) {
+                    Text("여행지에 도시를 추가하면 그 도시의 액티비티를 바로 찾을 수 있어요.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.dnaSlate)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("도시 추가하기") {
+                        showingEdit = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.dnaTeal)
+                    .buttonStyle(.plain)
+                }
+            }
+        } else {
+            AffiliateActivitySection(title: "출발 전 뭐 할까", links: links)
         }
     }
 

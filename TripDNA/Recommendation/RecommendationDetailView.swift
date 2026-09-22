@@ -21,6 +21,12 @@ struct RecommendationDetailView: View {
                 whySection
                 realityFitSection
                 noticesSection
+                if dependencies.affiliateActivitiesEnabled {
+                    AffiliateActivitySection(
+                        title: "이 나라에서는 뭐 할까",
+                        links: dependencies.affiliateLinkService.links(for: recommendation)
+                    )
+                }
             }
             .padding(DNASpacing.lg)
             .padding(.bottom, 120)

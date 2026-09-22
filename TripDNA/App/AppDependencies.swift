@@ -14,6 +14,8 @@ final class AppDependencies {
     let evaluationService: EvaluationService
     let rankingService: RankingService
     let recommendationService: RecommendationService
+    let affiliateLinkService: AffiliateLinkService
+    let affiliateActivitiesEnabled: Bool
     let dailyPhotoService: DailyPhotoService
     let wrappedService = WrappedService()
     let quizService = TasteQuizService()
@@ -75,7 +77,11 @@ final class AppDependencies {
         )
     }
 
-    init(persistence: AppPersistence = .onDisk) {
+    init(
+        persistence: AppPersistence = .onDisk,
+        affiliateActivitiesEnabled: Bool = AppDependencies.defaultAffiliateActivitiesEnabled
+    ) {
+        self.affiliateActivitiesEnabled = affiliateActivitiesEnabled
         let countries = Self.loadCountries()
         let tags = Self.loadTags()
         CountryCatalog.profiles = Dictionary(
@@ -85,7 +91,12 @@ final class AppDependencies {
             uniqueKeysWithValues: tags.map { ($0.id, $0) }
         )
 
-        let store = Self.makeStore(persistence: persistence, countries: countries, tags: tags)
+        #if DEBUG
+        let effectivePersistence: AppPersistence = ProcessInfo.processInfo.arguments.contains("-uiTesting") ? .inMemory : persistence
+        #else
+        let effectivePersistence = persistence
+        #endif
+        let store = Self.makeStore(persistence: effectivePersistence, countries: countries, tags: tags)
         self.store = store
 
         let replay = UTVReplayService()
@@ -111,11 +122,20 @@ final class AppDependencies {
             feedbackRepository: store,
             events: store
         )
+        self.affiliateLinkService = AffiliateLinkService(events: store)
         self.dailyPhotoService = DailyPhotoService(photos: store, events: store)
     }
 
     func allTags() async -> [TagDefinition] {
         (try? await store.definitions()) ?? []
+    }
+
+    static var defaultAffiliateActivitiesEnabled: Bool {
+        #if DEBUG
+        !ProcessInfo.processInfo.arguments.contains("-disableAffiliateActivities")
+        #else
+        false
+        #endif
     }
 
     func allTrips() async -> [Trip] {

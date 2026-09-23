@@ -20,13 +20,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TripDNA saves your Wrapped card to Photos so you can keep or share it."
+            "value" : "TripDNA saves your share cards to Photos so you can keep or share them."
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wrapped 카드를 사진첩에 저장해 보관하거나 공유할 수 있어요."
+            "value" : "지문·여행·Wrapped 공유 카드를 사진첩에 저장해 보관하거나 공유할 수 있어요."
           }
         }
       }

@@ -8,6 +8,7 @@ struct TripDetailView: View {
     @State private var showingCoverPicker = false
     @State private var showingEvaluation = false
     @State private var showingEdit = false
+    @State private var showingShare = false
     @State private var confirmingEnd = false
     @State private var photoPageDay = 1
     @State private var photoDayEdit: PhotoDayEdit?
@@ -57,6 +58,13 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showingCoverPicker) {
             coverPickerSheet
+        }
+        .sheet(isPresented: $showingShare) {
+            if let trip = viewModel.trip {
+                ShareCardSheet(title: "여행 공유", disclosure: "기록한 만족도, 내 여행 랭킹과 긍정 태그가 포함돼요.", allowsDestinationNames: true) { showsDestinationNames in
+                    TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: showsDestinationNames)
+                }
+            }
         }
         .sheet(isPresented: $showingEdit) {
             if let trip = viewModel.trip {
@@ -405,11 +413,14 @@ struct TripDetailView: View {
 
                     Spacer()
 
-                    ShareLink(item: viewModel.shareSummary) {
+                    Button {
+                        showingShare = true
+                    } label: {
                         Label("공유하기", systemImage: "square.and.arrow.up")
                             .font(.caption)
                             .foregroundStyle(Color.dnaTeal)
                     }
+                    .accessibilityIdentifier("trip.sharePreview")
                 }
             }
         }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// UI-4B. 상황 필터 시트: 시기·동행·예산(선택)·출발지(읽기 전용).
+/// UI-4B. 근거 데이터가 있는 예산 조건과 출발지(읽기 전용).
 /// 비행시간 필터는 노선 데이터 도입 전이라 노출하지 않는다.
 struct RecommendationFilterSheet: View {
     @Bindable var viewModel: RecommendationViewModel
@@ -11,41 +11,9 @@ struct RecommendationFilterSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.xl) {
-                    Text("이번 여행에 맞춰")
+                    Text("예산에 맞춰")
                         .font(.title.weight(.regular))
                         .foregroundStyle(Color.dnaTextPrimary)
-                    filterSection(
-                        title: "여행 시기",
-                        caption: "여러 계절을 고를 수 있어요. 시즌 적합 데이터가 준비되면 후보에 반영돼요."
-                    ) {
-                        DNAFlowLayout(spacing: 8) {
-                            ForEach(TravelSeason.allCases) { season in
-                                DNATagChip(
-                                    title: season.labelKo,
-                                    isSelected: viewModel.filter.seasons.contains(season)
-                                ) {
-                                    toggleSeason(season)
-                                }
-                            }
-                        }
-                    }
-
-                    filterSection(
-                        title: "동행",
-                        caption: "이번 여행의 동행이에요. 동행 유형에 맞는 나라만 고르지는 않아요."
-                    ) {
-                        DNAFlowLayout(spacing: 8) {
-                            ForEach(Companion.allCases, id: \.self) { companion in
-                                DNATagChip(
-                                    title: companion.labelKo,
-                                    isSelected: viewModel.filter.companion == companion
-                                ) {
-                                    toggleOptional(\.companion, to: companion)
-                                }
-                            }
-                        }
-                    }
-
                     filterSection(
                         title: "예산 범위",
                         caption: "예산을 넘는 물가의 나라를 후보에서 제외해요. 예산이 높다고 비싼 곳만 나오지 않아요."
@@ -176,14 +144,6 @@ struct RecommendationFilterSheet: View {
         }
     }
 
-    /// 여행 시기 복수 선택. 같은 칩을 다시 탭하면 해제.
-    private func toggleSeason(_ season: TravelSeason) {
-        if viewModel.filter.seasons.contains(season) {
-            viewModel.filter.seasons.remove(season)
-        } else {
-            viewModel.filter.seasons.insert(season)
-        }
-    }
 }
 
 #Preview("RecommendationFilterSheet") {

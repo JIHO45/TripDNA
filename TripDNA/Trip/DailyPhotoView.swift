@@ -263,7 +263,7 @@ struct DailyPhotoView: View {
     private var autoFallbackConsentSheet: some View {
         VStack(spacing: DNASpacing.lg) {
             Spacer(minLength: 0)
-            Text("다음부터 자동으로 골라둘까요?")
+            Text("앱을 열 때 비어 있는 날의 사진을 골라둘까요?")
                 .font(.title3.bold())
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
@@ -273,14 +273,14 @@ struct DailyPhotoView: View {
             Spacer(minLength: 0)
             DNABottomCTA {
                 Button("자동으로 골라두기") {
-                    UserDefaults.standard.set(true, forKey: "tripdna.dailyPhotoAutoFallbackConsent")
+                    UserDefaults.standard.set(true, forKey: AutoPhotoFallbackService.consentKey)
                     showConsentSheet = false
                     withAnimation { stage = .reaction }
                 }
                 .buttonStyle(.dnaPrimary)
 
                 Button("직접 고른 사진만") {
-                    UserDefaults.standard.set(false, forKey: "tripdna.dailyPhotoAutoFallbackConsent")
+                    UserDefaults.standard.set(false, forKey: AutoPhotoFallbackService.consentKey)
                     showConsentSheet = false
                     withAnimation { stage = .reaction }
                 }

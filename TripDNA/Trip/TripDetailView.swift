@@ -4,12 +4,17 @@ import SwiftUI
 struct TripDetailView: View {
     let tripID: String
     @Environment(AppDependencies.self) private var dependencies
+    @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TripDetailViewModel()
     @State private var showingCoverPicker = false
     @State private var showingEvaluation = false
     @State private var showingEdit = false
     @State private var showingShare = false
     @State private var confirmingEnd = false
+    @State private var confirmingTripDeletion = false
+    @State private var confirmingEvaluationDeletion = false
+    @State private var deletionError: String?
     @State private var photoPageDay = 1
     @State private var photoDayEdit: PhotoDayEdit?
 
@@ -42,6 +47,22 @@ struct TripDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("수정") { showingEdit = true }
                         .tint(Color.dnaTeal)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        if let trip = viewModel.trip,
+                           trip.status == .evaluated || trip.status == .skippedEvaluation {
+                            Button("평가 삭제", role: .destructive) {
+                                confirmingEvaluationDeletion = true
+                            }
+                        }
+                        Button("여행 삭제", role: .destructive) {
+                            confirmingTripDeletion = true
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityLabel("여행 관리")
                 }
             }
         }
@@ -99,6 +120,38 @@ struct TripDetailView: View {
             Button("계속 여행하기", role: .cancel) {}
         } message: {
             Text("종료하면 30초 평가를 시작할 수 있어요.")
+        }
+        .confirmationDialog("이 여행을 삭제할까요?", isPresented: $confirmingTripDeletion, titleVisibility: .visible) {
+            Button("여행과 사진 삭제", role: .destructive) {
+                Task {
+                    do {
+                        try await dependencies.deleteTrip(tripID: tripID, userID: session.userID)
+                        dismiss()
+                    } catch { deletionError = error.localizedDescription }
+                }
+            }
+        } message: {
+            Text("여행, 평가, 이 여행에 저장한 사진과 랭킹 기록이 삭제돼요.")
+        }
+        .confirmationDialog("평가를 삭제할까요?", isPresented: $confirmingEvaluationDeletion, titleVisibility: .visible) {
+            Button("평가 삭제", role: .destructive) {
+                Task {
+                    do {
+                        try await dependencies.deleteEvaluation(tripID: tripID, userID: session.userID)
+                        await viewModel.load(tripID: tripID, dependencies: dependencies)
+                    } catch { deletionError = error.localizedDescription }
+                }
+            }
+        } message: {
+            Text("여행과 사진은 남고, 평가는 지문과 랭킹에서 제외돼요.")
+        }
+        .alert("삭제하지 못했어요", isPresented: Binding(
+            get: { deletionError != nil },
+            set: { if !$0 { deletionError = nil } }
+        )) {
+            Button("확인", role: .cancel) { deletionError = nil }
+        } message: {
+            Text(deletionError ?? "다시 시도해 주세요.")
         }
     }
 

@@ -40,6 +40,7 @@ final class AppDependencies {
         guard let profile = try? await store.loadProfile() else { return }
         localUserID = profile.id
         homeCountryCode = profile.homeCountryCode
+        interestTagIDs = (try? await store.loadInterestTagIDs()) ?? []
         session.userID = profile.id
         if profile.onboardingStatus == .done {
             session.onboardingPhase = .completed
@@ -55,11 +56,79 @@ final class AppDependencies {
 
     /// 온보딩의 "어느 나라에 살고 계세요?" 단계 또는 설정 화면에서 사용자가 국가를
     /// 명시적으로 선택했을 때 호출한다. 기존 프로필의 다른 필드는 보존한다.
-    func setHomeCountryCode(_ code: String) async {
+    @discardableResult
+    func setHomeCountryCode(_ code: String) async -> String {
         homeCountryCode = code
         var profile = await loadOrCreateProfile()
         profile.homeCountryCode = code
         try? await store.saveProfile(profile)
+        return profile.id
+    }
+
+    func setInterestTagIDs(_ ids: Set<String>) async throws {
+        try await store.saveInterestTagIDs(ids)
+        interestTagIDs = ids
+    }
+
+    func unsaveRecommendation(countryCode: String) async throws {
+        let feedback = try await store.feedback()
+        for item in feedback where item.action == .save && item.countryCode == countryCode {
+            try await store.deleteFeedback(id: item.id)
+        }
+    }
+
+    func deleteEvaluation(tripID: String, userID: String) async throws {
+        guard var trip = try await store.trip(id: tripID) else { throw RepositoryError.notFound }
+        try trip.clearEvaluation()
+        try await store.update(trip)
+        try await removeFromRanking(tripID: tripID, userID: userID)
+    }
+
+    func deleteTrip(tripID: String, userID: String) async throws {
+        guard let trip = try await store.trip(id: tripID) else { throw RepositoryError.notFound }
+        let photos = try await store.photos(tripID: tripID)
+        let paths = photos.map(\.storagePath) + [trip.coverPhotoStoragePath].compactMap { $0 }
+        try await store.deleteTrip(id: tripID)
+        try await store.deletePhotos(tripID: tripID)
+        try await removeFromRanking(tripID: tripID, userID: userID)
+        EvaluationNotificationService.cancel(for: tripID)
+        let otherTrips = try await store.trips()
+        let otherPhotos = try await store.photos(tripID: nil)
+        let inUse = Set(otherTrips.compactMap(\.coverPhotoStoragePath) + otherPhotos.map(\.storagePath))
+        try LocalPhotoStore.delete(paths: paths.filter { !inUse.contains($0) })
+    }
+
+    private func removeFromRanking(tripID: String, userID: String) async throws {
+        if let ranking = try await store.currentRanking() {
+            let remaining = ranking.tripIDsOrdered.filter { $0 != tripID }
+            if remaining.count != ranking.tripIDsOrdered.count {
+                try await store.save(TripRanking(
+                    tripIDsOrdered: remaining,
+                    ledgerVersion: ranking.ledgerVersion + 1
+                ))
+                for (index, id) in remaining.enumerated() {
+                    guard var trip = try await store.trip(id: id) else { continue }
+                    try trip.mirrorRankPosition(index + 1)
+                    try await store.update(trip)
+                }
+            }
+        }
+        let prior = try await store.loadTastePrior() ?? .zero
+        _ = try await evaluationService.recompute(
+            userID: userID, trigger: "record_deleted", prior: prior
+        )
+    }
+
+    func deleteAccount(session: SessionStore) async throws {
+        try await store.deleteAllUserData()
+        try LocalPhotoStore.deleteAll()
+        EvaluationNotificationService.clearAll()
+        UserDefaults.standard.removeObject(forKey: AutoPhotoFallbackService.consentKey)
+        UserDefaults.standard.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")
+        homeCountryCode = nil
+        interestTagIDs.removeAll()
+        localUserID = UUID().uuidString
+        session.resetAfterDeletion()
     }
 
     private func loadOrCreateProfile() async -> UserProfile {

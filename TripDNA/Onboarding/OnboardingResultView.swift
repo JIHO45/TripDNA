@@ -214,11 +214,9 @@ enum AppleSignInMode: Equatable {
     case onboardingSave
     /// 로그아웃 후 같은 기기에서 다시 로그인한다.
     case sessionRestore
-    /// 훅에서 기존 계정으로 들어와 온보딩을 건너뛴다. (Firestore 복구는 이후 연동)
-    case existingAccount
 }
 
-/// RootView(로그아웃 후)·온보딩 페이오프·기존 계정 진입에서 모두 쓴다.
+/// RootView(로그아웃 후)와 온보딩 페이오프에서 쓴다.
 struct AppleSignInView: View {
     var viewModel: OnboardingViewModel?
     var mode: AppleSignInMode = .sessionRestore
@@ -383,8 +381,8 @@ struct AppleSignInView: View {
     private var headlineText: String {
         switch mode {
         case .onboardingSave:
-            return "이 지문을 안전하게 보관할까요?"
-        case .sessionRestore, .existingAccount:
+            return "Apple 계정으로 로그인할까요?"
+        case .sessionRestore:
             return "기존 계정으로 로그인"
         }
     }
@@ -394,9 +392,7 @@ struct AppleSignInView: View {
         case .onboardingSave:
             return "기록은 이 기기에 저장돼요.\n로그인은 계정을 연결하려는 경우에만 하면 돼요."
         case .sessionRestore:
-            return "Apple 계정으로 이어서 볼 수 있어요."
-        case .existingAccount:
-            return "Apple 계정으로 로그인하면\n온보딩 없이 홈으로 들어갈 수 있어요."
+            return "이 기기의 기록을 다시 열려면 이전에 사용한 Apple 계정으로 로그인해 주세요."
         }
     }
 
@@ -404,7 +400,7 @@ struct AppleSignInView: View {
         switch mode {
         case .onboardingSave:
             return "Apple로 계속하기"
-        case .sessionRestore, .existingAccount:
+        case .sessionRestore:
             return "Apple로 로그인"
         }
     }
@@ -412,8 +408,8 @@ struct AppleSignInView: View {
     private var successHeadlineText: String {
         switch mode {
         case .onboardingSave:
-            return "지문을 저장했어요"
-        case .sessionRestore, .existingAccount:
+            return "로그인했어요"
+        case .sessionRestore:
             return "로그인했어요"
         }
     }
@@ -431,6 +427,10 @@ struct AppleSignInView: View {
 
         do {
             let result = try await AppleSignInClient.shared.signIn()
+            if mode == .sessionRestore && !session.canRestoreAppleUser(result.userID) {
+                errorMessage = "이전에 사용한 Apple 계정으로 로그인해 주세요."
+                return
+            }
             pendingAppleUserID = result.userID
             // 성공 연출 동안에는 세션을 열지 않는다.
             // (즉시 인증하면 RootView가 MainTab으로 바뀌어 체크 화면이 스킵된다.)
@@ -448,7 +448,7 @@ struct AppleSignInView: View {
         if session.isAuthenticated { return }
         guard let appleUserID = pendingAppleUserID else { return }
         switch mode {
-        case .onboardingSave, .existingAccount:
+        case .onboardingSave:
             if let viewModel {
                 viewModel.completeSignIn(session: session, appleUserID: appleUserID)
             } else {

@@ -133,7 +133,7 @@ struct RecommendationView: View {
                 EmptyStateView(
                     systemImage: "line.3.horizontal.decrease.circle",
                     title: "필터에 맞는 추천이 없어요",
-                    message: "예산 범위 조건이 후보를 모두 제외했어요.\n필터를 완화하면 다시 보여드릴게요."
+                    message: "예산 범위가 후보를 모두 제외했어요.\n예산을 높이거나 초기화하면 다시 볼 수 있어요."
                 )
                 .frame(height: 240)
                 Button {

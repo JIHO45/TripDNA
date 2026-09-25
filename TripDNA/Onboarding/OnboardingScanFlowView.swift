@@ -24,7 +24,7 @@ struct OnboardingPhotoPrimingView: View {
             }
             .padding(.top, DNASpacing.lg)
 
-            DNATrustPanel(text: "사진 위치는 기기 안에서만 분석돼요. 서버로 전송되지 않아요.")
+            DNATrustPanel(text: "사진 원본은 업로드하지 않아요. 위치 좌표는 국가 확인에 사용돼요.")
                 .padding(.horizontal, DNASpacing.lg)
                 .padding(.top, DNASpacing.lg)
             Spacer()
@@ -147,6 +147,13 @@ struct OnboardingPhotoScanningView: View {
                 message: "위치 정보가 있는 여행 사진이 없어도 괜찮아요.\n다른 방법으로 지문을 만들 수 있어요."
             )
             .frame(maxHeight: 320)
+            if let message = viewModel.errorMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(Color.dnaCoral)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DNASpacing.lg)
+            }
             Spacer()
             DNABottomCTA {
                 Button {

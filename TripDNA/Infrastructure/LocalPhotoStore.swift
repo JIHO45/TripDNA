@@ -48,6 +48,18 @@ enum LocalPhotoStore {
         try jpeg.write(to: url, options: .atomic)
         return pathPrefix + fileName
     }
+
+    static func deleteAll() throws {
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        try FileManager.default.removeItem(at: directory)
+    }
+
+    static func delete(paths: [String]) throws {
+        for path in Set(paths) {
+            guard let url = fileURL(for: path), FileManager.default.fileExists(atPath: url.path) else { continue }
+            try FileManager.default.removeItem(at: url)
+        }
+    }
 }
 
 enum LocalPhotoStoreError: LocalizedError {

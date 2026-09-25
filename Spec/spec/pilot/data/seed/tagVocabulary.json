@@ -1,0 +1,399 @@
+{
+  "food": {
+    "labelKo": "미식",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "culture": {
+    "labelKo": "문화/예술",
+    "group": "interest",
+    "routing": [
+      "interest"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "history": {
+    "labelKo": "역사/유적",
+    "group": "interest",
+    "routing": [
+      "interest"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "outdoor": {
+    "labelKo": "자연/트레킹",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": {
+      "natureUrban": -0.6
+    },
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "beach": {
+    "labelKo": "해변/휴양",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": {
+      "natureUrban": -0.4,
+      "energyLevel": -0.4
+    },
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "nightlife": {
+    "labelKo": "밤문화",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": {
+      "energyLevel": 0.6
+    },
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "shopping": {
+    "labelKo": "쇼핑",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": {
+      "natureUrban": 0.4
+    },
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "wellness": {
+    "labelKo": "휴식/웰니스",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": {
+      "energyLevel": -0.6
+    },
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "sportsAndEvents": {
+    "labelKo": "스포츠/페스티벌 직관",
+    "group": "interest",
+    "routing": [
+      "taste",
+      "interest"
+    ],
+    "axisSignature": {
+      "energyLevel": 0.4
+    },
+    "polarityPairId": null,
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "energyLow": {
+    "labelKo": "고요한 평화",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "energyLevel": -0.8
+    },
+    "polarityPairId": "energyLevel",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "energyHigh": {
+    "labelKo": "에너지 넘치는 자극",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "energyLevel": 0.8
+    },
+    "polarityPairId": "energyLevel",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "planningLow": {
+    "labelKo": "무계획의 묘미",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "planningStyle": -0.8
+    },
+    "polarityPairId": "planningStyle",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "planningHigh": {
+    "labelKo": "알찬 계획과 실행",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "planningStyle": 0.8
+    },
+    "polarityPairId": "planningStyle",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "socialLow": {
+    "labelKo": "혼자만의 여유",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "socialMode": -0.8
+    },
+    "polarityPairId": "socialMode",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "socialHigh": {
+    "labelKo": "함께하는 즐거움",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "socialMode": 0.8
+    },
+    "polarityPairId": "socialMode",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "noveltyLow": {
+    "labelKo": "편안한 익숙함",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "noveltyAppetite": -0.7
+    },
+    "polarityPairId": "noveltyAppetite",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "noveltyHigh": {
+    "labelKo": "낯선 새로움 · 숨은 명소 탐험",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "noveltyAppetite": 0.7
+    },
+    "polarityPairId": "noveltyAppetite",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "natureUrbanNature": {
+    "labelKo": "대자연의 감동",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "natureUrban": -0.8
+    },
+    "polarityPairId": "natureUrban",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "natureUrbanCity": {
+    "labelKo": "도시의 매력",
+    "group": "polarity",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "natureUrban": 0.8
+    },
+    "polarityPairId": "natureUrban",
+    "isNegative": false,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "negCrowded": {
+    "labelKo": "너무 북적였어요",
+    "group": "negative",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "socialMode": -0.5,
+      "energyLevel": -0.3
+    },
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "negBoring": {
+    "labelKo": "너무 심심했어요",
+    "group": "negative",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "energyLevel": -0.5
+    },
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "negPacked": {
+    "labelKo": "일정이 너무 빡셌어요",
+    "group": "negative",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "energyLevel": 0.5
+    },
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "negPlanDisrupted": {
+    "labelKo": "계획대로 안 돼서 힘들었어요",
+    "group": "negative",
+    "routing": [
+      "taste"
+    ],
+    "axisSignature": {
+      "planningStyle": 0.5
+    },
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": false
+  },
+  "negWeather": {
+    "labelKo": "날씨가 아쉬웠어요",
+    "group": "negative",
+    "routing": [
+      "constraint"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": "seasonFit",
+    "qualityTarget": false
+  },
+  "negExpensive": {
+    "labelKo": "예상보다 비쌌어요",
+    "group": "negative",
+    "routing": [
+      "constraint"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": "budgetFit",
+    "qualityTarget": false
+  },
+  "negTransit": {
+    "labelKo": "이동이 힘들었어요",
+    "group": "negative",
+    "routing": [
+      "constraint"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": "flightFriction",
+    "qualityTarget": false
+  },
+  "negRipoffUnfriendly": {
+    "labelKo": "바가지/불친절",
+    "group": "negative",
+    "routing": [
+      "quality"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": true
+  },
+  "negHygiene": {
+    "labelKo": "위생이 아쉬웠어요",
+    "group": "negative",
+    "routing": [
+      "quality"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": true
+  },
+  "negInfra": {
+    "labelKo": "인프라가 부족해 불편했어요",
+    "group": "negative",
+    "routing": [
+      "quality"
+    ],
+    "axisSignature": null,
+    "polarityPairId": null,
+    "isNegative": true,
+    "constraintTarget": null,
+    "qualityTarget": true
+  }
+}

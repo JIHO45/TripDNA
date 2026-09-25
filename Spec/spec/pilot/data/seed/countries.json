@@ -1,0 +1,1112 @@
+{
+  "JP": {
+    "name": "Japan",
+    "nameKo": "일본",
+    "continent": "Asia",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.5,
+      "energyLevel": 0.1,
+      "planningStyle": 0.6,
+      "socialMode": -0.2,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.9,
+      "culture": 0.85,
+      "history": 0.8,
+      "outdoor": 0.65,
+      "beach": 0.35,
+      "nightlife": 0.75,
+      "shopping": 0.9,
+      "wellness": 0.8,
+      "sportsAndEvents": 0.7
+    },
+    "constraints": {
+      "cost": 0.52,
+      "climate": 0.42
+    },
+    "popularity": 0.75,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "TH": {
+    "name": "Thailand",
+    "nameKo": "태국",
+    "continent": "Asia",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.1,
+      "energyLevel": 0.3,
+      "planningStyle": -0.3,
+      "socialMode": 0.3,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.9,
+      "culture": 0.7,
+      "history": 0.6,
+      "outdoor": 0.7,
+      "beach": 0.95,
+      "nightlife": 0.9,
+      "shopping": 0.75,
+      "wellness": 0.85,
+      "sportsAndEvents": 0.55
+    },
+    "constraints": {
+      "cost": 0.32,
+      "climate": 0.88
+    },
+    "popularity": 0.8,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "VN": {
+    "name": "Vietnam",
+    "nameKo": "베트남",
+    "continent": "Asia",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.1,
+      "energyLevel": 0.2,
+      "planningStyle": -0.3,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.85,
+      "culture": 0.65,
+      "history": 0.65,
+      "outdoor": 0.75,
+      "beach": 0.75,
+      "nightlife": 0.6,
+      "shopping": 0.55,
+      "wellness": 0.6,
+      "sportsAndEvents": 0.3
+    },
+    "constraints": {
+      "cost": 0.26,
+      "climate": 0.82
+    },
+    "popularity": 0.6,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "IN": {
+    "name": "India",
+    "nameKo": "인도",
+    "continent": "Asia",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.1,
+      "energyLevel": 0.6,
+      "planningStyle": 0.1,
+      "socialMode": 0.2,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.8,
+      "culture": 0.9,
+      "history": 0.95,
+      "outdoor": 0.7,
+      "beach": 0.45,
+      "nightlife": 0.4,
+      "shopping": 0.7,
+      "wellness": 0.75,
+      "sportsAndEvents": 0.55
+    },
+    "constraints": {
+      "cost": 0.22,
+      "climate": 0.82
+    },
+    "popularity": 0.55,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "KR": {
+    "name": "South Korea",
+    "nameKo": "대한민국",
+    "continent": "Asia",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.6,
+      "energyLevel": 0.2,
+      "planningStyle": 0.3,
+      "socialMode": 0.0,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.8,
+      "culture": 0.75,
+      "history": 0.6,
+      "outdoor": 0.55,
+      "beach": 0.4,
+      "nightlife": 0.8,
+      "shopping": 0.85,
+      "wellness": 0.65,
+      "sportsAndEvents": 0.6
+    },
+    "constraints": {
+      "cost": 0.55,
+      "climate": 0.43
+    },
+    "popularity": 0.55,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "ID": {
+    "name": "Indonesia",
+    "nameKo": "인도네시아",
+    "continent": "Asia",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.4,
+      "energyLevel": 0.0,
+      "planningStyle": -0.2,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.65,
+      "culture": 0.7,
+      "history": 0.55,
+      "outdoor": 0.8,
+      "beach": 0.9,
+      "nightlife": 0.6,
+      "shopping": 0.45,
+      "wellness": 0.85,
+      "sportsAndEvents": 0.3
+    },
+    "constraints": {
+      "cost": 0.28,
+      "climate": 0.85
+    },
+    "popularity": 0.6,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "FR": {
+    "name": "France",
+    "nameKo": "프랑스",
+    "continent": "Europe",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.4,
+      "energyLevel": 0.1,
+      "planningStyle": 0.2,
+      "socialMode": 0.0,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.9,
+      "culture": 0.95,
+      "history": 0.85,
+      "outdoor": 0.65,
+      "beach": 0.6,
+      "nightlife": 0.65,
+      "shopping": 0.85,
+      "wellness": 0.55,
+      "sportsAndEvents": 0.75
+    },
+    "constraints": {
+      "cost": 0.65,
+      "climate": 0.42
+    },
+    "popularity": 1.0,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "IT": {
+    "name": "Italy",
+    "nameKo": "이탈리아",
+    "continent": "Europe",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.3,
+      "energyLevel": 0.2,
+      "planningStyle": 0.2,
+      "socialMode": 0.2,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.95,
+      "culture": 0.95,
+      "history": 0.95,
+      "outdoor": 0.6,
+      "beach": 0.7,
+      "nightlife": 0.6,
+      "shopping": 0.8,
+      "wellness": 0.55,
+      "sportsAndEvents": 0.7
+    },
+    "constraints": {
+      "cost": 0.58,
+      "climate": 0.48
+    },
+    "popularity": 0.85,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "IS": {
+    "name": "Iceland",
+    "nameKo": "아이슬란드",
+    "continent": "Europe",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.8,
+      "energyLevel": -0.4,
+      "planningStyle": 0.4,
+      "socialMode": -0.5,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.4,
+      "culture": 0.35,
+      "history": 0.3,
+      "outdoor": 0.95,
+      "beach": 0.1,
+      "nightlife": 0.45,
+      "shopping": 0.2,
+      "wellness": 0.8,
+      "sportsAndEvents": 0.2
+    },
+    "constraints": {
+      "cost": 0.85,
+      "climate": 0.12
+    },
+    "popularity": 0.4,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "PT": {
+    "name": "Portugal",
+    "nameKo": "포르투갈",
+    "continent": "Europe",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.1,
+      "energyLevel": 0.0,
+      "planningStyle": -0.3,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.8,
+      "culture": 0.7,
+      "history": 0.75,
+      "outdoor": 0.6,
+      "beach": 0.85,
+      "nightlife": 0.7,
+      "shopping": 0.45,
+      "wellness": 0.55,
+      "sportsAndEvents": 0.55
+    },
+    "constraints": {
+      "cost": 0.42,
+      "climate": 0.58
+    },
+    "popularity": 0.65,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "NO": {
+    "name": "Norway",
+    "nameKo": "노르웨이",
+    "continent": "Europe",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.7,
+      "energyLevel": -0.4,
+      "planningStyle": 0.3,
+      "socialMode": -0.4,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.45,
+      "culture": 0.4,
+      "history": 0.45,
+      "outdoor": 0.95,
+      "beach": 0.15,
+      "nightlife": 0.35,
+      "shopping": 0.25,
+      "wellness": 0.55,
+      "sportsAndEvents": 0.35
+    },
+    "constraints": {
+      "cost": 0.8,
+      "climate": 0.15
+    },
+    "popularity": 0.4,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "GR": {
+    "name": "Greece",
+    "nameKo": "그리스",
+    "continent": "Europe",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.2,
+      "energyLevel": 0.1,
+      "planningStyle": -0.1,
+      "socialMode": 0.2,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.8,
+      "culture": 0.7,
+      "history": 0.95,
+      "outdoor": 0.55,
+      "beach": 0.95,
+      "nightlife": 0.75,
+      "shopping": 0.4,
+      "wellness": 0.6,
+      "sportsAndEvents": 0.3
+    },
+    "constraints": {
+      "cost": 0.48,
+      "climate": 0.62
+    },
+    "popularity": 0.7,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "MA": {
+    "name": "Morocco",
+    "nameKo": "모로코",
+    "continent": "Africa",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.1,
+      "energyLevel": 0.3,
+      "planningStyle": 0.0,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.75,
+      "culture": 0.8,
+      "history": 0.7,
+      "outdoor": 0.7,
+      "beach": 0.45,
+      "nightlife": 0.4,
+      "shopping": 0.85,
+      "wellness": 0.65,
+      "sportsAndEvents": 0.25
+    },
+    "constraints": {
+      "cost": 0.32,
+      "climate": 0.62
+    },
+    "popularity": 0.5,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "KE": {
+    "name": "Kenya",
+    "nameKo": "케냐",
+    "continent": "Africa",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.7,
+      "energyLevel": -0.1,
+      "planningStyle": 0.5,
+      "socialMode": -0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.45,
+      "culture": 0.55,
+      "history": 0.3,
+      "outdoor": 0.95,
+      "beach": 0.55,
+      "nightlife": 0.3,
+      "shopping": 0.25,
+      "wellness": 0.35,
+      "sportsAndEvents": 0.35
+    },
+    "constraints": {
+      "cost": 0.5,
+      "climate": 0.72
+    },
+    "popularity": 0.25,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "ZA": {
+    "name": "South Africa",
+    "nameKo": "남아프리카공화국",
+    "continent": "Africa",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.2,
+      "energyLevel": 0.1,
+      "planningStyle": 0.3,
+      "socialMode": -0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.65,
+      "culture": 0.55,
+      "history": 0.55,
+      "outdoor": 0.9,
+      "beach": 0.6,
+      "nightlife": 0.55,
+      "shopping": 0.45,
+      "wellness": 0.5,
+      "sportsAndEvents": 0.55
+    },
+    "constraints": {
+      "cost": 0.42,
+      "climate": 0.58
+    },
+    "popularity": 0.45,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "EG": {
+    "name": "Egypt",
+    "nameKo": "이집트",
+    "continent": "Africa",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.0,
+      "energyLevel": 0.3,
+      "planningStyle": 0.4,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.55,
+      "culture": 0.7,
+      "history": 0.95,
+      "outdoor": 0.55,
+      "beach": 0.65,
+      "nightlife": 0.35,
+      "shopping": 0.6,
+      "wellness": 0.4,
+      "sportsAndEvents": 0.2
+    },
+    "constraints": {
+      "cost": 0.3,
+      "climate": 0.78
+    },
+    "popularity": 0.5,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "TZ": {
+    "name": "Tanzania",
+    "nameKo": "탄자니아",
+    "continent": "Africa",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.8,
+      "energyLevel": -0.2,
+      "planningStyle": 0.6,
+      "socialMode": 0.0,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.4,
+      "culture": 0.5,
+      "history": 0.3,
+      "outdoor": 0.95,
+      "beach": 0.75,
+      "nightlife": 0.25,
+      "shopping": 0.2,
+      "wellness": 0.4,
+      "sportsAndEvents": 0.2
+    },
+    "constraints": {
+      "cost": 0.52,
+      "climate": 0.72
+    },
+    "popularity": 0.2,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "US": {
+    "name": "USA",
+    "nameKo": "미국",
+    "continent": "North America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.1,
+      "energyLevel": 0.2,
+      "planningStyle": 0.1,
+      "socialMode": -0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.7,
+      "culture": 0.8,
+      "history": 0.5,
+      "outdoor": 0.85,
+      "beach": 0.7,
+      "nightlife": 0.8,
+      "shopping": 0.85,
+      "wellness": 0.55,
+      "sportsAndEvents": 0.9
+    },
+    "constraints": {
+      "cost": 0.72,
+      "climate": 0.5
+    },
+    "popularity": 0.85,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "MX": {
+    "name": "Mexico",
+    "nameKo": "멕시코",
+    "continent": "North America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.0,
+      "energyLevel": 0.3,
+      "planningStyle": -0.2,
+      "socialMode": 0.2,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.9,
+      "culture": 0.8,
+      "history": 0.85,
+      "outdoor": 0.65,
+      "beach": 0.85,
+      "nightlife": 0.75,
+      "shopping": 0.5,
+      "wellness": 0.6,
+      "sportsAndEvents": 0.45
+    },
+    "constraints": {
+      "cost": 0.35,
+      "climate": 0.78
+    },
+    "popularity": 0.8,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "CA": {
+    "name": "Canada",
+    "nameKo": "캐나다",
+    "continent": "North America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.5,
+      "energyLevel": -0.3,
+      "planningStyle": 0.2,
+      "socialMode": -0.3,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.55,
+      "culture": 0.5,
+      "history": 0.35,
+      "outdoor": 0.9,
+      "beach": 0.3,
+      "nightlife": 0.45,
+      "shopping": 0.5,
+      "wellness": 0.45,
+      "sportsAndEvents": 0.55
+    },
+    "constraints": {
+      "cost": 0.65,
+      "climate": 0.28
+    },
+    "popularity": 0.65,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "CR": {
+    "name": "Costa Rica",
+    "nameKo": "코스타리카",
+    "continent": "North America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.8,
+      "energyLevel": 0.1,
+      "planningStyle": 0.0,
+      "socialMode": -0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.55,
+      "culture": 0.4,
+      "history": 0.25,
+      "outdoor": 0.95,
+      "beach": 0.8,
+      "nightlife": 0.4,
+      "shopping": 0.25,
+      "wellness": 0.7,
+      "sportsAndEvents": 0.2
+    },
+    "constraints": {
+      "cost": 0.55,
+      "climate": 0.8
+    },
+    "popularity": 0.35,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "PE": {
+    "name": "Peru",
+    "nameKo": "페루",
+    "continent": "South America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.4,
+      "energyLevel": 0.0,
+      "planningStyle": 0.4,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.9,
+      "culture": 0.7,
+      "history": 0.9,
+      "outdoor": 0.85,
+      "beach": 0.35,
+      "nightlife": 0.45,
+      "shopping": 0.4,
+      "wellness": 0.4,
+      "sportsAndEvents": 0.25
+    },
+    "constraints": {
+      "cost": 0.3,
+      "climate": 0.52
+    },
+    "popularity": 0.4,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "BR": {
+    "name": "Brazil",
+    "nameKo": "브라질",
+    "continent": "South America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.1,
+      "energyLevel": 0.6,
+      "planningStyle": -0.2,
+      "socialMode": 0.5,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.7,
+      "culture": 0.75,
+      "history": 0.4,
+      "outdoor": 0.8,
+      "beach": 0.9,
+      "nightlife": 0.9,
+      "shopping": 0.5,
+      "wellness": 0.45,
+      "sportsAndEvents": 0.85
+    },
+    "constraints": {
+      "cost": 0.38,
+      "climate": 0.85
+    },
+    "popularity": 0.45,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "AR": {
+    "name": "Argentina",
+    "nameKo": "아르헨티나",
+    "continent": "South America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.0,
+      "energyLevel": 0.1,
+      "planningStyle": 0.1,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.8,
+      "culture": 0.7,
+      "history": 0.4,
+      "outdoor": 0.85,
+      "beach": 0.4,
+      "nightlife": 0.8,
+      "shopping": 0.5,
+      "wellness": 0.45,
+      "sportsAndEvents": 0.75
+    },
+    "constraints": {
+      "cost": 0.4,
+      "climate": 0.55
+    },
+    "popularity": 0.4,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "CO": {
+    "name": "Colombia",
+    "nameKo": "콜롬비아",
+    "continent": "South America",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.0,
+      "energyLevel": 0.3,
+      "planningStyle": -0.1,
+      "socialMode": 0.3,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.6,
+      "culture": 0.65,
+      "history": 0.5,
+      "outdoor": 0.75,
+      "beach": 0.65,
+      "nightlife": 0.85,
+      "shopping": 0.4,
+      "wellness": 0.45,
+      "sportsAndEvents": 0.4
+    },
+    "constraints": {
+      "cost": 0.32,
+      "climate": 0.78
+    },
+    "popularity": 0.35,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "NZ": {
+    "name": "New Zealand",
+    "nameKo": "뉴질랜드",
+    "continent": "Oceania",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.8,
+      "energyLevel": -0.1,
+      "planningStyle": 0.2,
+      "socialMode": -0.3,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.55,
+      "culture": 0.5,
+      "history": 0.3,
+      "outdoor": 0.95,
+      "beach": 0.55,
+      "nightlife": 0.35,
+      "shopping": 0.35,
+      "wellness": 0.55,
+      "sportsAndEvents": 0.55
+    },
+    "constraints": {
+      "cost": 0.68,
+      "climate": 0.35
+    },
+    "popularity": 0.45,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "AU": {
+    "name": "Australia",
+    "nameKo": "오스트레일리아",
+    "continent": "Oceania",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.1,
+      "energyLevel": 0.1,
+      "planningStyle": 0.0,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.65,
+      "culture": 0.55,
+      "history": 0.3,
+      "outdoor": 0.85,
+      "beach": 0.9,
+      "nightlife": 0.65,
+      "shopping": 0.6,
+      "wellness": 0.5,
+      "sportsAndEvents": 0.75
+    },
+    "constraints": {
+      "cost": 0.68,
+      "climate": 0.65
+    },
+    "popularity": 0.55,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "FJ": {
+    "name": "Fiji",
+    "nameKo": "피지",
+    "continent": "Oceania",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.8,
+      "energyLevel": -0.5,
+      "planningStyle": 0.0,
+      "socialMode": 0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.45,
+      "culture": 0.45,
+      "history": 0.2,
+      "outdoor": 0.7,
+      "beach": 0.95,
+      "nightlife": 0.25,
+      "shopping": 0.2,
+      "wellness": 0.8,
+      "sportsAndEvents": 0.3
+    },
+    "constraints": {
+      "cost": 0.5,
+      "climate": 0.88
+    },
+    "popularity": 0.25,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "AE": {
+    "name": "UAE",
+    "nameKo": "아랍에미리트",
+    "continent": "Middle East",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": 0.8,
+      "energyLevel": 0.3,
+      "planningStyle": 0.4,
+      "socialMode": 0.0,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.75,
+      "culture": 0.5,
+      "history": 0.3,
+      "outdoor": 0.55,
+      "beach": 0.7,
+      "nightlife": 0.7,
+      "shopping": 0.95,
+      "wellness": 0.7,
+      "sportsAndEvents": 0.65
+    },
+    "constraints": {
+      "cost": 0.78,
+      "climate": 0.92
+    },
+    "popularity": 0.65,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  },
+  "JO": {
+    "name": "Jordan",
+    "nameKo": "요르단",
+    "continent": "Middle East",
+    "status": "confirmed",
+    "tasteCore": {
+      "natureUrban": -0.4,
+      "energyLevel": -0.2,
+      "planningStyle": 0.2,
+      "socialMode": -0.1,
+      "noveltyDistance": null
+    },
+    "matchingAxes": [
+      "natureUrban",
+      "energyLevel",
+      "planningStyle",
+      "socialMode"
+    ],
+    "interestTags": {
+      "food": 0.65,
+      "culture": 0.6,
+      "history": 0.9,
+      "outdoor": 0.8,
+      "beach": 0.4,
+      "nightlife": 0.25,
+      "shopping": 0.35,
+      "wellness": 0.6,
+      "sportsAndEvents": 0.15
+    },
+    "constraints": {
+      "cost": 0.35,
+      "climate": 0.72
+    },
+    "popularity": 0.3,
+    "pilotReviewCosine": 1.0,
+    "source": "editorial_freeze"
+  }
+}

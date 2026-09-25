@@ -128,12 +128,13 @@ final class TripRegistrationViewModel {
                         return
                     }
                 }
-                _ = try await dependencies.tripService.updateTrip(
+                let updated = try await dependencies.tripService.updateTrip(
                     id: editingTripID,
                     legs: builtLegs,
                     companion: companion,
                     purpose: purpose
                 )
+                try? await EvaluationNotificationService.scheduleIfEnabled(for: updated)
                 didSave = true
                 return
             }
@@ -146,11 +147,12 @@ final class TripRegistrationViewModel {
                     return
                 }
             }
-            _ = try await dependencies.tripService.createTrip(
+            let created = try await dependencies.tripService.createTrip(
                 legs: builtLegs,
                 companion: companion,
                 purpose: purpose
             )
+            try? await EvaluationNotificationService.scheduleIfEnabled(for: created)
             if shouldShowNotificationPriming {
                 UserDefaults.standard.set(true, forKey: Self.notificationPrimingShownKey)
                 showNotificationPriming = true
@@ -273,7 +275,7 @@ struct TripRegistrationView: View {
         .sheet(isPresented: $viewModel.showNotificationPriming, onDismiss: {
             viewModel.didSave = true
         }) {
-            NotificationPrimingSheet {
+            NotificationPrimingSheet(trips: dependencies.store) {
                 viewModel.showNotificationPriming = false
             }
             .presentationDetents([.medium])
@@ -559,9 +561,12 @@ private struct CountryPickerSheet: View {
     }
 }
 
-/// UI-6C-5: 첫 예정·현재 여행 등록 직후 알림 프라이밍. 알림 권한 요청은 스텁이다.
+/// 첫 예정·현재 여행 등록 직후 알림 권한을 요청한다.
 private struct NotificationPrimingSheet: View {
+    let trips: any AppStore
     let onClose: () -> Void
+    @State private var isRequesting = false
+    @State private var errorMessage: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -586,8 +591,27 @@ private struct NotificationPrimingSheet: View {
             .padding(.horizontal, DNASpacing.lg)
             Spacer(minLength: 0)
             DNABottomCTA {
-                Button("알림 받기") { onClose() }
+                if let errorMessage {
+                    Text(errorMessage).font(.footnote).foregroundStyle(Color.dnaCoral)
+                }
+                Button("알림 받기") {
+                    Task {
+                        isRequesting = true
+                        defer { isRequesting = false }
+                        do {
+                            let all = try await trips.trips()
+                            if try await EvaluationNotificationService.enable(for: all) {
+                                onClose()
+                            } else {
+                                errorMessage = "알림을 사용하려면 설정에서 허용해 주세요."
+                            }
+                        } catch {
+                            errorMessage = "알림을 예약하지 못했어요. 다시 시도해 주세요."
+                        }
+                    }
+                }
                     .buttonStyle(.dnaPrimary)
+                    .disabled(isRequesting)
                 Button("나중에") { onClose() }
                     .buttonStyle(.dnaGhost)
             }

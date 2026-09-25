@@ -10,6 +10,7 @@ enum AppPersistence {
 @Observable
 final class AppDependencies {
     let store: any AppStore
+    let analytics: AnalyticsRecorder
     let tripService: TripService
     let evaluationService: EvaluationService
     let rankingService: RankingService
@@ -37,6 +38,9 @@ final class AppDependencies {
     /// 앱 진입 시 1회. 기기에 남아 있는 프로필로 홈 국가와 세션을 복원한다.
     /// 온보딩을 마친 기록이 있으면 다시 온보딩을 돌리지 않는다.
     func restore(session: SessionStore) async {
+        if UserDefaults.standard.object(forKey: Self.firstLaunchKey) == nil {
+            UserDefaults.standard.set(Date(), forKey: Self.firstLaunchKey)
+        }
         guard let profile = try? await store.loadProfile() else { return }
         localUserID = profile.id
         homeCountryCode = profile.homeCountryCode
@@ -45,6 +49,22 @@ final class AppDependencies {
         if profile.onboardingStatus == .done {
             session.onboardingPhase = .completed
         }
+    }
+
+    func track(_ type: AnalyticsEventType, _ payload: [String: String] = [:]) async {
+        try? await analytics.append(AnalyticsEvent(type: type, payload: payload))
+    }
+
+    /// 설치 후 한 번만 기록한다. `source`는 추천을 처음 본 화면이다.
+    func recordFirstRecommendationIfNeeded(source: String) async {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: Self.firstRecommendationKey) else { return }
+        defaults.set(true, forKey: Self.firstRecommendationKey)
+        let firstLaunch = defaults.object(forKey: Self.firstLaunchKey) as? Date ?? Date()
+        await track(.firstRecommendationShown, [
+            "source": source,
+            "secondsSinceFirstLaunch": String(Int(Date().timeIntervalSince(firstLaunch)))
+        ])
     }
 
     /// 온보딩을 끝냈다는 사실을 기기에 남긴다. 로그인 여부와는 무관하다.
@@ -125,6 +145,7 @@ final class AppDependencies {
         EvaluationNotificationService.clearAll()
         UserDefaults.standard.removeObject(forKey: AutoPhotoFallbackService.consentKey)
         UserDefaults.standard.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")
+        UserDefaults.standard.removeObject(forKey: Self.firstRecommendationKey)
         homeCountryCode = nil
         interestTagIDs.removeAll()
         localUserID = UUID().uuidString
@@ -141,14 +162,17 @@ final class AppDependencies {
             onboardingStatus: .pending,
             homeCountryCode: nil,
             departureAirportCode: nil,
-            dailyPhotoAutoFallbackConsent: nil,
             createdAt: Date()
         )
     }
 
+    private static let firstLaunchKey = "analytics.firstLaunchAt"
+    private static let firstRecommendationKey = "analytics.firstRecommendationRecorded"
+
     init(
         persistence: AppPersistence = .onDisk,
-        affiliateActivitiesEnabled: Bool = AppDependencies.defaultAffiliateActivitiesEnabled
+        affiliateActivitiesEnabled: Bool = AppDependencies.defaultAffiliateActivitiesEnabled,
+        analyticsSink: (any AnalyticsSink)? = nil
     ) {
         self.affiliateActivitiesEnabled = affiliateActivitiesEnabled
         let countries = Self.loadCountries()
@@ -167,9 +191,11 @@ final class AppDependencies {
         #endif
         let store = Self.makeStore(persistence: effectivePersistence, countries: countries, tags: tags)
         self.store = store
+        let analytics = AnalyticsRecorder(store: store, sink: analyticsSink)
+        self.analytics = analytics
 
         let replay = UTVReplayService()
-        self.tripService = TripService(trips: store, events: store)
+        self.tripService = TripService(trips: store, events: analytics)
         self.evaluationService = EvaluationService(
             trips: store,
             rankings: store,
@@ -177,22 +203,22 @@ final class AppDependencies {
             tags: store,
             feedback: store,
             utv: store,
-            events: store,
+            events: analytics,
             replay: replay
         )
         self.rankingService = RankingService(
             trips: store,
             rankings: store,
             evaluationService: evaluationService,
-            events: store
+            events: analytics
         )
         self.recommendationService = RecommendationService(
             countries: store,
             feedbackRepository: store,
-            events: store
+            events: analytics
         )
-        self.affiliateLinkService = AffiliateLinkService(events: store)
-        self.dailyPhotoService = DailyPhotoService(photos: store, events: store)
+        self.affiliateLinkService = AffiliateLinkService(events: analytics)
+        self.dailyPhotoService = DailyPhotoService(photos: store, events: analytics)
     }
 
     func allTags() async -> [TagDefinition] {

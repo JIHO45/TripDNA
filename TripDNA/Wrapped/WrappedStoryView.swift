@@ -63,7 +63,7 @@ struct WrappedStoryView: View {
 
     private func background(for kind: WrappedCardKind) -> some View {
         ZStack {
-            Color.dnaBackground
+            Color.dnaCanvas
             LinearGradient(
                 colors: gradientColors(for: kind),
                 startPoint: .topLeading,
@@ -76,12 +76,12 @@ struct WrappedStoryView: View {
 
     private func gradientColors(for kind: WrappedCardKind) -> [Color] {
         switch kind {
-        case .movement: [.dnaIndigo, .dnaTeal]
-        case .topTrip: [.dnaCoral, .dnaAmber]
-        case .strongestTaste: [.dnaTeal, .dnaIndigo]
-        case .tags: [.dnaAmber, .dnaIndigo]
-        case .photo: [.dnaCoral, .dnaIndigo]
-        case .share: [.dnaIndigo, .dnaBackground]
+        case .movement: [.dnaTextTertiary, .dnaData]
+        case .topTrip: [.dnaAction, .dnaWarning]
+        case .strongestTaste: [.dnaData, .dnaTextTertiary]
+        case .tags: [.dnaWarning, .dnaTextTertiary]
+        case .photo: [.dnaAction, .dnaTextTertiary]
+        case .share: [.dnaTextTertiary, .dnaCanvas]
         }
     }
 
@@ -149,7 +149,7 @@ private func storyEyebrow(_ text: String) -> some View {
     Text(text)
         .font(.footnote.weight(.semibold))
         .tracking(2)
-        .foregroundStyle(Color.dnaSlate)
+        .foregroundStyle(Color.dnaTextSecondary)
 }
 
 // MARK: - W1. 올해의 이동
@@ -169,7 +169,7 @@ private struct MovementCardView: View {
                         .font(.system(size: 104, weight: .heavy, design: .rounded))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [.dnaTeal, .dnaIndigo],
+                                colors: [.dnaData, .dnaTextTertiary],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
@@ -214,7 +214,7 @@ private struct PinDotPattern: View {
                     }
                 }
                 .foregroundStyle(
-                    (seedIndex.isMultiple(of: 2) ? Color.dnaTeal : Color.dnaIndigo)
+                    (seedIndex.isMultiple(of: 2) ? Color.dnaData : Color.dnaTextTertiary)
                         .opacity(0.35)
                 )
                 .position(
@@ -238,8 +238,8 @@ private struct TopTripCardView: View {
 
             Image(systemName: display.isSingleTrip ? "airplane" : "trophy.fill")
                 .font(.system(size: 44))
-                .foregroundStyle(Color.dnaAmber)
-                .shadow(color: Color.dnaAmber.opacity(0.5), radius: 16)
+                .foregroundStyle(Color.dnaWarning)
+                .shadow(color: Color.dnaWarning.opacity(0.5), radius: 16)
 
             Text(display.topTripTitle)
                 .font(.system(size: 40, weight: .heavy, design: .rounded))
@@ -250,18 +250,18 @@ private struct TopTripCardView: View {
             if !display.topTripDateRange.isEmpty {
                 Text(display.topTripDateRange)
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .monospacedDigit()
             }
 
             if !display.isSingleTrip {
                 Text("랭킹 1위")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.dnaAmber)
+                    .foregroundStyle(Color.dnaWarning)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.dnaAmber.opacity(0.16), in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color.dnaAmber.opacity(0.4), lineWidth: 1))
+                    .background(Color.dnaWarning.opacity(0.16), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.dnaWarning.opacity(0.4), lineWidth: 1))
             }
         }
         .padding(.horizontal, DNASpacing.lg)
@@ -304,7 +304,7 @@ private struct StrongestTasteCardView: View {
 private struct TagsCardView: View {
     let display: WrappedDisplayModel
 
-    private static let accents: [Color] = [.dnaTeal, .dnaIndigo, .dnaAmber]
+    private static let accents: [Color] = [.dnaData, .dnaTextTertiary, .dnaWarning]
 
     var body: some View {
         VStack(spacing: DNASpacing.lg) {
@@ -388,7 +388,7 @@ private struct PhotoMosaicCardView: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                    .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
     }
 }

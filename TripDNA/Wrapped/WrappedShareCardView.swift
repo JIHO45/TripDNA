@@ -28,7 +28,7 @@ struct WrappedShareStageView: View {
                 width: Self.cardSize.width * Self.previewScale,
                 height: Self.cardSize.height * Self.previewScale
             )
-            .shadow(color: Color.dnaIndigo.opacity(0.35), radius: 24, y: 10)
+            .shadow(color: Color.dnaTextTertiary.opacity(0.35), radius: 24, y: 10)
 
             Spacer(minLength: 0)
 
@@ -38,6 +38,7 @@ struct WrappedShareStageView: View {
         }
         .sheet(isPresented: $showingShare) {
             ShareCardSheet(
+                kind: .wrapped,
                 title: "Wrapped 공유",
                 disclosure: "연도, 여행·국가 수, 취향 지문, 베스트 여행과 긍정 태그가 포함돼요.",
                 allowsDestinationNames: true
@@ -71,6 +72,7 @@ struct WrappedShareStageView: View {
 struct WrappedShareCardView: View {
     let display: WrappedDisplayModel
     var showsDestinationNames: Bool
+    var installURL: URL? = ShareDestination.url
 
     var body: some View {
         ZStack {
@@ -82,7 +84,7 @@ struct WrappedShareCardView: View {
                         .font(.system(size: 56, weight: .heavy, design: .rounded))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [.dnaTeal, .dnaIndigo],
+                                colors: [.dnaData, .dnaTextTertiary],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -104,11 +106,11 @@ struct WrappedShareCardView: View {
                     Text(display.isSingleTrip ? "올해의 여행" : "올해의 1위 여행")
                         .font(.caption.weight(.semibold))
                         .tracking(1.5)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     Text(showsDestinationNames ? display.topTripTitle : "나의 베스트 여행")
                         .font(.headline)
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(Color.dnaAmber)
+                        .foregroundStyle(Color.dnaWarning)
                         .minimumScaleFactor(0.7)
                 }
 
@@ -117,10 +119,10 @@ struct WrappedShareCardView: View {
                         ForEach(display.topTagLabels, id: \.self) { label in
                             Text("#\(label)")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.dnaTeal)
+                                .foregroundStyle(Color.dnaData)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
-                                .background(Color.dnaTeal.opacity(0.14), in: Capsule())
+                                .background(Color.dnaData.opacity(0.14), in: Capsule())
                         }
                     }
                 }
@@ -134,37 +136,43 @@ struct WrappedShareCardView: View {
                         .font(.caption2.weight(.medium))
                         .tracking(1)
                 }
-                .foregroundStyle(Color.dnaSlate.opacity(0.8))
-                .padding(.bottom, DNASpacing.md)
+                .foregroundStyle(Color.dnaTextSecondary.opacity(0.8))
+                .padding(.bottom, installURL == nil ? DNASpacing.md : 0)
+
+                if let installURL {
+                    ShareInstallBadge(url: installURL)
+                        .foregroundStyle(.white)
+                        .padding(.bottom, DNASpacing.md)
+                }
             }
             .padding(.horizontal, DNASpacing.lg)
         }
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
     }
 
-    /// `AuroraBackground`는 `ignoresSafeArea`를 포함해 카드 프레임 밖으로 번질 수 있으므로
+    /// `AppCanvas`는 `ignoresSafeArea`를 포함해 카드 프레임 밖으로 번질 수 있으므로
     /// 렌더러·미리보기 겸용 배경을 카드 크기에 맞춰 직접 그린다.
     private var cardBackground: some View {
         ZStack {
-            Color.dnaBackground
+            Color.dnaCanvas
             RadialGradient(
-                colors: [Color.dnaIndigo.opacity(0.35), .clear],
+                colors: [Color.dnaTextTertiary.opacity(0.35), .clear],
                 center: UnitPoint(x: 0.2, y: 0.08),
                 startRadius: 10,
                 endRadius: 300
             )
             RadialGradient(
-                colors: [Color.dnaTeal.opacity(0.28), .clear],
+                colors: [Color.dnaData.opacity(0.28), .clear],
                 center: UnitPoint(x: 0.88, y: 0.35),
                 startRadius: 10,
                 endRadius: 280
             )
             RadialGradient(
-                colors: [Color.dnaCoral.opacity(0.16), .clear],
+                colors: [Color.dnaAction.opacity(0.16), .clear],
                 center: UnitPoint(x: 0.25, y: 0.95),
                 startRadius: 10,
                 endRadius: 260

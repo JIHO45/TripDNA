@@ -14,7 +14,7 @@ struct TripPhotoImage: View {
             } else if let symbol = storagePath.placeholderPhotoSymbol {
                 ZStack {
                     LinearGradient(
-                        colors: [.dnaIndigo.opacity(0.45), .dnaTeal.opacity(0.3)],
+                        colors: [.dnaTextTertiary.opacity(0.45), .dnaData.opacity(0.3)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -24,11 +24,19 @@ struct TripPhotoImage: View {
                 }
             } else {
                 ZStack {
-                    Color.dnaSurface
+                    Color.dnaSurface1
                     Image(systemName: "photo")
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
             }
         }
+    }
+}
+
+extension String {
+    /// 데모·시드 데이터의 `local://placeholder/<SF Symbol>` 경로에서 심볼 이름을 꺼낸다.
+    var placeholderPhotoSymbol: String? {
+        guard hasPrefix("local://placeholder/") else { return nil }
+        return String(dropFirst("local://placeholder/".count))
     }
 }

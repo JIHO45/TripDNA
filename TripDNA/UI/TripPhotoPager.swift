@@ -50,7 +50,7 @@ struct TripPhotoPager: View {
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                            .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                            .strokeBorder(Color.dnaDivider, lineWidth: 1)
                     )
             }
 
@@ -65,7 +65,7 @@ struct TripPhotoPager: View {
                         } label: {
                             Text(item.storagePath == nil ? "사진 고르기" : "사진 바꾸기")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.dnaTeal)
+                                .foregroundStyle(Color.dnaData)
                         }
                         .buttonStyle(.plain)
                     }
@@ -112,7 +112,7 @@ struct TripPhotoPager: View {
 
     private func heroChrome(photoHeight: CGFloat) -> some View {
         GeometryReader { geo in
-            let minY = geo.frame(in: .named(TripPhotoHeroBanner.scrollSpace)).minY
+            let minY = geo.frame(in: .named(TripPhotoScrollSpace.name)).minY
             let pull = max(0, minY)
             let scrolled = max(0, -minY)
             // 정지: 상·하단 스크림 / 스크롤 시작 후 블러·페이드.
@@ -133,8 +133,8 @@ struct TripPhotoPager: View {
                 // 상단: 노치·내비 컨트롤 가독성. 정지·스크롤 모두 유지하되 스크롤 시 약화.
                 LinearGradient(
                     colors: [
-                        Color.dnaBackground.opacity(isScrolling ? 0.35 : 0.62),
-                        Color.dnaBackground.opacity(isScrolling ? 0.12 : 0.28),
+                        Color.dnaCanvas.opacity(isScrolling ? 0.35 : 0.62),
+                        Color.dnaCanvas.opacity(isScrolling ? 0.12 : 0.28),
                         .clear
                     ],
                     startPoint: .top,
@@ -148,9 +148,9 @@ struct TripPhotoPager: View {
                     LinearGradient(
                         colors: [
                             .clear,
-                            Color.dnaBackground.opacity(0.2),
-                            Color.dnaBackground.opacity(0.72),
-                            Color.dnaBackground
+                            Color.dnaCanvas.opacity(0.2),
+                            Color.dnaCanvas.opacity(0.72),
+                            Color.dnaCanvas
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -174,17 +174,17 @@ struct TripPhotoPager: View {
             } else {
                 ZStack {
                     LinearGradient(
-                        colors: [Color.dnaSurface, Color.dnaBackground],
+                        colors: [Color.dnaSurface1, Color.dnaCanvas],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                     VStack(spacing: 8) {
                         Image(systemName: isEditable(item.dayIndex) ? "plus.circle" : "photo")
                             .font(prefersCompact ? .title3 : .title)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                         Text(isEditable(item.dayIndex) ? "탭해서 사진 고르기" : emptyDayMessage)
                             .font(.caption)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DNASpacing.lg)
                     }
@@ -221,13 +221,13 @@ struct TripPhotoPager: View {
                                     } else {
                                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                                             .strokeBorder(
-                                                Color.dnaHairline,
+                                                Color.dnaDivider,
                                                 style: StrokeStyle(lineWidth: 1, dash: [3])
                                             )
                                             .overlay(
                                                 Image(systemName: "photo")
                                                     .font(.caption2)
-                                                    .foregroundStyle(Color.dnaSlate.opacity(0.7))
+                                                    .foregroundStyle(Color.dnaTextSecondary.opacity(0.7))
                                             )
                                     }
                                 }
@@ -236,14 +236,14 @@ struct TripPhotoPager: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                                         .strokeBorder(
-                                            selection == item.dayIndex ? Color.dnaTeal : Color.clear,
+                                            selection == item.dayIndex ? Color.dnaData : Color.clear,
                                             lineWidth: 2
                                         )
                                 )
 
                                 Text("\(item.dayIndex)일")
                                     .font(.caption2.weight(selection == item.dayIndex ? .bold : .regular))
-                                    .foregroundStyle(selection == item.dayIndex ? Color.dnaTeal : Color.dnaSlate)
+                                    .foregroundStyle(selection == item.dayIndex ? Color.dnaData : Color.dnaTextSecondary)
                             }
                         }
                         .buttonStyle(.plain)
@@ -290,6 +290,19 @@ struct TripPhotoPager: View {
     }
 }
 
+
+/// 사진 페이저가 스크롤 위치를 읽어 흐림을 계산하는 좌표 공간.
+enum TripPhotoScrollSpace {
+    static let name = "tripPhotoHeroScroll"
+}
+
+extension View {
+    /// 사진 페이저를 품은 스크롤 뷰 루트에 붙인다.
+    func tripPhotoHeroScrollSpace() -> some View {
+        coordinateSpace(name: TripPhotoScrollSpace.name)
+    }
+}
+
 #Preview("TripPhotoPager") {
     struct PreviewHost: View {
         @State private var day = 2
@@ -312,7 +325,7 @@ struct TripPhotoPager: View {
             }
             .tripPhotoHeroScrollSpace()
             .ignoresSafeArea(edges: .top)
-            .background(Color.dnaBackground)
+            .background(Color.dnaCanvas)
         }
     }
     return PreviewHost()

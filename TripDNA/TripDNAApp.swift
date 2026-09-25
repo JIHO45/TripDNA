@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct TripDNAApp: App {
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
+
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environment(appDelegate.router)
         }
     }
 }

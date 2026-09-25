@@ -5,6 +5,7 @@ struct EvaluationView: View {
     let tripID: String
     @Environment(AppDependencies.self) private var dependencies
     @Environment(SessionStore.self) private var session
+    @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = EvaluationViewModel()
     @State private var photoPageDay = 1
@@ -26,6 +27,7 @@ struct EvaluationView: View {
             }
         }
         .toolbarBackground(.hidden, for: .navigationBar)
+        .sensoryFeedback(.success, trigger: viewModel.didSubmit) { _, submitted in submitted }
         .task {
             await viewModel.load(tripID: tripID, dependencies: dependencies)
             if let first = introPhotoItems.first?.dayIndex {
@@ -51,13 +53,15 @@ struct EvaluationView: View {
                 )
 
                 VStack(spacing: DNASpacing.sm) {
-                    Text("\(viewModel.trip?.titleKo ?? "여행"), 어땠나요?")
+                    Text(viewModel.isRevising
+                         ? "\(viewModel.trip?.titleKo ?? "여행") 평가 고치기"
+                         : "\(viewModel.trip?.titleKo ?? "여행"), 어땠나요?")
                         .font(.title.bold())
                         .foregroundStyle(Color.dnaTextPrimary)
                         .multilineTextAlignment(.center)
-                    Text("약 30초면 충분해요")
+                    Text(viewModel.isRevising ? "이전 답이 채워져 있어요. 바꿀 것만 고치면 돼요" : "약 30초면 충분해요")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 .padding(.horizontal, DNASpacing.lg)
                 .padding(.top, DNASpacing.sm)
@@ -68,21 +72,24 @@ struct EvaluationView: View {
         .ignoresSafeArea(edges: hasRealPhotos ? .top : [])
         .safeAreaInset(edge: .bottom) {
             DNABottomCTA {
-                Button("평가 시작") { viewModel.start() }
+                Button(viewModel.isRevising ? "고치기 시작" : "평가 시작") { viewModel.start() }
                     .buttonStyle(.dnaPrimary)
 
                 HStack(spacing: DNASpacing.md) {
-                    Button("나중에") { dismiss() }
-                    Text("·")
-                        .foregroundStyle(Color.dnaSlate.opacity(0.5))
-                    Button("평가 건너뛰기") {
-                        Task { await viewModel.skip(dependencies: dependencies, session: session) }
+                    Button(viewModel.isRevising ? "닫기" : "나중에") { dismiss() }
+                    if !viewModel.isRevising {
+                        Text("·")
+                            .foregroundStyle(Color.dnaTextSecondary.opacity(0.5))
+                            .accessibilityHidden(true)
+                        Button("평가 건너뛰기") {
+                            Task { await viewModel.skip(dependencies: dependencies, session: session) }
+                        }
+                        .disabled(viewModel.isSubmitting)
                     }
-                    .disabled(viewModel.isSubmitting)
                 }
                 .font(.subheadline)
-                .foregroundStyle(Color.dnaSlate)
-                .frame(maxWidth: .infinity)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .frame(maxWidth: .infinity, minHeight: 44)
                 .padding(.top, DNASpacing.xs)
             }
         }
@@ -148,6 +155,7 @@ struct EvaluationView: View {
                 }
             )
             .padding(.horizontal, DNASpacing.lg)
+            .sensoryFeedback(.selection, trigger: viewModel.satisfaction)
             Spacer()
         }
     }
@@ -217,7 +225,7 @@ struct EvaluationView: View {
                     comparisonCard(title: trip.titleKo, subtitle: trip.dateRangeKo)
                     Text("VS")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .frame(width: 36, height: 36)
                         .background(Circle().fill(Color.white.opacity(0.06)))
                     comparisonCard(title: anchor.titleKo, subtitle: anchor.dateRangeKo)
@@ -269,7 +277,7 @@ struct EvaluationView: View {
                 .multilineTextAlignment(.center)
             Text(subtitle)
                 .font(.caption2)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -286,7 +294,7 @@ struct EvaluationView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("최대 5개 · 없어도 괜찮아요")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
 
                     if !viewModel.polarityTags.isEmpty {
                         tagSection(title: "성향", tags: viewModel.polarityTags, isPositive: true)
@@ -315,7 +323,7 @@ struct EvaluationView: View {
                         .foregroundStyle(Color.dnaTextPrimary)
                     Text("전체 여행에서 느낀 것이면 '전체 여행에서'를 골라주세요.")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
 
                     ForEach(viewModel.tasteTagsNeedingAttribution) { tag in
                         VStack(alignment: .leading, spacing: DNASpacing.sm) {
@@ -342,7 +350,7 @@ struct EvaluationView: View {
                         .padding(DNASpacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                                .fill(Color.dnaSurface)
+                                .fill(Color.dnaSurface1)
                         )
                     }
                 }
@@ -364,13 +372,13 @@ struct EvaluationView: View {
                         .foregroundStyle(Color.dnaTextPrimary)
                     Text("최대 3개 · 선택 사항이에요")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
 
                     tagSection(title: "아쉬웠던 것", tags: viewModel.negativeTagOptions, isPositive: false)
 
-                    Text("제출 후에는 평가를 수정할 수 없어요. 서열은 랭킹 보드에서 고칠 수 있어요.")
+                    Text("제출한 뒤에도 여행 상세에서 고칠 수 있어요. 여행끼리의 순서는 랭킹 보드에서 바꿔요.")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .padding(.top, DNASpacing.sm)
 
                     if let message = viewModel.errorMessage {
@@ -388,7 +396,7 @@ struct EvaluationView: View {
                     if viewModel.isSubmitting {
                         ProgressView().tint(Color.dnaCanvas)
                     } else {
-                        Text("평가 완료")
+                        Text(viewModel.isRevising ? "수정 완료" : "평가 완료")
                     }
                 }
                 .buttonStyle(.dnaPrimary(isDisabled: viewModel.isSubmitting))
@@ -401,7 +409,7 @@ struct EvaluationView: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(title)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
             DNAFlowLayout(spacing: 8) {
                 ForEach(tags) { tag in
                     let selected = isPositive
@@ -451,7 +459,7 @@ struct EvaluationView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(Color.dnaTextPrimary)
             }
-            Text("평가가 반영됐어요")
+            Text(viewModel.isRevising ? "수정한 평가가 반영됐어요" : "평가가 반영됐어요")
                 .font(.title3.bold())
                 .foregroundStyle(Color.dnaTextPrimary)
 
@@ -461,7 +469,7 @@ struct EvaluationView: View {
                     if moved.isEmpty {
                         Text("지문은 거의 그대로예요")
                             .font(.subheadline)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                     } else {
                         ForEach(TasteAxis.allCases, id: \.self) { axis in
                             let value = delta[axis]
@@ -470,8 +478,8 @@ struct EvaluationView: View {
                                 Spacer()
                                 Text(String(format: "%+.2f", value))
                                     .foregroundStyle(abs(value) >= 0.02
-                                        ? (value >= 0 ? Color.dnaTeal : Color.dnaCoral)
-                                        : Color.dnaSlate)
+                                        ? (value >= 0 ? Color.dnaData : Color.dnaAction)
+                                        : Color.dnaTextSecondary)
                             }
                             .font(.subheadline)
                             .opacity(abs(value) >= 0.02 ? 1 : 0.45)
@@ -483,8 +491,14 @@ struct EvaluationView: View {
 
             Spacer()
             DNABottomCTA {
-                Button("홈으로") { dismiss() }
-                    .buttonStyle(.dnaPrimary)
+                Button("바뀐 추천 보기") {
+                    router.selectedTab = .recommendation
+                    dismiss()
+                }
+                .buttonStyle(.dnaPrimary)
+                Button("닫기") { dismiss() }
+                    .buttonStyle(.dnaGhost)
+                    .frame(minHeight: 44)
             }
         }
     }

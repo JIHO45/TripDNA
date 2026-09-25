@@ -65,22 +65,4 @@ final class TripDetailViewModel {
     var todayPhoto: DailyPhoto? {
         photo(forDay: currentDayIndex)
     }
-
-    /// 평가 완료 여행의 공유용 텍스트 요약.
-    var shareSummary: String {
-        guard let trip else { return "" }
-        var lines = ["\(trip.titleKo) 여행", trip.dateRangeKo]
-        if let satisfaction = trip.evaluation?.satisfaction {
-            lines.append("만족도 \(satisfaction)/5")
-        }
-        if let rank = trip.rankPosition {
-            lines.append("내 여행 랭킹 \(rank)위")
-        }
-        let tags = trip.evaluation?.positiveTagIDs.map(TagCatalog.labelKo(for:)) ?? []
-        if !tags.isEmpty {
-            lines.append("좋았던 것: " + tags.joined(separator: ", "))
-        }
-        lines.append("— TripDNA에서 기록했어요")
-        return lines.joined(separator: "\n")
-    }
 }

@@ -9,8 +9,6 @@ struct RootView: View {
         Group {
             if session.isReadyForMainApp {
                 MainTabView()
-            } else if session.onboardingPhase == .completed && session.requiresSignIn {
-                AppleSignInView(mode: .sessionRestore)
             } else {
                 OnboardingFlowView()
             }
@@ -121,4 +119,5 @@ enum UIDemoSeed {
 
 #Preview("RootView") {
     RootView()
+        .environment(AppRouter())
 }

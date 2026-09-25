@@ -76,4 +76,15 @@ enum QuizQuestionCatalog {
     static var allQuestions: [QuizQuestion] {
         abQuestions + [quadrantQuestion]
     }
+
+    /// 여행 기록만으로 흐린 축마다 단일 축 문항을 하나씩 고른다. 카탈로그 순서를 유지한다.
+    static func miniQuizQuestions(for axes: Set<TasteAxis>) -> [QuizQuestion] {
+        var remaining = axes
+        return abQuestions.filter { question in
+            guard let axis = question.options.first?.signature.keys.first,
+                  remaining.contains(axis) else { return false }
+            remaining.remove(axis)
+            return true
+        }
+    }
 }

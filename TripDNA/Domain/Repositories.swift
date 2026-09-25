@@ -58,17 +58,11 @@ nonisolated enum AnalyticsEventType: String, Codable, Sendable {
     case utvRecomputed = "utv_recomputed"
     case dailyPhotoSelected = "daily_photo_selected"
     case recommendationFeedback = "recommendation_feedback"
-    case slotImpression = "slot_impression"
     case slotClick = "slot_click"
-    case slotSave = "slot_save"
-    case slotReopen = "slot_reopen"
-    case wrappedOpened = "wrapped_opened"
-    case wrappedCompleted = "wrapped_completed"
-    case wrappedImageSaved = "wrapped_image_saved"
-    case wrappedShared = "wrapped_shared"
-    case tripCardShared = "trip_card_shared"
-    case quizAnswered = "quiz_answered"
-    case onboardingStepCompleted = "onboarding_step_completed"
+    /// 설치 후 처음으로 추천 카드를 본 시점. README §6 "첫 추천 도달"
+    case firstRecommendationShown = "first_recommendation_shown"
+    /// 지문·여행·Wrapped 카드를 저장했거나 공유 시트에서 실제로 보냈을 때.
+    case shareCardExported = "share_card_exported"
 }
 
 nonisolated struct AnalyticsEvent: Identifiable, Codable, Equatable, Sendable {

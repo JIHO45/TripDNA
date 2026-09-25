@@ -33,7 +33,7 @@ struct TripListView: View {
                 .refreshable { await viewModel.load(dependencies) }
             }
         }
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
             DNABottomCTA {
@@ -92,17 +92,17 @@ struct TripListView: View {
                 .foregroundStyle(.white)
             Text("아래 버튼으로 예정 여행을 등록해보세요.")
                 .font(.caption)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DNASpacing.md)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
     }
 
@@ -113,7 +113,7 @@ struct TripListView: View {
             if viewModel.pastTrips.isEmpty {
                 Text("다녀온 여행을 등록하면 지문이 더 정확해져요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .padding(.vertical, DNASpacing.xs)
             } else {
                 ForEach(viewModel.pastTrips) { trip in
@@ -140,7 +140,7 @@ struct TripListView: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
             content()
         }
     }
@@ -172,22 +172,22 @@ private struct CompactTripRow: View {
                         .lineLimit(1)
                     Text(trip.dateRangeKo)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(.horizontal, DNASpacing.md)
             .padding(.vertical, DNASpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .fill(Color.dnaSurface)
+                    .fill(Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -211,7 +211,7 @@ private struct TripCard: View {
                         .lineLimit(1)
                     Text(trip.dateRangeKo)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     HStack(spacing: 8) {
                         Label(trip.companion.labelKo, systemImage: "person.2")
                         if trip.purpose == .obligation {
@@ -219,7 +219,7 @@ private struct TripCard: View {
                         }
                     }
                     .font(.caption2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Spacer(minLength: 0)
                 StatusPill(status: trip.status)
@@ -235,24 +235,24 @@ private struct TripCard: View {
                     Image(systemName: "chevron.right")
                         .font(.caption2.weight(.semibold))
                 }
-                .foregroundStyle(Color.dnaAmber)
+                .foregroundStyle(Color.dnaWarning)
                 .padding(.horizontal, DNASpacing.sm)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                        .fill(Color.dnaAmber.opacity(0.1))
+                        .fill(Color.dnaWarning.opacity(0.1))
                 )
             }
         }
         .padding(DNASpacing.md)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
                 .strokeBorder(
-                    awaitingEvaluation ? Color.dnaAmber.opacity(0.4) : Color.dnaHairline,
+                    awaitingEvaluation ? Color.dnaWarning.opacity(0.4) : Color.dnaDivider,
                     lineWidth: 1
                 )
         )

@@ -29,7 +29,7 @@ struct RecommendationDetailView: View {
                 }
             }
             .padding(DNASpacing.lg)
-            .padding(.bottom, 120)
+            .padding(.bottom, 180)
         }
         .dnaBackground()
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -64,18 +64,18 @@ struct RecommendationDetailView: View {
                 }
                 Text("\(recommendation.slot.labelKo) 슬롯의 추천이에요")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(DNASpacing.md)
         }
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
         .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
         .shadow(color: recommendation.slot.accentColor.opacity(0.16), radius: 24, y: 10)
     }
@@ -110,12 +110,12 @@ struct RecommendationDetailView: View {
 
                 Text("물가 배지는 참고용이에요. 취향 매치 점수와 합쳐서 계산하지 않아요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text("예산·비행시간은 검증된 데이터가 준비되면 보여드릴게요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -126,7 +126,7 @@ struct RecommendationDetailView: View {
             if recommendation.notices.isEmpty {
                 Text("지금 알려드릴 주의 사항이 없어요.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             } else {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     ForEach(recommendation.notices, id: \.self) { notice in
@@ -137,7 +137,7 @@ struct RecommendationDetailView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         } icon: {
                             Image(systemName: "exclamationmark.circle")
-                                .foregroundStyle(Color.dnaAmber)
+                                .foregroundStyle(Color.dnaWarning)
                         }
                     }
                 }
@@ -157,11 +157,18 @@ struct RecommendationDetailView: View {
             .buttonStyle(.dnaPrimary(isDisabled: isSaved))
             .disabled(isSaved)
 
+            NavigationLink {
+                TripRegistrationView(prefilledCountryCode: recommendation.countryCode)
+            } label: {
+                Label("이 나라로 여행 등록", systemImage: "airplane")
+            }
+            .buttonStyle(.dnaSecondary)
+
             Button {
                 showingDislikeSheet = true
             } label: {
                 Text("관심 없어요")
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.dnaGhost)
         }

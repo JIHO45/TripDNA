@@ -65,6 +65,8 @@ enum CountryFlag {
 final class RecommendationViewModel {
     var slots: [Recommendation] = []
     var savedFeedback: [CardFeedback] = []
+    /// "앞으로도 관심 없어요"로 뺀 나라. 저장 목록에서 되돌릴 수 있다.
+    var dislikedFeedback: [CardFeedback] = []
     var isLoading = false
     var errorMessage: String?
     var filter = RecommendationFilter()
@@ -105,6 +107,7 @@ final class RecommendationViewModel {
         vector = try? await dependencies.store.currentUTV()
         await refreshSlots(dependencies)
         await refreshSavedList(dependencies)
+        await refreshDislikedList(dependencies)
     }
 
     func refreshSlots(_ dependencies: AppDependencies) async {
@@ -114,6 +117,9 @@ final class RecommendationViewModel {
         }
         slots = await generateSlots(dependencies)
         slotReactions = [:]
+        if !slots.isEmpty {
+            await dependencies.recordFirstRecommendationIfNeeded(source: "recommendation")
+        }
     }
 
     /// 3장 모두 반응한 뒤 "새 추천 보기"를 눌렀을 때. 현재 세트는 세션에서 제외하고 새 세트를 만든다.
@@ -153,19 +159,15 @@ final class RecommendationViewModel {
         await refreshSavedList(dependencies)
     }
 
-    /// 스킵: 해당 슬롯 카드만 다음 후보로 교체한다. 후보가 없으면 슬롯을 소진 상태로 표시한다.
+    /// "이번엔 아니에요": 이번 세션에서만 빼고 같은 슬롯을 다음 후보로 바꾼다.
+    /// 취향 신호가 아니므로 저장소에 남기지 않는다(README §8).
     func skip(_ recommendation: Recommendation, dependencies: AppDependencies) async {
-        _ = try? await dependencies.recommendationService.applyFeedback(
-            countryCode: recommendation.countryCode,
-            slot: recommendation.slot,
-            action: .skip
-        )
         sessionExcluded.insert(recommendation.countryCode)
         await replaceSlot(recommendation.slot, dependencies: dependencies)
     }
 
-    /// 싫어요: 이유는 선택 사항. 해당 국가는 180일간 추천에서 제외된다(서비스 정책).
-    /// 제외 오버레이를 잠시 보여준 뒤 같은 슬롯을 다음 후보로 교체한다.
+    /// "앞으로도 관심 없어요": 이유는 선택 사항. 되돌리기 전까지 추천에서 빠진다.
+    /// 되돌리기 오버레이를 잠시 보여준 뒤 같은 슬롯을 다음 후보로 교체한다.
     func dislike(
         _ recommendation: Recommendation,
         reason: FeedbackReason?,
@@ -179,6 +181,7 @@ final class RecommendationViewModel {
         )
         sessionExcluded.insert(recommendation.countryCode)
         slotReactions[recommendation.slot] = .dislike
+        await refreshDislikedList(dependencies)
 
         try? await Task.sleep(for: .seconds(3))
 
@@ -208,6 +211,30 @@ final class RecommendationViewModel {
         } else {
             slotReactions[slot] = .skip
         }
+    }
+
+    /// 방금 누른 "관심 없어요"를 카드 위에서 바로 취소한다.
+    func undoDislike(_ recommendation: Recommendation, dependencies: AppDependencies) async {
+        guard slotReactions[recommendation.slot] == .dislike else { return }
+        try? await dependencies.recommendationService.revokeDislike(countryCode: recommendation.countryCode)
+        sessionExcluded.remove(recommendation.countryCode)
+        slotReactions[recommendation.slot] = nil
+        await refreshDislikedList(dependencies)
+    }
+
+    func revokeDislike(_ feedback: CardFeedback, dependencies: AppDependencies) async {
+        do {
+            try await dependencies.recommendationService.revokeDislike(countryCode: feedback.countryCode)
+            sessionExcluded.remove(feedback.countryCode)
+            await refreshDislikedList(dependencies)
+            toastMessage = "다시 추천에 포함할게요"
+        } catch {
+            errorMessage = "되돌리지 못했어요. 다시 시도해 주세요."
+        }
+    }
+
+    func refreshDislikedList(_ dependencies: AppDependencies) async {
+        dislikedFeedback = (try? await dependencies.recommendationService.activeDislikes()) ?? []
     }
 
     // MARK: 저장 목록 (UI-4D)

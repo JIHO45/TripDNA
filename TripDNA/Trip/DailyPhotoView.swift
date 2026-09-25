@@ -47,7 +47,7 @@ struct DailyPhotoView: View {
 
     var body: some View {
         ZStack {
-            AuroraBackground()
+            AppCanvas()
             stageContent
             if showDoneCheck {
                 doneOverlay
@@ -143,14 +143,14 @@ struct DailyPhotoView: View {
                 .foregroundStyle(.white)
             Text("기록용이에요. 취향 지문에는 반영되지 않아요.")
                 .font(.subheadline)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DNASpacing.lg)
 
             HStack(spacing: DNASpacing.sm) {
-                reactionButton(title: "좋았어", value: .good, accent: .dnaTeal)
-                reactionButton(title: "그럭저럭", value: .neutral, accent: .dnaAmber)
-                reactionButton(title: "별로", value: .bad, accent: .dnaCoral)
+                reactionButton(title: "좋았어", value: .good, accent: .dnaData)
+                reactionButton(title: "그럭저럭", value: .neutral, accent: .dnaWarning)
+                reactionButton(title: "별로", value: .bad, accent: .dnaAction)
             }
             .padding(.horizontal, DNASpacing.lg)
 
@@ -227,7 +227,7 @@ struct DailyPhotoView: View {
         VStack(spacing: 6) {
             Text("\(trip.titleKo) · \(resolvedDayIndex)일차")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.dnaTeal)
+                .foregroundStyle(Color.dnaData)
             Text(isToday ? "오늘을 한 장으로 남긴다면?" : "\(resolvedDayIndex)일차를 한 장으로 남긴다면?")
                 .font(.title3.bold())
                 .foregroundStyle(.white)
@@ -241,11 +241,11 @@ struct DailyPhotoView: View {
         VStack(spacing: DNASpacing.sm) {
             ZStack {
                 Circle()
-                    .fill(Color.dnaTeal.opacity(0.18))
+                    .fill(Color.dnaData.opacity(0.18))
                     .frame(width: 88, height: 88)
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
             }
             Text(isToday ? "오늘의 한 장을 남겼어요" : "\(resolvedDayIndex)일차 사진을 남겼어요")
                 .font(.headline)
@@ -254,7 +254,7 @@ struct DailyPhotoView: View {
         .padding(DNASpacing.xl)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface.opacity(0.96))
+                .fill(Color.dnaSurface1.opacity(0.96))
         )
         .transition(.scale.combined(with: .opacity))
     }
@@ -289,7 +289,7 @@ struct DailyPhotoView: View {
                 .padding(.vertical, 14)
             }
         }
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .interactiveDismissDisabled()
         .onDisappear {
             // 시트를 닫으면 반응 단계로 진행한다.

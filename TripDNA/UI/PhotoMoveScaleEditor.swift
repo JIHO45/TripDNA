@@ -16,7 +16,7 @@ struct PhotoMoveScaleEditor: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.dnaSurface)
+            .fill(Color.dnaSurface1)
             .aspectRatio(aspectRatio, contentMode: .fit)
             .frame(maxHeight: maxHeight)
             .overlay {
@@ -48,7 +48,7 @@ struct PhotoMoveScaleEditor: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
             .overlay(alignment: .bottom) {
                 Text("손가락으로 옮기고 확대해 맞춰 주세요")

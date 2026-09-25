@@ -137,7 +137,7 @@ nonisolated struct EvaluationService {
         tripID: String,
         evaluation: TripEvaluation,
         userID: String,
-        prior: TasteAxes = .zero,
+        prior: TasteAxes? = nil,
         at date: Date = Date()
     ) async throws -> UTVReplayResult {
         guard var trip = try await trips.trip(id: tripID) else {
@@ -162,10 +162,34 @@ nonisolated struct EvaluationService {
         )
     }
 
+    func revise(
+        tripID: String,
+        evaluation: TripEvaluation,
+        userID: String,
+        at date: Date = Date()
+    ) async throws -> UTVReplayResult {
+        guard var trip = try await trips.trip(id: tripID) else {
+            throw ApplicationServiceError.tripNotFound
+        }
+        try trip.revise(evaluation)
+        try await trips.update(trip)
+        try await events.append(AnalyticsEvent(
+            type: .tripEvaluated,
+            payload: [
+                "tripId": tripID,
+                "source": evaluation.source.rawValue,
+                "skipped": String(evaluation.skipped),
+                "revised": "true"
+            ],
+            createdAt: date
+        ))
+        return try await recompute(userID: userID, trigger: "evaluation_revised", now: date)
+    }
+
     func recompute(
         userID: String,
         trigger: String,
-        prior: TasteAxes = .zero,
+        prior: TasteAxes? = nil,
         now: Date = Date()
     ) async throws -> UTVReplayResult {
         let allTrips = try await trips.trips()
@@ -181,7 +205,7 @@ nonisolated struct EvaluationService {
             countries: profiles,
             tags: definitions,
             feedback: allFeedback,
-            prior: prior,
+            prior: try await resolvedPrior(prior),
             previous: previous,
             now: now
         )
@@ -200,6 +224,13 @@ nonisolated struct EvaluationService {
             createdAt: now
         ))
         return result
+    }
+
+    /// 재생은 항상 퀴즈 prior에서 출발한다. 호출자가 넘기지 않으면 저장된 값을 쓴다.
+    /// 넘기지 않은 쪽이 `.zero`로 재생하면 퀴즈로 시작한 사용자의 지문이 첫 평가·랭킹 저장에서 사라진다.
+    func resolvedPrior(_ prior: TasteAxes?) async throws -> TasteAxes {
+        if let prior { return prior }
+        return try await utv.loadTastePrior() ?? .zero
     }
 }
 
@@ -229,7 +260,7 @@ nonisolated struct RankingService {
     func preview(
         ranking: TripRanking,
         userID: String,
-        prior: TasteAxes = .zero,
+        prior: TasteAxes? = nil,
         now: Date = Date()
     ) async throws -> UTVReplayResult {
         let allTrips = try await trips.trips()
@@ -243,7 +274,7 @@ nonisolated struct RankingService {
             countries: profiles,
             tags: definitions,
             feedback: allFeedback,
-            prior: prior,
+            prior: try await evaluationService.resolvedPrior(prior),
             previous: try await evaluationService.utv.currentUTV(),
             now: now
         )
@@ -252,7 +283,7 @@ nonisolated struct RankingService {
     func save(
         _ draft: TripRanking,
         userID: String,
-        prior: TasteAxes = .zero,
+        prior: TasteAxes? = nil,
         at date: Date = Date()
     ) async throws -> UTVReplayResult {
         let allTrips = try await trips.trips()

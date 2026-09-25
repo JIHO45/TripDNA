@@ -410,6 +410,26 @@ struct TripDNATests {
         #expect(result.interestTagIDs.count == 3)
     }
 
+    @Test @MainActor func miniQuizAsksOneSingleAxisQuestionPerBlurryAxis() {
+        let blurry: Set<TasteAxis> = [.planningStyle, .socialMode]
+        let questions = QuizQuestionCatalog.miniQuizQuestions(for: blurry)
+
+        let askedAxes = questions.map { question in
+            Set(question.options.flatMap { $0.signature.keys })
+        }
+        #expect(questions.count == blurry.count)
+        #expect(askedAxes.allSatisfy { $0.count == 1 })
+        #expect(Set(askedAxes.flatMap { $0 }) == blurry)
+        #expect(QuizQuestionCatalog.miniQuizQuestions(for: []).isEmpty)
+    }
+
+    @Test func coldStartTripsLeaveEveryAxisForTheMiniQuiz() {
+        let coldStart = AxisConfidence(
+            natureUrban: 0.35, energyLevel: 0.35, planningStyle: 0.2, socialMode: 0.35, noveltyAppetite: 0
+        )
+        #expect(TasteQuizService().axesRequiringQuestions(confidence: coldStart) == Set(TasteAxis.allCases))
+    }
+
     @Test func comparisonAnchorPrefersSameScoreRecentLeisureTrip() async throws {
         var older = try makeTrip(id: "older", countryCodes: ["JP"])
         try older.end()
@@ -495,7 +515,6 @@ struct TripDNATests {
                 onboardingStatus: .done,
                 homeCountryCode: "KR",
                 departureAirportCode: nil,
-                dailyPhotoAutoFallbackConsent: nil,
                 createdAt: date(2026, 1, 1)
             ))
         }

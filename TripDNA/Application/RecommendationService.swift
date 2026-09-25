@@ -4,8 +4,8 @@ nonisolated struct RecommendationConfiguration: Equatable, Sendable {
     var tasteWeight = 0.8
     var interestWeight = 0.2
     var freshStretchTasteFloor = 0.55
+    /// 이전 버전의 180일 기한 싫어요가 만료된 뒤 남는 감점. 새 싫어요는 기한이 없다.
     var dislikePenalty = 0.45
-    var dislikeExclusionDays = 180
     /// fresh_stretch/underrated_fit은 "다르지만 넓혀볼 만한" 혹은 "저평가된" 후보를 위한 슬롯이므로,
     /// 매치 스코어가 이 값 이상이면 사실상 베스트 매치이므로 두 슬롯 후보에서 제외한다.
     var nonBestSlotMatchScoreCeiling = 0.95
@@ -30,20 +30,17 @@ nonisolated struct RecommendationService {
     let feedbackRepository: any FeedbackRepository
     let events: any EventRepository
     let configuration: RecommendationConfiguration
-    let calendar: Calendar
 
     init(
         countries: any CountryRepository,
         feedbackRepository: any FeedbackRepository,
         events: any EventRepository,
-        configuration: RecommendationConfiguration = .init(),
-        calendar: Calendar = Calendar(identifier: .gregorian)
+        configuration: RecommendationConfiguration = .init()
     ) {
         self.countries = countries
         self.feedbackRepository = feedbackRepository
         self.events = events
         self.configuration = configuration
-        self.calendar = calendar
     }
 
     func generateThreeSlots(
@@ -130,16 +127,13 @@ nonisolated struct RecommendationService {
         reason: FeedbackReason? = nil,
         at date: Date = Date()
     ) async throws -> CardFeedback {
-        let excludeUntil = action == .dislike
-            ? calendar.date(byAdding: .day, value: configuration.dislikeExclusionDays, to: date)
-            : nil
         let feedback = CardFeedback(
             id: UUID().uuidString,
             countryCode: countryCode,
             slot: slot,
             action: action,
             reason: reason,
-            excludeUntil: excludeUntil,
+            excludeUntil: nil,
             revokedAt: nil,
             createdAt: date
         )
@@ -156,12 +150,22 @@ nonisolated struct RecommendationService {
         return feedback
     }
 
-    func revokeDislike(id: String, at date: Date = Date()) async throws {
-        guard var item = try await feedbackRepository.feedback().first(where: { $0.id == id }) else {
-            throw RepositoryError.notFound
+    /// "앞으로도 관심 없어요"를 취소한다. 같은 나라에 남은 제외 기록을 모두 거둔다.
+    func revokeDislike(countryCode: String, at date: Date = Date()) async throws {
+        for var item in try await feedbackRepository.feedback()
+        where item.countryCode == countryCode && item.action == .dislike && item.revokedAt == nil {
+            item.revoke(at: date)
+            try await feedbackRepository.update(item)
         }
-        item.revoke(at: date)
-        try await feedbackRepository.update(item)
+    }
+
+    /// 지금 추천에서 빠져 있는 나라. 나라마다 가장 최근 기록 하나만 돌려준다.
+    func activeDislikes(now: Date = Date()) async throws -> [CardFeedback] {
+        var seen = Set<String>()
+        return try await feedbackRepository.feedback()
+            .filter { isActiveDislike($0, now: now) }
+            .sorted { $0.createdAt > $1.createdAt }
+            .filter { seen.insert($0.countryCode).inserted }
     }
 
     private struct Candidate {
@@ -387,12 +391,14 @@ nonisolated struct RecommendationService {
         feedback: [CardFeedback],
         now: Date
     ) -> Bool {
-        feedback.contains {
-            $0.countryCode == countryCode
-                && $0.action == .dislike
-                && $0.revokedAt == nil
-                && ($0.excludeUntil ?? .distantPast) > now
-        }
+        feedback.contains { $0.countryCode == countryCode && isActiveDislike($0, now: now) }
+    }
+
+    /// 기한이 없는 싫어요는 취소할 때까지 유효하다.
+    private func isActiveDislike(_ item: CardFeedback, now: Date) -> Bool {
+        item.action == .dislike
+            && item.revokedAt == nil
+            && (item.excludeUntil ?? .distantFuture) > now
     }
 
     private func hasExpiredDislike(
@@ -401,10 +407,11 @@ nonisolated struct RecommendationService {
         now: Date
     ) -> Bool {
         feedback.contains {
-            $0.countryCode == countryCode
+            guard let until = $0.excludeUntil else { return false }
+            return $0.countryCode == countryCode
                 && $0.action == .dislike
                 && $0.revokedAt == nil
-                && ($0.excludeUntil ?? .distantFuture) <= now
+                && until <= now
         }
     }
 

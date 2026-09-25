@@ -14,19 +14,28 @@ enum ShareCardRenderer {
     }
 }
 
+enum ShareCardKind: String {
+    case fingerprint
+    case trip
+    case wrapped
+}
+
 struct ShareCardSheet<Card: View>: View {
+    let kind: ShareCardKind
     let title: String
     let disclosure: String
     var allowsDestinationNames = false
     @ViewBuilder let card: (Bool) -> Card
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppDependencies.self) private var dependencies
     @State private var showsDestinationNames = false
     @State private var confirmed = false
     @State private var renderedImage: UIImage?
     @State private var isSaving = false
     @State private var message: String?
     @State private var sharePayload: ShareCardPayload?
+    @State private var exportCount = 0
 
     var body: some View {
         NavigationStack {
@@ -106,9 +115,12 @@ struct ShareCardSheet<Card: View>: View {
             }
             .interactiveDismissDisabled(isSaving)
             .sheet(item: $sharePayload) { payload in
-                ShareCardActivityView(image: payload.image)
+                ShareCardActivityView(image: payload.image) { activityType in
+                    Task { await recordExport(action: "share", activityType: activityType) }
+                }
             }
         }
+        .sensoryFeedback(.success, trigger: exportCount)
         .preferredColorScheme(.dark)
     }
 
@@ -135,9 +147,21 @@ struct ShareCardSheet<Card: View>: View {
                 PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
             }
             message = "사진첩에 저장했어요."
+            await recordExport(action: "save", activityType: nil)
         } catch {
             message = "저장하지 못했어요. 다시 시도하거나 공유하기를 이용해주세요."
         }
+    }
+
+    private func recordExport(action: String, activityType: String?) async {
+        exportCount += 1
+        var payload = [
+            "kind": kind.rawValue,
+            "action": action,
+            "destinationNamesShown": String(showsDestinationNames)
+        ]
+        payload["activityType"] = activityType
+        await dependencies.track(.shareCardExported, payload)
     }
 }
 
@@ -149,9 +173,16 @@ private struct ShareCardPayload: Identifiable {
 /// 미리보기에서 확인한 이미지만 전달하며 원본 여행 데이터는 공유하지 않는다.
 private struct ShareCardActivityView: UIViewControllerRepresentable {
     let image: UIImage
+    /// 사용자가 실제로 보냈을 때만 호출된다. 인자는 받은 앱의 activity type이다.
+    let onCompleted: (String) -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        controller.completionWithItemsHandler = { activityType, completed, _, _ in
+            guard completed else { return }
+            onCompleted(activityType?.rawValue ?? "unknown")
+        }
+        return controller
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}

@@ -21,6 +21,34 @@ extension TasteAxis {
         case .noveltyAppetite: "새로움"
         }
     }
+
+    /// 음수 쪽, 양수 쪽 극 이름.
+    var polesKo: (negative: String, positive: String) {
+        let parts = labelKo.components(separatedBy: " ↔ ")
+        return (parts.first ?? "", parts.last ?? "")
+    }
+}
+
+extension TasteAxes {
+    /// 지문 시각화를 VoiceOver로 읽을 때 쓰는 축별 요약.
+    func spokenSummaryKo(confidence: AxisConfidence? = nil) -> String {
+        TasteAxis.allCases.map { axis in
+            let value = self[axis]
+            let poles = axis.polesKo
+            let pole = value < 0 ? poles.negative : poles.positive
+            var phrase: String
+            switch abs(value) {
+            case ..<0.15: phrase = "균형"
+            case ..<0.5: phrase = "약간 \(pole) 쪽"
+            default: phrase = "\(pole) 쪽"
+            }
+            if let confidence, confidence[axis] < 0.4 {
+                phrase += ", 아직 흐림"
+            }
+            return "\(axis.labelKo): \(phrase)"
+        }
+        .joined(separator: ". ")
+    }
 }
 
 extension RecommendationSlot {
@@ -43,9 +71,9 @@ extension RecommendationSlot {
     /// 08-ui-prompts.md의 슬롯 칩 색상: bestMatch=teal, freshStretch=indigo, underratedFit=amber.
     var accentColor: Color {
         switch self {
-        case .bestMatch: .dnaTeal
-        case .freshStretch: .dnaIndigo
-        case .underratedFit: .dnaAmber
+        case .bestMatch: .dnaData
+        case .freshStretch: .dnaTextTertiary
+        case .underratedFit: .dnaWarning
         }
     }
 }

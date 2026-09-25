@@ -53,6 +53,7 @@ private struct AxisSelection: Identifiable {
 }
 
 struct FingerprintDetailView: View {
+    @Environment(AppRouter.self) private var router
     @Environment(AppDependencies.self) private var dependencies
     @State private var viewModel = FingerprintDetailViewModel()
     @State private var selectedAxis: AxisSelection?
@@ -73,7 +74,9 @@ struct FingerprintDetailView: View {
                     EmptyStateView(
                         systemImage: "touchid",
                         title: "아직 지문이 없어요",
-                        message: "여행을 등록하고 평가하면 지문이 생성돼요."
+                        message: "여행을 등록하고 평가하면 지문이 생성돼요.",
+                        actionTitle: "여행 등록하러 가기",
+                        action: { router.selectedTab = .trips }
                     )
                     .frame(height: 280)
                 }
@@ -105,7 +108,7 @@ struct FingerprintDetailView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let vector = viewModel.vector {
-                ShareCardSheet(title: "지문 공유", disclosure: "5축 취향 지문과 취향 설명이 포함돼요. 개별 여행 이력은 표시하지 않아요.") { _ in
+                ShareCardSheet(kind: .fingerprint, title: "지문 공유", disclosure: "5축 취향 지문과 취향 설명이 포함돼요. 개별 여행 이력은 표시하지 않아요.") { _ in
                     FingerprintShareCard(axes: vector.axes, confidence: vector.confidence)
                 }
             }
@@ -152,7 +155,7 @@ struct FingerprintDetailView: View {
                 }
                 Text("ⓘ 표시된 축은 현재 추천 점수에는 반영하지 않아요")
                     .font(.caption2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
         }
     }
@@ -164,7 +167,7 @@ struct FingerprintDetailView: View {
             if viewModel.evidenceTrips.isEmpty {
                 Text("아직 평가된 여행이 없어요. 여행을 평가하면 여기에 쌓여요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             } else {
                 VStack(spacing: DNASpacing.sm) {
                     ForEach(viewModel.evidenceTrips.prefix(5)) { trip in
@@ -175,13 +178,13 @@ struct FingerprintDetailView: View {
                                     .foregroundStyle(.white)
                                 Text(trip.dateRangeKo)
                                     .font(.caption2)
-                                    .foregroundStyle(Color.dnaSlate)
+                                    .foregroundStyle(Color.dnaTextSecondary)
                             }
                             Spacer()
                             if let satisfaction = trip.evaluation?.satisfaction {
                                 Text("만족도 \(satisfaction)/5")
                                     .font(.caption)
-                                    .foregroundStyle(Color.dnaTeal)
+                                    .foregroundStyle(Color.dnaData)
                             }
                         }
                     }
@@ -197,7 +200,7 @@ struct FingerprintDetailView: View {
             if viewModel.frequentTags.isEmpty {
                 Text("여행을 평가할 때 고른 좋았던 태그가 여기에 모여요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             } else {
                 DNAFlowLayout(spacing: 8) {
                     ForEach(viewModel.frequentTags) { tag in
@@ -216,13 +219,13 @@ struct FingerprintDetailView: View {
             if tag.count > 1 {
                 Text("×\(tag.count)")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
         .background(Capsule(style: .continuous).fill(Color.white.opacity(0.05)))
-        .overlay(Capsule(style: .continuous).strokeBorder(Color.dnaHairline, lineWidth: 1))
+        .overlay(Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1))
     }
 
     // MARK: - 아직 흐린 축 (3B)
@@ -233,26 +236,26 @@ struct FingerprintDetailView: View {
             if blurryAxes.isEmpty {
                 Text("모든 축이 충분히 선명해요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             } else {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     ForEach(blurryAxes, id: \.self) { axis in
                         HStack(spacing: 6) {
                             Image(systemName: "circle.dotted")
                                 .font(.caption)
-                                .foregroundStyle(Color.dnaAmber)
+                                .foregroundStyle(Color.dnaWarning)
                             Text(axis.labelKo)
                                 .font(.subheadline)
                                 .foregroundStyle(.white)
                             Spacer()
                             Text("데이터 적음")
                                 .font(.caption2)
-                                .foregroundStyle(Color.dnaSlate)
+                                .foregroundStyle(Color.dnaTextSecondary)
                         }
                     }
                     Text("여행 평가가 쌓이면 선명해져요.")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .padding(.top, 2)
                 }
             }
@@ -279,32 +282,32 @@ private struct AxisRow: View {
                         // 조건부축: 현재 추천 점수 미반영 안내 (카드 하단 각주 참조).
                         Image(systemName: "info.circle")
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                     }
                     Spacer()
                     if confidence < 0.4 {
                         Text("데이터 적음")
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaAmber)
+                            .foregroundStyle(Color.dnaWarning)
                     } else {
                         Text("신뢰도 \(Int((confidence * 100).rounded()))%")
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                             .monospacedDigit()
                     }
                     Image(systemName: "chevron.right")
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 BipolarAxisBar(value: value, confidence: confidence)
                 HStack {
                     Text(AxisNarrative.negativePoleKo(axis))
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     Spacer()
                     Text(AxisNarrative.positivePoleKo(axis))
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
             }
             .contentShape(Rectangle())
@@ -331,9 +334,9 @@ private struct BipolarAxisBar: View {
                     .frame(width: 1.5, height: 12)
                     .offset(x: width / 2 - 0.75)
                 Circle()
-                    .fill(Color.dnaTeal)
+                    .fill(Color.dnaData)
                     .frame(width: 14, height: 14)
-                    .shadow(color: Color.dnaTeal.opacity(0.7), radius: 6)
+                    .shadow(color: Color.dnaData.opacity(0.7), radius: 6)
                     .opacity(max(0.35, confidence))
                     .offset(x: (width - 14) * position)
             }
@@ -366,43 +369,43 @@ private struct AxisDetailSheet: View {
                     HStack {
                         Text("현재 위치")
                             .font(.caption)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                         Spacer()
                         Text("\(AxisNarrative.leaningPhraseKo(axis: axis, value: value)) 쪽")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                     }
                     BipolarAxisBar(value: value, confidence: confidence)
                     HStack {
                         Text(AxisNarrative.negativePoleKo(axis))
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                         Spacer()
                         Text(AxisNarrative.positivePoleKo(axis))
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
                 .padding(DNASpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .fill(Color.dnaSurface)
+                        .fill(Color.dnaSurface1)
                 )
 
                 if confidence < 0.4 {
                     Label("여행 평가가 쌓이면 선명해져요", systemImage: "sparkles")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaAmber)
+                        .foregroundStyle(Color.dnaWarning)
                 } else {
                     Label("신뢰도 \(Int((confidence * 100).rounded()))% · 평가한 여행이 반영됐어요", systemImage: "checkmark.seal")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaTeal)
+                        .foregroundStyle(Color.dnaData)
                 }
 
                 if axis != .natureUrban {
                     Label("현재 추천 점수에는 반영하지 않아요", systemImage: "info.circle")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
 
                 if !evidenceTrips.isEmpty {
@@ -420,7 +423,7 @@ private struct AxisDetailSheet: View {
                                 if let satisfaction = trip.evaluation?.satisfaction {
                                     Text("만족도 \(satisfaction)/5")
                                         .font(.caption)
-                                        .foregroundStyle(Color.dnaSlate)
+                                        .foregroundStyle(Color.dnaTextSecondary)
                                 }
                             }
                         }
@@ -430,10 +433,10 @@ private struct AxisDetailSheet: View {
             .padding(DNASpacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.dnaBackground)
+        .background(Color.dnaCanvas)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        .presentationBackground(Color.dnaBackground)
+        .presentationBackground(Color.dnaCanvas)
     }
 }
 

@@ -44,7 +44,7 @@ struct RecommendationFilterSheet: View {
                     Button("초기화") {
                         viewModel.resetFilter()
                     }
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -52,7 +52,7 @@ struct RecommendationFilterSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("닫기")
@@ -90,24 +90,24 @@ struct RecommendationFilterSheet: View {
                         .foregroundStyle(Color.dnaTextPrimary)
                 } else {
                     Image(systemName: "questionmark.circle")
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     Text("거주 국가가 아직 설정되지 않았어요")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "lock")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(DNASpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .fill(Color.dnaSurface)
+                    .fill(Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
         }
     }
@@ -127,7 +127,7 @@ struct RecommendationFilterSheet: View {
             if let caption {
                 Text(caption)
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
         }
     }
@@ -147,7 +147,7 @@ struct RecommendationFilterSheet: View {
 }
 
 #Preview("RecommendationFilterSheet") {
-    Color.dnaBackground
+    Color.dnaCanvas
         .sheet(isPresented: .constant(true)) {
             RecommendationFilterSheet(viewModel: RecommendationViewModel())
         }

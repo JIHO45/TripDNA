@@ -32,9 +32,9 @@ struct AffiliateActivitySection: View {
                         HStack(spacing: DNASpacing.sm) {
                             Image(systemName: link.category.systemImage)
                                 .font(.headline)
-                                .foregroundStyle(Color.dnaTeal)
+                                .foregroundStyle(Color.dnaData)
                                 .frame(width: 38, height: 38)
-                                .background(Color.dnaTeal.opacity(0.12), in: Circle())
+                                .background(Color.dnaData.opacity(0.12), in: Circle())
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("\(link.city) · \(link.category.labelKo)")
@@ -42,18 +42,18 @@ struct AffiliateActivitySection: View {
                                     .foregroundStyle(.white)
                                 Text("\(link.providerName) 웹에서 보기")
                                     .font(.caption)
-                                    .foregroundStyle(Color.dnaSlate)
+                                    .foregroundStyle(Color.dnaTextSecondary)
                             }
                             Spacer(minLength: 0)
                             Image(systemName: "arrow.up.right")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.dnaTeal)
+                                .foregroundStyle(Color.dnaData)
                         }
                         .padding(DNASpacing.sm)
                         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
                         .overlay {
                             RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                                .strokeBorder(Color.dnaDivider, lineWidth: 1)
                         }
                     }
                     .buttonStyle(.plain)
@@ -86,7 +86,7 @@ struct AffiliateActivitySection: View {
                 Image(systemName: "hammer.fill")
             }
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Color.dnaAmber)
+            .foregroundStyle(Color.dnaWarning)
         }
     }
 }
@@ -99,7 +99,7 @@ private struct AffiliateBrowserView: UIViewControllerRepresentable {
         configuration.entersReaderIfAvailable = false
         configuration.barCollapsingEnabled = true
         let controller = SFSafariViewController(url: url, configuration: configuration)
-        controller.preferredControlTintColor = UIColor(Color.dnaTeal)
+        controller.preferredControlTintColor = UIColor(Color.dnaData)
         controller.dismissButtonStyle = .close
         return controller
     }

@@ -7,7 +7,7 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         ZStack {
-            AuroraBackground()
+            AppCanvas()
             Group {
                 switch viewModel.stage {
                 case .hook:
@@ -33,7 +33,7 @@ struct OnboardingFlowView: View {
                 case .result:
                     OnboardingResultView(viewModel: viewModel)
                 case .appleSignIn:
-                    AppleSignInView(viewModel: viewModel, mode: .onboardingSave)
+                    AppleSignInView(viewModel: viewModel)
                 }
             }
             .transition(.opacity)
@@ -59,7 +59,7 @@ struct OnboardingHookView: View {
                 Text("다녀온 여행으로 먼저 읽고, 부족한 축만 짧게 물어볼게요")
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(.horizontal, DNASpacing.lg)
             .padding(.top, DNASpacing.lg)
@@ -74,7 +74,7 @@ struct OnboardingHookView: View {
 
                 Text("약 2분이면 끝나요")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
 
             }
         }
@@ -92,7 +92,7 @@ private struct FingerprintMotifView: View {
                     .trim(from: 0, to: isDrawn ? 1 : 0.12)
                     .stroke(
                         AngularGradient(
-                            colors: [.dnaIndigo, .dnaTeal, .dnaIndigo.opacity(0.4), .dnaTeal, .dnaIndigo],
+                            colors: [.dnaTextTertiary, .dnaData, .dnaTextTertiary.opacity(0.4), .dnaData, .dnaTextTertiary],
                             center: .center
                         ),
                         style: StrokeStyle(lineWidth: 1.6, lineCap: .round, dash: ring == 2 ? [26, 10] : [])
@@ -108,14 +108,14 @@ private struct FingerprintMotifView: View {
             Image(systemName: "touchid")
                 .font(.system(size: 52, weight: .light))
                 .foregroundStyle(
-                    LinearGradient(colors: [.dnaTeal, .dnaIndigo], startPoint: .top, endPoint: .bottom)
+                    LinearGradient(colors: [.dnaData, .dnaTextTertiary], startPoint: .top, endPoint: .bottom)
                 )
                 .opacity(isDrawn ? 1 : 0.3)
                 .scaleEffect(isDrawn ? 1 : 0.85)
                 .animation(.spring(duration: 1.1).delay(0.4), value: isDrawn)
         }
         .frame(width: 220, height: 220)
-        .shadow(color: .dnaTeal.opacity(0.45), radius: 30)
+        .shadow(color: .dnaData.opacity(0.45), radius: 30)
         .onAppear { isDrawn = true }
     }
 }
@@ -146,7 +146,7 @@ struct OnboardingExpectationView: View {
                 FingerprintRadarView(axes: Self.sampleAxes, confidence: nil)
                 Text("예시 지문")
                     .font(.caption2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(.horizontal, DNASpacing.lg)
@@ -158,7 +158,7 @@ struct OnboardingExpectationView: View {
                     .multilineTextAlignment(.center)
                 Text("과거 여행을 넣으면 취향이 그려지고,\n부족한 부분만 몇 문항 더 물어요")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .multilineTextAlignment(.center)
             }
             .padding(.top, DNASpacing.lg)
@@ -202,7 +202,7 @@ struct OnboardingHomeCountryView: View {
                     .foregroundStyle(.white)
                 Text("맞춤 추천에서 거주 국가는 자동으로 제외돼요.")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DNASpacing.lg)
@@ -292,7 +292,7 @@ private struct EntryModeCard: View {
                         RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [.dnaIndigo.opacity(0.35), .dnaTeal.opacity(0.25)],
+                                    colors: [.dnaTextTertiary.opacity(0.35), .dnaData.opacity(0.25)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -306,11 +306,11 @@ private struct EntryModeCard: View {
                     if let badge {
                         Text(badge)
                             .font(.caption2.weight(.bold))
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color.dnaTeal.opacity(0.14), in: Capsule())
-                            .overlay(Capsule().strokeBorder(Color.dnaTeal.opacity(0.4), lineWidth: 1))
+                            .background(Color.dnaData.opacity(0.14), in: Capsule())
+                            .overlay(Capsule().strokeBorder(Color.dnaData.opacity(0.4), lineWidth: 1))
                     }
                 }
                 Text(title)
@@ -318,18 +318,18 @@ private struct EntryModeCard: View {
                     .foregroundStyle(.white)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(DNASpacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                    .fill(Color.dnaSurface)
+                    .fill(Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                    .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -343,13 +343,13 @@ private struct EntryModeCard: View {
 
 #Preview("OnboardingHookView") {
     OnboardingHookView(viewModel: OnboardingViewModel())
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }
 
 #Preview("OnboardingExpectationView") {
     OnboardingExpectationView(viewModel: OnboardingViewModel())
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }
 
@@ -360,12 +360,12 @@ private struct EntryModeCard: View {
         dependencies: dependencies
     )
     .environment(dependencies)
-    .background(AuroraBackground())
+    .background(AppCanvas())
     .preferredColorScheme(.dark)
 }
 
 #Preview("OnboardingEntryModeView") {
     OnboardingEntryModeView(viewModel: OnboardingViewModel())
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct RankingBoardView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(SessionStore.self) private var session
+    @Environment(AppRouter.self) private var router
     @State private var viewModel = RankingViewModel()
 
     var body: some View {
@@ -13,13 +14,15 @@ struct RankingBoardView: View {
                 EmptyStateView(
                     systemImage: "list.number",
                     title: "아직 순서를 매길 여행이 없어요",
-                    message: "평가를 마친 여행이 생기면 순서를 매길 수 있어요."
+                    message: "평가를 마친 여행이 생기면 순서를 매길 수 있어요.",
+                    actionTitle: "내 여행 보기",
+                    action: { router.selectedTab = .trips }
                 )
             } else {
                 boardContent
             }
         }
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .task { await viewModel.load(dependencies) }
@@ -35,7 +38,7 @@ struct RankingBoardView: View {
                 if let message = viewModel.saveMessage {
                     Text(message)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaTeal)
+                        .foregroundStyle(Color.dnaData)
                         .multilineTextAlignment(.center)
                 }
                 Button {
@@ -59,7 +62,7 @@ struct RankingBoardView: View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
             Text("여행 단위로 순서를 바꾸면 지문이 다시 계산돼요")
                 .font(.caption)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
 
             if let vector = viewModel.previewVector {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
@@ -67,17 +70,17 @@ struct RankingBoardView: View {
                     if viewModel.hasUnsavedChanges {
                         Text("미리보기예요. 저장해야 반영돼요")
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaAmber)
+                            .foregroundStyle(Color.dnaWarning)
                     }
                 }
                 .padding(DNASpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .fill(Color.dnaSurface)
+                        .fill(Color.dnaSurface1)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                        .strokeBorder(Color.dnaDivider, lineWidth: 1)
                 )
                 .animation(.easeOut(duration: 0.25), value: vector.axes)
             }
@@ -95,8 +98,8 @@ struct RankingBoardView: View {
                 ForEach(Array(viewModel.order.enumerated()), id: \.element) { index, tripID in
                     if let trip = viewModel.trip(for: tripID) {
                         rankingRow(rank: index + 1, trip: trip)
-                            .listRowBackground(Color.dnaSurface)
-                            .listRowSeparatorTint(Color.dnaHairline)
+                            .listRowBackground(Color.dnaSurface1)
+                            .listRowSeparatorTint(Color.dnaDivider)
                     }
                 }
                 .onMove { source, destination in
@@ -110,7 +113,7 @@ struct RankingBoardView: View {
             } header: {
                 Text("드래그해서 순서를 바꿔보세요")
                     .font(.caption2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
         }
         .scrollContentBackground(.hidden)
@@ -122,7 +125,7 @@ struct RankingBoardView: View {
         HStack(spacing: DNASpacing.md) {
             Text("\(rank)")
                 .font(.title2.bold())
-                .foregroundStyle(rank <= 3 ? Color.dnaTeal : Color.dnaSlate)
+                .foregroundStyle(rank <= 3 ? Color.dnaData : Color.dnaTextSecondary)
                 .monospacedDigit()
                 .frame(width: 34)
             VStack(alignment: .leading, spacing: 3) {
@@ -132,11 +135,11 @@ struct RankingBoardView: View {
                 HStack(spacing: 8) {
                     Text(trip.dateRangeKo)
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     if let satisfaction = trip.evaluation?.satisfaction {
                         Text("만족도 \(satisfaction)/5")
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                     }
                 }
             }
@@ -156,7 +159,7 @@ private struct MiniFingerprintPreview: View {
                 HStack(spacing: DNASpacing.sm) {
                     Text(axis.shortLabelKo)
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .frame(width: 52, alignment: .leading)
                     GeometryReader { proxy in
                         ZStack(alignment: .leading) {
@@ -166,7 +169,7 @@ private struct MiniFingerprintPreview: View {
                             Capsule()
                                 .fill(
                                     LinearGradient(
-                                        colors: [.dnaIndigo, .dnaTeal],
+                                        colors: [.dnaTextTertiary, .dnaData],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
@@ -181,7 +184,7 @@ private struct MiniFingerprintPreview: View {
                     .frame(height: 5)
                     Text(String(format: "%+.2f", vector.axes[axis]))
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .monospacedDigit()
                         .frame(width: 42, alignment: .trailing)
                 }

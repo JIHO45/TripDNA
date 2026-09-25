@@ -94,7 +94,7 @@ struct OnboardingManualEntryView: View {
                 DatePicker("종료일", selection: $draft.endDate, in: draft.startDate...Date(), displayedComponents: .date)
                     .foregroundStyle(.white)
             }
-            .tint(Color.dnaTeal)
+            .tint(Color.dnaData)
             .padding(.horizontal, DNASpacing.lg)
             Spacer()
             DNABottomCTA {
@@ -196,7 +196,7 @@ struct OnboardingManualEntryView: View {
             if let message = viewModel.errorMessage {
                 Text(message)
                     .font(.caption)
-                    .foregroundStyle(Color.dnaCoral)
+                    .foregroundStyle(Color.dnaAction)
                     .padding(.bottom, DNASpacing.xs)
             }
 
@@ -232,7 +232,7 @@ struct OnboardingManualEntryView: View {
             if let caption {
                 Text(caption)
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
         }
         .frame(maxWidth: .infinity)
@@ -291,7 +291,7 @@ private struct RegisteredTripRow: View {
                     .foregroundStyle(.white)
                 Text(OnboardingFormat.periodText(start: draft.startDate, end: draft.endDate))
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             Spacer()
             Text(OnboardingFormat.satisfactionEmojis[max(0, min(4, draft.satisfaction - 1))])
@@ -300,45 +300,23 @@ private struct RegisteredTripRow: View {
                 onRemove()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(Color.dnaSlate.opacity(0.7))
+                    .foregroundStyle(Color.dnaTextSecondary.opacity(0.7))
             }
             .buttonStyle(.plain)
         }
         .padding(DNASpacing.md)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
     }
 }
 
-// MARK: - 공용 유틸 (다른 화면에서도 사용 — 시그니처 유지)
-
-struct FlowChips: View {
-    let ids: [String]
-    @Binding var selected: Set<String>
-
-    private let columns = [GridItem(.adaptive(minimum: 90), spacing: 8)]
-
-    var body: some View {
-        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-            ForEach(ids, id: \.self) { tagID in
-                let isSelected = selected.contains(tagID)
-                DNATagChip(title: TagCatalog.labelKo(for: tagID), isSelected: isSelected) {
-                    if isSelected {
-                        selected.remove(tagID)
-                    } else {
-                        selected.insert(tagID)
-                    }
-                }
-            }
-        }
-    }
-}
+// MARK: - 공용 유틸
 
 enum TagCatalog {
     nonisolated(unsafe) static var definitions: [String: TagDefinition] = [:]
@@ -357,13 +335,3 @@ enum TagCatalog {
     .previewWithAppEnvironment()
 }
 
-#Preview("FlowChips") {
-    @Previewable @State var selected: Set<String> = ["food"]
-    FlowChips(
-        ids: ["food", "culture", "history", "outdoor", "beach"],
-        selected: $selected
-    )
-    .padding()
-    .background(AuroraBackground())
-    .previewWithAppEnvironment()
-}

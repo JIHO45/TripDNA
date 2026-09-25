@@ -51,6 +51,9 @@ final class HomeViewModel {
             visitedCountryCodes: dependencies.excludedCountryCodes(visited: visited)
         )) ?? []
         bestMatch = recommendations.first { $0.slot == .bestMatch } ?? recommendations.first
+        if bestMatch != nil {
+            await dependencies.recordFirstRecommendationIfNeeded(source: "home")
+        }
     }
 
     private func hasTodayPhoto(for trip: Trip) -> Bool {

@@ -1,6 +1,7 @@
 import Foundation
 import CoreLocation
 import Photos
+import PhotosUI
 import SwiftUI
 
 struct ManualTripDraft: Identifiable {
@@ -15,6 +16,8 @@ struct ManualTripDraft: Identifiable {
     var positiveTagIDs: Set<String> = []
     /// 스캔 카드 루프의 서열 비교 응답. 직전에 확정한 여행이 비교 앵커가 된다.
     var comparison: ComparisonResult?
+    /// 사진첩 스캔으로 묶인 사진의 `PHAsset.localIdentifier` (촬영순). 카드 표시 전용이며 저장·업로드하지 않는다.
+    var photoAssetIDs: [String] = []
 }
 
 /// 온보딩 화면들이 공유하는 표기 유틸리티 (Onboarding 폴더 전용).
@@ -76,6 +79,8 @@ final class OnboardingViewModel {
     /// 스캔이 끝났지만 여행이 0건(또는 전부 제거됨)일 때 대체 경로를 보여준다.
     var scanFoundNothing = false
     var scanCardIndex = 0
+    /// 사용자가 "사진 선택…"(제한된 접근)을 골라 일부 사진만 스캔된 상태.
+    var isPhotoAccessLimited = false
     private var scanTask: Task<Void, Never>?
 
     // MARK: 퀴즈 상태
@@ -83,6 +88,8 @@ final class OnboardingViewModel {
     /// 출제 문항 풀. 미니 퀴즈(축 신뢰도 게이트)에서는 부족한 축 문항만 담긴다.
     var quizQuestions: [QuizQuestion] = QuizQuestionCatalog.allQuestions
     var isMiniQuiz = false
+    /// 미니 퀴즈를 마친 뒤 추천 후보에서 뺄 여행 국가. 여행 경로에서 넘어올 때만 채워진다.
+    private var miniQuizVisitedCountryCodes: Set<String> = []
     var quizQuestionIndex = 0
     var quizAnswers: [QuizAnswer] = []
     var selectedInterestTagIDs: Set<String> = []
@@ -207,6 +214,7 @@ final class OnboardingViewModel {
                     self.scanStatusText = "여행별로 묶는 중"
                 }
                 try Task.checkCancellation()
+                self.isPhotoAccessLimited = PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited
                 self.scanCardIndex = 0
                 self.scanFoundNothing = self.photoScanDrafts.isEmpty
                 if !self.scanFoundNothing { self.stage = .photoScanReview }
@@ -222,6 +230,24 @@ final class OnboardingViewModel {
     func cancelPhotoScan() {
         scanTask?.cancel()
         stage = .photoPriming
+    }
+
+    /// 제한된 접근에서 시스템 사진 선택 창을 띄우고, 선택을 마치면 다시 스캔한다.
+    func presentLimitedPhotoPicker() {
+        guard isPhotoAccessLimited, let presenter = UIApplication.shared.topMostViewController else { return }
+        Task {
+            _ = await PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: presenter)
+            startPhotoScan()
+        }
+    }
+
+    /// 설정 앱에서 "모든 사진"으로 바꾸고 돌아온 경우 전체 사진첩으로 다시 스캔한다.
+    func refreshPhotoAccessAfterReturning() {
+        guard isPhotoAccessLimited,
+              stage == .photoScanReview || (stage == .photoScanning && scanFoundNothing),
+              PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized else { return }
+        isPhotoAccessLimited = false
+        startPhotoScan()
     }
 
     // MARK: 스캔 카드 루프
@@ -331,7 +357,6 @@ final class OnboardingViewModel {
         let previousStage = stage
         isSubmitting = true
         errorMessage = nil
-        beginAnalysis()
         defer { isSubmitting = false }
 
         do {
@@ -371,21 +396,87 @@ final class OnboardingViewModel {
             }
 
             let vector = try await dependencies.store.currentUTV()
-            resultVector = vector
             try await dependencies.setInterestTagIDs(Set(validDrafts.flatMap(\.positiveTagIDs)))
 
-            if let vector {
-                recommendations = try await dependencies.recommendationService.generateThreeSlots(
-                    vector: vector,
-                    interestTagIDs: dependencies.interestTagIDs,
-                    visitedCountryCodes: dependencies.excludedCountryCodes(visited: visitedCountryCodes)
-                )
+            if let vector, startMiniQuizIfNeeded(for: vector, dependencies: dependencies, visited: visitedCountryCodes) {
+                return
             }
-            await waitForAnalysisPayoff()
-            stage = .result
+            beginAnalysis()
+            try await showResult(vector: vector, dependencies: dependencies, visited: visitedCountryCodes)
         } catch {
             errorMessage = "등록 중 문제가 발생했어요. 입력값을 확인해주세요."
             stage = previousStage
+        }
+    }
+
+    // MARK: 미니 퀴즈 (여행 경로 뒤 흐린 축 보강)
+
+    /// 여행 기록으로 드러나지 않은 축만 짧게 묻는다. 물을 문항이 없으면 false.
+    private func startMiniQuizIfNeeded(
+        for vector: UserTasteVector,
+        dependencies: AppDependencies,
+        visited: Set<String>
+    ) -> Bool {
+        let axes = dependencies.quizService.axesRequiringQuestions(confidence: vector.confidence)
+        let questions = QuizQuestionCatalog.miniQuizQuestions(for: axes)
+        guard !questions.isEmpty else { return false }
+        quizQuestions = questions
+        isMiniQuiz = true
+        quizQuestionIndex = 0
+        quizAnswers = []
+        miniQuizVisitedCountryCodes = visited
+        stage = .quiz
+        return true
+    }
+
+    /// 여행은 이미 저장됐으므로 답이 하나도 없어도 결과로 넘어간다.
+    /// 답한 축은 퀴즈 prior로 저장해 원장 재생의 출발점이 된다.
+    func finishMiniQuiz(_ dependencies: AppDependencies, session: SessionStore) async {
+        guard isMiniQuiz, !isSubmitting else { return }
+        isSubmitting = true
+        errorMessage = nil
+        beginAnalysis()
+        defer { isSubmitting = false }
+
+        do {
+            let answered = quizAnswers.filter { !$0.signatures.isEmpty }
+            if !answered.isEmpty {
+                let result = dependencies.quizService.score(answers: answered, interestTagIDs: [])
+                try await dependencies.store.saveTastePrior(result.prior)
+                _ = try await dependencies.evaluationService.recompute(
+                    userID: session.userID,
+                    trigger: "mini_quiz"
+                )
+            }
+            try await showResult(
+                vector: try await dependencies.store.currentUTV(),
+                dependencies: dependencies,
+                visited: miniQuizVisitedCountryCodes
+            )
+            isMiniQuiz = false
+        } catch {
+            errorMessage = "취향 지문을 계산하지 못했어요. 다시 시도해주세요."
+            stage = .quiz
+        }
+    }
+
+    private func showResult(
+        vector: UserTasteVector?,
+        dependencies: AppDependencies,
+        visited: Set<String>
+    ) async throws {
+        resultVector = vector
+        if let vector {
+            recommendations = try await dependencies.recommendationService.generateThreeSlots(
+                vector: vector,
+                interestTagIDs: dependencies.interestTagIDs,
+                visitedCountryCodes: dependencies.excludedCountryCodes(visited: visited)
+            )
+        }
+        await waitForAnalysisPayoff()
+        stage = .result
+        if !recommendations.isEmpty {
+            await dependencies.recordFirstRecommendationIfNeeded(source: "onboarding")
         }
     }
 
@@ -419,6 +510,9 @@ final class OnboardingViewModel {
             )
             await waitForAnalysisPayoff()
             stage = .result
+            if !recommendations.isEmpty {
+                await dependencies.recordFirstRecommendationIfNeeded(source: "onboarding")
+            }
         } catch {
             errorMessage = "취향 지문을 계산하지 못했어요. 다시 시도해주세요."
             stage = previousStage
@@ -454,6 +548,19 @@ final class OnboardingViewModel {
 
 }
 
+private extension UIApplication {
+    /// UIKit 전용 API(`presentLimitedLibraryPicker`)를 띄울 최상단 뷰 컨트롤러.
+    var topMostViewController: UIViewController? {
+        let scenes = connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow) ?? scenes.first?.windows.first
+        var top = window?.rootViewController
+        while let presented = top?.presentedViewController {
+            top = presented
+        }
+        return top
+    }
+}
+
 private enum PhotoTripScanError: LocalizedError {
     case accessDenied
 
@@ -462,12 +569,18 @@ private enum PhotoTripScanError: LocalizedError {
     }
 }
 
-/// 사진의 위치와 촬영 시각만 읽는다. 사진 원본은 스캔 결과에 보관하지 않는다.
+/// 사진의 위치·촬영 시각·식별자만 읽는다. 사진 원본은 스캔 결과에 보관하지 않는다.
 @MainActor
 private enum PhotoTripScanner {
+    private struct DatedAsset {
+        let date: Date
+        let assetID: String
+    }
+
     private struct LocatedPhoto {
         let countryCode: String
         let date: Date
+        let assetID: String
     }
 
     static func scan(excluding homeCountryCode: String, onGrouping: () -> Void) async throws -> [ManualTripDraft] {
@@ -483,46 +596,47 @@ private enum PhotoTripScanner {
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         options.fetchLimit = 1000
         let assets = PHAsset.fetchAssets(with: .image, options: options)
-        var buckets: [String: (location: CLLocation, dates: [Date])] = [:]
+        var buckets: [String: (location: CLLocation, photos: [DatedAsset])] = [:]
         assets.enumerateObjects { asset, _, _ in
             guard let location = asset.location, let date = asset.creationDate else { return }
             let key = "\(Int(location.coordinate.latitude.rounded())):\(Int(location.coordinate.longitude.rounded()))"
             if buckets[key] == nil { buckets[key] = (location, []) }
-            buckets[key]?.dates.append(date)
+            buckets[key]?.photos.append(DatedAsset(date: date, assetID: asset.localIdentifier))
         }
         onGrouping()
 
         var located: [LocatedPhoto] = []
         let geocoder = CLGeocoder()
-        for bucket in buckets.values.sorted(by: { $0.dates.count > $1.dates.count }).prefix(24) {
+        for bucket in buckets.values.sorted(by: { $0.photos.count > $1.photos.count }).prefix(24) {
             try Task.checkCancellation()
             guard let place = try? await geocoder.reverseGeocodeLocation(bucket.location).first,
                   let code = place.isoCountryCode?.uppercased(),
                   code != homeCountryCode.uppercased(),
                   CountryCatalog.profiles[code] != nil else { continue }
-            located += bucket.dates.map { LocatedPhoto(countryCode: code, date: $0) }
+            located += bucket.photos.map { LocatedPhoto(countryCode: code, date: $0.date, assetID: $0.assetID) }
         }
 
         let calendar = Calendar.current
-        var groups: [(code: String, dates: [Date])] = []
+        var groups: [(code: String, photos: [LocatedPhoto])] = []
         for code in Set(located.map(\.countryCode)).sorted() {
-            let dates = located.filter { $0.countryCode == code }.map(\.date).sorted()
-            for date in dates {
+            let photos = located.filter { $0.countryCode == code }.sorted { $0.date < $1.date }
+            for photo in photos {
                 if let last = groups.indices.last,
                    groups[last].code == code,
-                   let previous = groups[last].dates.last,
-                   date.timeIntervalSince(previous) <= 14 * 24 * 60 * 60 {
-                    groups[last].dates.append(date)
+                   let previous = groups[last].photos.last,
+                   photo.date.timeIntervalSince(previous.date) <= 14 * 24 * 60 * 60 {
+                    groups[last].photos.append(photo)
                 } else {
-                    groups.append((code, [date]))
+                    groups.append((code, [photo]))
                 }
             }
         }
-        return groups.filter { $0.dates.count >= 2 }.sorted { $0.dates[0] > $1.dates[0] }.prefix(12).map { group in
+        return groups.filter { $0.photos.count >= 2 }.sorted { $0.photos[0].date > $1.photos[0].date }.prefix(12).map { group in
             var draft = ManualTripDraft()
             draft.countryCode = group.code
-            draft.startDate = calendar.startOfDay(for: group.dates.first!)
-            draft.endDate = calendar.startOfDay(for: group.dates.last!)
+            draft.startDate = calendar.startOfDay(for: group.photos.first!.date)
+            draft.endDate = calendar.startOfDay(for: group.photos.last!.date)
+            draft.photoAssetIDs = group.photos.map(\.assetID)
             return draft
         }
     }

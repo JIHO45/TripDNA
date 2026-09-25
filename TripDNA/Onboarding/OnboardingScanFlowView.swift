@@ -1,4 +1,6 @@
+import Photos
 import SwiftUI
+import UIKit
 
 // MARK: - 1B-2 사진첩 프라이밍
 
@@ -20,7 +22,7 @@ struct OnboardingPhotoPrimingView: View {
                     .multilineTextAlignment(.center)
                 Text("사진 위치로 국가와 시기를 자동으로 채워드려요")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(.top, DNASpacing.lg)
 
@@ -56,15 +58,15 @@ private struct MapPinsMotifView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
             DotGridView()
                 .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             GeometryReader { proxy in
                 ForEach(Array(pins.enumerated()), id: \.offset) { _, pin in
                     Image(systemName: "mappin.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(Color.dnaTeal)
-                        .shadow(color: .dnaTeal.opacity(0.7), radius: 6)
+                        .foregroundStyle(Color.dnaData)
+                        .shadow(color: .dnaData.opacity(0.7), radius: 6)
                         .position(x: proxy.size.width * pin.x, y: proxy.size.height * pin.y)
                         .offset(y: isDropped ? 0 : -14)
                         .opacity(isDropped ? 1 : 0)
@@ -74,7 +76,7 @@ private struct MapPinsMotifView: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
         .frame(height: 190)
         .padding(.horizontal, DNASpacing.lg)
@@ -105,11 +107,18 @@ private struct DotGridView: View {
 struct OnboardingPhotoScanningView: View {
     let viewModel: OnboardingViewModel
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
-        if viewModel.scanFoundNothing {
-            noResultView
-        } else {
-            scanningView
+        Group {
+            if viewModel.scanFoundNothing {
+                noResultView
+            } else {
+                scanningView
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { viewModel.refreshPhotoAccessAfterReturning() }
         }
     }
 
@@ -123,7 +132,7 @@ struct OnboardingPhotoScanningView: View {
                 .contentTransition(.opacity)
                 .animation(.easeInOut(duration: 0.3), value: viewModel.scanStatusText)
             ProgressView()
-                .tint(Color.dnaTeal)
+                .tint(Color.dnaData)
             Spacer()
             DNABottomCTA {
                 Button("취소") {
@@ -143,14 +152,21 @@ struct OnboardingPhotoScanningView: View {
             Spacer()
             EmptyStateView(
                 systemImage: "photo.badge.exclamationmark",
-                title: "여행 기록을 찾지 못했어요",
+                title: viewModel.isPhotoAccessLimited ? "선택한 사진에서는 여행을 찾지 못했어요" : "여행 기록을 찾지 못했어요",
                 message: "위치 정보가 있는 여행 사진이 없어도 괜찮아요.\n다른 방법으로 지문을 만들 수 있어요."
             )
             .frame(maxHeight: 320)
+            if viewModel.isPhotoAccessLimited {
+                LimitedPhotoAccessBanner(
+                    message: "지금은 직접 고른 사진만 볼 수 있어요. 모든 사진을 허용하면 사진첩 전체에서 여행을 찾아드려요.",
+                    onSelectMore: { viewModel.presentLimitedPhotoPicker() }
+                )
+                .padding(.horizontal, DNASpacing.lg)
+            }
             if let message = viewModel.errorMessage {
                 Text(message)
                     .font(.footnote)
-                    .foregroundStyle(Color.dnaCoral)
+                    .foregroundStyle(Color.dnaAction)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DNASpacing.lg)
             }
@@ -180,7 +196,7 @@ private struct ScanPulseView: View {
         ZStack {
             ForEach(0..<3, id: \.self) { ring in
                 Circle()
-                    .strokeBorder(Color.dnaTeal.opacity(0.5 - Double(ring) * 0.14), lineWidth: 1.4)
+                    .strokeBorder(Color.dnaData.opacity(0.5 - Double(ring) * 0.14), lineWidth: 1.4)
                     .frame(width: 88 + CGFloat(ring) * 36, height: 88 + CGFloat(ring) * 36)
                     .scaleEffect(isPulsing ? 1.06 : 0.94)
                     .animation(
@@ -190,10 +206,10 @@ private struct ScanPulseView: View {
             }
             Image(systemName: "photo.stack")
                 .font(.system(size: 36, weight: .light))
-                .foregroundStyle(Color.dnaTeal)
+                .foregroundStyle(Color.dnaData)
         }
         .frame(width: 190, height: 190)
-        .shadow(color: .dnaTeal.opacity(0.35), radius: 24)
+        .shadow(color: .dnaData.opacity(0.35), radius: 24)
         .onAppear { isPulsing = true }
     }
 }
@@ -208,6 +224,7 @@ struct OnboardingScanCardLoopView: View {
     @State private var satisfaction: Int?
     @State private var showComparison = false
     @State private var isAdvancing = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
@@ -216,6 +233,15 @@ struct OnboardingScanCardLoopView: View {
                 counterText: counterText,
                 onBack: { handleBack() }
             )
+
+            if viewModel.isPhotoAccessLimited {
+                LimitedPhotoAccessBanner(
+                    message: "선택한 사진에서만 여행을 찾았어요. 모든 사진을 허용하면 더 많은 여행을 찾을 수 있어요.",
+                    onSelectMore: { viewModel.presentLimitedPhotoPicker() }
+                )
+                .padding(.horizontal, DNASpacing.lg)
+                .padding(.top, DNASpacing.xs)
+            }
 
             if let draft = viewModel.currentScanDraft {
                 Spacer(minLength: DNASpacing.md)
@@ -233,7 +259,7 @@ struct OnboardingScanCardLoopView: View {
                 if let message = viewModel.errorMessage {
                     Text(message)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaCoral)
+                        .foregroundStyle(Color.dnaAction)
                         .padding(.bottom, DNASpacing.xs)
                 }
 
@@ -260,6 +286,9 @@ struct OnboardingScanCardLoopView: View {
             satisfaction = nil
             showComparison = false
             isAdvancing = false
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { viewModel.refreshPhotoAccessAfterReturning() }
         }
     }
 
@@ -328,10 +357,10 @@ struct OnboardingScanCardLoopView: View {
 
                 Text("VS")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .frame(width: 38, height: 38)
-                    .background(Circle().fill(Color.dnaSurfaceElevated))
-                    .overlay(Circle().strokeBorder(Color.dnaHairline, lineWidth: 1))
+                    .background(Circle().fill(Color.dnaSurface2))
+                    .overlay(Circle().strokeBorder(Color.dnaDivider, lineWidth: 1))
             }
 
             Button("비슷했어요 / 기억 안 나요") {
@@ -389,58 +418,222 @@ struct OnboardingScanCardLoopView: View {
     }
 }
 
-/// 스캔으로 찾은 여행 1건을 보여주는 큰 카드 (사진 자리는 그라데이션 플레이스홀더).
+/// 스캔으로 찾은 여행 1건을 보여주는 사진 중심 카드. 묶인 사진 전체를 좌우로 넘겨본다.
 private struct ScanTripCard: View {
     let draft: ManualTripDraft
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.md) {
-            HStack(spacing: DNASpacing.xs) {
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.dnaIndigo.opacity(0.42 - Double(index) * 0.08),
-                                    Color.dnaTeal.opacity(0.3 - Double(index) * 0.05)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(height: 84)
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.4))
-                        )
-                }
-            }
+    @State private var page = 0
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: DNASpacing.xs) {
-                    Text(OnboardingFormat.flagEmoji(for: draft.countryCode))
-                        .font(.title2)
-                    Text(CountryCatalog.name(for: draft.countryCode))
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                }
-                Text(OnboardingFormat.periodText(start: draft.startDate, end: draft.endDate))
-                    .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
-            }
+    private var photoIDs: [String] { draft.photoAssetIDs }
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            photoPager
+
+            LinearGradient(
+                colors: [.clear, Color.black.opacity(0.25), Color.black.opacity(0.72)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 150)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+            .allowsHitTesting(false)
+
+            tripInfo
+                .padding(DNASpacing.md)
+                .allowsHitTesting(false)
         }
-        .padding(DNASpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
-        )
+        .frame(minHeight: 240, maxHeight: 320)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
         )
-        .shadow(color: Color.dnaIndigo.opacity(0.14), radius: 20, y: 8)
+        .overlay(alignment: .topTrailing) {
+            if photoIDs.count > 1 {
+                Text("\(page + 1) / \(photoIDs.count)")
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(DNASpacing.sm)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.15), value: page)
+            }
+        }
+        .shadow(color: Color.dnaTextTertiary.opacity(0.22), radius: 24, y: 10)
+    }
+
+    @ViewBuilder
+    private var photoPager: some View {
+        if photoIDs.isEmpty {
+            ScanTripPhotoFallback(countryCode: draft.countryCode, flagSize: 72)
+        } else {
+            TabView(selection: $page) {
+                ForEach(Array(photoIDs.enumerated()), id: \.offset) { index, assetID in
+                    PhotoAssetImage(localIdentifier: assetID, targetSize: CGSize(width: 900, height: 900))
+                        .tag(index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        }
+    }
+
+    private var tripInfo: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: DNASpacing.xs) {
+                Text(OnboardingFormat.flagEmoji(for: draft.countryCode))
+                    .font(.title)
+                Text(CountryCatalog.name(for: draft.countryCode))
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+            }
+            HStack(spacing: 6) {
+                Text(OnboardingFormat.periodText(start: draft.startDate, end: draft.endDate))
+                if !photoIDs.isEmpty {
+                    Text("·")
+                    Label("사진 \(photoIDs.count)장", systemImage: "photo.on.rectangle")
+                        .labelStyle(.titleAndIcon)
+                }
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.white.opacity(0.85))
+        }
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+    }
+}
+
+/// 제한된 사진 접근일 때 전체 허용(설정) 또는 사진 추가 선택을 안내하는 배너.
+private struct LimitedPhotoAccessBanner: View {
+    let message: String
+    let onSelectMore: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            HStack(alignment: .top, spacing: DNASpacing.sm) {
+                Image(systemName: "photo.badge.exclamationmark")
+                    .font(.body)
+                    .foregroundStyle(Color.dnaWarning)
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: DNASpacing.md) {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    Link("모든 사진 허용하기", destination: url)
+                        .foregroundStyle(Color.dnaData)
+                }
+                Button("사진 더 고르기", action: onSelectMore)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            .font(.footnote.weight(.semibold))
+            .padding(.leading, 28)
+        }
+        .padding(DNASpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
+                .fill(Color.dnaWarning.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
+                .strokeBorder(Color.dnaWarning.opacity(0.25), lineWidth: 1)
+        )
+    }
+}
+
+/// 사진이 없거나 불러오지 못했을 때의 대체 비주얼 (국기 + 그라데이션).
+private struct ScanTripPhotoFallback: View {
+    let countryCode: String
+    var flagSize: CGFloat = 40
+
+    var body: some View {
+        LinearGradient(
+            colors: [Color.dnaTextTertiary.opacity(0.45), Color.dnaData.opacity(0.3)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .overlay(
+            Text(OnboardingFormat.flagEmoji(for: countryCode))
+                .font(.system(size: flagSize))
+        )
+    }
+}
+
+/// `PHAsset.localIdentifier`로 사진첩 이미지를 직접 불러와 채워 그린다 (파일로 복사하지 않음).
+private struct PhotoAssetImage: View {
+    let localIdentifier: String
+    let targetSize: CGSize
+
+    @State private var image: UIImage?
+    @State private var didFail = false
+
+    var body: some View {
+        Color.dnaSurface1
+            .overlay {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .transition(.opacity)
+                } else if didFail {
+                    Image(systemName: "photo")
+                        .font(.title3)
+                        .foregroundStyle(Color.dnaTextSecondary.opacity(0.7))
+                } else {
+                    ProgressView().tint(.white.opacity(0.7))
+                }
+            }
+            .clipped()
+            .task(id: localIdentifier) {
+                await load()
+            }
+    }
+
+    @MainActor
+    private func load() async {
+        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil).firstObject else {
+            didFail = true
+            return
+        }
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .opportunistic
+        options.resizeMode = .fast
+        options.isNetworkAccessAllowed = true
+
+        for await delivered in Self.imageStream(for: asset, targetSize: targetSize, options: options) {
+            withAnimation(.easeOut(duration: 0.2)) { image = delivered }
+        }
+        if image == nil && !Task.isCancelled { didFail = true }
+    }
+
+    /// opportunistic 요청은 저화질 → 고화질 순으로 여러 번 콜백되므로 스트림으로 흘려보낸다.
+    /// 화면을 벗어나 task가 취소되면 스트림 종료와 함께 사진 요청도 취소한다.
+    private static func imageStream(
+        for asset: PHAsset,
+        targetSize: CGSize,
+        options: PHImageRequestOptions
+    ) -> AsyncStream<UIImage> {
+        let (stream, continuation) = AsyncStream<UIImage>.makeStream()
+        let requestID = PHImageManager.default().requestImage(
+            for: asset,
+            targetSize: targetSize,
+            contentMode: .aspectFill,
+            options: options
+        ) { image, info in
+            if let image { continuation.yield(image) }
+            let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+            if !isDegraded || image == nil { continuation.finish() }
+        }
+        continuation.onTermination = { termination in
+            if case .cancelled = termination {
+                PHImageManager.default().cancelImageRequest(requestID)
+            }
+        }
+        return stream
     }
 }
 
@@ -453,49 +646,60 @@ private struct ComparisonTripCard: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: DNASpacing.sm) {
-                RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.dnaIndigo.opacity(0.4), Color.dnaTeal.opacity(0.28)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(height: 110)
-                    .overlay(
-                        Text(OnboardingFormat.flagEmoji(for: draft.countryCode))
-                            .font(.system(size: 40))
-                    )
+                coverPhoto
+                    .frame(height: 140)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous))
+                    .overlay(alignment: .topLeading) {
+                        if !draft.photoAssetIDs.isEmpty {
+                            Text(OnboardingFormat.flagEmoji(for: draft.countryCode))
+                                .font(.title3)
+                                .padding(6)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .padding(6)
+                        }
+                    }
                 VStack(spacing: 2) {
                     Text(CountryCatalog.name(for: draft.countryCode))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                     Text(OnboardingFormat.periodText(start: draft.startDate, end: draft.endDate))
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     Text(caption)
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate.opacity(0.8))
+                        .foregroundStyle(Color.dnaTextSecondary.opacity(0.8))
                 }
             }
             .padding(DNASpacing.sm)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .fill(Color.dnaSurface)
+                    .fill(Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// 여행 중간 무렵 사진을 대표로 쓴다 (첫 장은 공항·이동 사진인 경우가 많음).
+    @ViewBuilder
+    private var coverPhoto: some View {
+        let ids = draft.photoAssetIDs
+        if ids.isEmpty {
+            ScanTripPhotoFallback(countryCode: draft.countryCode)
+        } else {
+            PhotoAssetImage(localIdentifier: ids[ids.count / 2], targetSize: CGSize(width: 500, height: 500))
+        }
     }
 }
 
 #Preview("OnboardingPhotoPrimingView") {
     OnboardingPhotoPrimingView(viewModel: OnboardingViewModel())
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }
 
@@ -503,7 +707,7 @@ private struct ComparisonTripCard: View {
     let viewModel = OnboardingViewModel()
     viewModel.scanStatusText = "사진 위치 확인 중"
     return OnboardingPhotoScanningView(viewModel: viewModel)
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }
 

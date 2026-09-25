@@ -255,7 +255,7 @@ struct TripRegistrationView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("취소") { dismiss() }
-                    .tint(Color.dnaSlate)
+                    .tint(Color.dnaTextSecondary)
             }
         }
         .sheet(item: $countryPickerTarget) { target in
@@ -545,7 +545,7 @@ private struct CountryPickerSheet: View {
         NavigationStack {
             CountrySelectionList(selectedCode: $selectedCode)
                 .padding(.top, DNASpacing.sm)
-                .background(AuroraBackground())
+                .background(AppCanvas())
                 .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -586,13 +586,13 @@ private struct NotificationPrimingSheet: View {
                     .multilineTextAlignment(.center)
                 Text("평가할수록 다음 추천이 더 정확해져요.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(.horizontal, DNASpacing.lg)
             Spacer(minLength: 0)
             DNABottomCTA {
                 if let errorMessage {
-                    Text(errorMessage).font(.footnote).foregroundStyle(Color.dnaCoral)
+                    Text(errorMessage).font(.footnote).foregroundStyle(Color.dnaAction)
                 }
                 Button("알림 받기") {
                     Task {
@@ -616,7 +616,7 @@ private struct NotificationPrimingSheet: View {
                     .buttonStyle(.dnaGhost)
             }
         }
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .interactiveDismissDisabled()
     }
 }

@@ -43,6 +43,8 @@ final class EvaluationViewModel {
     var tagLegAttribution: [String: String] = [:]
 
     var isSubmitting = false
+    /// 이미 제출한 평가를 고치는 중. 이전 답이 채워진 채로 시작한다.
+    private(set) var isRevising = false
     var errorMessage: String?
     var didSubmit = false
     var deltaAxes: TasteAxes?
@@ -135,6 +137,24 @@ final class EvaluationViewModel {
         if let firstLeg = trip?.legs.first, trip?.legs.count == 1 {
             bestLegCountryCode = firstLeg.countryCode
         }
+        if let trip, trip.status == .evaluated || trip.status == .skippedEvaluation {
+            isRevising = true
+            if let evaluation = trip.evaluation, !evaluation.skipped {
+                prefill(from: evaluation)
+            }
+        }
+    }
+
+    private func prefill(from evaluation: TripEvaluation) {
+        satisfaction = evaluation.satisfaction
+        revisitAnswer = evaluation.wouldRepeat.map { $0 ? .yes : .no }
+        if let best = evaluation.bestLegCountryCode {
+            bestLegCountryCode = best
+        }
+        comparisonResult = evaluation.comparison?.result
+        positiveTagIDs = evaluation.positiveTagIDs
+        negativeTagIDs = evaluation.negativeTagIDs
+        tagLegAttribution = evaluation.tagLegAttribution
     }
 
     func start() {
@@ -227,11 +247,17 @@ final class EvaluationViewModel {
                 tagLegAttribution: attribution,
                 source: .postTrip
             )
-            let result = try await dependencies.evaluationService.submit(
-                tripID: trip.id,
-                evaluation: evaluation,
-                userID: session.userID
-            )
+            let result = isRevising
+                ? try await dependencies.evaluationService.revise(
+                    tripID: trip.id,
+                    evaluation: evaluation,
+                    userID: session.userID
+                )
+                : try await dependencies.evaluationService.submit(
+                    tripID: trip.id,
+                    evaluation: evaluation,
+                    userID: session.userID
+                )
             deltaAxes = result.delta
             didSubmit = true
             EvaluationNotificationService.cancel(for: trip.id)

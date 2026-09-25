@@ -35,23 +35,28 @@ struct TripDetailView: View {
                 EmptyStateView(
                     systemImage: "questionmark.folder",
                     title: "여행을 찾을 수 없어요",
-                    message: "삭제되었거나 존재하지 않는 여행이에요."
+                    message: "삭제되었거나 존재하지 않는 여행이에요.",
+                    actionTitle: "돌아가기",
+                    action: { dismiss() }
                 )
             }
         }
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             if viewModel.trip != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("수정") { showingEdit = true }
-                        .tint(Color.dnaTeal)
+                        .tint(Color.dnaData)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         if let trip = viewModel.trip,
                            trip.status == .evaluated || trip.status == .skippedEvaluation {
+                            Button("평가 고치기") {
+                                showingEvaluation = true
+                            }
                             Button("평가 삭제", role: .destructive) {
                                 confirmingEvaluationDeletion = true
                             }
@@ -66,12 +71,8 @@ struct TripDetailView: View {
                 }
             }
         }
-        .task {
-            await viewModel.load(tripID: tripID, dependencies: dependencies)
-            syncPhotoPageSelection()
-        }
         .onAppear {
-            // DailyPhotoView 등에서 돌아오면 오늘 사진 상태를 다시 읽는다.
+            // 첫 진입과 DailyPhotoView 등에서 돌아온 경우 모두 여기서 읽는다.
             Task {
                 await viewModel.load(tripID: tripID, dependencies: dependencies)
                 syncPhotoPageSelection()
@@ -82,7 +83,7 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let trip = viewModel.trip {
-                ShareCardSheet(title: "여행 공유", disclosure: "기록한 만족도, 내 여행 랭킹과 긍정 태그가 포함돼요.", allowsDestinationNames: true) { showsDestinationNames in
+                ShareCardSheet(kind: .trip, title: "여행 공유", disclosure: "기록한 만족도, 내 여행 랭킹과 긍정 태그가 포함돼요.", allowsDestinationNames: true) { showsDestinationNames in
                     TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: showsDestinationNames)
                 }
             }
@@ -245,7 +246,7 @@ struct TripDetailView: View {
                     .foregroundStyle(.white)
                 Text("여행이 시작되면 매일 한 장의 사진으로 하루를 남길 수 있어요.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
 
                 Button {
                     Task { await viewModel.start(dependencies: dependencies) }
@@ -257,7 +258,7 @@ struct TripDetailView: View {
 
                 Label("여행이 끝나면 30초 평가를 알려드릴게요.", systemImage: "bell")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
         }
@@ -272,7 +273,7 @@ struct TripDetailView: View {
                     Spacer()
                     Text(trip.dateRangeKo)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("\(viewModel.currentDayIndex)일차")
@@ -280,12 +281,12 @@ struct TripDetailView: View {
                         .foregroundStyle(.white)
                     Text("/ \(viewModel.totalDays)일")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
 
                 HStack(spacing: DNASpacing.xs) {
                     Image(systemName: viewModel.todayPhoto == nil ? "camera" : "checkmark.circle.fill")
-                        .foregroundStyle(viewModel.todayPhoto == nil ? Color.dnaAmber : Color.dnaTeal)
+                        .foregroundStyle(viewModel.todayPhoto == nil ? Color.dnaWarning : Color.dnaData)
                     Text(viewModel.todayPhoto == nil ? "오늘의 한 장을 아직 남기지 않았어요" : "오늘의 한 장을 남겼어요")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.9))
@@ -296,7 +297,7 @@ struct TripDetailView: View {
                         } label: {
                             Text("사진 바꾸기")
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.dnaTeal)
+                                .foregroundStyle(Color.dnaData)
                         }
                         .buttonStyle(.plain)
                     }
@@ -317,7 +318,7 @@ struct TripDetailView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
-                            .background(Capsule(style: .continuous).fill(Color.dnaCoral))
+                            .background(Capsule(style: .continuous).fill(Color.dnaAction))
                     }
                     .buttonStyle(.plain)
                     .padding(.top, DNASpacing.xs)
@@ -333,26 +334,26 @@ struct TripDetailView: View {
 
     /// UI-6H(평가 미완료): 30초 평가 강조.
     private func endedHero(_ trip: Trip) -> some View {
-        heroCard(borderColor: Color.dnaAmber.opacity(0.45)) {
+        heroCard(borderColor: Color.dnaWarning.opacity(0.45)) {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 HStack {
                     StatusPill(status: trip.status)
                     Spacer()
                     Text(trip.dateRangeKo)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Text("여행은 어땠나요?")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
                 Text("약 30초면 다음 추천이 더 정확해져요.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
 
                 if missingPhotoDayCount > 0 {
                     Text("아직 사진이 없는 날이 \(missingPhotoDayCount)일 있어요. 위 사진을 눌러 보완할 수 있어요.")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
 
                 Button {
@@ -392,7 +393,7 @@ struct TripDetailView: View {
                     Spacer()
                     Text(trip.dateRangeKo)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
 
                 if let evaluation = trip.evaluation, !evaluation.skipped {
@@ -407,7 +408,7 @@ struct TripDetailView: View {
                                 if let wouldRepeat = evaluation.wouldRepeat {
                                     Text(wouldRepeat ? "또 가고 싶은 여행" : "한 번이면 충분한 여행")
                                         .font(.caption)
-                                        .foregroundStyle(Color.dnaSlate)
+                                        .foregroundStyle(Color.dnaTextSecondary)
                                 }
                             }
                         }
@@ -416,10 +417,10 @@ struct TripDetailView: View {
                             VStack(spacing: 2) {
                                 Text("\(rank)위")
                                     .font(.title3.bold())
-                                    .foregroundStyle(Color.dnaTeal)
+                                    .foregroundStyle(Color.dnaData)
                                 Text("내 랭킹")
                                     .font(.caption2)
-                                    .foregroundStyle(Color.dnaSlate)
+                                    .foregroundStyle(Color.dnaTextSecondary)
                             }
                         }
                     }
@@ -427,17 +428,17 @@ struct TripDetailView: View {
                     if !evaluation.positiveTagIDs.isEmpty || !evaluation.negativeTagIDs.isEmpty {
                         DNAFlowLayout(spacing: 6) {
                             ForEach(evaluation.positiveTagIDs, id: \.self) { tagID in
-                                summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaTeal)
+                                summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaData)
                             }
                             ForEach(evaluation.negativeTagIDs, id: \.self) { tagID in
-                                summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaAmber)
+                                summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaWarning)
                             }
                         }
                     }
                 } else {
                     Text("평가를 생략한 여행이에요. 방문 기록만 남아 있어요.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
 
                 NavigationLink {
@@ -449,7 +450,7 @@ struct TripDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(Capsule(style: .continuous).fill(Color.white.opacity(0.06)))
-                        .overlay(Capsule(style: .continuous).strokeBorder(Color.dnaHairline, lineWidth: 1))
+                        .overlay(Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
                 .padding(.top, DNASpacing.xs)
@@ -460,7 +461,7 @@ struct TripDetailView: View {
                     } label: {
                         Label(trip.coverPhotoStoragePath == nil ? "대표 사진 선택" : "대표 사진 변경", systemImage: "photo")
                             .font(.caption)
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                     }
                     .buttonStyle(.plain)
 
@@ -471,7 +472,7 @@ struct TripDetailView: View {
                     } label: {
                         Label("공유하기", systemImage: "square.and.arrow.up")
                             .font(.caption)
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                     }
                     .accessibilityIdentifier("trip.sharePreview")
                 }
@@ -480,7 +481,7 @@ struct TripDetailView: View {
     }
 
     private func heroCard<Content: View>(
-        borderColor: Color = .dnaHairline,
+        borderColor: Color = .dnaDivider,
         @ViewBuilder content: () -> Content
     ) -> some View {
         content()
@@ -488,13 +489,13 @@ struct TripDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                    .fill(Color.dnaSurface)
+                    .fill(Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
                     .strokeBorder(borderColor, lineWidth: 1)
             )
-            .shadow(color: Color.dnaIndigo.opacity(0.12), radius: 20, y: 8)
+            .shadow(color: Color.dnaTextTertiary.opacity(0.12), radius: 20, y: 8)
     }
 
     private func summaryTagPill(_ title: String, accent: Color) -> some View {
@@ -516,9 +517,9 @@ struct TripDetailView: View {
                     if trip.legs.count > 1 {
                         Text("\(index + 1)")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                             .frame(width: 22, height: 22)
-                            .background(Color.dnaTeal.opacity(0.14), in: Circle())
+                            .background(Color.dnaData.opacity(0.14), in: Circle())
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(CountryCatalog.name(for: leg.countryCode))
@@ -531,12 +532,12 @@ struct TripDetailView: View {
                         }
                         Text(legDateRange(leg))
                             .font(.caption2)
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                     }
                     Spacer()
                     Text("\(leg.days)일")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
             }
         }
@@ -550,11 +551,11 @@ struct TripDetailView: View {
                 Spacer()
             }
             .font(.subheadline)
-            .foregroundStyle(Color.dnaSlate)
+            .foregroundStyle(Color.dnaTextSecondary)
             if trip.purpose == .obligation {
                 Text("의무 여행이라 취향 반영이 낮아요.")
                     .font(.caption2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
         }
     }
@@ -567,13 +568,13 @@ struct TripDetailView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.sm) {
                     Text("여행지에 도시를 추가하면 그 도시의 액티비티를 바로 찾을 수 있어요.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("도시 추가하기") {
                         showingEdit = true
                     }
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
                     .buttonStyle(.plain)
                 }
             }
@@ -596,7 +597,7 @@ struct TripDetailView: View {
                 if !viewModel.photos.isEmpty {
                     Text("하루 한 장에서 고르기")
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: DNASpacing.xs) {
                             ForEach(viewModel.photos.sorted { $0.tripDayIndex < $1.tripDayIndex }) { photo in
@@ -614,11 +615,11 @@ struct TripDetailView: View {
                             }
                         }
                     }
-                    Divider().overlay(Color.dnaHairline)
+                    Divider().overlay(Color.dnaDivider)
                 }
                 Text("사진첩에서 고르기")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                 AnyPhotoLibraryPickerButton(title: "사진 선택") { path in
                     Task {
                         await viewModel.setCoverPhoto(path, dependencies: dependencies)
@@ -628,7 +629,7 @@ struct TripDetailView: View {
                 Spacer(minLength: 0)
             }
             .padding(DNASpacing.lg)
-            .background(AuroraBackground())
+            .background(AppCanvas())
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar(.hidden, for: .navigationBar)
         }

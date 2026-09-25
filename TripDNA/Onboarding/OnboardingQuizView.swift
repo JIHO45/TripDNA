@@ -25,7 +25,7 @@ struct OnboardingQuizView: View {
             )
 
             if viewModel.isMiniQuiz {
-                Text("부족한 취향만 확인하고 있어요")
+                Text("여행 기록으로 덜 드러난 취향만 물어볼게요")
                     .font(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .padding(.top, DNASpacing.sm)
@@ -35,6 +35,9 @@ struct OnboardingQuizView: View {
                 questionView(question)
                     .id(question.id)
                     .transition(transition(for: question))
+            } else if viewModel.isMiniQuiz {
+                miniQuizFinishStep
+                    .transition(.opacity)
             } else {
                 interestStep
                     .transition(.opacity)
@@ -122,8 +125,42 @@ struct OnboardingQuizView: View {
 
     private func handleBack() {
         guard selectedOptionID == nil else { return }
-        if !viewModel.goBackInQuiz() {
+        guard !viewModel.goBackInQuiz() else { return }
+        if viewModel.isMiniQuiz {
+            // 여행은 이미 저장됐으므로 입력 방식 선택으로 되돌아가지 않고 지금까지의 답으로 마무리한다.
+            Task { await viewModel.finishMiniQuiz(dependencies, session: session) }
+        } else {
             viewModel.goBack()
+        }
+    }
+
+    // MARK: 미니 퀴즈 마무리
+
+    /// 관심사는 여행 태그로 이미 받았으므로 묻지 않고 바로 지문을 다시 계산한다.
+    /// 실패했을 때만 재시도 버튼을 보여 자동 재시도 반복을 막는다.
+    private var miniQuizFinishStep: some View {
+        VStack(spacing: DNASpacing.lg) {
+            Spacer()
+            if let message = viewModel.errorMessage {
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.dnaError)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DNASpacing.lg)
+                Button("다시 시도") {
+                    Task { await viewModel.finishMiniQuiz(dependencies, session: session) }
+                }
+                .buttonStyle(.dnaSecondary)
+                .frame(maxWidth: 260)
+            } else {
+                ProgressView()
+                    .tint(Color.dnaTextSecondary)
+            }
+            Spacer()
+        }
+        .task {
+            guard viewModel.errorMessage == nil else { return }
+            await viewModel.finishMiniQuiz(dependencies, session: session)
         }
     }
 
@@ -139,7 +176,7 @@ struct OnboardingQuizView: View {
                     .multilineTextAlignment(.center)
                 Text("1개만 골라도 지문을 만들 수 있어요")
                     .font(.caption)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
 
             DNAFlowLayout(spacing: 10) {
@@ -188,7 +225,7 @@ struct OnboardingQuizView: View {
     )
     .environment(dependencies)
     .environment(session)
-    .background(AuroraBackground())
+    .background(AppCanvas())
     .preferredColorScheme(.dark)
 }
 
@@ -204,6 +241,6 @@ struct OnboardingQuizView: View {
     )
     .environment(dependencies)
     .environment(session)
-    .background(AuroraBackground())
+    .background(AppCanvas())
     .preferredColorScheme(.dark)
 }

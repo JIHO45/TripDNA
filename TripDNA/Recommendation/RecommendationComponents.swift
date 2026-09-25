@@ -19,7 +19,7 @@ struct RecommendationHeroView: View {
                 colors: [
                     slot.accentColor.opacity(0.58),
                     slot.accentColor.opacity(0.22),
-                    Color.dnaSurfaceElevated
+                    Color.dnaSurface2
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -78,9 +78,9 @@ struct RecommendationDislikeSheet: View {
                 Text("이유를 알려주실래요?")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
-                Text("\(countryName)은(는) 180일 동안 추천에서 제외돼요.")
+                Text("\(countryName)은(는) 앞으로 추천에서 빠져요. 저장 목록에서 언제든 되돌릴 수 있어요.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(.top, DNASpacing.lg)
 
@@ -108,7 +108,7 @@ struct RecommendationDislikeSheet: View {
         }
         .padding(.horizontal, DNASpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.dnaSurface)
+        .background(Color.dnaSurface1)
         .presentationDetents([.height(420)])
         .presentationDragIndicator(.visible)
     }
@@ -126,11 +126,11 @@ struct RecommendationToast: View {
             .padding(.vertical, DNASpacing.sm)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.dnaSurfaceElevated)
+                    .fill(Color.dnaSurface2)
             )
             .overlay(
                 Capsule(style: .continuous)
-                    .strokeBorder(Color.dnaTeal.opacity(0.45), lineWidth: 1)
+                    .strokeBorder(Color.dnaData.opacity(0.45), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
     }
@@ -147,7 +147,7 @@ struct RecommendationTagPill: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(Color.white.opacity(0.07), in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.dnaHairline, lineWidth: 1))
+            .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
     }
 }
 
@@ -158,7 +158,7 @@ struct RecommendationTagPill: View {
         RecommendationHeroView(countryCode: "GE", slot: .underratedFit)
     }
     .padding()
-    .background(AuroraBackground())
+    .background(AppCanvas())
     .preferredColorScheme(.dark)
 }
 
@@ -170,6 +170,6 @@ struct RecommendationTagPill: View {
 #Preview("RecommendationToast") {
     RecommendationToast(message: "저장했어요")
         .padding()
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }

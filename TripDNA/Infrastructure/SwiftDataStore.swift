@@ -8,71 +8,93 @@ import SwiftData
 // 초기화 경로를 새로 열어야 하므로, 조회에 필요한 키만 컬럼으로 두고 값 자체는
 // Codable JSON으로 보관한다.
 
-@Model
-final class StoredTrip {
-    @Attribute(.unique) var tripID: String
-    var createdAt: Date
-    var payload: Data
+/// 출시 후 저장 모델을 바꿀 때는 이 스키마를 고치지 말고 V2를 새로 만들어
+/// `TripDNAMigrationPlan`에 단계를 추가한다. 이미 설치된 기기의 저장소가 V1이기 때문이다.
+nonisolated enum TripDNASchemaV1: VersionedSchema {
+    static let versionIdentifier = Schema.Version(1, 0, 0)
 
-    init(tripID: String, createdAt: Date, payload: Data) {
-        self.tripID = tripID
-        self.createdAt = createdAt
-        self.payload = payload
+    static var models: [any PersistentModel.Type] {
+        [StoredTrip.self, StoredCardFeedback.self, StoredDailyPhoto.self,
+         StoredAnalyticsEvent.self, StoredSingleton.self]
+    }
+
+    @Model
+    final class StoredTrip {
+        @Attribute(.unique) var tripID: String
+        var createdAt: Date
+        var payload: Data
+
+        init(tripID: String, createdAt: Date, payload: Data) {
+            self.tripID = tripID
+            self.createdAt = createdAt
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class StoredCardFeedback {
+        @Attribute(.unique) var feedbackID: String
+        var createdAt: Date
+        var payload: Data
+
+        init(feedbackID: String, createdAt: Date, payload: Data) {
+            self.feedbackID = feedbackID
+            self.createdAt = createdAt
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class StoredDailyPhoto {
+        @Attribute(.unique) var photoID: String
+        var tripID: String
+        var tripDayIndex: Int
+        var payload: Data
+
+        init(photoID: String, tripID: String, tripDayIndex: Int, payload: Data) {
+            self.photoID = photoID
+            self.tripID = tripID
+            self.tripDayIndex = tripDayIndex
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class StoredAnalyticsEvent {
+        @Attribute(.unique) var eventID: String
+        var createdAt: Date
+        var payload: Data
+
+        init(eventID: String, createdAt: Date, payload: Data) {
+            self.eventID = eventID
+            self.createdAt = createdAt
+            self.payload = payload
+        }
+    }
+
+    /// 항상 한 벌만 존재하는 값(랭킹·취향 지문·사용자 프로필)을 키로 구분해 보관한다.
+    @Model
+    final class StoredSingleton {
+        @Attribute(.unique) var key: String
+        var payload: Data
+
+        init(key: String, payload: Data) {
+            self.key = key
+            self.payload = payload
+        }
     }
 }
 
-@Model
-final class StoredCardFeedback {
-    @Attribute(.unique) var feedbackID: String
-    var createdAt: Date
-    var payload: Data
-
-    init(feedbackID: String, createdAt: Date, payload: Data) {
-        self.feedbackID = feedbackID
-        self.createdAt = createdAt
-        self.payload = payload
-    }
+nonisolated enum TripDNAMigrationPlan: SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] { [TripDNASchemaV1.self] }
+    static var stages: [MigrationStage] { [] }
 }
 
-@Model
-final class StoredDailyPhoto {
-    @Attribute(.unique) var photoID: String
-    var tripID: String
-    var tripDayIndex: Int
-    var payload: Data
-
-    init(photoID: String, tripID: String, tripDayIndex: Int, payload: Data) {
-        self.photoID = photoID
-        self.tripID = tripID
-        self.tripDayIndex = tripDayIndex
-        self.payload = payload
-    }
-}
-
-@Model
-final class StoredAnalyticsEvent {
-    @Attribute(.unique) var eventID: String
-    var createdAt: Date
-    var payload: Data
-
-    init(eventID: String, createdAt: Date, payload: Data) {
-        self.eventID = eventID
-        self.createdAt = createdAt
-        self.payload = payload
-    }
-}
-
-/// 항상 한 벌만 존재하는 값(랭킹·취향 지문·사용자 프로필)을 키로 구분해 보관한다.
-@Model
-final class StoredSingleton {
-    @Attribute(.unique) var key: String
-    var payload: Data
-
-    init(key: String, payload: Data) {
-        self.key = key
-        self.payload = payload
-    }
-}
+typealias StoredTrip = TripDNASchemaV1.StoredTrip
+typealias StoredCardFeedback = TripDNASchemaV1.StoredCardFeedback
+typealias StoredDailyPhoto = TripDNASchemaV1.StoredDailyPhoto
+typealias StoredAnalyticsEvent = TripDNASchemaV1.StoredAnalyticsEvent
+typealias StoredSingleton = TripDNASchemaV1.StoredSingleton
 
 // MARK: - 저장소
 
@@ -125,11 +147,8 @@ actor SwiftDataAppStore: nonisolated AppStore {
             ModelConfiguration(isStoredInMemoryOnly: inMemory)
         }
         return try ModelContainer(
-            for: StoredTrip.self,
-            StoredCardFeedback.self,
-            StoredDailyPhoto.self,
-            StoredAnalyticsEvent.self,
-            StoredSingleton.self,
+            for: Schema(versionedSchema: TripDNASchemaV1.self),
+            migrationPlan: TripDNAMigrationPlan.self,
             configurations: configuration
         )
     }

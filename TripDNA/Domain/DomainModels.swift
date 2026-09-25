@@ -73,7 +73,6 @@ nonisolated struct UserProfile: Identifiable, Codable, Equatable, Sendable {
     var onboardingStatus: OnboardingStatus
     var homeCountryCode: String?
     var departureAirportCode: String?
-    var dailyPhotoAutoFallbackConsent: Bool?
     let createdAt: Date
 }
 
@@ -249,6 +248,16 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
         self.evaluation = evaluation
         status = evaluation.skipped ? .skippedEvaluation : .evaluated
         evaluatedAt = date
+    }
+
+    /// 제출한 평가를 고친다. 원장 재생 순서가 바뀌지 않도록 평가 시각과 랭킹 자리는 유지한다.
+    mutating func revise(_ evaluation: TripEvaluation) throws {
+        guard status == .evaluated || status == .skippedEvaluation else {
+            throw DomainValidationError.invalidTripTransition
+        }
+        try validate(evaluation)
+        self.evaluation = evaluation
+        status = evaluation.skipped ? .skippedEvaluation : .evaluated
     }
 
     mutating func clearEvaluation() throws {

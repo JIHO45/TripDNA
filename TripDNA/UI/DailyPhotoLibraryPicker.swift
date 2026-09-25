@@ -83,7 +83,7 @@ struct DailyPhotoLibraryPicker: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
-                    .foregroundStyle(Color.dnaCoral)
+                    .foregroundStyle(Color.dnaAction)
                     .padding(.horizontal, DNASpacing.lg)
             }
             Spacer(minLength: 0)
@@ -98,7 +98,7 @@ struct DailyPhotoLibraryPicker: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(Color.dnaCoral)
+                        .foregroundStyle(Color.dnaAction)
                 }
             }
             .padding(.horizontal, DNASpacing.lg)
@@ -113,18 +113,18 @@ struct DailyPhotoLibraryPicker: View {
                 .foregroundStyle(.white)
             Text("설정에서 허용하면 \(dayLabel) 찍은 사진을 고를 수 있어요. 지금은 건너뛰어도 괜찮아요.")
                 .font(.caption)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
             if let url = URL(string: UIApplication.openSettingsURLString) {
                 Link("설정 열기", destination: url)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
             }
         }
         .padding(DNASpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
     }
 
@@ -143,7 +143,7 @@ struct DailyPhotoLibraryPicker: View {
             if filtersToSingleDay {
                 Text("\(dayLabel) 찍은 사진")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(assets, id: \.localIdentifier) { asset in
@@ -165,7 +165,7 @@ struct DailyPhotoLibraryPicker: View {
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                 Label("사진첩에서 더 보기", systemImage: "photo.on.rectangle")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
             }
             .disabled(isImporting)
         }
@@ -178,7 +178,7 @@ struct DailyPhotoLibraryPicker: View {
                 .foregroundStyle(.white)
             Text("건너뛰거나, 사진첩에서 다른 사진을 고를 수 있어요.")
                 .font(.caption)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                 Text("사진첩에서 고르기")
                     .font(.subheadline.weight(.semibold))
@@ -193,7 +193,7 @@ struct DailyPhotoLibraryPicker: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
     }
 
@@ -330,7 +330,7 @@ private struct DailyPhotoAssetCell: View {
                         .resizable()
                         .scaledToFill()
                 } else {
-                    Color.dnaSurface
+                    Color.dnaSurface1
                     ProgressView().tint(.white)
                 }
             }

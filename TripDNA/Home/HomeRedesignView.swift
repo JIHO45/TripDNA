@@ -38,6 +38,7 @@ struct HomeRedesignView: View {
         .sheet(isPresented: $showingProfile) { ProfileSheet() }
         .task { await viewModel.load(dependencies) }
         .refreshable { await viewModel.load(dependencies) }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
     }
 
     // MARK: 상단 메타
@@ -62,7 +63,7 @@ struct HomeRedesignView: View {
         HStack(alignment: .firstTextBaseline) {
             // 한글에는 자간·고정폭을 쓰지 않는다. 물성은 영문 메타데이터에서만 낸다.
             Text(HomeNarrative.metaLine(trips: viewModel.trips))
-                .font(.system(size: 13, weight: .regular))
+                .dnaFont(size: 13, weight: .regular)
                 .foregroundStyle(Color.dnaTextTertiary)
 
             Spacer(minLength: 12)
@@ -71,7 +72,7 @@ struct HomeRedesignView: View {
                 showingProfile = true
             } label: {
                 Image(systemName: "person")
-                    .font(.system(size: 17, weight: .regular))
+                    .dnaFont(size: 17, weight: .regular)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .frame(width: 32, height: 32)
                     .contentShape(Rectangle())
@@ -88,14 +89,14 @@ struct HomeRedesignView: View {
     private func fingerprintOpening(_ vector: UserTasteVector) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(HomeNarrative.heroSentence(axes: vector.axes, confidence: vector.confidence))
-                .font(.system(size: 31, weight: .regular))
+                .dnaFont(size: 31, weight: .regular)
                 .foregroundStyle(Color.dnaTextPrimary)
                 .lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 26)
 
             Text(HomeNarrative.evidence(trips: viewModel.trips))
-                .font(.system(size: 14))
+                .dnaFont(size: 14)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.top, 14)
 
@@ -120,14 +121,14 @@ struct HomeRedesignView: View {
     private var emptyFingerprintOpening: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("여행 하나가 모이면\n첫 지문이 만들어집니다")
-                .font(.system(size: 31, weight: .regular))
+                .dnaFont(size: 31, weight: .regular)
                 .foregroundStyle(Color.dnaTextPrimary)
                 .lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 26)
 
             Text("여행 탭에서 첫 여행을 등록해보세요")
-                .font(.system(size: 14))
+                .dnaFont(size: 14)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.top, 14)
 
@@ -168,7 +169,7 @@ struct HomeRedesignView: View {
                         }
 
                         Text(HomeNarrative.tripSentence(trip))
-                            .font(.system(size: 21, weight: .regular))
+                            .dnaFont(size: 21, weight: .regular)
                             .foregroundStyle(Color.dnaTextPrimary)
                             .lineSpacing(4)
                             .fixedSize(horizontal: false, vertical: true)
@@ -176,8 +177,7 @@ struct HomeRedesignView: View {
                             .padding(.top, 18)
 
                         Text(HomeNarrative.photoMeta(trip))
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .kerning(1.0)
+                            .dnaFont(size: 11, weight: .medium, design: .monospaced)
                             .foregroundStyle(Color.dnaTextTertiary)
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
@@ -216,12 +216,12 @@ struct HomeRedesignView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(CountryCatalog.name(for: best.countryCode))
-                            .font(.system(size: 27, weight: .medium))
+                            .dnaFont(size: 27, weight: .medium)
                             .foregroundStyle(Color.dnaTextPrimary)
                             .padding(.top, 14)
 
                         Text(HomeNarrative.recommendationReason(best))
-                            .font(.system(size: 15))
+                            .dnaFont(size: 15)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .lineSpacing(3)
                             .fixedSize(horizontal: false, vertical: true)
@@ -230,12 +230,12 @@ struct HomeRedesignView: View {
                         // 매칭 수치만 데이터 색을 갖고, 이유는 뉴트럴로 이어 붙인다.
                         HStack(spacing: 6) {
                             Text("\(Int((best.matchScore * 100).rounded()))% 일치")
-                                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                .dnaFont(size: 13, weight: .medium, design: .monospaced)
                                 .foregroundStyle(Color.dnaData)
                             Text("·")
                                 .foregroundStyle(Color.dnaTextTertiary)
                             Text(best.slot.subtitleKo)
-                                .font(.system(size: 13))
+                                .dnaFont(size: 13)
                                 .foregroundStyle(Color.dnaTextTertiary)
                                 .lineLimit(1)
                         }
@@ -258,9 +258,9 @@ struct HomeRedesignView: View {
         HStack(spacing: 6) {
             Spacer(minLength: 0)
             Text(title)
-                .font(.system(size: 13, weight: .medium))
+                .dnaFont(size: 13, weight: .medium)
             Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .semibold))
+                .dnaFont(size: 10, weight: .semibold)
                 .accessibilityHidden(true)
         }
         .foregroundStyle(Color.dnaTextSecondary)
@@ -276,30 +276,24 @@ struct HomeRedesignView: View {
 
     // MARK: 하단 주 행동 (화면에서 코랄을 쓰는 유일한 지점)
 
-    @ViewBuilder
     private var bottomAction: some View {
-        switch viewModel.primaryAction {
-        case .registerFirstTrip:
-            EmptyView()
-        default:
-            actionButton
-                .padding(.horizontal, 20)
-                .padding(.top, 44)
-                .padding(.bottom, 8)
-                .background(alignment: .bottom) {
-                    // 지나가는 콘텐츠가 버튼 뒤에서 비치지 않도록 페이드 구간을 길게 잡는다.
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color.dnaCanvas.opacity(0), location: 0),
-                            .init(color: Color.dnaCanvas.opacity(0.78), location: 0.22),
-                            .init(color: Color.dnaCanvas, location: 0.5)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea(edges: .bottom)
-                }
-        }
+        actionButton
+            .padding(.horizontal, 20)
+            .padding(.top, 44)
+            .padding(.bottom, 8)
+            .background(alignment: .bottom) {
+                // 지나가는 콘텐츠가 버튼 뒤에서 비치지 않도록 페이드 구간을 길게 잡는다.
+                LinearGradient(
+                    stops: [
+                        .init(color: Color.dnaCanvas.opacity(0), location: 0),
+                        .init(color: Color.dnaCanvas.opacity(0.78), location: 0.22),
+                        .init(color: Color.dnaCanvas, location: 0.5)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea(edges: .bottom)
+            }
     }
 
     @ViewBuilder
@@ -320,7 +314,12 @@ struct HomeRedesignView: View {
             }
             .buttonStyle(.dnaPrimary)
         case .registerFirstTrip:
-            EmptyView()
+            NavigationLink {
+                TripRegistrationView(prefilledCountryCode: nil)
+            } label: {
+                Text(actionTitle)
+            }
+            .buttonStyle(.dnaPrimary)
         }
     }
 
@@ -330,7 +329,7 @@ struct HomeRedesignView: View {
         case .dailyPhoto: "오늘의 한 장 고르기"
         case .activeTrip: "오늘의 한 장 바꾸기"
         case .upcoming: "여행 일정 보기"
-        case .registerFirstTrip: ""
+        case .registerFirstTrip: "첫 여행 등록하기"
         }
     }
 
@@ -394,6 +393,7 @@ struct FingerprintRidge: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("취향 지문 5축 능선")
+        .accessibilityValue(axes.spokenSummaryKo(confidence: confidence))
     }
 
     /// 축 이름 대신 지금 기울어 있는 극을 보여준다.
@@ -403,10 +403,10 @@ struct FingerprintRidge: View {
             ForEach(order, id: \.self) { axis in
                 VStack(spacing: 3) {
                     Text(poleLabel(for: axis))
-                        .font(.system(size: 13, weight: .medium))
+                        .dnaFont(size: 13, weight: .medium)
                         .foregroundStyle(Color.dnaTextSecondary.opacity(opacity(for: axis)))
                     Text(strengthText(for: axis))
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .dnaFont(size: 11, weight: .medium, design: .monospaced)
                         .foregroundStyle(Color.dnaTextTertiary.opacity(opacity(for: axis)))
                 }
                 .frame(maxWidth: .infinity)
@@ -498,7 +498,7 @@ struct EditorialLabel: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13, weight: .semibold))
+            .dnaFont(size: 13, weight: .semibold)
             .foregroundStyle(Color.dnaTextTertiary)
     }
 }
@@ -637,17 +637,17 @@ enum HomeNarrative {
         }
     }
 
-    /// 여행 기록에 물성을 주는 영문 메타데이터 한 줄.
+    /// 여행 기록에 물성을 주는 장소·시기 메타데이터 한 줄.
     static func photoMeta(_ trip: Trip) -> String {
         guard let leg = trip.legs.first else { return "" }
-        let place = leg.cities.first?.uppercased()
-            ?? CountryCatalog.profiles[leg.countryCode]?.name.uppercased()
+        let place = leg.cities.first
+            ?? CountryCatalog.profiles[leg.countryCode]?.nameKo
             ?? leg.countryCode
 
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US")
-        formatter.dateFormat = "MMM yyyy"
-        return "\(place) · \(formatter.string(from: leg.startDate).uppercased())"
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy년 M월"
+        return "\(place) · \(formatter.string(from: leg.startDate))"
     }
 
     /// 추천 이유를 별도 설명 카드 대신 제목 아래 한 문장으로 합친다.

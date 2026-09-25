@@ -22,7 +22,7 @@ struct OnboardingAnalyzingView: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color.dnaIndigo.opacity(0.35), .clear],
+                            colors: [Color.dnaTextTertiary.opacity(0.35), .clear],
                             center: .center,
                             startRadius: 10,
                             endRadius: 140
@@ -47,7 +47,7 @@ struct OnboardingAnalyzingView: View {
 
             Text("지문을 그리는 중이에요")
                 .font(.subheadline)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
             Spacer()
         }
         .padding(DNASpacing.lg)
@@ -78,7 +78,7 @@ struct OnboardingResultView: View {
                 VStack(spacing: 6) {
                     Text(isQuizOnly ? "첫인상 지문" : "당신의 여행 지문")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .textCase(.uppercase)
                         .tracking(1.2)
 
@@ -100,12 +100,12 @@ struct OnboardingResultView: View {
                         if hasLowConfidence(vector.confidence) {
                             Text("아직 흐려요 · 여행을 평가할수록 지문이 선명해져요")
                                 .font(.caption)
-                                .foregroundStyle(Color.dnaSlate)
+                                .foregroundStyle(Color.dnaTextSecondary)
                                 .frame(maxWidth: .infinity, alignment: .center)
                         } else {
                             Text("여행을 평가할수록 지문이 선명해져요")
                                 .font(.caption)
-                                .foregroundStyle(Color.dnaSlate)
+                                .foregroundStyle(Color.dnaTextSecondary)
                                 .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
@@ -114,7 +114,7 @@ struct OnboardingResultView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.sm) {
                     HStack(spacing: 6) {
                         Image(systemName: "fingerprint")
-                            .foregroundStyle(Color.dnaTeal)
+                            .foregroundStyle(Color.dnaData)
                         Text("당신의 지문으로 찾은 다음 여행지")
                             .font(.headline)
                             .foregroundStyle(.white)
@@ -128,7 +128,7 @@ struct OnboardingResultView: View {
                 if let message = viewModel.errorMessage {
                     Text(message)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaCoral)
+                        .foregroundStyle(Color.dnaAction)
                 }
             }
             .padding(DNASpacing.lg)
@@ -171,7 +171,7 @@ struct OnboardingResultView: View {
                     .foregroundStyle(.white)
                 Text(reasonLine(for: recommendation))
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 ScoreBadge(score: recommendation.matchScore)
             }
@@ -180,7 +180,7 @@ struct OnboardingResultView: View {
         .padding(DNASpacing.md)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
@@ -209,17 +209,9 @@ struct OnboardingResultView: View {
 
 // MARK: - UI-2 Apple 로그인
 
-enum AppleSignInMode: Equatable {
-    /// 온보딩 결과 후 지문을 계정에 연결한다.
-    case onboardingSave
-    /// 로그아웃 후 같은 기기에서 다시 로그인한다.
-    case sessionRestore
-}
-
-/// RootView(로그아웃 후)와 온보딩 페이오프에서 쓴다.
+/// 온보딩 페이오프 뒤 선택 로그인. 지문을 Apple 계정에 연결한다.
 struct AppleSignInView: View {
     var viewModel: OnboardingViewModel?
-    var mode: AppleSignInMode = .sessionRestore
     var onBack: (() -> Void)?
     @Environment(SessionStore.self) private var session
     @Environment(AppDependencies.self) private var dependencies
@@ -236,7 +228,7 @@ struct AppleSignInView: View {
                 promptView
             }
         }
-        .background(AuroraBackground())
+        .background(AppCanvas())
     }
 
     private var promptView: some View {
@@ -246,7 +238,7 @@ struct AppleSignInView: View {
                     Button(action: onBack) {
                         Image(systemName: "chevron.left")
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 36, height: 36)
                             .background(Color.white.opacity(0.06), in: Circle())
                     }
@@ -258,7 +250,7 @@ struct AppleSignInView: View {
             }
 
             Spacer()
-            if mode == .onboardingSave, let vector = viewModel?.resultVector {
+            if let vector = viewModel?.resultVector {
                 SectionCard {
                     FingerprintRadarView(axes: vector.axes, confidence: vector.confidence)
                         .frame(height: 160)
@@ -267,7 +259,7 @@ struct AppleSignInView: View {
                         confidence: vector.confidence
                     ))
                     .font(.subheadline)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                 }
@@ -290,13 +282,13 @@ struct AppleSignInView: View {
             Text(subtitleText)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.horizontal, DNASpacing.xl)
 
             if let errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
-                    .foregroundStyle(Color.dnaCoral)
+                    .foregroundStyle(Color.dnaAction)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DNASpacing.lg)
             }
@@ -325,20 +317,18 @@ struct AppleSignInView: View {
                 .buttonStyle(.plain)
                 .disabled(isSigningIn)
 
-                if mode == .onboardingSave {
-                    Button("로그인 없이 시작하기") {
-                        continueWithoutSignIn()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.dnaSlate)
-                    .frame(height: 44)
-                    .disabled(isSigningIn)
+                Button("로그인 없이 시작하기") {
+                    continueWithoutSignIn()
                 }
+                .buttonStyle(.plain)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.dnaTextSecondary)
+                .frame(height: 44)
+                .disabled(isSigningIn)
 
                 Text("계속하면 이용약관 및 개인정보 처리방침에 동의하게 됩니다.")
                     .font(.caption2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, DNASpacing.lg)
@@ -351,18 +341,18 @@ struct AppleSignInView: View {
             Spacer()
             ZStack {
                 Circle()
-                    .fill(Color.dnaTeal.opacity(0.16))
+                    .fill(Color.dnaData.opacity(0.16))
                     .frame(width: 96, height: 96)
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
             }
             Text(successHeadlineText)
                 .font(.title3.bold())
                 .foregroundStyle(.white)
             Text(successSubtitleText)
                 .font(.subheadline)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
             Spacer()
             DNABottomCTA {
                 Button("홈으로 가기") {
@@ -378,45 +368,11 @@ struct AppleSignInView: View {
         }
     }
 
-    private var headlineText: String {
-        switch mode {
-        case .onboardingSave:
-            return "Apple 계정으로 로그인할까요?"
-        case .sessionRestore:
-            return "기존 계정으로 로그인"
-        }
-    }
-
-    private var subtitleText: String {
-        switch mode {
-        case .onboardingSave:
-            return "기록은 이 기기에 저장돼요.\n로그인은 계정을 연결하려는 경우에만 하면 돼요."
-        case .sessionRestore:
-            return "이 기기의 기록을 다시 열려면 이전에 사용한 Apple 계정으로 로그인해 주세요."
-        }
-    }
-
-    private var ctaText: String {
-        switch mode {
-        case .onboardingSave:
-            return "Apple로 계속하기"
-        case .sessionRestore:
-            return "Apple로 로그인"
-        }
-    }
-
-    private var successHeadlineText: String {
-        switch mode {
-        case .onboardingSave:
-            return "로그인했어요"
-        case .sessionRestore:
-            return "로그인했어요"
-        }
-    }
-
-    private var successSubtitleText: String {
-        "홈에서 추천과 여행을 이어갈 수 있어요."
-    }
+    private let headlineText = "Apple 계정으로 로그인할까요?"
+    private let subtitleText = "기록은 이 기기에 저장돼요.\n로그인은 계정을 연결하려는 경우에만 하면 돼요."
+    private let ctaText = "Apple로 계속하기"
+    private let successHeadlineText = "로그인했어요"
+    private let successSubtitleText = "홈에서 추천과 여행을 이어갈 수 있어요."
 
     @MainActor
     private func signIn() async {
@@ -427,10 +383,6 @@ struct AppleSignInView: View {
 
         do {
             let result = try await AppleSignInClient.shared.signIn()
-            if mode == .sessionRestore && !session.canRestoreAppleUser(result.userID) {
-                errorMessage = "이전에 사용한 Apple 계정으로 로그인해 주세요."
-                return
-            }
             pendingAppleUserID = result.userID
             // 성공 연출 동안에는 세션을 열지 않는다.
             // (즉시 인증하면 RootView가 MainTab으로 바뀌어 체크 화면이 스킵된다.)
@@ -447,19 +399,13 @@ struct AppleSignInView: View {
     private func finalizeSignIn() {
         if session.isAuthenticated { return }
         guard let appleUserID = pendingAppleUserID else { return }
-        switch mode {
-        case .onboardingSave:
-            if let viewModel {
-                viewModel.completeSignIn(session: session, appleUserID: appleUserID)
-            } else {
-                session.applyAppleSignIn(userID: appleUserID)
-                session.onboardingPhase = .completed
-            }
-            Task { await dependencies.markOnboardingCompleted() }
-        case .sessionRestore:
-            // 로그아웃 후 재로그인: 온보딩은 이미 완료된 상태.
+        if let viewModel {
+            viewModel.completeSignIn(session: session, appleUserID: appleUserID)
+        } else {
             session.applyAppleSignIn(userID: appleUserID)
+            session.onboardingPhase = .completed
         }
+        Task { await dependencies.markOnboardingCompleted() }
     }
 
     /// 서버가 없는 동안 로그인은 사용자에게 이득이 없다. 기록은 기기에 남으므로
@@ -481,7 +427,7 @@ struct AppleSignInView: View {
 
 #Preview("OnboardingAnalyzingView") {
     OnboardingAnalyzingView(viewModel: OnboardingViewModel())
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }
 

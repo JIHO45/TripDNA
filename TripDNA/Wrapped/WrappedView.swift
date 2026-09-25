@@ -28,14 +28,16 @@ struct WrappedView: View {
                 }
             } else if viewModel.isLoading {
                 LoadingView()
-                    .background(AuroraBackground())
+                    .background(AppCanvas())
             } else {
                 EmptyStateView(
                     systemImage: "sparkles.rectangle.stack",
                     title: "Wrapped를 볼 수 없어요",
-                    message: viewModel.notAvailableReason ?? ""
+                    message: viewModel.notAvailableReason ?? "",
+                    actionTitle: "돌아가기",
+                    action: { dismiss() }
                 )
-                .background(AuroraBackground())
+                .background(AppCanvas())
             }
         }
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -61,13 +63,13 @@ private struct WrappedIntroView: View {
                 Text("한 해의 기록이 모였어요")
                     .font(.footnote.weight(.semibold))
                     .tracking(2)
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
 
                 Text(verbatim: "\(display.year)")
                     .font(.system(size: 84, weight: .heavy, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.dnaTeal, .dnaIndigo],
+                            colors: [.dnaData, .dnaTextTertiary],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -101,7 +103,7 @@ private struct WrappedIntroView: View {
         HStack(spacing: 0) {
             statColumn(value: display.destinationCount, label: "여행 국가")
             Rectangle()
-                .fill(Color.dnaHairline)
+                .fill(Color.dnaDivider)
                 .frame(width: 1, height: 44)
             statColumn(value: display.tripCount, label: "여행 수")
         }
@@ -113,7 +115,7 @@ private struct WrappedIntroView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
     }
 
@@ -125,7 +127,7 @@ private struct WrappedIntroView: View {
                 .monospacedDigit()
             Text(label)
                 .font(.caption)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
         }
         .frame(maxWidth: .infinity)
     }

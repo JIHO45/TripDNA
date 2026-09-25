@@ -43,18 +43,16 @@ extension Color {
 
     // MARK: 이전 이름
     //
-    // 물리적 색 이름은 역할을 숨겨서 "아무 데나 쓰는 색"이 되기 쉽다.
-    // 화면을 순서대로 재작성하며 위의 역할 토큰으로 옮기고, 이 블록은 비워 나간다.
-    static let dnaBackground = Color.dnaCanvas
-    static let dnaSurface = Color.dnaSurface1
-    static let dnaSurfaceElevated = Color.dnaSurface2
-    static let dnaSlate = Color.dnaTextSecondary
-    static let dnaHairline = Color.dnaDivider
-    static let dnaCoral = Color.dnaAction
-    static let dnaTeal = Color.dnaData
-    static let dnaAmber = Color.dnaWarning
-    /// 폐기 대상. 인디고 장식(그라데이션·컬러 섀도우)을 한 번에 끄기 위해 뉴트럴로 매핑해 둔다.
-    static let dnaIndigo = Color.dnaTextTertiary
+    // 모든 화면이 역할 토큰으로 옮겨졌다. 새 코드에서 쓰면 경고가 나도록 남겨 둔다.
+    @available(*, deprecated, renamed: "dnaCanvas") static let dnaBackground = Color.dnaCanvas
+    @available(*, deprecated, renamed: "dnaSurface1") static let dnaSurface = Color.dnaSurface1
+    @available(*, deprecated, renamed: "dnaSurface2") static let dnaSurfaceElevated = Color.dnaSurface2
+    @available(*, deprecated, renamed: "dnaTextSecondary") static let dnaSlate = Color.dnaTextSecondary
+    @available(*, deprecated, renamed: "dnaDivider") static let dnaHairline = Color.dnaDivider
+    @available(*, deprecated, renamed: "dnaAction") static let dnaCoral = Color.dnaAction
+    @available(*, deprecated, renamed: "dnaData") static let dnaTeal = Color.dnaData
+    @available(*, deprecated, renamed: "dnaWarning") static let dnaAmber = Color.dnaWarning
+    @available(*, deprecated, renamed: "dnaTextTertiary") static let dnaIndigo = Color.dnaTextTertiary
 }
 
 enum DNASpacing {
@@ -79,7 +77,7 @@ struct AppCanvas: View {
     }
 }
 
-/// 폐기 대상 이름. 화면을 재작성하며 `AppCanvas`로 옮긴다.
+@available(*, deprecated, renamed: "AppCanvas")
 typealias AuroraBackground = AppCanvas
 
 /// `ScrollView`/`List`/`Form` 루트에 적용해 캔버스와 다크 스크롤 배경을 통일한다.
@@ -107,6 +105,44 @@ extension View {
     }
 }
 
+// MARK: - Scaled Type
+
+/// 디자인이 정한 pt 크기를 기준으로 두되, 사용자의 글자 크기 설정을 따라 함께 커진다.
+/// 이미지로 렌더링되는 공유 카드처럼 크기가 고정돼야 하는 곳에는 쓰지 않는다.
+private struct DNAScaledFont: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    private let weight: Font.Weight
+    private let design: Font.Design
+
+    init(size: CGFloat, weight: Font.Weight, design: Font.Design) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: Self.textStyle(for: size))
+        self.weight = weight
+        self.design = design
+    }
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: size, weight: weight, design: design))
+    }
+
+    private static func textStyle(for size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case ..<12: .caption2
+        case ..<14: .footnote
+        case ..<16: .subheadline
+        case ..<18: .body
+        case ..<23: .title3
+        case ..<29: .title2
+        default: .title
+        }
+    }
+}
+
+extension View {
+    func dnaFont(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        modifier(DNAScaledFont(size: size, weight: weight, design: design))
+    }
+}
+
 // MARK: - Buttons
 
 /// 단색 코랄 주 행동. 위치와 크기로 먼저 읽히게 하고, 글로우로 강조하지 않는다.
@@ -115,10 +151,10 @@ struct DNAPrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 16, weight: .semibold))
+            .dnaFont(size: 16, weight: .semibold)
             .foregroundStyle(isDisabled ? Color.dnaTextTertiary : Color.dnaCanvas)
             .frame(maxWidth: .infinity)
-            .frame(height: 54)
+            .frame(minHeight: 54)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
                     .fill(fillColor(isPressed: configuration.isPressed))
@@ -143,7 +179,7 @@ struct DNASecondaryButtonStyle: ButtonStyle {
                 Capsule(style: .continuous).fill(Color.white.opacity(0.06))
             )
             .overlay(
-                Capsule(style: .continuous).strokeBorder(Color.dnaHairline, lineWidth: 1)
+                Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
@@ -153,7 +189,9 @@ struct DNAGhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline)
-            .foregroundStyle(Color.dnaSlate)
+            .foregroundStyle(Color.dnaTextSecondary)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }
@@ -192,7 +230,7 @@ struct DNAScreenHeader<Trailing: View>: View {
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
             }
             Spacer(minLength: DNASpacing.sm)
@@ -205,7 +243,7 @@ struct DNAScreenHeader<Trailing: View>: View {
 struct DNAHeaderDivider: View {
     var body: some View {
         Rectangle()
-            .fill(Color.dnaHairline)
+            .fill(Color.dnaDivider)
             .frame(height: 1)
             .padding(.horizontal, -DNASpacing.lg)
     }
@@ -220,16 +258,16 @@ struct DNACircleIcon: View {
     var body: some View {
         Image(systemName: systemImage)
             .font(.body.weight(.semibold))
-            .foregroundStyle(isEmphasized ? .white : Color.dnaSlate)
+            .foregroundStyle(isEmphasized ? .white : Color.dnaTextSecondary)
             .frame(width: size, height: size)
             .background(
                 Circle()
-                    .fill(isEmphasized ? Color.dnaSurfaceElevated : Color.white.opacity(0.04))
+                    .fill(isEmphasized ? Color.dnaSurface2 : Color.white.opacity(0.04))
             )
             .overlay(
                 Circle()
                     .strokeBorder(
-                        isEmphasized ? Color.dnaTeal.opacity(0.5) : Color.dnaHairline,
+                        isEmphasized ? Color.dnaData.opacity(0.5) : Color.dnaDivider,
                         lineWidth: 1
                     )
             )
@@ -252,7 +290,7 @@ struct DNABottomCTA<Content: View>: View {
         // 버튼 콘텐츠 폭은 명시적으로 화면 가로 - lg*2 를 유지한다.
         .background(alignment: .bottom) {
             LinearGradient(
-                colors: [Color.dnaBackground.opacity(0), Color.dnaBackground.opacity(0.92)],
+                colors: [Color.dnaCanvas.opacity(0), Color.dnaCanvas.opacity(0.92)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -278,6 +316,9 @@ struct DNASegmentedProgressBar: View {
             }
         }
         .frame(height: 4)
+        .accessibilityElement()
+        .accessibilityLabel("진행률")
+        .accessibilityValue("\(Int((max(0, min(1, progress)) * 100).rounded()))퍼센트")
     }
 }
 
@@ -295,7 +336,7 @@ struct DNASkipButton: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
         }
     }
 }
@@ -316,27 +357,30 @@ struct DNAStepTopBar: View {
                     Button(action: onBack) {
                         Image(systemName: "chevron.left")
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 36, height: 36)
                             .background(Color.white.opacity(0.06), in: Circle())
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("뒤로")
                 }
                 Spacer(minLength: 0)
                 if let counterText {
                     Text(counterText)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .monospacedDigit()
                 }
                 Spacer(minLength: 0)
                 if let trailingTitle, let onTrailing {
                     Button(trailingTitle, action: onTrailing)
                         .font(.subheadline)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 } else if onBack != nil {
                     // 좌측 뒤로가기와 시각 균형을 맞추는 자리 채움.
-                    Color.clear.frame(width: 36, height: 36)
+                    Color.clear.frame(width: 44, height: 44)
                 }
             }
             DNASegmentedProgressBar(progress: progress)
@@ -370,22 +414,22 @@ struct DNASelectableCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.dnaTextPrimary)
                     if let subtitle {
-                        Text(subtitle).font(.caption).foregroundStyle(Color.dnaSlate)
+                        Text(subtitle).font(.caption).foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
                 Spacer(minLength: 0)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(DNASpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .fill(isSelected ? Color.dnaElevated : Color.dnaSurface)
+                    .fill(isSelected ? Color.dnaElevated : Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .strokeBorder(isSelected ? Color.dnaTextSecondary.opacity(0.5) : Color.dnaHairline, lineWidth: 1)
+                    .strokeBorder(isSelected ? Color.dnaTextSecondary.opacity(0.5) : Color.dnaDivider, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -416,11 +460,11 @@ struct DNAChoiceCard: View {
                 .frame(maxWidth: .infinity, minHeight: 72)
                 .background(
                     RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .fill(isSelected ? Color.dnaElevated : Color.dnaSurface)
+                        .fill(isSelected ? Color.dnaElevated : Color.dnaSurface1)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .strokeBorder(isSelected ? Color.dnaTextSecondary.opacity(0.5) : Color.dnaHairline, lineWidth: 1)
+                        .strokeBorder(isSelected ? Color.dnaTextSecondary.opacity(0.5) : Color.dnaDivider, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
@@ -437,6 +481,7 @@ struct DNASatisfactionEmojiRow: View {
     var onSelect: ((Int) -> Void)?
 
     private let emojis = ["😞", "😕", "😐", "😊", "🤩"]
+    private let spokenLabels = ["별로였어요", "아쉬웠어요", "보통이었어요", "좋았어요", "최고였어요"]
 
     var body: some View {
         HStack(spacing: 0) {
@@ -471,7 +516,7 @@ struct DNASatisfactionEmojiRow: View {
                         .animation(.spring(duration: 0.25), value: satisfaction)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("만족도 \(value)점")
+                .accessibilityLabel("만족도 \(value)점, \(spokenLabels[value - 1])")
                 .accessibilityAddTraits(satisfaction == value ? .isSelected : [])
                 .frame(maxWidth: .infinity)
             }
@@ -488,7 +533,7 @@ struct DNATrustPanel: View {
         HStack(alignment: .top, spacing: DNASpacing.sm) {
             Image(systemName: systemImage)
                 .font(.title3)
-                .foregroundStyle(Color.dnaTeal)
+                .foregroundStyle(Color.dnaData)
             Text(text)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.9))
@@ -498,11 +543,11 @@ struct DNATrustPanel: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                .fill(Color.dnaTeal.opacity(0.08))
+                .fill(Color.dnaData.opacity(0.08))
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                .strokeBorder(Color.dnaTeal.opacity(0.25), lineWidth: 1)
+                .strokeBorder(Color.dnaData.opacity(0.25), lineWidth: 1)
         )
     }
 }
@@ -638,65 +683,13 @@ struct SectionCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.dnaSurface)
+                .fill(Color.dnaSurface1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaHairline, lineWidth: 1)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
-        .shadow(color: Color.dnaIndigo.opacity(0.12), radius: 20, y: 8)
-    }
-}
-
-/// 5축 취향 지문을 발광 바 형태로 보여준다. 목록·랭킹 미리보기처럼 좁은 공간에 적합하다.
-struct AxisBarsView: View {
-    let axes: TasteAxes
-    var confidence: AxisConfidence?
-
-    var body: some View {
-        VStack(spacing: DNASpacing.sm) {
-            ForEach(TasteAxis.allCases, id: \.self) { axis in
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(axis.labelKo)
-                            .font(.subheadline)
-                            .foregroundStyle(.white)
-                        Spacer()
-                        if let confidence, confidence[axis] < 0.4 {
-                            Text("데이터 적음")
-                                .font(.caption2)
-                                .foregroundStyle(Color.dnaSlate)
-                        }
-                        Text(String(format: "%.2f", axes[axis]))
-                            .font(.caption)
-                            .foregroundStyle(Color.dnaSlate)
-                            .monospacedDigit()
-                    }
-                    GeometryReader { proxy in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.white.opacity(0.08))
-                                .frame(height: 8)
-                            Capsule()
-                                .fill(
-                                    LinearGradient(colors: [.dnaIndigo, .dnaTeal], startPoint: .leading, endPoint: .trailing)
-                                )
-                                .opacity(confidenceOpacity(for: axis))
-                                .frame(
-                                    width: proxy.size.width * CGFloat((axes[axis] + 1) / 2),
-                                    height: 8
-                                )
-                        }
-                    }
-                    .frame(height: 8)
-                }
-            }
-        }
-    }
-
-    private func confidenceOpacity(for axis: TasteAxis) -> Double {
-        guard let confidence else { return 1 }
-        return max(0.35, confidence[axis])
+        .shadow(color: Color.dnaTextTertiary.opacity(0.12), radius: 20, y: 8)
     }
 }
 
@@ -731,11 +724,11 @@ struct FingerprintRadarView: View {
 
                 valuePolygon(center: center, radius: radius)
                     .fill(
-                        LinearGradient(colors: [.dnaIndigo.opacity(0.5), .dnaTeal.opacity(0.35)], startPoint: .top, endPoint: .bottom)
+                        LinearGradient(colors: [.dnaTextTertiary.opacity(0.5), .dnaData.opacity(0.35)], startPoint: .top, endPoint: .bottom)
                     )
                 valuePolygon(center: center, radius: radius)
-                    .stroke(Color.dnaTeal, lineWidth: 2)
-                    .shadow(color: Color.dnaTeal.opacity(0.7), radius: 10)
+                    .stroke(Color.dnaData, lineWidth: 2)
+                    .shadow(color: Color.dnaData.opacity(0.7), radius: 10)
 
                 ForEach(Array(axisOrder.enumerated()), id: \.offset) { index, axis in
                     let labelPoint = vertex(index: index, radius: radius + 20, center: center)
@@ -747,6 +740,9 @@ struct FingerprintRadarView: View {
             }
         }
         .frame(height: 220)
+        .accessibilityElement()
+        .accessibilityLabel("취향 지문")
+        .accessibilityValue(axes.spokenSummaryKo(confidence: confidence))
     }
 
     private func angle(for index: Int) -> CGFloat {
@@ -785,7 +781,7 @@ struct FingerprintRadarView: View {
 
     private func labelColor(for axis: TasteAxis) -> Color {
         guard let confidence else { return .white }
-        return confidence[axis] < 0.4 ? Color.dnaSlate.opacity(0.6) : .white
+        return confidence[axis] < 0.4 ? Color.dnaTextSecondary.opacity(0.6) : .white
     }
 }
 
@@ -797,8 +793,8 @@ struct ScoreBadge: View {
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.dnaTeal.opacity(0.16), in: Capsule())
-            .foregroundStyle(Color.dnaTeal)
+            .background(Color.dnaData.opacity(0.16), in: Capsule())
+            .foregroundStyle(Color.dnaData)
     }
 }
 
@@ -811,7 +807,7 @@ struct FitBadgesRow: View {
                 ForEach(badges, id: \.self) { badge in
                     Text(badge)
                         .font(.caption2)
-                        .foregroundStyle(Color.dnaSlate)
+                        .foregroundStyle(Color.dnaTextSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Color.white.opacity(0.06), in: Capsule())
@@ -846,16 +842,19 @@ struct StatusPill: View {
 struct LoadingView: View {
     var body: some View {
         ProgressView("불러오는 중…")
-            .tint(Color.dnaTeal)
-            .foregroundStyle(Color.dnaSlate)
+            .tint(Color.dnaData)
+            .foregroundStyle(Color.dnaTextSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
+/// 빈 상태는 막힌 화면이 아니라 다음 행동으로 이어져야 한다. 갈 곳이 있으면 `actionTitle`을 준다.
 struct EmptyStateView: View {
     var systemImage: String = "airplane.departure"
     let title: String
     let message: String
+    var actionTitle: String?
+    var action: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 8) {
@@ -865,15 +864,21 @@ struct EmptyStateView: View {
                     .frame(width: 64, height: 64)
                 Image(systemName: systemImage)
                     .font(.title2)
-                    .foregroundStyle(Color.dnaTeal)
+                    .foregroundStyle(Color.dnaData)
             }
             Text(title)
                 .font(.headline)
                 .foregroundStyle(.white)
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(Color.dnaSlate)
+                .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .buttonStyle(.dnaSecondary)
+                    .frame(maxWidth: 260)
+                    .padding(.top, DNASpacing.sm)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -932,7 +937,7 @@ struct CountrySelectionList: View {
         VStack(spacing: DNASpacing.sm) {
             HStack(spacing: DNASpacing.sm) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Color.dnaSlate)
+                    .foregroundStyle(Color.dnaTextSecondary)
 
                 TextField("국가 검색", text: $query)
                     .textInputAutocapitalization(.never)
@@ -944,20 +949,20 @@ struct CountrySelectionList: View {
                         query = ""
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(Color.dnaSlate)
+                            .foregroundStyle(Color.dnaTextSecondary)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, DNASpacing.md)
-            .frame(height: 48)
+            .frame(minHeight: 48)
             .background(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .fill(Color.dnaSurface)
+                    .fill(Color.dnaSurface1)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    .stroke(Color.dnaHairline)
+                    .stroke(Color.dnaDivider)
             )
 
             ScrollView {
@@ -971,7 +976,7 @@ struct CountrySelectionList: View {
                                 Spacer()
                                 if country.code == selectedCode {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(Color.dnaTeal)
+                                        .foregroundStyle(Color.dnaData)
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -982,7 +987,7 @@ struct CountrySelectionList: View {
                         .foregroundStyle(.white)
 
                         Divider()
-                            .overlay(Color.dnaHairline)
+                            .overlay(Color.dnaDivider)
                     }
                 }
             }
@@ -1037,44 +1042,38 @@ extension View {
         return self
             .environment(AppDependencies(persistence: .inMemory))
             .environment(session)
+            .environment(AppRouter())
             .preferredColorScheme(.dark)
     }
-}
-
-#Preview("AxisBarsView") {
-    AxisBarsView(axes: PreviewSample.axes, confidence: PreviewSample.confidence)
-        .padding()
-        .background(Color.dnaBackground)
-        .preferredColorScheme(.dark)
 }
 
 #Preview("FingerprintRadarView") {
     FingerprintRadarView(axes: PreviewSample.axes, confidence: PreviewSample.confidence)
         .padding()
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }
 
 #Preview("ScoreBadge") {
     ScoreBadge(score: 0.82)
         .padding()
-        .background(Color.dnaBackground)
+        .background(Color.dnaCanvas)
 }
 
 #Preview("FitBadgesRow") {
     FitBadgesRow(badges: ["취향 일치", "관심사 매치"])
         .padding()
-        .background(Color.dnaBackground)
+        .background(Color.dnaCanvas)
 }
 
 #Preview("SectionCard") {
     SectionCard(title: "섹션 카드") {
         Text("내용이 여기에 들어가요.")
             .font(.subheadline)
-            .foregroundStyle(Color.dnaSlate)
+            .foregroundStyle(Color.dnaTextSecondary)
     }
     .padding()
-    .background(AuroraBackground())
+    .background(AppCanvas())
 }
 
 #Preview("StatusPill") {
@@ -1085,22 +1084,22 @@ extension View {
         StatusPill(status: .evaluated)
     }
     .padding()
-    .background(Color.dnaBackground)
+    .background(Color.dnaCanvas)
 }
 
 #Preview("LoadingView") {
     LoadingView()
-        .background(AuroraBackground())
+        .background(AppCanvas())
 }
 
 #Preview("EmptyStateView") {
     EmptyStateView(title: "아직 데이터가 없어요", message: "여행을 등록하면 여기에 표시돼요.")
-        .background(AuroraBackground())
+        .background(AppCanvas())
 }
 
 #Preview("CountrySelectionList") {
     @Previewable @State var code = "KR"
     CountrySelectionList(selectedCode: $code)
-        .background(AuroraBackground())
+        .background(AppCanvas())
         .preferredColorScheme(.dark)
 }

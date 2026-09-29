@@ -66,6 +66,7 @@ struct OnboardingAnalyzingView: View {
 // MARK: - 1D-2 · 1D-3 지문 공개 + 첫 추천 3슬롯
 
 struct OnboardingResultView: View {
+    @Environment(AppDependencies.self) private var dependencies
     let viewModel: OnboardingViewModel
 
     private var isQuizOnly: Bool {
@@ -97,6 +98,11 @@ struct OnboardingResultView: View {
                 if let vector = viewModel.resultVector {
                     SectionCard {
                         FingerprintRadarView(axes: vector.axes, confidence: vector.confidence)
+                        if let breadth = AxisNarrative.breadthSentenceKo(vector) {
+                            Text(breadth)
+                                .font(.caption)
+                                .foregroundStyle(Color.dnaTextSecondary)
+                        }
                         if hasLowConfidence(vector.confidence) {
                             Text("아직 흐려요 · 여행을 평가할수록 지문이 선명해져요")
                                 .font(.caption)
@@ -122,6 +128,11 @@ struct OnboardingResultView: View {
 
                     ForEach(viewModel.recommendations) { recommendation in
                         firstSlotCard(recommendation)
+                            .onScrollVisibilityChange(threshold: 0.5) { visible in
+                                guard visible, let exposure = viewModel.exposure else { return }
+                                Task { await exposure.record(recommendation, dependencies: dependencies) }
+                            }
+                            .id("\(viewModel.exposure?.id ?? ""):\(recommendation.id)")
                     }
                 }
 

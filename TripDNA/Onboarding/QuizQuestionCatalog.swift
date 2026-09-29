@@ -71,7 +71,7 @@ enum QuizQuestionCatalog {
         QuizOption(text: "야시장 대도시", signature: [.natureUrban: 0.5, .energyLevel: 0.5])
     ])
 
-    static let escapeText = "모르겠어요 / 둘 다 좋아요"
+    static let escapeText = "모르겠어요"
 
     static var allQuestions: [QuizQuestion] {
         abQuestions + [quadrantQuestion]

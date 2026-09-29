@@ -3,6 +3,12 @@ import Foundation
 /// 축 값·신뢰도·변화를 한국어 문구로 바꿔주는 헬퍼.
 /// 홈 미니 지문 카드, 지문 상세 히어로·축 바텀시트, 랭킹 저장 델타 문구에서 함께 쓴다.
 enum AxisNarrative {
+    static func breadthSentenceKo(_ vector: UserTasteVector) -> String? {
+        let axes = TasteAxis.allCases.filter { vector.acceptedAxes?.contains($0) == true }
+        guard !axes.isEmpty else { return nil }
+        return axes.map { "\(negativePoleKo($0))·\(positivePoleKo($0))" }.joined(separator: ", ")
+            + " 모두 좋다고 답했어요. 추천에서 어느 한쪽을 불리하게 보지 않아요."
+    }
     /// 음(-1) 방향 극 라벨. 예: 자연 ↔ 도시에서 "자연".
     static func negativePoleKo(_ axis: TasteAxis) -> String {
         switch axis {

@@ -99,6 +99,11 @@ struct OnboardingQuizView: View {
             }
             Spacer()
             DNABottomCTA {
+                Button(question.options.count == 2 ? "둘 다 좋아요" : "모두 좋아요") {
+                    guard selectedOptionID == nil else { return }
+                    viewModel.answerQuizAcceptingBoth()
+                }
+                .buttonStyle(.dnaSecondary)
                 Button(QuizQuestionCatalog.escapeText) {
                     skipCurrentQuestion()
                 }

@@ -131,6 +131,11 @@ struct FingerprintDetailView: View {
     private func hero(_ vector: UserTasteVector) -> some View {
         VStack(spacing: DNASpacing.sm) {
             FingerprintRadarView(axes: vector.axes, confidence: vector.confidence)
+            if let breadth = AxisNarrative.breadthSentenceKo(vector) {
+                Text(breadth)
+                    .font(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            }
             Text(AxisNarrative.representativeSentenceKo(axes: vector.axes, confidence: vector.confidence))
                 .font(.title3.bold())
                 .foregroundStyle(.white)

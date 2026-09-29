@@ -15,6 +15,7 @@ final class HomeViewModel {
     var trips: [Trip] = []
     var photos: [DailyPhoto] = []
     var bestMatch: Recommendation?
+    var exposure: RecommendationExposure?
     var isSeasonOpen = false
     var isLoading = false
 
@@ -51,8 +52,13 @@ final class HomeViewModel {
             visitedCountryCodes: dependencies.excludedCountryCodes(visited: visited)
         )) ?? []
         bestMatch = recommendations.first { $0.slot == .bestMatch } ?? recommendations.first
-        if bestMatch != nil {
-            await dependencies.recordFirstRecommendationIfNeeded(source: "home")
+        if let bestMatch {
+            exposure = RecommendationExposure(
+                source: "home", cards: [bestMatch], vector: vector,
+                interests: dependencies.interestTagIDs,
+                excludedCountries: dependencies.excludedCountryCodes(visited: visited),
+                homeCountry: dependencies.homeCountryCode
+            )
         }
     }
 

@@ -327,6 +327,14 @@ actor SwiftDataAppStore: nonisolated AppStore {
         try saveSingleton(axes, key: SingletonKey.tastePrior)
     }
 
+    func loadQuizAnswers() async throws -> [QuizAnswer] {
+        try singleton([QuizAnswer].self, key: "quizAnswers.v1") ?? []
+    }
+
+    func saveQuizAnswers(_ answers: [QuizAnswer]) async throws {
+        try saveSingleton(answers, key: "quizAnswers.v1")
+    }
+
     func loadProfile() async throws -> UserProfile? {
         try singleton(UserProfile.self, key: SingletonKey.userProfile)
     }

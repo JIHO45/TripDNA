@@ -70,6 +70,8 @@ final class RecommendationViewModel {
     var isLoading = false
     var errorMessage: String?
     var filter = RecommendationFilter()
+    private(set) var exposure: RecommendationExposure?
+    private var lastExcludedCountries: Set<String> = []
     /// "저장했어요" 같은 짧은 확인 피드백. nil이 아니면 토스트를 띄운다.
     var toastMessage: String?
 
@@ -117,9 +119,7 @@ final class RecommendationViewModel {
         }
         slots = await generateSlots(dependencies)
         slotReactions = [:]
-        if !slots.isEmpty {
-            await dependencies.recordFirstRecommendationIfNeeded(source: "recommendation")
-        }
+        prepareExposure(dependencies)
     }
 
     /// 3장 모두 반응한 뒤 "새 추천 보기"를 눌렀을 때. 현재 세트는 세션에서 제외하고 새 세트를 만든다.
@@ -151,7 +151,8 @@ final class RecommendationViewModel {
         _ = try? await dependencies.recommendationService.applyFeedback(
             countryCode: recommendation.countryCode,
             slot: recommendation.slot,
-            action: .save
+            action: .save,
+            exposureSetID: exposure?.id
         )
         slotReactions[recommendation.slot] = .save
         savedSnapshots[recommendation.countryCode] = recommendation
@@ -177,7 +178,8 @@ final class RecommendationViewModel {
             countryCode: recommendation.countryCode,
             slot: recommendation.slot,
             action: .dislike,
-            reason: reason
+            reason: reason,
+            exposureSetID: exposure?.id
         )
         sessionExcluded.insert(recommendation.countryCode)
         slotReactions[recommendation.slot] = .dislike
@@ -208,6 +210,7 @@ final class RecommendationViewModel {
            let index = slots.firstIndex(where: { $0.slot == slot }) {
             slots[index] = replacement
             slotReactions[slot] = nil
+            prepareExposure(dependencies)
         } else {
             slotReactions[slot] = .skip
         }
@@ -300,6 +303,15 @@ final class RecommendationViewModel {
 
     // MARK: 내부
 
+    private func prepareExposure(_ dependencies: AppDependencies) {
+        guard let vector else { exposure = nil; return }
+        exposure = RecommendationExposure(
+            source: "recommendation", cards: slots, vector: vector,
+            interests: dependencies.interestTagIDs, excludedCountries: lastExcludedCountries,
+            homeCountry: dependencies.homeCountryCode, budget: filter.budget?.rawValue
+        )
+    }
+
     private func generateSlots(
         _ dependencies: AppDependencies,
         alsoExcluding: Set<String> = []
@@ -311,6 +323,7 @@ final class RecommendationViewModel {
                 .union(budgetExcludedCountryCodes())
                 .union(alsoExcluding)
         )
+        lastExcludedCountries = excluded
         return (try? await dependencies.recommendationService.generateThreeSlots(
             vector: vector,
             interestTagIDs: dependencies.interestTagIDs,

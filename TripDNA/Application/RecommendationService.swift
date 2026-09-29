@@ -26,6 +26,7 @@ nonisolated struct RecommendationConfiguration: Equatable, Sendable {
 }
 
 nonisolated struct RecommendationService {
+    static let modelVersion = "country-cosine-v2-breadth"
     let countries: any CountryRepository
     let feedbackRepository: any FeedbackRepository
     let events: any EventRepository
@@ -86,7 +87,7 @@ nonisolated struct RecommendationService {
                     && $0.tasteFit >= configuration.freshStretchTasteFloor
                     && $0.matchScore < configuration.nonBestSlotMatchScoreCeiling
             },
-            by: { noveltyDistance($0.profile.tasteCore, vector.axes) },
+            by: { noveltyDistance($0.profile.tasteCore, vector.axes, excluding: vector.acceptedAxes ?? []) },
             tieEpsilon: tieEpsilon
         )
         if let fresh {
@@ -125,6 +126,7 @@ nonisolated struct RecommendationService {
         slot: RecommendationSlot,
         action: FeedbackAction,
         reason: FeedbackReason? = nil,
+        exposureSetID: String? = nil,
         at date: Date = Date()
     ) async throws -> CardFeedback {
         let feedback = CardFeedback(
@@ -143,7 +145,9 @@ nonisolated struct RecommendationService {
             payload: [
                 "countryCode": countryCode,
                 "slot": slot.rawValue,
-                "action": action.rawValue
+                "action": action.rawValue,
+                "reason": reason?.rawValue ?? "unspecified",
+                "exposureSetID": exposureSetID ?? "unavailable"
             ],
             createdAt: date
         ))
@@ -215,7 +219,8 @@ nonisolated struct RecommendationService {
                 vector.axes,
                 profile.tasteCore,
                 confidence: vector.confidence,
-                allowedAxes: profile.matchingAxes
+                allowedAxes: profile.matchingAxes.isEmpty ? [.natureUrban] : profile.matchingAxes,
+                acceptedAxes: vector.acceptedAxes ?? []
             )
             let interestFit = averageInterestFit(profile, selected: interestTagIDs)
             // tasteFit 원본은 fresh_stretch 문턱 판정에 그대로 쓰고, 확신 감쇠는
@@ -339,9 +344,12 @@ nonisolated struct RecommendationService {
         _ lhs: TasteAxes,
         _ rhs: TasteAxes,
         confidence: AxisConfidence,
-        allowedAxes: Set<TasteAxis>
+        allowedAxes: Set<TasteAxis>,
+        acceptedAxes: Set<TasteAxis>
     ) -> Double {
-        let axes = allowedAxes.isEmpty ? Set([TasteAxis.natureUrban]) : allowedAxes
+        // An explicitly broad axis must not penalize either pole via the norm.
+        // All-broad preferences leave ranking to other evidence; do not invent fit.
+        let axes = allowedAxes.subtracting(acceptedAxes)
         var dot = 0.0
         var lhsLength = 0.0
         var rhsLength = 0.0
@@ -368,8 +376,8 @@ nonisolated struct RecommendationService {
         return dot / (sqrt(lhsLength) * sqrt(rhsLength))
     }
 
-    private func noveltyDistance(_ lhs: TasteAxes, _ rhs: TasteAxes) -> Double {
-        sqrt(TasteAxis.allCases.reduce(0) { partial, axis in
+    private func noveltyDistance(_ lhs: TasteAxes, _ rhs: TasteAxes, excluding: Set<TasteAxis>) -> Double {
+        sqrt(TasteAxis.allCases.filter { !excluding.contains($0) }.reduce(0) { partial, axis in
             partial + pow(lhs[axis] - rhs[axis], 2)
         })
     }

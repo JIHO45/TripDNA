@@ -119,6 +119,11 @@ struct RecommendationView: View {
         } else {
             ForEach(viewModel.slots) { recommendation in
                 slotCard(recommendation)
+                    .onScrollVisibilityChange(threshold: 0.5) { visible in
+                        guard visible, let exposure = viewModel.exposure else { return }
+                        Task { await exposure.record(recommendation, dependencies: dependencies) }
+                    }
+                    .id("\(viewModel.exposure?.id ?? ""):\(recommendation.id)")
                     .transition(
                         .asymmetric(
                             insertion: .move(edge: .trailing).combined(with: .opacity),

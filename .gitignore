@@ -18,6 +18,7 @@ build/
 # Swift Package Manager
 .build/
 .swiftpm/
+graphify-out/
 
 # Local configuration and secrets
 .env

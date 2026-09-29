@@ -380,6 +380,8 @@ nonisolated struct UserTasteVector: Codable, Equatable, Sendable {
     var confidence: AxisConfidence
     var ledgerVersion: Int
     var recomputedAt: Date
+    /// Explicitly accepts both poles. Optional so pre-existing JSON remains readable.
+    var acceptedAxes: Set<TasteAxis>? = nil
 
     func isAxisUsable(_ axis: TasteAxis, minimumConfidence: Double = 0.4) -> Bool {
         confidence[axis] >= minimumConfidence

@@ -198,6 +198,8 @@ nonisolated struct EvaluationService {
         let definitions = try await tags.definitions()
         let allFeedback = try await feedback.feedback()
         let previous = try await utv.currentUTV()
+        let quizAnswers = try await utv.loadQuizAnswers()
+        let quiz = quizAnswers.isEmpty ? nil : TasteQuizService().score(answers: quizAnswers, interestTagIDs: [])
         let result = replay.replay(
             userID: userID,
             trips: allTrips,
@@ -206,6 +208,7 @@ nonisolated struct EvaluationService {
             tags: definitions,
             feedback: allFeedback,
             prior: try await resolvedPrior(prior),
+            quiz: quiz,
             previous: previous,
             now: now
         )

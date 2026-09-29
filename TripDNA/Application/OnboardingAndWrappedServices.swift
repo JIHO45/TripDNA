@@ -1,14 +1,17 @@
 import Foundation
 
-nonisolated struct QuizAnswer: Equatable, Sendable {
+nonisolated struct QuizAnswer: Codable, Equatable, Sendable {
     let questionID: String
     let signatures: [TasteAxis: Double]
+    /// nil/empty means no explicit breadth answer, not rejection of either pole.
+    var acceptedAxes: Set<TasteAxis>? = nil
 }
 
 nonisolated struct QuizResult: Equatable, Sendable {
     let prior: TasteAxes
     let confidence: AxisConfidence
     let interestTagIDs: Set<String>
+    var acceptedAxes: Set<TasteAxis> = []
 }
 
 nonisolated struct TasteQuizService {
@@ -20,10 +23,15 @@ nonisolated struct TasteQuizService {
     ) -> QuizResult {
         var sums = TasteAxes.zero
         var counts = TasteAxes.zero
+        var acceptedAxes: Set<TasteAxis> = []
         for answer in answers {
             for (axis, value) in answer.signatures {
                 sums[axis] += value
                 counts[axis] += 1
+            }
+            for axis in answer.acceptedAxes ?? [] {
+                acceptedAxes.insert(axis)
+                // Breadth is evidence, but does not pull directional preference to zero.
             }
         }
 
@@ -43,10 +51,14 @@ nonisolated struct TasteQuizService {
                 confidenceCap * counts[axis] / (maximumQuestionCount[axis] ?? counts[axis])
             )
         }
+        for axis in acceptedAxes {
+            confidence[axis] = max(confidence[axis], confidenceCap / (maximumQuestionCount[axis] ?? 1))
+        }
         return QuizResult(
             prior: prior.clamped(),
             confidence: confidence,
-            interestTagIDs: Set(interestTagIDs.prefix(3))
+            interestTagIDs: Set(interestTagIDs.sorted().prefix(3)),
+            acceptedAxes: acceptedAxes
         )
     }
 

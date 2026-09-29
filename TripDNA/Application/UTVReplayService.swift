@@ -51,6 +51,7 @@ nonisolated struct UTVReplayService {
         tags: [TagDefinition],
         feedback: [CardFeedback] = [],
         prior: TasteAxes = .zero,
+        quiz: QuizResult? = nil,
         previous: UserTasteVector? = nil,
         now: Date = Date()
     ) -> UTVReplayResult {
@@ -131,19 +132,25 @@ nonisolated struct UTVReplayService {
             axes: &axes
         )
 
-        let confidence = calculateConfidence(
+        var confidence = calculateConfidence(
             counts: signalCounts,
             lastDates: lastSignalDates,
             appliedTripCount: appliedTripCount,
             now: now
         )
+        // Do not count correlated quiz/trip evidence twice. This is a conservative
+        // floor, not a calibrated probability or a sum of observation counts.
+        for axis in TasteAxis.allCases {
+            confidence[axis] = max(confidence[axis], quiz?.confidence[axis] ?? 0)
+        }
         let ledgerVersion = ranking?.ledgerVersion ?? eligibleTrips.count
         let vector = UserTasteVector(
             userID: userID,
             axes: axes.clamped(),
             confidence: confidence,
             ledgerVersion: ledgerVersion,
-            recomputedAt: now
+            recomputedAt: now,
+            acceptedAxes: quiz?.acceptedAxes
         )
         let oldAxes = previous?.axes ?? prior
         return UTVReplayResult(
@@ -324,11 +331,12 @@ nonisolated struct UTVReplayService {
         countries: [String: CountryProfile],
         axes: inout TasteAxes
     ) {
-        for item in feedback where item.action != .skip && item.revokedAt == nil {
+        // A country-level rejection does not identify a disliked axis, even when
+        // its reason is notMyTaste. Exclusion is handled by RecommendationService.
+        for item in feedback where item.action == .save && item.revokedAt == nil {
             guard let profile = countries[item.countryCode] else { continue }
-            let direction = item.action == .save ? 1.0 : -1.0
             for axis in TasteAxis.allCases {
-                let target = direction > 0 ? profile.tasteCore[axis] : -profile.tasteCore[axis]
+                let target = profile.tasteCore[axis]
                 axes[axis] += configuration.feedbackWeight * (target - axes[axis])
                 axes[axis] = min(max(axes[axis], -1), 1)
             }

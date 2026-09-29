@@ -10,6 +10,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     private var storedPhotos: [String: DailyPhoto]
     private var storedUTV: UserTasteVector?
     private var storedTastePrior: TasteAxes?
+    private var storedQuizAnswers: [QuizAnswer] = []
     private var storedProfile: UserProfile?
     private var storedInterestTagIDs: Set<String> = []
     private(set) var storedEvents: [AnalyticsEvent]
@@ -153,6 +154,10 @@ nonisolated final class InMemoryAppStore: AppStore {
 
     func saveTastePrior(_ axes: TasteAxes) async throws { storedTastePrior = axes }
 
+    func loadQuizAnswers() async throws -> [QuizAnswer] { storedQuizAnswers }
+
+    func saveQuizAnswers(_ answers: [QuizAnswer]) async throws { storedQuizAnswers = answers }
+
     func loadProfile() async throws -> UserProfile? {
         storedProfile
     }
@@ -185,6 +190,7 @@ nonisolated final class InMemoryAppStore: AppStore {
         storedPhotos.removeAll()
         storedUTV = nil
         storedTastePrior = nil
+        storedQuizAnswers = []
         storedProfile = nil
         storedInterestTagIDs.removeAll()
         storedEvents.removeAll()

@@ -100,6 +100,7 @@ final class OnboardingViewModel {
     var errorMessage: String?
     var resultVector: UserTasteVector?
     var recommendations: [Recommendation] = []
+    var exposure: RecommendationExposure?
     var firstRecommendation: Recommendation? { recommendations.first }
     private var analysisStartedAt: Date?
 
@@ -316,6 +317,16 @@ final class OnboardingViewModel {
         quizQuestionIndex += 1
     }
 
+    func answerQuizAcceptingBoth() {
+        guard let question = currentQuizQuestion else { return }
+        quizAnswers.append(QuizAnswer(
+            questionID: question.id,
+            signatures: [:],
+            acceptedAxes: Set(question.options.flatMap { $0.signature.keys })
+        ))
+        quizQuestionIndex += 1
+    }
+
     /// 퀴즈 내부 뒤로가기. 첫 문항 이전이면 false를 돌려주고 화면이 스테이지 이동을 맡는다.
     func goBackInQuiz() -> Bool {
         guard quizQuestionIndex > 0 else { return false }
@@ -439,9 +450,12 @@ final class OnboardingViewModel {
         defer { isSubmitting = false }
 
         do {
-            let answered = quizAnswers.filter { !$0.signatures.isEmpty }
-            if !answered.isEmpty {
-                let result = dependencies.quizService.score(answers: answered, interestTagIDs: [])
+            if !quizAnswers.isEmpty {
+                let previousAnswers = try await dependencies.store.loadQuizAnswers()
+                let replacedIDs = Set(quizAnswers.map(\.questionID))
+                let merged = previousAnswers.filter { !replacedIDs.contains($0.questionID) } + quizAnswers
+                let result = dependencies.quizService.score(answers: merged, interestTagIDs: [])
+                try await dependencies.store.saveQuizAnswers(merged)
                 try await dependencies.store.saveTastePrior(result.prior)
                 _ = try await dependencies.evaluationService.recompute(
                     userID: session.userID,
@@ -474,10 +488,8 @@ final class OnboardingViewModel {
             )
         }
         await waitForAnalysisPayoff()
+        prepareExposure(dependencies, visited: visited)
         stage = .result
-        if !recommendations.isEmpty {
-            await dependencies.recordFirstRecommendationIfNeeded(source: "onboarding")
-        }
     }
 
     func finishQuiz(_ dependencies: AppDependencies, session: SessionStore) async {
@@ -496,9 +508,11 @@ final class OnboardingViewModel {
             axes: result.prior,
             confidence: result.confidence,
             ledgerVersion: 0,
-            recomputedAt: Date()
+            recomputedAt: Date(),
+            acceptedAxes: result.acceptedAxes
         )
         do {
+            try await dependencies.store.saveQuizAnswers(quizAnswers)
             try await dependencies.store.saveTastePrior(result.prior)
             try await dependencies.store.save(vector)
             try await dependencies.setInterestTagIDs(result.interestTagIDs)
@@ -509,10 +523,8 @@ final class OnboardingViewModel {
                 visitedCountryCodes: dependencies.excludedCountryCodes(visited: [])
             )
             await waitForAnalysisPayoff()
+            prepareExposure(dependencies, visited: [])
             stage = .result
-            if !recommendations.isEmpty {
-                await dependencies.recordFirstRecommendationIfNeeded(source: "onboarding")
-            }
         } catch {
             errorMessage = "취향 지문을 계산하지 못했어요. 다시 시도해주세요."
             stage = previousStage
@@ -521,6 +533,16 @@ final class OnboardingViewModel {
 
     func proceedToSignIn() {
         stage = .appleSignIn
+    }
+
+    private func prepareExposure(_ dependencies: AppDependencies, visited: Set<String>) {
+        guard let resultVector else { exposure = nil; return }
+        exposure = RecommendationExposure(
+            source: "onboarding", cards: recommendations, vector: resultVector,
+            interests: dependencies.interestTagIDs,
+            excludedCountries: dependencies.excludedCountryCodes(visited: visited),
+            homeCountry: dependencies.homeCountryCode
+        )
     }
 
     func completeSignIn(session: SessionStore, appleUserID: String) {

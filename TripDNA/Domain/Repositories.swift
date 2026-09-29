@@ -42,6 +42,8 @@ protocol UTVRepository {
     func save(_ vector: UserTasteVector) async throws
     func loadTastePrior() async throws -> TasteAxes?
     func saveTastePrior(_ axes: TasteAxes) async throws
+    func loadQuizAnswers() async throws -> [QuizAnswer]
+    func saveQuizAnswers(_ answers: [QuizAnswer]) async throws
 }
 
 protocol UserProfileRepository {
@@ -58,6 +60,7 @@ nonisolated enum AnalyticsEventType: String, Codable, Sendable {
     case utvRecomputed = "utv_recomputed"
     case dailyPhotoSelected = "daily_photo_selected"
     case recommendationFeedback = "recommendation_feedback"
+    case recommendationImpression = "recommendation_impression"
     case slotClick = "slot_click"
     /// 설치 후 처음으로 추천 카드를 본 시점. README §6 "첫 추천 도달"
     case firstRecommendationShown = "first_recommendation_shown"

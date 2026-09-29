@@ -248,6 +248,11 @@ struct HomeRedesignView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .onScrollVisibilityChange(threshold: 0.5) { visible in
+                    guard visible, let exposure = viewModel.exposure else { return }
+                    Task { await exposure.record(best, dependencies: dependencies) }
+                }
+                .id(viewModel.exposure?.id)
             }
             .padding(.horizontal, 20)
         }

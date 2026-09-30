@@ -68,7 +68,7 @@ extension RecommendationSlot {
         }
     }
 
-    /// 08-ui-prompts.md의 슬롯 칩 색상: bestMatch=teal, freshStretch=indigo, underratedFit=amber.
+    /// 현행 국가 추천의 슬롯 칩 색상: bestMatch=teal, freshStretch=indigo, underratedFit=amber.
     var accentColor: Color {
         switch self {
         case .bestMatch: .dnaData

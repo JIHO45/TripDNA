@@ -19,6 +19,10 @@ build/
 .build/
 .swiftpm/
 graphify-out/
+.codex/
+.mcp.json
+.claude/
+__pycache__/
 
 # Local configuration and secrets
 .env

@@ -1,0 +1,605 @@
+{
+  "schema_version": 3,
+  "category_version": 1,
+  "dataset_kind": "catalog",
+  "data_version": 4,
+  "destination": {
+    "id": "th-phuket-island",
+    "kind": "region",
+    "name": "푸껫섬",
+    "aliases": [
+      "Phuket Island",
+      "Ko Phuket",
+      "เกาะภูเก็ต"
+    ],
+    "country_codes": [
+      "TH"
+    ],
+    "coverage": {
+      "description": "푸껫 본섬만을 대상으로 한다. 초기 자료는 빠통·까따·까론 해변과 푸껫 올드타운으로 제한한다. 주변 섬·보트 투어·팡아만·끄라비 등 본섬 밖 경험은 포함하지 않는다. 본섬 전체의 모든 경험을 검수했다는 의미가 아니다.",
+      "evidence_ids": [
+        "island-scope",
+        "west-coast-beaches",
+        "old-town-location"
+      ],
+      "gateway_city_ids": []
+    },
+    "review_status": "draft"
+  },
+  "experiences": [
+    {
+      "id": "west-coast-beach-visit",
+      "label": "서해안 해변 탐방",
+      "categories": [
+        "nature_scenery",
+        "relaxation"
+      ],
+      "evidence_ids": [
+        "west-coast-beaches"
+      ],
+      "constraint_evidence_ids": [
+        "beach-season",
+        "experience-access",
+        "beach-red-flag",
+        "beach-current-conditions"
+      ],
+      "place_ids": [
+        "patong-beach",
+        "kata-beach",
+        "karon-beach"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    },
+    {
+      "id": "old-town-walk",
+      "label": "올드타운 건축 탐방",
+      "categories": [
+        "city_exploration",
+        "culture_history"
+      ],
+      "evidence_ids": [
+        "old-town-architecture",
+        "old-town-location"
+      ],
+      "constraint_evidence_ids": [
+        "experience-access"
+      ],
+      "place_ids": [
+        "old-town"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "text": "Patong, Kata and Karon beaches are on the west coast of Phuket main island.",
+      "evidence_ids": [
+        "west-coast-beaches"
+      ]
+    },
+    {
+      "text": "Explore Sino-Portuguese architecture in Phuket Old Town.",
+      "evidence_ids": [
+        "old-town-architecture"
+      ]
+    },
+    {
+      "text": "Waves and rip currents can pose swimming risks in Phuket during the May–October southwest monsoon.",
+      "evidence_ids": [
+        "beach-season"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "island-scope",
+      "version": 2,
+      "kind": "location",
+      "statement": "Phuket main island and the surrounding islands within Phuket Province are distinct geographical areas.",
+      "question": null,
+      "area": "푸껫 본섬 및 푸껫주",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://km.dmcr.go.th/c_1/s_186/d_7567",
+        "locator": "เกาะในจังหวัดภูเก็ต 서두: 푸껫 본섬과 주변 섬을 별도로 열거한다.",
+        "checked_on": "2026-10-04",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "태국어 원문을 바탕으로 작성한 초안. 섬 수·면적·현재 행정 경계는 이 주장에 포함하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "west-coast-beaches",
+      "version": 2,
+      "kind": "location",
+      "statement": "Patong, Kata and Karon beaches are on the west coast of Phuket main island.",
+      "question": null,
+      "area": "푸껫 본섬 서해안의 빠통·까따·까론 해변",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://thai.tourismthailand.org/Destinations/Provinces/%E0%B8%A0%E0%B8%B9%E0%B9%80%E0%B8%81%E0%B9%87%E0%B8%95/350",
+        "locator": "แนะนำ: 본섬 서해안을 설명하며 หาดป่าตอง, หาดกะตะ, หาดกะรน을 열거하는 문단.",
+        "checked_on": "2026-10-04",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "위치만을 뒷받침한다. 수영 가능·운영·혼잡·이동 시간·예약 불필요를 뜻하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "old-town-architecture",
+      "version": 2,
+      "kind": "experience",
+      "statement": "Visitors can explore older Sino-Portuguese architecture in Phuket Old Town.",
+      "question": null,
+      "area": "푸껫 올드타운",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://thai.tourismthailand.org/Articles/%E0%B9%80%E0%B8%94%E0%B8%B4%E0%B8%99%E0%B8%8A%E0%B8%B4%E0%B8%A5-%E0%B8%8A%E0%B8%B4%E0%B8%A1%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3-%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%99%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%81%E0%B9%88%E0%B8%B2-%E0%B8%A0%E0%B8%B9%E0%B9%80%E0%B8%81%E0%B9%87%E0%B8%95",
+        "locator": "รายละเอียด 첫 문단: 오래된 시노포르투갈 양식 건물 탐방 소개. 페이지 표기 발행일 2020-01-09.",
+        "checked_on": "2026-10-04",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "오래된 소개 기사다. 개별 건물 실내 입장이나 나열된 식당의 현재 영업·메뉴·가격은 확인하지 않았다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "old-town-location",
+      "version": 2,
+      "kind": "location",
+      "statement": "Phuket Old Town is the historic quarter of Phuket City (Mueang Phuket) on Phuket main island.",
+      "question": null,
+      "area": "푸껫 올드타운(라차다·푸껫·텝까사뜨리·사뚠·디북 거리로 둘러싸인 구역)",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://nced.onep.go.th/opendata/2568/oldtown36_announce/phuket.pdf",
+        "locator": "4.2 องค์ประกอบของเมืองเก่าภูเก็ต(보고서 20쪽): 푸껫 시를 탈랑·까투와 함께 푸껫섬(เกาะภูเก็ต)의 도시로 서술하고, 구시가지 경계를 라차다·푸껫·텝까사뜨리·사뚠·디북 거리로 제시한다.",
+        "checked_on": "2026-10-04",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "천연자원환경정책계획청(ONEP)의 구시가지 경계 보고서. 도시가 섬에 있다는 서술과 구시가지 경계를 결합한 주장이므로 검수자가 두 부분을 모두 확인한다. 개별 건물 위치·개방은 포함하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "old-town-to-patong",
+      "version": 3,
+      "kind": "transport",
+      "statement": null,
+      "question": "What transport, waiting and actual round-trip travel time apply to this route?",
+      "area": "푸껫 올드타운 → 빠통 해변",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "smartbus-town-patong-route에 시내 경유 노선을 별도로 기록했다. 올드타운의 정확한 승하차 지점·도보 접근·대기·왕복 시간은 확인하지 못했으므로 이 질문은 미상으로 유지한다.",
+      "cost": null,
+      "mobility": {
+        "origin_destination_id": "th-phuket-island",
+        "origin_place": "푸껫 올드타운",
+        "mode": null,
+        "one_way_minutes": null,
+        "car_required": null,
+        "overnight_required": null
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "patong-to-kata-karon",
+      "version": 3,
+      "kind": "transport",
+      "statement": null,
+      "question": "What transport, waiting and actual round-trip travel time apply to this route?",
+      "area": "빠통 → 까론·까따 해변",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "smartbus-west-coast-route에 양방향 노선을 별도로 기록했다. 정확한 승하차 지점·대기·귀환편·왕복 시간은 확인하지 못했으므로 이 질문은 미상으로 유지한다.",
+      "cost": null,
+      "mobility": {
+        "origin_destination_id": "th-phuket-island",
+        "origin_place": "빠통",
+        "mode": null,
+        "one_way_minutes": null,
+        "car_required": null,
+        "overnight_required": null
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "beach-season",
+      "version": 3,
+      "kind": "season",
+      "statement": "The Tourism Authority of Thailand warns that large waves and rip currents can make swimming dangerous in Phuket and similar destinations during the May–October southwest monsoon.",
+      "question": null,
+      "area": "푸껫 해안의 해수욕; 빠통·까따·까론의 당일 상태는 별도 확인",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "conditions": [
+          "바다에서 수영하려는 경우"
+        ]
+      },
+      "source": {
+        "url": "https://www.tatnews.org/2018/07/important-information-on-marine-tourism-in-thailand-during-the-southwest-monsoon-season/",
+        "locator": "2018-07-24 기사 서두의 May to October 및 Swimming 절의 Phuket, large waves, rip-currents 안내.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "오래된 공식 일반 안내를 재열람한 것이다. 특정 연도의 몬순 시작·종료일이나 현재 개방 상태를 확인한 것은 아니다. 해변 산책과 해수욕을 구분한다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "experience-access",
+      "version": 3,
+      "kind": "reservation",
+      "statement": null,
+      "question": "What advance booking and admission conditions apply to the selected facilities or activities?",
+      "area": "해변 및 올드타운의 개별 시설·체험",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "거리·해변 방문과 개별 유료 시설·체험의 예약 조건은 분리한다. 공식 관광 소개만으로 예약 불필요를 확인할 수 없었다. 버스 차내 결제도 예약 불필요의 근거가 아니다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "experience-cost",
+      "version": 3,
+      "kind": "price",
+      "statement": null,
+      "question": "What is the reference date and scope of each activity price and transport cost?",
+      "area": "선택할 해변·올드타운 체험 및 이동",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "버스 일반 편도 운임은 별도 price 주장에 기록했다. 개별 시설·체험·정류장 접근 비용은 미확인이며 버스 요금으로 도시 총예산이나 무료 이용을 추정하지 않는다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "smartbus-west-coast-route",
+      "version": 2,
+      "kind": "transport",
+      "statement": "Phuket Smart Bus publishes an Airport–Rawai route in both directions via Patong, Karon and Kata.",
+      "question": null,
+      "area": "빠통·까론·까따의 Phuket Smart Bus 정류장 구간",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://phuketsmartbus.com/th/timetable",
+        "locator": "시간표 첫 노선의 South/North 경로: Airport → Patong → Karon → Kata → Rawai 및 역방향.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "노선 존재에 한정한다. 정류장까지의 도보·대기·혼잡·귀환편을 확인하지 않았으며 실제 왕복 시간이나 당일 경험 조합을 보장하지 않는다.",
+      "cost": null,
+      "mobility": {
+        "origin_destination_id": "th-phuket-island",
+        "origin_place": "빠통의 Phuket Smart Bus 정류장(정확한 승차 지점 미확인)",
+        "mode": "public_transport",
+        "one_way_minutes": null,
+        "car_required": null,
+        "overnight_required": null
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "smartbus-town-patong-route",
+      "version": 2,
+      "kind": "transport",
+      "statement": "Phuket Smart Bus publishes a Bus Terminal 2–Patong Beach route in both directions via Phuket Town.",
+      "question": null,
+      "area": "Bus Terminal 2↔Phuket Town↔Patong Beach; 올드타운의 특정 건물까지 연결되는지는 미확인",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://phuketsmartbus.com/th/timetable",
+        "locator": "시간표 두 번째 노선의 Patong/Terminal 경로에 Phuket Town을 양방향 경유지로 표시한다.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "노선 존재에 한정한다. 정류장까지의 도보·대기·혼잡·귀환편을 확인하지 않았으며 실제 왕복 시간이나 당일 경험 조합을 보장하지 않는다.",
+      "cost": null,
+      "mobility": {
+        "origin_destination_id": "th-phuket-island",
+        "origin_place": "Phuket Town 정류장(정확한 승차 지점 미확인)",
+        "mode": "public_transport",
+        "one_way_minutes": null,
+        "car_required": null,
+        "overnight_required": null
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "smartbus-west-coast-fare",
+      "version": 2,
+      "kind": "price",
+      "statement": "Phuket Smart Bus lists the standard one-way fare on its Airport–Patong–Rawai route as THB 100 per person.",
+      "question": null,
+      "area": "Phuket Smart Bus 공항↔빠통↔라와이 노선",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "일반 운임 대상 승객 1명",
+          "해당 노선의 편도 승차 1회"
+        ]
+      },
+      "source": {
+        "url": "https://phuketsmartbus.com/th/payment",
+        "locator": "ค่าโดยสาร 표: Airport ⇄ Patong ⇄ Rawai, 편도 100 ฿ flat.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "공식 게시 운임의 확인일 기준 초안. 미래 여행일 가격이나 도시 총예산을 보장하지 않는다. 어린이 무료 기준은 조사 페이지 간 표현 차이가 있어 포함하지 않는다.",
+      "cost": {
+        "currency": "THB",
+        "amount_min": 100,
+        "amount_max": 100,
+        "as_of": "2026-10-05",
+        "party_size": 1,
+        "basis": "per_person",
+        "period": "편도 승차 1회",
+        "includes": [
+          "해당 노선 일반 편도 버스 운임"
+        ],
+        "excludes": [
+          "귀환편",
+          "다른 노선 환승 운임",
+          "정류장 전후 이동",
+          "시설 입장·체험비"
+        ]
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "smartbus-town-patong-fare",
+      "version": 2,
+      "kind": "price",
+      "statement": "Phuket Smart Bus lists the standard one-way fare on its Bus Terminal–Patong route as THB 50 per person.",
+      "question": null,
+      "area": "Phuket Smart Bus Bus Terminal↔Patong 노선",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "일반 운임 대상 승객 1명",
+          "해당 노선의 편도 승차 1회"
+        ]
+      },
+      "source": {
+        "url": "https://phuketsmartbus.com/th/payment",
+        "locator": "ค่าโดยสาร 표: Bus Terminal ⇄ Patong, 편도 50 ฿.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "공식 게시 운임의 확인일 기준 초안. 미래 여행일 가격이나 도시 총예산을 보장하지 않는다. 어린이 무료 기준은 조사 페이지 간 표현 차이가 있어 포함하지 않는다.",
+      "cost": {
+        "currency": "THB",
+        "amount_min": 50,
+        "amount_max": 50,
+        "as_of": "2026-10-05",
+        "party_size": 1,
+        "basis": "per_person",
+        "period": "편도 승차 1회",
+        "includes": [
+          "해당 노선 일반 편도 버스 운임"
+        ],
+        "excludes": [
+          "귀환편",
+          "다른 노선 환승 운임",
+          "정류장 전후 이동",
+          "시설 입장·체험비"
+        ]
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "smartbus-onboard-payment",
+      "version": 2,
+      "kind": "operation",
+      "statement": "Phuket Smart Bus advertises onboard payment by cash or contactless card.",
+      "question": null,
+      "area": "Phuket Smart Bus 차내 결제",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://phuketsmartbus.com/th/payment",
+        "locator": "Payment Methods의 Mastercard / Visa, Cash 및 FAQ의 차내 결제 안내.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "차내 결제 가능과 예약 불필요·좌석 보장은 별개다. 이 근거로 사전 예약 조건을 채우지 않는다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "beach-red-flag",
+      "version": 2,
+      "kind": "access",
+      "statement": "The Tourism Authority of Thailand states that red flags on beaches in Phuket and similar destinations mean no swimming.",
+      "question": null,
+      "area": "푸껫 해변의 해수욕 구역",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "현장에 빨간 깃발이 표시된 경우"
+        ]
+      },
+      "source": {
+        "url": "https://www.tatnews.org/2018/07/important-information-on-marine-tourism-in-thailand-during-the-southwest-monsoon-season/",
+        "locator": "Swimming 절: 해변의 red flags는 DO NOT SWIM을 의미한다고 설명한다.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "깃발의 의미에 대한 안내이며 특정 해변에 현재 깃발이 있다는 주장은 아니다. 깃발 부재를 안전 확인으로 해석하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "beach-current-conditions",
+      "version": 2,
+      "kind": "access",
+      "statement": null,
+      "question": "What warning flags, local restrictions and swimming conditions apply at the selected beach on the visit date?",
+      "area": "빠통·까따·까론 중 실제 방문할 해변",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "일반 계절 안내로 당일 수영 가능을 확정하지 않는다. 현장 통제와 당일 공식 안내 확인이 필요하다.",
+      "cost": null,
+      "usage": "recommendation"
+    }
+  ],
+  "places": [
+    {
+      "id": "patong-beach",
+      "name": "빠통 해변",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "west-coast-beaches"
+      ]
+    },
+    {
+      "id": "kata-beach",
+      "name": "까따 해변",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "west-coast-beaches"
+      ]
+    },
+    {
+      "id": "karon-beach",
+      "name": "까론 해변",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "west-coast-beaches"
+      ]
+    },
+    {
+      "id": "old-town",
+      "name": "푸껫 올드타운",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "old-town-location"
+      ]
+    }
+  ]
+}

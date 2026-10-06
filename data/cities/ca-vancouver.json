@@ -1,0 +1,371 @@
+{
+  "schema_version": 3,
+  "category_version": 1,
+  "dataset_kind": "catalog",
+  "data_version": 2,
+  "destination": {
+    "id": "ca-vancouver",
+    "kind": "city",
+    "name": "밴쿠버",
+    "aliases": [
+      "Vancouver"
+    ],
+    "country_codes": [
+      "CA"
+    ],
+    "coverage": {
+      "description": "밴쿠버 시내의 스탠리파크 해안길·숲길부터 다룬다. 노스쇼어·휘슬러 등 광역 자연 경험은 이번 자료에 포함하지 않는다. 밴쿠버 전체의 대표 경험을 모두 조사·검수한 것은 아니다.",
+      "evidence_ids": [
+        "stanley-location"
+      ],
+      "gateway_city_ids": []
+    },
+    "review_status": "draft"
+  },
+  "experiences": [
+    {
+      "id": "stanley-seawall-stroll",
+      "label": "스탠리파크 해안길 산책",
+      "categories": [
+        "nature_scenery"
+      ],
+      "evidence_ids": [
+        "stanley-location",
+        "seawall-walk"
+      ],
+      "constraint_evidence_ids": [
+        "seawall-path-separation",
+        "seawall-winter-maintenance",
+        "walk-effort",
+        "visit-day-access",
+        "facility-reservation"
+      ],
+      "place_ids": [
+        "stanley-seawall"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    },
+    {
+      "id": "stanley-forest-stroll",
+      "label": "스탠리파크 숲길 산책",
+      "categories": [
+        "nature_scenery"
+      ],
+      "evidence_ids": [
+        "stanley-location",
+        "forest-walk"
+      ],
+      "constraint_evidence_ids": [
+        "walk-effort",
+        "visit-day-access",
+        "facility-reservation"
+      ],
+      "place_ids": [
+        "stanley-forest"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "text": "Stanley Park in downtown Vancouver offers waterfront and interior forest walks.",
+      "evidence_ids": [
+        "stanley-location",
+        "seawall-walk",
+        "forest-walk"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "stanley-location",
+      "version": 2,
+      "kind": "location",
+      "statement": "Stanley Park is located in downtown Vancouver.",
+      "question": null,
+      "area": "스탠리파크",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://vancouver.ca/parks-recreation-culture/stanley-park.aspx",
+        "locator": "Digital map 절: located in downtown Vancouver.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "노스쇼어·휘슬러를 포함하는 위치 근거가 아니다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "seawall-walk",
+      "version": 2,
+      "kind": "experience",
+      "statement": "Visitors can walk along the Stanley Park section of the Seawall.",
+      "question": null,
+      "area": "스탠리파크 Seawall",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://vancouver.ca/parks-recreation-culture/seawall.aspx",
+        "locator": "서두와 Walking and cycling around Stanley Park on the seawall 절.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "전 구간 완주를 필수로 권하지 않는다. 산책 가능이라는 이유로 짧거나 저강도라고 단정하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "forest-walk",
+      "version": 2,
+      "kind": "experience",
+      "statement": "Stanley Park has walking trails through its interior forest.",
+      "question": null,
+      "area": "스탠리파크 내부 숲길",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://vancouver.ca/parks-recreation-culture/stanley-park-trails.aspx",
+        "locator": "Forest trails 서두와 interior paths 설명.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "구간별 경사·거리·사용자 체력과의 적합성은 별도 확인한다. 야생동물 관찰 성공·안전·조용함은 보장하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "seawall-path-separation",
+      "version": 2,
+      "kind": "access",
+      "statement": "The Seawall separates walking and jogging from cycling and inline skating, and visitors are instructed to follow the signs.",
+      "question": null,
+      "area": "스탠리파크를 포함한 밴쿠버 Seawall",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://vancouver.ca/parks-recreation-culture/seawall.aspx",
+        "locator": "서두의 2 clearly marked sections 및 signs 안내.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "자전거 이용 규칙을 보행 규칙과 혼동하지 않는다. 현장 우회로는 별도 확인한다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "seawall-winter-maintenance",
+      "version": 2,
+      "kind": "season",
+      "statement": "The City of Vancouver describes temporary closures of some Stanley Park Seawall sections during winter maintenance.",
+      "question": null,
+      "area": "Prospect Point~Third Beach 및 Ferguson Point 구간",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "겨울 정비 시행 시"
+        ]
+      },
+      "source": {
+        "url": "https://vancouver.ca/parks-recreation-culture/seawall.aspx",
+        "locator": "Annual slope stabilization and maintenance 절.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "연례 정비의 일반 안내다. 특정 연도의 폐쇄 날짜·현재 전 구간 개방 여부는 미확인이다. 겨울의 시작·종료 월은 원문에 없어 null로 둔다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "local-round-trip",
+      "version": 2,
+      "kind": "transport",
+      "statement": null,
+      "question": "What transport, waiting and round-trip travel time are needed between the accommodation and the chosen trail entrance?",
+      "area": "밴쿠버 숙소~스탠리파크 선택 구간",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "도심 위치만으로 차량 불필요·특정 이동 시간·당일 적합성을 확정하지 않는다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "walk-effort",
+      "version": 2,
+      "kind": "access",
+      "statement": null,
+      "question": "Do the selected section’s distance, gradient, surface and resting places suit the user’s walking requirements?",
+      "area": "스탠리파크 해안길·숲길의 선택 구간",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "자연 선호를 긴 도보나 고강도 운동 선호로 바꾸지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "visit-day-access",
+      "version": 2,
+      "kind": "access",
+      "statement": null,
+      "question": "Which sections are restricted by maintenance, weather or local controls on the intended visit date?",
+      "area": "스탠리파크 해안길·숲길",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "일반 정비 안내만으로 특정 날짜 개방 여부를 판정하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "visit-cost",
+      "version": 2,
+      "kind": "price",
+      "statement": null,
+      "question": "What costs apply to the selected experience, transport, parking and rentals, and what do they include?",
+      "area": "스탠리파크 방문",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "공공 공원이라는 이유로 모든 방문 비용을 0으로 채우지 않는다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "facility-reservation",
+      "version": 2,
+      "kind": "reservation",
+      "statement": null,
+      "question": "What booking conditions apply to any additional guided tour or facility?",
+      "area": "스탠리파크의 선택 투어·시설",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "초안의 자율 산책과 별도 유료 서비스의 예약 조건을 구분한다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "stanley-path-locations",
+      "version": 1,
+      "kind": "location",
+      "statement": "The waterfront Seawall and interior forest trails described here are in Stanley Park.",
+      "question": null,
+      "area": "스탠리파크",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://vancouver.ca/parks-recreation-culture/stanley-park.aspx",
+        "locator": "Stanley Park introduction: rainforest, scenic trails and waterfront views along the Seawall.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "기존에 열람한 공식 소개에서 위치 관계를 분리한 초안. 범위와 번역은 사람 검수 전이다.",
+      "cost": null,
+      "usage": "recommendation"
+    }
+  ],
+  "places": [
+    {
+      "id": "stanley-seawall",
+      "name": "스탠리파크 Seawall",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "stanley-location",
+        "stanley-path-locations"
+      ]
+    },
+    {
+      "id": "stanley-forest",
+      "name": "스탠리파크 내부 숲길",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "stanley-location",
+        "stanley-path-locations"
+      ]
+    }
+  ]
+}

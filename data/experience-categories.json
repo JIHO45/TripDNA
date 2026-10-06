@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "city_exploration",
+      "label_ko": "도시 탐방"
+    },
+    {
+      "id": "nature_scenery",
+      "label_ko": "자연 풍경"
+    },
+    {
+      "id": "food",
+      "label_ko": "미식"
+    },
+    {
+      "id": "relaxation",
+      "label_ko": "휴식·힐링"
+    },
+    {
+      "id": "culture_history",
+      "label_ko": "문화·역사"
+    },
+    {
+      "id": "activities",
+      "label_ko": "액티비티"
+    },
+    {
+      "id": "shopping",
+      "label_ko": "쇼핑"
+    },
+    {
+      "id": "nightlife",
+      "label_ko": "밤 문화"
+    },
+    {
+      "id": "meeting_people",
+      "label_ko": "새로운 사람 만나기"
+    }
+  ]
+}

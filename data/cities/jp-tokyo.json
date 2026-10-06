@@ -1,0 +1,451 @@
+{
+  "schema_version": 3,
+  "category_version": 1,
+  "dataset_kind": "catalog",
+  "data_version": 2,
+  "destination": {
+    "id": "jp-tokyo",
+    "kind": "city",
+    "name": "도쿄",
+    "aliases": [
+      "Tokyo",
+      "東京"
+    ],
+    "country_codes": [
+      "JP"
+    ],
+    "coverage": {
+      "description": "초기 자료는 도쿄의 아사쿠사와 우에노 공원 주변 경험으로 제한한다. 도쿄도 도서 지역·후지산·다른 현의 경험을 포함하지 않는다. 도쿄 전체를 조사·검수했다는 뜻이 아니다.",
+      "evidence_ids": [
+        "asakusa-location",
+        "ueno-location"
+      ],
+      "gateway_city_ids": []
+    },
+    "review_status": "draft"
+  },
+  "experiences": [
+    {
+      "id": "asakusa-cultural-walk",
+      "label": "아사쿠사 거리·사찰 주변 탐방",
+      "categories": [
+        "city_exploration",
+        "culture_history"
+      ],
+      "evidence_ids": [
+        "asakusa-location",
+        "asakusa-street-walk"
+      ],
+      "constraint_evidence_ids": [
+        "facility-reservation",
+        "visit-day-access"
+      ],
+      "place_ids": [
+        "kaminarimon",
+        "nakamise",
+        "sensoji"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    },
+    {
+      "id": "ueno-park-stroll",
+      "label": "우에노 공원·연못 주변 산책",
+      "categories": [
+        "nature_scenery",
+        "city_exploration"
+      ],
+      "evidence_ids": [
+        "ueno-location",
+        "ueno-park-walk"
+      ],
+      "constraint_evidence_ids": [
+        "ueno-cherry-season",
+        "facility-reservation",
+        "visit-day-access"
+      ],
+      "place_ids": [
+        "ueno-park",
+        "shinobazu-pond"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "text": "Explore the Kaminarimon, Nakamise and Sensoji area in Asakusa.",
+      "evidence_ids": [
+        "asakusa-location",
+        "asakusa-street-walk"
+      ]
+    },
+    {
+      "text": "Walk through Ueno Park and enjoy the scenery around the pond.",
+      "evidence_ids": [
+        "ueno-location",
+        "ueno-park-walk"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "asakusa-location",
+      "version": 2,
+      "kind": "location",
+      "statement": "Asakusa is an area in eastern Tokyo centered on Sensoji Temple, Kaminarimon and Nakamise shopping street.",
+      "question": null,
+      "area": "도쿄 아사쿠사",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/destinations/eastern-tokyo/asakusa/",
+        "locator": "Eastern Tokyo 분류와 An iconic Tokyo temple complex 서두.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "도쿄도 전체 또는 인근 현의 경험까지 포함하는 근거가 아니다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "asakusa-street-walk",
+      "version": 2,
+      "kind": "experience",
+      "statement": "Visitors can explore the streets from Kaminarimon through Nakamise toward Sensoji in Asakusa.",
+      "question": null,
+      "area": "가미나리몬·나카미세·센소지 일대",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/destinations/eastern-tokyo/asakusa/",
+        "locator": "Thunder gate, temples and traditional theme parks 첫 문단.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "개별 건물 내부 입장·상점 영업·혼잡 수준·무료 여부를 보장하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "asakusa-rail-access",
+      "version": 2,
+      "kind": "transport",
+      "statement": "Asakusa Station is served by the Tokyo Metro Ginza Line, Toei Asakusa Line and Tobu Skytree Line.",
+      "question": null,
+      "area": "아사쿠사역",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/destinations/eastern-tokyo/asakusa/",
+        "locator": "How to Get There 첫 문장.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "숙소에서 출발하는 경로·환승·왕복 시간은 미확인이다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "ueno-location",
+      "version": 2,
+      "kind": "location",
+      "statement": "Ueno Park is located at 5-20 Ueno-koen, Taito City, Tokyo.",
+      "question": null,
+      "area": "우에노 공원",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/spot/482/index.html",
+        "locator": "제목 아래 주소: 5-20 Ueno-koen, Taito City, Tokyo.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "ueno-park-walk",
+      "version": 2,
+      "kind": "experience",
+      "statement": "Visitors can walk through Ueno Park and view the scenery around Shinobazu Pond.",
+      "question": null,
+      "area": "우에노 공원·시노바즈 연못 주변",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/spot/482/index.html",
+        "locator": "View beautiful cherry blossoms, take a stroll through Ueno Park and ride a paddle boat 절의 산책 안내.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "보트 이용·동물원·박물관 입장을 이 산책 경험에 포함하지 않는다. 공원이라는 이유로 조용함·낮은 운동 강도를 보장하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "ueno-entry-fee",
+      "version": 2,
+      "kind": "price",
+      "statement": "GO TOKYO lists admission to Ueno Park itself as free, separately from fees for facilities within the park.",
+      "question": null,
+      "area": "우에노 공원 자체 입장",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/spot/482/index.html",
+        "locator": "How to Get to the Heart of the Ueno Area: 공원 입장료 없음, 내부 시설 별도 요금.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "확인일의 게시 정보이며 모든 내부 시설이나 여행 총비용이 무료라는 뜻이 아니다.",
+      "cost": {
+        "currency": "JPY",
+        "amount_min": 0,
+        "amount_max": 0,
+        "as_of": "2026-10-05",
+        "party_size": 1,
+        "basis": "per_person",
+        "period": "공원 자체 입장 1회",
+        "includes": [
+          "우에노 공원 자체 입장"
+        ],
+        "excludes": [
+          "동물원·박물관 등 개별 시설",
+          "보트 대여",
+          "이동·식사"
+        ]
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "ueno-cherry-season",
+      "version": 2,
+      "kind": "season",
+      "statement": "GO TOKYO describes the usual cherry blossom season in Ueno Park as late March to early April.",
+      "question": null,
+      "area": "우에노 공원의 벚꽃 관람",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": [
+          3,
+          4
+        ],
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/spot/482/index.html",
+        "locator": "View beautiful cherry blossoms 절: usually late March to early April.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "개별 여행일의 개화나 만개를 보장하지 않는다. 월 배열은 대략적인 시기이며 해당 월 전체가 개화 기간이라는 뜻이 아니다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "local-round-trip",
+      "version": 2,
+      "kind": "transport",
+      "statement": null,
+      "question": "What transport, transfers, waiting and round-trip travel time are needed from the chosen accommodation?",
+      "area": "아사쿠사·우에노의 선택 경험",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "숙소·경로 미지정. 역 존재만으로 당일에 두 지역을 모두 체험 가능하다고 판단하지 않는다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "facility-reservation",
+      "version": 2,
+      "kind": "reservation",
+      "statement": null,
+      "question": "What admission and advance booking conditions apply to the selected facilities or activities?",
+      "area": "아사쿠사·우에노의 개별 시설·체험",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "거리 산책·공원 입장과 내부 시설을 구분한다. 예약 불필요로 추정하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "visit-cost",
+      "version": 2,
+      "kind": "price",
+      "statement": null,
+      "question": "What costs apply to transport, meals and selected facilities, and what do they include as of the quoted date?",
+      "area": "아사쿠사·우에노 방문",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "우에노 공원 자체 입장료를 도시 하루 예산으로 확대하지 않는다.",
+      "cost": null,
+      "usage": "detail_only"
+    },
+    {
+      "id": "visit-day-access",
+      "version": 2,
+      "kind": "access",
+      "statement": null,
+      "question": "What closures, opening conditions and access restrictions apply on the intended visit date?",
+      "area": "아사쿠사·우에노의 실제 방문 구간",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "일반 관광 안내는 실시간 개방·접근 가능성을 증명하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "ueno-park-location",
+      "version": 1,
+      "kind": "location",
+      "statement": "Shinobazu Pond is in Ueno Park.",
+      "question": null,
+      "area": "우에노 공원·시노바즈 연못 주변",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": {
+        "url": "https://www.gotokyo.org/en/spot/482/index.html",
+        "locator": "Ueno Park walking route description ending at Shinobazu Pond.",
+        "checked_on": "2026-10-05",
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "기존에 열람한 공식 소개에서 위치 관계를 분리한 초안. 범위와 번역은 사람 검수 전이다.",
+      "cost": null,
+      "usage": "recommendation"
+    }
+  ],
+  "places": [
+    {
+      "id": "kaminarimon",
+      "name": "가미나리몬",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "asakusa-location"
+      ]
+    },
+    {
+      "id": "nakamise",
+      "name": "나카미세 상점가",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "asakusa-location"
+      ]
+    },
+    {
+      "id": "sensoji",
+      "name": "센소지",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "asakusa-location"
+      ]
+    },
+    {
+      "id": "ueno-park",
+      "name": "우에노 공원",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "ueno-location"
+      ]
+    },
+    {
+      "id": "shinobazu-pond",
+      "name": "시노바즈 연못",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "ueno-location",
+        "ueno-park-location"
+      ]
+    }
+  ]
+}

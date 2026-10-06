@@ -1,0 +1,329 @@
+{
+  "schema_version": 3,
+  "dataset_kind": "synthetic",
+  "data_version": 3,
+  "destination": {
+    "id": "sample-harbor-city",
+    "kind": "city",
+    "name": "가상 항구 도시",
+    "aliases": [
+      "Sample Harbor City"
+    ],
+    "country_codes": [
+      "ZZ"
+    ],
+    "coverage": {
+      "description": "가상 항구 도시 중심부. 외곽 산악 지역은 포함하지 않는다.",
+      "evidence_ids": [
+        "scope"
+      ],
+      "gateway_city_ids": []
+    },
+    "review_status": "partial"
+  },
+  "experiences": [
+    {
+      "id": "harbor-walk",
+      "label": "항구 산책",
+      "categories": [
+        "city_exploration"
+      ],
+      "evidence_ids": [
+        "walk"
+      ],
+      "constraint_evidence_ids": [
+        "access",
+        "reservation",
+        "season",
+        "price",
+        "evening_opening"
+      ],
+      "place_ids": [
+        "harbor-promenade"
+      ],
+      "travel_requirements": {
+        "boat_required": {
+          "value": null,
+          "evidence_ids": []
+        },
+        "overnight_required": {
+          "value": null,
+          "evidence_ids": []
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "text": "Visitors can take a coastal walk along the fictional harbor promenade.",
+      "evidence_ids": [
+        "walk"
+      ]
+    },
+    {
+      "text": "Fictional promenade admission costs USD 10 per adult per visit (as of 2026-05-31).",
+      "evidence_ids": [
+        "price"
+      ]
+    },
+    {
+      "text": "The fictional promenade is open in the evening.",
+      "evidence_ids": [
+        "evening_opening"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "scope",
+      "version": 2,
+      "kind": "location",
+      "statement": "The fictional harbor promenade is in the center of Sample Harbor City.",
+      "question": null,
+      "area": "가상 항구 도시 중심부",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "conditions": []
+      },
+      "source": {
+        "url": "https://example.invalid/harbor/map",
+        "locator": "가상 안내도: 중심부 산책로 위치",
+        "checked_on": "2026-09-30",
+        "valid_through": null
+      },
+      "status": "reviewed",
+      "review": {
+        "kind": "self",
+        "reviewer_id": "fixture-reviewer",
+        "reviewed_on": "2026-09-30",
+        "claim_version": 2,
+        "notes": "형식 시험용 가상 검수. 실제 사람 검수 아님."
+      },
+      "notes": "출처와 지명 모두 가상이다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "walk",
+      "version": 2,
+      "kind": "experience",
+      "statement": "Visitors can take a coastal walk along the fictional harbor promenade.",
+      "question": null,
+      "area": "가상 항구 산책로",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "개방 시 이용하는 경험이며 운영 시기는 별도 확인"
+        ]
+      },
+      "source": {
+        "url": "https://example.invalid/harbor/walk",
+        "locator": "가상 시설 소개: 해안 산책로",
+        "checked_on": "2026-09-30",
+        "valid_through": null
+      },
+      "status": "reviewed",
+      "review": {
+        "kind": "self",
+        "reviewer_id": "fixture-reviewer",
+        "reviewed_on": "2026-09-30",
+        "claim_version": 2,
+        "notes": "형식 시험용 가상 검수. 실제 사람 검수 아님."
+      },
+      "notes": "상설 경험 존재를 나타내며 연중 운영을 보장하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "access",
+      "version": 3,
+      "kind": "transport",
+      "statement": "Draft: the bus trip from Central Station to the promenade takes 20 minutes one way.",
+      "question": null,
+      "area": "가상 중앙역 → 가상 항구 산책로",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "버스 이용, 대기 시간 미포함"
+        ]
+      },
+      "source": {
+        "url": "https://example.invalid/harbor/bus",
+        "locator": "확인할 출처 후보이며 아직 읽고 검수하지 않음",
+        "checked_on": null,
+        "valid_through": null
+      },
+      "status": "unreviewed",
+      "review": null,
+      "notes": "원문 확인 전. 왕복 시간·배차·체험 시간이 없어 당일 여행 가능 근거로 쓰지 않는다.",
+      "cost": null,
+      "mobility": {
+        "origin_destination_id": "sample-harbor-city",
+        "origin_place": "가상 중앙역",
+        "mode": "public_transport",
+        "one_way_minutes": {
+          "min": 20,
+          "max": 20
+        },
+        "car_required": null,
+        "overnight_required": null
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "reservation",
+      "version": 2,
+      "kind": "reservation",
+      "statement": null,
+      "question": "Is a reservation required to enter the promenade?",
+      "area": "가상 항구 산책로",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "예약 불필요로 해석하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "season",
+      "version": 2,
+      "kind": "season",
+      "statement": null,
+      "question": "Are there seasonal restrictions on access to the promenade?",
+      "area": "가상 항구 산책로",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": []
+      },
+      "source": null,
+      "status": "unknown",
+      "review": null,
+      "notes": "연중 개방으로 해석하지 않는다.",
+      "cost": null,
+      "usage": "recommendation"
+    },
+    {
+      "id": "price",
+      "version": 2,
+      "kind": "price",
+      "statement": "Admission to the fictional promenade costs USD 10 per adult per visit.",
+      "question": null,
+      "area": "가상 항구 산책로 입장권",
+      "applies": {
+        "date_from": "2026-05-01",
+        "date_through": "2026-06-30",
+        "months": [
+          5,
+          6
+        ],
+        "conditions": [
+          "성인 일반 요금"
+        ]
+      },
+      "source": {
+        "url": "https://example.invalid/harbor/tickets",
+        "locator": "가상 5~6월 성인 요금표",
+        "checked_on": "2026-05-31",
+        "valid_through": "2026-06-30"
+      },
+      "status": "reviewed",
+      "review": {
+        "kind": "self",
+        "reviewer_id": "fixture-reviewer",
+        "reviewed_on": "2026-05-31",
+        "claim_version": 2,
+        "notes": "형식 시험용 가상 검수. 실제 사람 검수 아님."
+      },
+      "notes": "검수 이력은 있지만 2026-09-30에는 사용 불가한 근거의 예시.",
+      "cost": {
+        "currency": "USD",
+        "amount_min": 10,
+        "amount_max": 10,
+        "as_of": "2026-05-31",
+        "party_size": 1,
+        "basis": "per_person",
+        "period": "1회 입장",
+        "includes": [
+          "성인 입장권"
+        ],
+        "excludes": [
+          "교통",
+          "식사",
+          "숙박"
+        ]
+      },
+      "usage": "detail_only"
+    },
+    {
+      "id": "evening_opening",
+      "version": 2,
+      "kind": "operation",
+      "statement": "The fictional promenade is open in the evening.",
+      "question": null,
+      "area": "가상 항구 산책로",
+      "applies": {
+        "date_from": null,
+        "date_through": null,
+        "months": null,
+        "conditions": [
+          "저녁 개방 시간은 재확인 필요"
+        ]
+      },
+      "source": {
+        "url": "https://example.invalid/harbor/hours",
+        "locator": "가상 운영 안내의 이전 저녁 개방 문구",
+        "checked_on": "2026-09-20",
+        "valid_through": null
+      },
+      "status": "withheld",
+      "review": {
+        "kind": "self",
+        "reviewer_id": "fixture-reviewer",
+        "reviewed_on": "2026-09-20",
+        "claim_version": 2,
+        "notes": "형식 시험용 가상 검수. 실제 사람 검수 아님."
+      },
+      "notes": "2026-09-30 변경 공지와 충돌한 상황을 가정. 재확인 기한 전에도 보류하며 이전 검수 이력은 보존한다.",
+      "cost": null,
+      "usage": "detail_only"
+    }
+  ],
+  "category_version": 1,
+  "places": [
+    {
+      "id": "harbor-promenade",
+      "name": "가상 항구 산책로",
+      "scope_relation": "inside",
+      "scope_evidence_ids": [
+        "scope"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1026 @@
+{
+  "fr-paris": {
+    "scope": "Covers the city of Paris within its central arrondissements. Versailles and other day trips outside the city are not covered.",
+    "experiences": [
+      {
+        "category": "culture_history",
+        "what": "world-class art museums and a Gothic cathedral on the Seine island",
+        "places": [
+          "Louvre Museum",
+          "Musée d'Orsay",
+          "Notre-Dame Cathedral"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "walking between landmark viewpoints, hilltop village streets and old mansion-lined lanes",
+        "places": [
+          "Eiffel Tower",
+          "Montmartre",
+          "Le Marais"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "bakeries, cheese shops and bistros along pedestrian market streets",
+        "places": [
+          "Rue Montorgueil",
+          "Rue Mouffetard"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "grand department stores and fashion boutiques",
+        "places": [
+          "Galeries Lafayette",
+          "Le Bon Marché",
+          "Champs-Élysées"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "sitting in formal gardens with fountains and tree-lined paths",
+        "places": [
+          "Luxembourg Gardens",
+          "Tuileries Garden"
+        ]
+      }
+    ],
+    "constraints": []
+  },
+  "jp-tokyo": {
+    "scope": "Covers the central wards of Tokyo. The Tokyo islands and Mount Fuji are not covered.",
+    "experiences": [
+      {
+        "category": "city_exploration",
+        "what": "neon-lit crossings, youth fashion streets and skyscraper districts",
+        "places": [
+          "Shibuya",
+          "Harajuku",
+          "Shinjuku"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "a large Buddhist temple with a lantern gate, a forested Shinto shrine and national art collections",
+        "places": [
+          "Senso-ji",
+          "Meiji Shrine",
+          "Tokyo National Museum"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "sushi and seafood snacks at market stalls and street food under railway arches",
+        "places": [
+          "Tsukiji Outer Market",
+          "Ameyoko"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "luxury flagship stores and multi-storey electronics and anime shops",
+        "places": [
+          "Ginza",
+          "Akihabara"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "tiny bars packed into narrow alleys and late-night clubs",
+        "places": [
+          "Golden Gai",
+          "Omoide Yokocho",
+          "Roppongi"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "strolling landscaped Japanese gardens with ponds and teahouses",
+        "places": [
+          "Shinjuku Gyoen",
+          "Hamarikyu Gardens"
+        ]
+      }
+    ],
+    "constraints": []
+  },
+  "us-new-york": {
+    "scope": "Covers New York City at borough level, mainly Manhattan and Brooklyn. The rest of New York State is not covered.",
+    "experiences": [
+      {
+        "category": "city_exploration",
+        "what": "walking a suspension bridge, an elevated rail-line park and a billboard-lit square",
+        "places": [
+          "Brooklyn Bridge",
+          "High Line",
+          "Times Square"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "encyclopedic and modern art museums and the harbour immigration monuments",
+        "places": [
+          "Metropolitan Museum of Art",
+          "Museum of Modern Art",
+          "Statue of Liberty"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "pizza slices, bagels, pastrami sandwiches and food hall stalls",
+        "places": [
+          "Katz's Delicatessen",
+          "Chelsea Market",
+          "Chinatown"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "stage musicals and plays, and jazz and comedy clubs",
+        "places": [
+          "Broadway Theater District",
+          "Greenwich Village"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "lawns, lakes and walking paths in large landscaped parks",
+        "places": [
+          "Central Park",
+          "Prospect Park"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "flagship stores and cast-iron district boutiques",
+        "places": [
+          "Fifth Avenue",
+          "SoHo"
+        ]
+      }
+    ],
+    "constraints": [
+      "The Statue of Liberty and Ellis Island are reached by ferry.",
+      "Winters are cold with snow possible, which limits park and outdoor walking experiences."
+    ]
+  },
+  "sg-singapore": {
+    "scope": "Covers the main island of Singapore by neighbourhood. Sentosa is not covered in this draft.",
+    "experiences": [
+      {
+        "category": "food",
+        "what": "inexpensive cooked dishes such as chicken rice, satay and laksa at open-air hawker centres",
+        "places": [
+          "Maxwell Food Centre",
+          "Lau Pa Sat",
+          "Newton Food Centre"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "walking ethnic quarters with shophouses, temples and a mosque",
+        "places": [
+          "Chinatown",
+          "Little India",
+          "Kampong Glam"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "giant artificial tree structures, cooled glass conservatories and a tropical orchid garden",
+        "places": [
+          "Gardens by the Bay",
+          "Singapore Botanic Gardens"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "a long boulevard of air-conditioned malls",
+        "places": [
+          "Orchard Road"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "riverside bars and restaurants in converted warehouses",
+        "places": [
+          "Clarke Quay",
+          "Boat Quay"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "museums on the island's history and Southeast Asian art",
+        "places": [
+          "National Museum of Singapore",
+          "National Gallery Singapore"
+        ]
+      }
+    ],
+    "constraints": [
+      "Outdoor experiences take place in hot, humid equatorial weather with frequent rain all year."
+    ]
+  },
+  "ae-dubai": {
+    "scope": "Covers experiences inside the city of Dubai. Desert excursions are not covered in this draft.",
+    "experiences": [
+      {
+        "category": "city_exploration",
+        "what": "observation decks on the world's tallest tower, a choreographed fountain and a high-rise waterfront promenade",
+        "places": [
+          "Burj Khalifa",
+          "Dubai Fountain",
+          "Dubai Marina"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "wind-tower houses in the old quarter and wooden abra boats crossing the creek",
+        "places": [
+          "Al Fahidi Historical Neighbourhood",
+          "Dubai Creek"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "a very large mall and traditional gold and spice markets",
+        "places": [
+          "Dubai Mall",
+          "Gold Souk",
+          "Spice Souk"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "public sandy beaches on the Gulf with skyline views",
+        "places": [
+          "Jumeirah Beach",
+          "Kite Beach"
+        ]
+      },
+      {
+        "category": "activities",
+        "what": "an indoor ski slope and large waterparks",
+        "places": [
+          "Ski Dubai",
+          "Aquaventure Waterpark"
+        ]
+      }
+    ],
+    "constraints": [
+      "Extreme summer heat, roughly June to September, severely limits beaches, walking and other outdoor experiences.",
+      "The main districts are spread far apart along the coast, so moving between the old creek area, downtown and the marina takes a metro or car ride."
+    ]
+  },
+  "tr-istanbul": {
+    "scope": "Covers the districts of Istanbul on both the European and Asian sides, including crossings of the Bosphorus. Cappadocia is not covered.",
+    "experiences": [
+      {
+        "category": "culture_history",
+        "what": "Byzantine and Ottoman monuments: a domed former basilica, an imperial mosque and a sultans' palace",
+        "places": [
+          "Hagia Sophia",
+          "Blue Mosque",
+          "Topkapi Palace"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "covered bazaars selling carpets, ceramics, spices and Turkish delight",
+        "places": [
+          "Grand Bazaar",
+          "Spice Bazaar"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "a medieval stone tower, a pedestrian avenue with a historic tram and colourful hillside houses",
+        "places": [
+          "Galata Tower",
+          "Istiklal Avenue",
+          "Balat"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "ferry rides along the strait past waterfront mansions, fortresses and suspension bridges",
+        "places": [
+          "Bosphorus",
+          "Ortaköy"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "fish sandwiches by the water and market streets of meze, pickles and sweets",
+        "places": [
+          "Eminönü",
+          "Kadıköy Market"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "steam bathing and scrubs in centuries-old Ottoman bathhouses",
+        "places": [
+          "Çemberlitaş Hamamı",
+          "Cağaloğlu Hamamı"
+        ]
+      }
+    ],
+    "constraints": [
+      "Bosphorus sightseeing is done by boat.",
+      "The city is split by the strait, so combining the European and Asian sides involves a ferry, metro or bridge crossing."
+    ]
+  },
+  "tw-taipei": {
+    "scope": "Covers Taipei City. Jiufen and other places in neighbouring administrative areas are not covered in this draft.",
+    "experiences": [
+      {
+        "category": "food",
+        "what": "night market stalls selling fried chicken, pepper buns, oyster omelettes and bubble tea",
+        "places": [
+          "Shilin Night Market",
+          "Raohe Street Night Market",
+          "Ningxia Night Market"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "a major collection of Chinese imperial art, a monumental memorial hall and an ornate working temple",
+        "places": [
+          "National Palace Museum",
+          "Chiang Kai-shek Memorial Hall",
+          "Longshan Temple"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "a skyscraper observatory, a pedestrian youth shopping district and an old street of dried-goods and tea shops",
+        "places": [
+          "Taipei 101",
+          "Ximending",
+          "Dihua Street"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "soaking in sulphur hot spring baths in a valley district",
+        "places": [
+          "Beitou"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "a short stair hike to a skyline viewpoint and volcanic hills with fumaroles and grassland",
+        "places": [
+          "Elephant Mountain",
+          "Yangmingshan National Park"
+        ]
+      }
+    ],
+    "constraints": [
+      "Typhoons and heavy rain in summer and early autumn can disrupt outdoor experiences.",
+      "Beitou and Yangmingshan are on the northern edge of the city, a metro or bus ride from the centre."
+    ]
+  },
+  "jp-kyoto": {
+    "scope": "Covers the city of Kyoto. The rest of Kyoto Prefecture and Osaka are not covered.",
+    "experiences": [
+      {
+        "category": "culture_history",
+        "what": "a hillside path through thousands of vermilion torii gates, a gold-leaf pavilion and a wooden temple terrace",
+        "places": [
+          "Fushimi Inari Shrine",
+          "Kinkaku-ji",
+          "Kiyomizu-dera"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "walking preserved lanes of wooden townhouses and teahouses in the geisha districts",
+        "places": [
+          "Gion",
+          "Ninenzaka",
+          "Pontocho"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "a tall bamboo grove by a river and a canal-side path lined with cherry trees",
+        "places": [
+          "Arashiyama Bamboo Grove",
+          "Philosopher's Path"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "a covered market arcade of pickles, tofu, sweets and seafood skewers",
+        "places": [
+          "Nishiki Market"
+        ]
+      }
+    ],
+    "constraints": [
+      "Cherry blossom in spring and autumn foliage are short seasonal windows; the scenery differs outside them.",
+      "Arashiyama, Fushimi Inari and Kinkaku-ji lie on different edges of the city, so combining them takes train or bus transfers."
+    ]
+  },
+  "th-bangkok": {
+    "scope": "Covers central Bangkok, with its markets, temples and riverside. Distant day-trip products outside the city are not covered.",
+    "experiences": [
+      {
+        "category": "culture_history",
+        "what": "a royal palace compound and riverside temples with a giant reclining Buddha and a porcelain-covered spire",
+        "places": [
+          "Grand Palace",
+          "Wat Pho",
+          "Wat Arun"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "a vast weekend market of thousands of stalls and large air-conditioned malls",
+        "places": [
+          "Chatuchak Weekend Market",
+          "Siam Paragon",
+          "MBK Center"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "street food stalls along the Chinatown main road after dark and a fresh produce market",
+        "places": [
+          "Yaowarat Road",
+          "Or Tor Kor Market"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "river express boats and long-tail boats through old canals",
+        "places": [
+          "Chao Phraya River",
+          "Thonburi canals"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "a backpacker street of bars and street vendors and a long avenue of clubs and bars",
+        "places": [
+          "Khao San Road",
+          "Sukhumvit Road"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "a central park with a lake and shaded paths",
+        "places": [
+          "Lumphini Park"
+        ]
+      }
+    ],
+    "constraints": [
+      "The rainy season, roughly May to October, brings frequent heavy downpours and occasional street flooding.",
+      "Heat and humidity are high all year, which limits long daytime walking."
+    ]
+  },
+  "pt-lisbon": {
+    "scope": "Covers the city of Lisbon, including the Belém waterfront. Sintra and Cascais are not covered.",
+    "experiences": [
+      {
+        "category": "city_exploration",
+        "what": "steep lanes of the old Moorish quarter, vintage yellow trams and hilltop terrace viewpoints",
+        "places": [
+          "Alfama",
+          "Miradouro da Senhora do Monte",
+          "Chiado"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "Manueline monuments from the Age of Discovery and a hilltop medieval castle",
+        "places": [
+          "Belém Tower",
+          "Jerónimos Monastery",
+          "São Jorge Castle"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "custard tarts from a historic bakery and a food hall of Portuguese stalls",
+        "places": [
+          "Pastéis de Belém",
+          "Time Out Market"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "street-side bars on a hilltop grid of lanes, a nightlife street by the river and fado music houses",
+        "places": [
+          "Bairro Alto",
+          "Cais do Sodré"
+        ]
+      }
+    ],
+    "constraints": [
+      "The historic districts are built on steep hills with cobbled streets and stairs, which matters for limited mobility.",
+      "Belém is several kilometres west of the centre, a tram, train or bus ride away."
+    ]
+  },
+  "au-sydney": {
+    "scope": "Covers central Sydney, the harbour and the city beaches. National parks and other nature areas outside the city, such as the Blue Mountains, are not covered.",
+    "experiences": [
+      {
+        "category": "city_exploration",
+        "what": "the sail-roofed opera house, the steel arch bridge and a sandstone colonial quarter on the harbour",
+        "places": [
+          "Sydney Opera House",
+          "Sydney Harbour Bridge",
+          "The Rocks"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "swimming and surfing at ocean beaches with ocean pools",
+        "places": [
+          "Bondi Beach",
+          "Manly Beach"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "harbourside gardens, headland lookouts and a clifftop coastal path",
+        "places": [
+          "Royal Botanic Garden",
+          "Watsons Bay",
+          "Bondi to Coogee Coastal Walk"
+        ]
+      },
+      {
+        "category": "activities",
+        "what": "a harbourside zoo with native animals reached across the water",
+        "places": [
+          "Taronga Zoo"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "art and natural history museums",
+        "places": [
+          "Art Gallery of New South Wales",
+          "Australian Museum"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "fresh seafood, oysters and sashimi at a working fish market",
+        "places": [
+          "Sydney Fish Market"
+        ]
+      }
+    ],
+    "constraints": [
+      "Beach swimming is mainly a warm-season experience, roughly November to April.",
+      "Manly and Taronga Zoo are across the harbour from the centre and are commonly reached by ferry."
+    ]
+  },
+  "th-phuket-island": {
+    "scope": "Covers the main island of Phuket, limited to Patong, Kata and Karon beaches and Phuket Old Town. Offshore islands and boat tours are not covered.",
+    "experiences": [
+      {
+        "category": "relaxation",
+        "what": "swimming and sunbathing on long west-coast sandy beaches",
+        "places": [
+          "Patong Beach",
+          "Karon Beach",
+          "Kata Beach"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "walking streets of colourful Sino-Portuguese shophouses, shrines and cafes",
+        "places": [
+          "Phuket Old Town",
+          "Thalang Road"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "a neon-lit walking street of bars, clubs and live music",
+        "places": [
+          "Bangla Road"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "a hilltop lookout over three bays",
+        "places": [
+          "Karon Viewpoint"
+        ]
+      }
+    ],
+    "constraints": [
+      "During the southwest monsoon, roughly May to October, west-coast beaches have rough seas and swimming is often unsafe.",
+      "Phuket Old Town is on the opposite side of the island from the beaches, a road transfer away.",
+      "Offshore islands are reached by boat and are outside this profile."
+    ]
+  },
+  "mx-mexico-city": {
+    "scope": "Covers Mexico City by district. Archaeological sites outside the city, such as Teotihuacan, are not covered in this draft.",
+    "experiences": [
+      {
+        "category": "culture_history",
+        "what": "a major museum of pre-Hispanic civilisations, excavated Aztec temple ruins and the blue house of a famous painter",
+        "places": [
+          "National Museum of Anthropology",
+          "Templo Mayor",
+          "Frida Kahlo Museum"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "a vast colonial main square and leafy districts of art deco buildings, cafes and plazas",
+        "places": [
+          "Zócalo",
+          "Roma and Condesa",
+          "Coyoacán"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "tacos al pastor, tamales and market stalls of regional produce and antojitos",
+        "places": [
+          "Mercado de San Juan",
+          "Mercado de Coyoacán"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "a large forested park with lakes and a hilltop castle",
+        "places": [
+          "Chapultepec Park"
+        ]
+      },
+      {
+        "category": "activities",
+        "what": "rides on painted flat-bottomed boats along ancient canals",
+        "places": [
+          "Xochimilco"
+        ]
+      },
+      {
+        "category": "nightlife",
+        "what": "mariachi bands playing in a square and masked wrestling shows",
+        "places": [
+          "Plaza Garibaldi",
+          "Arena México"
+        ]
+      }
+    ],
+    "constraints": [
+      "The city lies at about 2,240 metres, and the altitude can affect visitors on arrival.",
+      "The rainy season, roughly June to September, brings heavy afternoon showers.",
+      "Xochimilco is in the far south of the city, a long transfer from the centre."
+    ]
+  },
+  "ca-vancouver": {
+    "scope": "Covers the city of Vancouver, centred on its urban nature such as Stanley Park. The North Shore mountains and Whistler are not covered in this draft.",
+    "experiences": [
+      {
+        "category": "nature_scenery",
+        "what": "walking or cycling a waterfront seawall around a forested peninsula park, and a hilltop garden with skyline views",
+        "places": [
+          "Stanley Park",
+          "Queen Elizabeth Park"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "a Victorian-era district with cobbled streets and a steam clock, and converted warehouse neighbourhoods",
+        "places": [
+          "Gastown",
+          "Chinatown",
+          "Yaletown"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "a covered public market of seafood, baked goods and produce on a harbour peninsula",
+        "places": [
+          "Granville Island Public Market"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "city beaches with mountain and bay views",
+        "places": [
+          "English Bay Beach",
+          "Kitsilano Beach"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "Northwest Coast Indigenous art and totem poles, and a downtown art museum",
+        "places": [
+          "Museum of Anthropology at UBC",
+          "Vancouver Art Gallery"
+        ]
+      }
+    ],
+    "constraints": [
+      "Late autumn and winter are persistently rainy, which limits parks, beaches and the seawall."
+    ]
+  },
+  "us-honolulu": {
+    "scope": "Covers urban Honolulu, centred on downtown and Waikiki. The rest of Oahu and the other Hawaiian islands are not covered.",
+    "experiences": [
+      {
+        "category": "activities",
+        "what": "beginner surf lessons and outrigger canoe rides on gentle rolling waves",
+        "places": [
+          "Waikiki Beach"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "calm-water swimming and picnicking in beachfront parks",
+        "places": [
+          "Ala Moana Beach Park",
+          "Kapiolani Park"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "a hike up a volcanic crater to an ocean and city lookout, and a rainforest trail to a waterfall",
+        "places": [
+          "Diamond Head",
+          "Manoa Falls"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "a royal palace of the Hawaiian monarchy and a museum of Hawaiian and Pacific culture",
+        "places": [
+          "Iolani Palace",
+          "Bishop Museum"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "a large open-air shopping centre and a beachfront avenue of shops",
+        "places": [
+          "Ala Moana Center",
+          "Kalakaua Avenue"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "poke, plate lunches and malasada doughnuts",
+        "places": [
+          "Leonard's Bakery",
+          "Chinatown"
+        ]
+      }
+    ],
+    "constraints": [
+      "Honolulu is on an island, so reaching it requires a long flight.",
+      "The Diamond Head summit trail is a steep uphill walk with stairs."
+    ]
+  },
+  "in-delhi": {
+    "scope": "Covers the Delhi urban area, including Old Delhi and New Delhi. Sights in other states, such as the Taj Mahal in Agra, are not covered.",
+    "experiences": [
+      {
+        "category": "culture_history",
+        "what": "Mughal and Sultanate monuments: a red sandstone fort, a garden tomb and a tall medieval minaret",
+        "places": [
+          "Red Fort",
+          "Humayun's Tomb",
+          "Qutub Minar"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "rickshaw rides through crowded bazaar lanes, a colonial-era circular arcade and a ceremonial boulevard with a war memorial arch",
+        "places": [
+          "Chandni Chowk",
+          "Connaught Place",
+          "India Gate"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "Old Delhi street food such as stuffed parathas, kebabs and chaat",
+        "places": [
+          "Paranthe Wali Gali",
+          "Karim's"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "handicraft stalls from across India and street markets for textiles and jewellery",
+        "places": [
+          "Dilli Haat",
+          "Janpath",
+          "Khan Market"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "walking in landscaped gardens dotted with medieval tombs",
+        "places": [
+          "Lodhi Garden"
+        ]
+      }
+    ],
+    "constraints": [
+      "Extreme heat, roughly April to June, limits outdoor sightseeing.",
+      "Heavy air pollution and fog in late autumn and winter affect outdoor experiences and visibility.",
+      "The monsoon, roughly July to September, brings heavy rain and humidity."
+    ]
+  },
+  "ma-marrakesh": {
+    "scope": "Covers the city of Marrakesh, centred on the medina and its markets. Overnight trips to the Sahara are not covered.",
+    "experiences": [
+      {
+        "category": "city_exploration",
+        "what": "walking the walled old city's lanes, the old Jewish quarter and past a landmark 12th-century minaret",
+        "places": [
+          "Marrakesh Medina",
+          "Mellah",
+          "Koutoubia Mosque"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "bargaining in covered souks for leather, lamps, carpets and spices",
+        "places": [
+          "Souk Semmarine"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "a 19th-century palace with painted ceilings, royal tombs and a tiled Islamic college",
+        "places": [
+          "Bahia Palace",
+          "Saadian Tombs",
+          "Ben Youssef Madrasa"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "evening open-air food stalls with grilled meats, snail soup and orange juice among street performers",
+        "places": [
+          "Jemaa el-Fnaa"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "a cobalt-blue villa garden of cacti and palms and an olive grove with a reflecting pool",
+        "places": [
+          "Majorelle Garden",
+          "Menara Gardens"
+        ]
+      }
+    ],
+    "constraints": [
+      "Summer, roughly June to August, is very hot, which limits daytime walking in the medina.",
+      "The medina's narrow lanes are largely inaccessible to cars and are explored on foot."
+    ]
+  },
+  "za-cape-town": {
+    "scope": "Covers the city of Cape Town and nearby experiences such as Table Mountain. Safaris and the Garden Route are not covered.",
+    "experiences": [
+      {
+        "category": "nature_scenery",
+        "what": "a flat-topped mountain reached by cable car or hiking trails, a peak hike with city views and a botanical garden on the mountain slopes",
+        "places": [
+          "Table Mountain",
+          "Lion's Head",
+          "Kirstenbosch National Botanical Garden"
+        ]
+      },
+      {
+        "category": "culture_history",
+        "what": "a former island prison, a hillside quarter of brightly painted houses and a museum of apartheid-era forced removals",
+        "places": [
+          "Robben Island",
+          "Bo-Kaap",
+          "District Six Museum"
+        ]
+      },
+      {
+        "category": "city_exploration",
+        "what": "a working harbour precinct of shops and restaurants and a historic public garden",
+        "places": [
+          "V&A Waterfront",
+          "Company's Garden"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "white-sand Atlantic beaches backed by mountain peaks",
+        "places": [
+          "Camps Bay Beach",
+          "Clifton Beaches"
+        ]
+      }
+    ],
+    "constraints": [
+      "The Table Mountain cable car does not operate in strong wind or poor visibility.",
+      "Robben Island is reached by boat.",
+      "Winter, roughly June to August, is cool, wet and windy; Atlantic beach water is cold all year."
+    ]
+  },
+  "au-cairns": {
+    "scope": "Covers staying in Cairns and day trips that depart from Cairns. The whole Great Barrier Reef and multi-day liveaboard trips are not covered.",
+    "experiences": [
+      {
+        "category": "activities",
+        "what": "day boat trips for snorkelling and diving over coral on nearby reef islands",
+        "places": [
+          "Green Island",
+          "Fitzroy Island"
+        ]
+      },
+      {
+        "category": "nature_scenery",
+        "what": "a cableway over rainforest canopy and a historic mountain railway past a gorge waterfall",
+        "places": [
+          "Skyrail Rainforest Cableway",
+          "Kuranda Scenic Railway",
+          "Barron Falls"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "swimming in a free saltwater lagoon pool on the waterfront promenade",
+        "places": [
+          "Cairns Esplanade Lagoon"
+        ]
+      },
+      {
+        "category": "food",
+        "what": "a weekend market of tropical fruit and local produce",
+        "places": [
+          "Rusty's Markets"
+        ]
+      },
+      {
+        "category": "shopping",
+        "what": "evening stalls of souvenirs and crafts",
+        "places": [
+          "Cairns Night Markets"
+        ]
+      }
+    ],
+    "constraints": [
+      "Reef snorkelling and diving require a boat trip from Cairns.",
+      "Marine stingers are present in coastal waters roughly November to May, limiting unprotected sea swimming.",
+      "The wet season, roughly December to April, brings heavy rain and possible cyclones.",
+      "Central Cairns has tidal mudflats rather than a swimming beach."
+    ]
+  },
+  "nz-queenstown": {
+    "scope": "Covers Queenstown town and nearby walks and lake experiences. Milford Sound and multi-day treks are not covered.",
+    "experiences": [
+      {
+        "category": "nature_scenery",
+        "what": "lakeside walks, a peninsula garden and a hill climb to views of the lake and mountains",
+        "places": [
+          "Lake Wakatipu",
+          "Queenstown Gardens",
+          "Queenstown Hill"
+        ]
+      },
+      {
+        "category": "activities",
+        "what": "bungy jumping from a historic bridge, jet boat rides through a narrow canyon and a gondola with a downhill luge",
+        "places": [
+          "Kawarau Bridge Bungy",
+          "Shotover Jet",
+          "Skyline Queenstown"
+        ]
+      },
+      {
+        "category": "activities",
+        "what": "downhill skiing and snowboarding at nearby ski fields",
+        "places": [
+          "Coronet Peak",
+          "The Remarkables"
+        ]
+      },
+      {
+        "category": "relaxation",
+        "what": "a lake cruise on a vintage coal-fired steamship",
+        "places": [
+          "TSS Earnslaw"
+        ]
+      }
+    ],
+    "constraints": [
+      "Skiing is limited to winter, roughly June to early October.",
+      "The ski fields are a mountain road drive from town.",
+      "Winters are cold with snow and ice, which affects walking tracks."
+    ]
+  }
+}

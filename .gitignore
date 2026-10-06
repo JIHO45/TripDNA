@@ -23,6 +23,7 @@ graphify-out/
 .mcp.json
 .claude/
 __pycache__/
+.venv/
 
 # Local configuration and secrets
 .env

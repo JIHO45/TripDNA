@@ -34,6 +34,11 @@ assert len(r.plan(cases, None, 0)) == 24
 assert [x[1] for x in r.plan(cases, None, 0)[:8]] == list("AABBBBAA")
 assert len(r.plan(cases, {"S1", "S4"}, 2)) == 8
 
+# Run 2 swaps in the constraints-only arm and never includes the experience list.
+c = r.build_user("C", "recommend", {"id": "S1", "user": "u"}, [{"id": "x", "name": "n", "country": "ZZ"}], {"x": {"scope": "s", "constraints": []}})
+assert r.C_HEADER in c and "experiences" not in c
+assert set(r.RUNS[2][0]) == {"A", "C"} and r.RUNS[1] == ("AB", "profiles.json", "runs")
+
 # Full run path with a fake SDK.
 replies = iter(["[]", '{"candidates":[null]}'])
 

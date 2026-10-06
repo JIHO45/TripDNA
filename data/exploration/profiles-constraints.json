@@ -1,0 +1,140 @@
+{
+  "fr-paris": {
+    "scope": "Covers the city of Paris within its central arrondissements. Versailles and other day trips outside the city are not covered.",
+    "constraints": []
+  },
+  "jp-tokyo": {
+    "scope": "Covers the central wards of Tokyo. The Tokyo islands and Mount Fuji are not covered.",
+    "constraints": []
+  },
+  "us-new-york": {
+    "scope": "Covers New York City at borough level, mainly Manhattan and Brooklyn. The rest of New York State is not covered.",
+    "constraints": [
+      "The Statue of Liberty and Ellis Island are reached by ferry.",
+      "Winters are cold with snow possible, which limits park and outdoor walking experiences."
+    ]
+  },
+  "sg-singapore": {
+    "scope": "Covers the main island of Singapore by neighbourhood. Sentosa is not covered in this draft.",
+    "constraints": [
+      "Outdoor experiences take place in hot, humid equatorial weather with frequent rain all year."
+    ]
+  },
+  "ae-dubai": {
+    "scope": "Covers experiences inside the city of Dubai. Desert excursions are not covered in this draft.",
+    "constraints": [
+      "Extreme summer heat, roughly June to September, severely limits beaches, walking and other outdoor experiences.",
+      "The main districts are spread far apart along the coast, so moving between the old creek area, downtown and the marina takes a metro or car ride."
+    ]
+  },
+  "tr-istanbul": {
+    "scope": "Covers the districts of Istanbul on both the European and Asian sides, including crossings of the Bosphorus. Cappadocia is not covered.",
+    "constraints": [
+      "Bosphorus sightseeing is done by boat.",
+      "The city is split by the strait, so combining the European and Asian sides involves a ferry, metro or bridge crossing."
+    ]
+  },
+  "tw-taipei": {
+    "scope": "Covers Taipei City. Jiufen and other places in neighbouring administrative areas are not covered in this draft.",
+    "constraints": [
+      "Typhoons and heavy rain in summer and early autumn can disrupt outdoor experiences.",
+      "Beitou and Yangmingshan are on the northern edge of the city, a metro or bus ride from the centre."
+    ]
+  },
+  "jp-kyoto": {
+    "scope": "Covers the city of Kyoto. The rest of Kyoto Prefecture and Osaka are not covered.",
+    "constraints": [
+      "Cherry blossom in spring and autumn foliage are short seasonal windows; the scenery differs outside them.",
+      "Arashiyama, Fushimi Inari and Kinkaku-ji lie on different edges of the city, so combining them takes train or bus transfers."
+    ]
+  },
+  "th-bangkok": {
+    "scope": "Covers central Bangkok, with its markets, temples and riverside. Distant day-trip products outside the city are not covered.",
+    "constraints": [
+      "The rainy season, roughly May to October, brings frequent heavy downpours and occasional street flooding.",
+      "Heat and humidity are high all year, which limits long daytime walking."
+    ]
+  },
+  "pt-lisbon": {
+    "scope": "Covers the city of Lisbon, including the Belém waterfront. Sintra and Cascais are not covered.",
+    "constraints": [
+      "The historic districts are built on steep hills with cobbled streets and stairs, which matters for limited mobility.",
+      "Belém is several kilometres west of the centre, a tram, train or bus ride away."
+    ]
+  },
+  "au-sydney": {
+    "scope": "Covers central Sydney, the harbour and the city beaches. National parks and other nature areas outside the city, such as the Blue Mountains, are not covered.",
+    "constraints": [
+      "Beach swimming is mainly a warm-season experience, roughly November to April.",
+      "Manly and Taronga Zoo are across the harbour from the centre and are commonly reached by ferry."
+    ]
+  },
+  "th-phuket-island": {
+    "scope": "Covers the main island of Phuket, limited to Patong, Kata and Karon beaches and Phuket Old Town. Offshore islands and boat tours are not covered.",
+    "constraints": [
+      "During the southwest monsoon, roughly May to October, west-coast beaches have rough seas and swimming is often unsafe.",
+      "Phuket Old Town is on the opposite side of the island from the beaches, a road transfer away.",
+      "Offshore islands are reached by boat and are outside this profile."
+    ]
+  },
+  "mx-mexico-city": {
+    "scope": "Covers Mexico City by district. Archaeological sites outside the city, such as Teotihuacan, are not covered in this draft.",
+    "constraints": [
+      "The city lies at about 2,240 metres, and the altitude can affect visitors on arrival.",
+      "The rainy season, roughly June to September, brings heavy afternoon showers.",
+      "Xochimilco is in the far south of the city, a long transfer from the centre."
+    ]
+  },
+  "ca-vancouver": {
+    "scope": "Covers the city of Vancouver, centred on its urban nature such as Stanley Park. The North Shore mountains and Whistler are not covered in this draft.",
+    "constraints": [
+      "Late autumn and winter are persistently rainy, which limits parks, beaches and the seawall."
+    ]
+  },
+  "us-honolulu": {
+    "scope": "Covers urban Honolulu, centred on downtown and Waikiki. The rest of Oahu and the other Hawaiian islands are not covered.",
+    "constraints": [
+      "The Diamond Head summit trail is a steep uphill walk with stairs."
+    ]
+  },
+  "in-delhi": {
+    "scope": "Covers the Delhi urban area, including Old Delhi and New Delhi. Sights in other states, such as the Taj Mahal in Agra, are not covered.",
+    "constraints": [
+      "Extreme heat, roughly April to June, limits outdoor sightseeing.",
+      "Heavy air pollution and fog in late autumn and winter affect outdoor experiences and visibility.",
+      "The monsoon, roughly July to September, brings heavy rain and humidity."
+    ]
+  },
+  "ma-marrakesh": {
+    "scope": "Covers the city of Marrakesh, centred on the medina and its markets. Overnight trips to the Sahara are not covered.",
+    "constraints": [
+      "Summer, roughly June to August, is very hot, which limits daytime walking in the medina.",
+      "The medina's narrow lanes are largely inaccessible to cars and are explored on foot."
+    ]
+  },
+  "za-cape-town": {
+    "scope": "Covers the city of Cape Town and nearby experiences such as Table Mountain. Safaris and the Garden Route are not covered.",
+    "constraints": [
+      "The Table Mountain cable car does not operate in strong wind or poor visibility.",
+      "Robben Island is reached by boat.",
+      "Winter, roughly June to August, is cool, wet and windy; Atlantic beach water is cold all year."
+    ]
+  },
+  "au-cairns": {
+    "scope": "Covers staying in Cairns and day trips that depart from Cairns. The whole Great Barrier Reef and multi-day liveaboard trips are not covered.",
+    "constraints": [
+      "Reef snorkelling and diving require a boat trip from Cairns.",
+      "Marine stingers are present in coastal waters roughly November to May, limiting unprotected sea swimming.",
+      "The wet season, roughly December to April, brings heavy rain and possible cyclones.",
+      "Central Cairns has tidal mudflats rather than a swimming beach."
+    ]
+  },
+  "nz-queenstown": {
+    "scope": "Covers Queenstown town and nearby walks and lake experiences. Milford Sound and multi-day treks are not covered.",
+    "constraints": [
+      "Skiing is limited to winter, roughly June to early October.",
+      "The ski fields are a mountain road drive from town.",
+      "Winters are cold with snow and ice, which affects walking tracks."
+    ]
+  }
+}

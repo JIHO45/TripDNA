@@ -7,6 +7,7 @@
   python3 scripts/run_profile_exploration.py --cases S1,S4 --rep 2   # repeat for split cases
   python3 scripts/run_profile_exploration.py --sheet            # blind review sheet for the base run
   python3 scripts/run_profile_exploration.py --sheet --rep 2    # separate sheet for a repeat
+  python3 scripts/run_profile_exploration.py --run 2 --dry-run  # second run: list vs constraints-only notes
 
 Calls already in the log are skipped, so a run can be resumed. No automatic retry:
 a failure is logged as it is and the run stops, because a failed call reports no
@@ -24,6 +25,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 EXP = ROOT / "data" / "exploration"
 LOG = EXP / "runs" / "responses.jsonl"
+ARMS, PROFILE_FILE = "AB", "profiles.json"
+# Run 1: list (A) vs full profile (B). Run 2: list (A) vs scope + constraints only (C, "B-prime" in the plan).
+RUNS = {1: ("AB", "profiles.json", "runs"), 2: ("AC", "profiles-constraints.json", "runs2")}
+C_HEADER = (
+    "Destination notes. `scope` is what the app recommends under each destination id; do not present "
+    "out-of-scope places as part of that destination. The notes are not a limit on what you may explain: "
+    "answer questions about any place from your own knowledge. Never mention these notes, a profile or a "
+    "scope to the user. A missing item means not recorded, not absent."
+)
 
 MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 1024
@@ -65,7 +75,7 @@ def load_inputs():
         {"id": c.get("recommendation_destination_id") or c["id"], "name": c["name_ko"], "country": c["country_code"]}
         for c in pilots
     ]
-    profiles = json.loads((EXP / "profiles.json").read_text())
+    profiles = json.loads((EXP / PROFILE_FILE).read_text())
     cases = json.loads((EXP / "cases.json").read_text())["cases"]
     ids = [c["id"] for c in cities]
     assert len(ids) == 20 and len(set(ids)) == 20, "expected 20 distinct pilot destinations"
@@ -80,6 +90,8 @@ def build_user(arm, task, case, cities, profiles):
     if arm == "B":
         lines += ["", "Destination profiles (drafts; a missing item means not recorded, not absent):",
                   json.dumps(profiles, ensure_ascii=False)]
+    if arm == "C":
+        lines += ["", C_HEADER, json.dumps(profiles, ensure_ascii=False)]
     lines += ["", "User:", case["user"]]
     if task == "detail":
         lines += ["", "Follow-up question:", case["detail"]]
@@ -93,7 +105,7 @@ def plan(cases, only, rep):
     for i, case in enumerate(cases):
         if only and case["id"] not in only:
             continue
-        for arm in ("AB" if i % 2 == 0 else "BA"):
+        for arm in (ARMS if i % 2 == 0 else ARMS[::-1]):
             for task in ("recommend", "detail"):
                 out.append((case, arm, task, rep))
     return out
@@ -169,7 +181,8 @@ def run(args):
     cities, profiles, cases = load_inputs()
     allowed = {c["id"] for c in cities}
     inputs_hash = hashlib.sha256(
-        json.dumps([MODEL, MAX_TOKENS, cities, profiles, cases, SYSTEM, TASKS], ensure_ascii=False, sort_keys=True).encode()
+        json.dumps([MODEL, MAX_TOKENS, cities, profiles, cases, SYSTEM, TASKS] + ([C_HEADER] if "C" in ARMS else []),
+                   ensure_ascii=False, sort_keys=True).encode()
     ).hexdigest()[:16]
     logged = read_log()
     stale = {r["inputs_hash"] for r in logged} - {inputs_hash}
@@ -186,10 +199,10 @@ def run(args):
 
     if args.dry_run:
         a = build_user("A", "recommend", cases[0], cities, profiles)
-        b = build_user("B", "recommend", cases[0], cities, profiles)
+        b = build_user(ARMS[1], "recommend", cases[0], cities, profiles)
         assert a.split("\n\n")[0] == b.split("\n\n")[0], "A and B must share the same destination list"
         print(f"model {MODEL}, inputs {inputs_hash}, {len(todo)} call(s) pending, {len(done)} already logged")
-        print(f"request size (chars): system {len(SYSTEM)}, A {len(a)}, B {len(b)}")
+        print(f"request size (chars): system {len(SYSTEM)}, A {len(a)}, {ARMS[1]} {len(b)}")
         print("order:", " ".join(key(*t) for t in todo))
         return
 
@@ -235,7 +248,7 @@ def run(args):
 def sheet(rep):
     """Shuffled responses with the arm hidden; the key goes to a separate file.
     One sheet per repeat number, never overwritten: it holds the reviewer's verdicts."""
-    md, keyfile = EXP / "runs" / f"review-r{rep}.md", EXP / "runs" / f"review-key-r{rep}.json"
+    md, keyfile = LOG.parent / f"review-r{rep}.md", LOG.parent / f"review-key-r{rep}.json"
     if md.exists() or keyfile.exists():
         sys.exit(f"stopped: {md.name} already exists and may hold review notes. Move it aside to regenerate.")
     rows = [r for r in read_log() if r["rep"] == rep]
@@ -271,5 +284,8 @@ if __name__ == "__main__":
     p.add_argument("--cases", default="")
     p.add_argument("--rep", type=int, default=0, choices=[0, 1, 2])
     p.add_argument("--max-usd", type=float, default=3.0)  # worst case for all 72 calls is about $2.4
+    p.add_argument("--run", type=int, default=1, choices=sorted(RUNS))
     a = p.parse_args()
+    ARMS, PROFILE_FILE, log_dir = RUNS[a.run]
+    LOG = EXP / log_dir / "responses.jsonl"
     sheet(a.rep) if a.sheet else run(a)

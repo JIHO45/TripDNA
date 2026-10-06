@@ -21,12 +21,13 @@ assert problems("recommend", '{"candidates":[{"id":"jp-tokyo","facts":["걷기 �
 assert problems("recommend", "[]") == ["not_object"]
 assert problems("recommend", '{"candidates":[null]}') == ["candidate_not_object"]
 assert problems("recommend", '```json\n{"candidates":[]}\n```') == ["markdown_fence"]
-assert "id_not_allowed:jp-osaka" in problems("recommend", '{"candidates":[{"id":"jp-osaka","facts":["a"],"caveat":"c"}]}')
-assert problems("recommend", '{"candidates":[{"id":"jp-tokyo","facts":["a","b","c"],"caveat":"c"}]}') == ["facts_count"]
+assert "id_not_allowed:jp-osaka" in problems("recommend", '{"candidates":[{"id":"jp-osaka","facts":["가."],"caveat":"다."}]}')
+assert problems("recommend", '{"candidates":[{"id":"jp-tokyo","facts":["가.","나.","다."],"caveat":"다."}]}') == ["facts_count"]
 assert problems("detail", '{"answer":[1],"limits":""}') == ["answer_not_text", "limits_not_text"]
-assert problems("detail", '{"answer":["See https://x.y"],"limits":"첫 문장. 둘째 문장."}') == [
+assert problems("detail", '{"answer":["참고 https://x.y"],"limits":"첫 문장. 둘째 문장."}') == [
     "answer_link", "limits_maybe_multi_sentence"]
 assert problems("detail", "sorry") == ["not_json"]
+assert problems("detail", '{"answer":["Whistler is 120 km away."],"limits":"확인 필요."}') == ["answer_not_korean"]
 
 # Call order: 24 base calls, A/B then B/A per case; repeats only for the named cases.
 cases = [{"id": f"S{i}"} for i in range(1, 7)]
@@ -47,7 +48,7 @@ order = [x[1] for x in r.plan(cases, None, 0)]
 assert order[:6] == ["G0", "G0", "G1", "G1", "G2", "G2"] and order[6:8] == ["G1", "G1"] and len(order) == 36
 assert problems("recommend", '{"candidates":[]}') == ["note_missing"]
 assert problems("recommend", '{"candidates":[],"note":"조건에 맞는 곳이 없습니다."}') == []
-one = '{"candidates":[{"id":"jp-tokyo","facts":["a"],"caveat":"c"}]%s}'
+one = '{"candidates":[{"id":"jp-tokyo","facts":["가."],"caveat":"다."}]%s}'
 assert problems("recommend", one % "") == ["note_missing"] and problems("recommend", one % ',"note":"이유."') == []
 r.configure(1)
 assert "note" not in r.TASKS["recommend"] and r.ARMS == ("A", "B")

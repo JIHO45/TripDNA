@@ -9,6 +9,7 @@
   python3 scripts/run_profile_exploration.py --sheet --rep 2    # separate sheet for a repeat
   python3 scripts/run_profile_exploration.py --run 2 --dry-run  # second run: list vs constraints-only notes
   python3 scripts/run_profile_exploration.py --run 3 --dry-run  # third run: three system prompts, cases N1-N6
+  python3 scripts/run_profile_exploration.py --run 4 --dry-run  # fourth run: same prompts, cases C1-C6
 
 Calls already in the log are skipped, so a run can be resumed. No automatic retry:
 a failure is logged as it is and the run stops, because a failed call reports no
@@ -33,6 +34,9 @@ RUNS = {
     1: dict(arms=("A", "B"), profiles="profiles.json", dir="runs"),
     2: dict(arms=("A", "C"), profiles="profiles-constraints.json", dir="runs2"),
     3: dict(arms=("G0", "G1", "G2"), profiles=None, dir="runs3", cases="cases-n.json", note=True,
+            guidelines={"G1": "guidelines/g1-claude.md", "G2": "guidelines/g2-codex.md"}),
+    # Run 4: the same three prompts, unchanged, on confirmation cases C1-C6.
+    4: dict(arms=("G0", "G1", "G2"), profiles=None, dir="runs4", cases="cases-c.json", note=True,
             guidelines={"G1": "guidelines/g1-claude.md", "G2": "guidelines/g2-codex.md"}),
 }
 ARMS, PROFILE_FILE, CASES_FILE, NOTE, SYSTEMS = ("A", "B"), "profiles.json", "cases.json", False, {}
@@ -164,6 +168,8 @@ def _sentence(value, problems, name):
     if not isinstance(value, str) or not value.strip():
         problems.append(f"{name}_not_text")
         return
+    if not re.search("[가-힣]", value):  # every case is written in Korean
+        problems.append(f"{name}_not_korean")
     if "http" in value or "www." in value:
         problems.append(f"{name}_link")
     if len(re.findall(r"[.!?。](?=\s|$)", value.strip())) > 1:

@@ -53,27 +53,7 @@ struct TripDNATests {
         }
     }
 
-    @Test func calibratedSatisfactionUsesAbsoluteFallbackForTwoTrips() throws {
-        let evaluation = try TripEvaluation(
-            satisfaction: 5,
-            wouldRepeat: true,
-            source: .postTrip
-        )
-        let service = UTVReplayService()
-
-        #expect(service.calibratedSatisfaction(
-            evaluation: evaluation,
-            rank: 2,
-            rankedTripCount: 2
-        ) == 1)
-        #expect(abs(service.calibratedSatisfaction(
-            evaluation: evaluation,
-            rank: 2,
-            rankedTripCount: 4
-        ) - 0.7666666667) < 0.0001)
-    }
-
-    @Test func replayIsDeterministicAndDefersGreyCountries() throws {
+    @Test func replayIsDeterministicAndDefersTripsWithoutDirectTags() throws {
         var confirmedTrip = try makeTrip(id: "confirmed", countryCodes: ["JP"])
         try confirmedTrip.end(at: date(2026, 1, 2))
         try confirmedTrip.submit(TripEvaluation(
@@ -129,7 +109,7 @@ struct TripDNATests {
         #expect(first.vector.confidence.natureUrban > 0)
     }
 
-    @Test func midSatisfactionStillMovesAxesTowardTrip() throws {
+    @Test func satisfactionWithoutReasonDoesNotInferAxes() throws {
         var trip = try makeTrip(id: "mid", countryCodes: ["JP"])
         try trip.end(at: date(2026, 1, 2))
         try trip.submit(TripEvaluation(
@@ -147,12 +127,11 @@ struct TripDNATests {
             now: date(2026, 3, 1)
         )
 
-        #expect(result.vector.axes.natureUrban < -0.01)
-        #expect(result.vector.confidence.natureUrban > 0)
-        #expect(result.vector.confidence.natureUrban <= 0.35)
+        #expect(result.vector.axes == .zero)
+        #expect(result.vector.confidence == .zero)
     }
 
-    @Test func firstHighSatisfactionTripMovesStronglyWithCappedConfidence() throws {
+    @Test func explicitPositiveTagOnlyUpdatesItsAxis() throws {
         var trip = try makeTrip(id: "love", countryCodes: ["JP"])
         try trip.end(at: date(2026, 1, 2))
         try trip.submit(TripEvaluation(
@@ -181,10 +160,11 @@ struct TripDNATests {
             now: date(2026, 3, 1)
         )
 
-        // 첫 고평가는 스텝 상한(0.45)까지 세게 당기고, 신뢰도는 콜드스타트 캡 이하.
-        #expect(result.vector.axes.natureUrban <= -0.4)
+        #expect(result.vector.axes.natureUrban == -0.25)
+        #expect(result.vector.axes.planningStyle == 0)
         #expect(result.vector.confidence.natureUrban <= 0.35)
         #expect(result.vector.confidence.natureUrban > 0)
+        #expect(result.vector.confidence.planningStyle == 0)
     }
 
     @Test func rankingPreviewDoesNotPersistButSaveDoes() async throws {
@@ -543,10 +523,15 @@ struct TripDNATests {
         at url: URL,
         countries: [CountryProfile]
     ) throws -> SwiftDataAppStore {
-        SwiftDataAppStore(
+        let outdoor = TagDefinition(
+            id: "outdoor", labelKo: "자연/트레킹", group: .interest,
+            routing: [.taste, .interest], axisSignature: [.natureUrban: -0.6],
+            polarityPairID: nil, constraintTarget: nil, qualityTarget: false
+        )
+        return SwiftDataAppStore(
             container: try SwiftDataAppStore.makeContainer(url: url),
             countries: countries,
-            tags: []
+            tags: [outdoor]
         )
     }
 

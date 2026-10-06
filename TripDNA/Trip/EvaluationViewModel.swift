@@ -83,7 +83,7 @@ final class EvaluationViewModel {
         positiveTagOptions.filter { $0.group == .interest }
     }
 
-    /// 선택된 긍정 태그 중 taste 라우팅이 있는 것만 — 국가 귀속 스텝 대상.
+    /// 선택된 긍정 태그 중 taste 라우팅이 있는 것만 — 기존 평가 입력의 귀속 대상.
     var tasteTagsNeedingAttribution: [TagDefinition] {
         positiveTagOptions.filter { tag in
             positiveTagIDs.contains(tag.id) && tag.routing.contains(.taste)

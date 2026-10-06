@@ -4,6 +4,40 @@ import Testing
 @testable import TripDNA
 
 struct TasteEvidenceTests {
+    @Test func visitsComparisonsAndSavesDoNotInventTasteOrConfidence() throws {
+        let prior = TasteAxes(natureUrban: 0.2, energyLevel: 0, planningStyle: -0.7,
+                              socialMode: 0, noveltyAppetite: 0)
+        let start = Date(timeIntervalSince1970: 1_780_000_000)
+        var trips: [Trip] = []
+        for (index, code) in ["JP", "US", "CA"].enumerated() {
+            let day = start.addingTimeInterval(Double(index) * 86_400)
+            let leg = try TripLeg(countryCode: code, startDate: day, endDate: day)
+            var trip = try Trip(id: code, legs: [leg], companion: .alone,
+                                purpose: .leisure, createdAt: day)
+            try trip.end(at: day)
+            try trip.submit(TripEvaluation(satisfaction: 5, wouldRepeat: true,
+                comparison: TripComparison(versusTripID: trips.first?.id, result: .better),
+                source: .postTrip), at: day)
+            trips.append(trip)
+        }
+        let countries = ["JP", "US", "CA"].map {
+            CountryProfile(countryCode: $0, name: $0, nameKo: $0, status: .confirmed,
+                tasteCore: TasteAxes(natureUrban: -0.8, energyLevel: 0.8, planningStyle: 0.9,
+                                    socialMode: 0.8, noveltyAppetite: 0),
+                matchingAxes: [.natureUrban, .energyLevel, .planningStyle, .socialMode],
+                interestTags: [:], constraints: .init(cost: 0.5, climate: 0.5), popularity: 0.5)
+        }
+        let saves = countries.map { country in
+            CardFeedback(id: country.countryCode, countryCode: country.countryCode,
+                slot: .bestMatch, action: .save, reason: nil, excludeUntil: nil,
+                revokedAt: nil, createdAt: start)
+        }
+        let result = UTVReplayService().replay(userID: "u", trips: trips, ranking: nil,
+            countries: countries, tags: [], feedback: saves, prior: prior, now: start)
+        #expect(result.vector.axes == prior)
+        #expect(result.vector.confidence == .zero)
+    }
+
     @Test func everyCountryRejectionLeavesTasteUnchanged() {
         let prior = TasteAxes(natureUrban: 0.3, energyLevel: -0.2, planningStyle: 0.4,
                               socialMode: -0.1, noveltyAppetite: 0.2)

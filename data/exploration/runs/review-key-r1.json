@@ -1,0 +1,22 @@
+{
+  "R01": "S2-B-detail-r1",
+  "R02": "S2-A-detail-r1",
+  "R03": "S2-B-recommend-r1",
+  "R04": "S2-A-recommend-r1",
+  "R05": "S3-A-detail-r1",
+  "R06": "S3-B-detail-r1",
+  "R07": "S3-A-recommend-r1",
+  "R08": "S3-B-recommend-r1",
+  "R09": "S4-A-detail-r1",
+  "R10": "S4-B-detail-r1",
+  "R11": "S4-A-recommend-r1",
+  "R12": "S4-B-recommend-r1",
+  "R13": "S5-A-detail-r1",
+  "R14": "S5-B-detail-r1",
+  "R15": "S5-B-recommend-r1",
+  "R16": "S5-A-recommend-r1",
+  "R17": "S6-A-detail-r1",
+  "R18": "S6-B-detail-r1",
+  "R19": "S6-A-recommend-r1",
+  "R20": "S6-B-recommend-r1"
+}

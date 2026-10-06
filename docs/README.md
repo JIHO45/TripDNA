@@ -4,7 +4,7 @@
 새 추천의 기준은 [취향·도시·LLM 추천 설계 v2](recommendation/architecture.md)다.
 이 폴더는 **구현 목표**를 정의하며, 문서 수정이 앱 구현 완료를 뜻하지 않는다.
 
-현재 우선 작업은 [도시 목록 대 프로필 탐색 실험](evaluation/profile-exploration.md)이다. D3 사람 검수·자료 확대는 중단했으며 기존 v3 자료는 보존한다. 다음 작업과 진행 상태는 [전환 체크리스트](TODO.md)에서 확인한다. 항목별 선행 조건·완료 기준·결정 시점을 관리한다.
+현재 우선 작업은 [도시 목록 대 프로필 탐색 실험](evaluation/profile-exploration.md)과 그에 이어지는 [추천 지침 비교 실험](evaluation/guideline-comparison.md)이다. D3 사람 검수·자료 확대는 중단했으며 기존 v3 자료는 보존한다. 다음 작업과 진행 상태는 [전환 체크리스트](TODO.md)에서 확인한다. 항목별 선행 조건·완료 기준·결정 시점을 관리한다.
 
 ## 폴더 구조
 

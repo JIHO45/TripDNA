@@ -37,7 +37,20 @@ assert len(r.plan(cases, {"S1", "S4"}, 2)) == 8
 # Run 2 swaps in the constraints-only arm and never includes the experience list.
 c = r.build_user("C", "recommend", {"id": "S1", "user": "u"}, [{"id": "x", "name": "n", "country": "ZZ"}], {"x": {"scope": "s", "constraints": []}})
 assert r.C_HEADER in c and "experiences" not in c
-assert set(r.RUNS[2][0]) == {"A", "C"} and r.RUNS[1] == ("AB", "profiles.json", "runs")
+assert r.RUNS[2]["arms"] == ("A", "C") and r.RUNS[1]["arms"] == ("A", "B")
+
+# Run 3: three prompts, list-only input, arm order rotates, `note` is checked.
+r.configure(3)
+assert r.ARMS == ("G0", "G1", "G2") and set(r.SYSTEMS) == {"G1", "G2"} and "note" in r.TASKS["recommend"]
+assert all(not t.startswith("#") and "---" not in t[:5] for t in r.SYSTEMS.values())
+order = [x[1] for x in r.plan(cases, None, 0)]
+assert order[:6] == ["G0", "G0", "G1", "G1", "G2", "G2"] and order[6:8] == ["G1", "G1"] and len(order) == 36
+assert problems("recommend", '{"candidates":[]}') == ["note_missing"]
+assert problems("recommend", '{"candidates":[],"note":"조건에 맞는 곳이 없습니다."}') == []
+one = '{"candidates":[{"id":"jp-tokyo","facts":["a"],"caveat":"c"}]%s}'
+assert problems("recommend", one % "") == ["note_missing"] and problems("recommend", one % ',"note":"이유."') == []
+r.configure(1)
+assert "note" not in r.TASKS["recommend"] and r.ARMS == ("A", "B")
 
 # Full run path with a fake SDK.
 replies = iter(["[]", '{"candidates":[null]}'])

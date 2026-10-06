@@ -11,3 +11,12 @@
 - `runs2/`: 실행 2(목록 대 제약 중심 입력)의 기록. `--run 2`로 실행한다.
 
 실행별 첫 호출 뒤에는 그 실행의 입력을 고치지 않는다. 고치면 새 실행으로 기록한다.
+
+## 추천 지침 비교 (실행 3·4)
+
+계획: [guideline-comparison.md](../../docs/evaluation/guideline-comparison.md).
+
+- `guidelines/`: 실행 3에 쓰는 지침 고정본. `g1-claude.md`, `g2-codex.md`. 세 줄표(`---`) 아래가 모델에 보내는 본문이다.
+- `cases-n.json`: 개발용 사례 N1~N6의 문장. 판정 기준은 `drafts/cases-claude.md`.
+- `drafts/`: 지침·사례 초안. `cases-c.md`는 지침 고정 뒤에 쓰는 확인용 사례 C1~C6이다.
+- `runs3/`: 실행 3의 기록. `--run 3`으로 실행한다.

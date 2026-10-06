@@ -8,6 +8,7 @@
   python3 scripts/run_profile_exploration.py --sheet            # blind review sheet for the base run
   python3 scripts/run_profile_exploration.py --sheet --rep 2    # separate sheet for a repeat
   python3 scripts/run_profile_exploration.py --run 2 --dry-run  # second run: list vs constraints-only notes
+  python3 scripts/run_profile_exploration.py --run 3 --dry-run  # third run: three system prompts, cases N1-N6
 
 Calls already in the log are skipped, so a run can be resumed. No automatic retry:
 a failure is logged as it is and the run stops, because a failed call reports no
@@ -25,9 +26,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 EXP = ROOT / "data" / "exploration"
 LOG = EXP / "runs" / "responses.jsonl"
-ARMS, PROFILE_FILE = "AB", "profiles.json"
 # Run 1: list (A) vs full profile (B). Run 2: list (A) vs scope + constraints only (C, "B-prime" in the plan).
-RUNS = {1: ("AB", "profiles.json", "runs"), 2: ("AC", "profiles-constraints.json", "runs2")}
+# Run 3: three system prompts on the list-only input with development cases N1-N6
+# (docs/evaluation/guideline-comparison.md). G0 is the run 1-2 prompt; its task text gains `note`.
+RUNS = {
+    1: dict(arms=("A", "B"), profiles="profiles.json", dir="runs"),
+    2: dict(arms=("A", "C"), profiles="profiles-constraints.json", dir="runs2"),
+    3: dict(arms=("G0", "G1", "G2"), profiles=None, dir="runs3", cases="cases-n.json", note=True,
+            guidelines={"G1": "guidelines/g1-claude.md", "G2": "guidelines/g2-codex.md"}),
+}
+ARMS, PROFILE_FILE, CASES_FILE, NOTE, SYSTEMS = ("A", "B"), "profiles.json", "cases.json", False, {}
 C_HEADER = (
     "Destination notes. `scope` is what the app recommends under each destination id; do not present "
     "out-of-scope places as part of that destination. The notes are not a limit on what you may explain: "
@@ -51,6 +59,16 @@ Rules:
 - Write the sentences in the user's language. One fact per sentence.
 - Reply with a single JSON object only, no markdown fence and no other text."""
 
+NOTE_TASK = (
+    "Recommend at most 2 destinations for this user.\n"
+    'JSON shape: {"candidates": [{"id": "<allowed id>", "facts": ["<sentence>", "<sentence>"], '
+    '"caveat": "<sentence>"}], "note": "<sentence>"}\n'
+    "facts: at most 2 sentences about the destination that support the recommendation "
+    "and connect to what the user said. caveat: exactly 1 sentence the user should know or check. "
+    "note: 1 sentence giving the actual reason when fewer than 2 destinations are returned; "
+    "otherwise leave it out."
+)
+
 TASKS = {
     "recommend": (
         "Recommend at most 2 destinations for this user.\n"
@@ -68,6 +86,21 @@ TASKS = {
 }
 
 
+RECOMMEND_TASK = TASKS["recommend"]
+
+
+def configure(run):
+    """Point the module at one run's arms, inputs, prompts and log."""
+    global ARMS, PROFILE_FILE, CASES_FILE, NOTE, SYSTEMS, LOG
+    cfg = RUNS[run]
+    ARMS, PROFILE_FILE, NOTE = cfg["arms"], cfg["profiles"], cfg.get("note", False)
+    CASES_FILE = cfg.get("cases", "cases.json")
+    LOG = EXP / cfg["dir"] / "responses.jsonl"
+    # A guideline file holds notes for people above a line of three dashes; the model gets the rest.
+    SYSTEMS = {arm: (EXP / f).read_text().split("\n---\n", 1)[1].strip() for arm, f in cfg.get("guidelines", {}).items()}
+    TASKS["recommend"] = NOTE_TASK if NOTE else RECOMMEND_TASK
+
+
 def load_inputs():
     cand = json.loads((ROOT / "data/planning/destination-candidates.json").read_text())
     pilots = [c for c in cand["candidates"] if c.get("pilot")]
@@ -75,11 +108,11 @@ def load_inputs():
         {"id": c.get("recommendation_destination_id") or c["id"], "name": c["name_ko"], "country": c["country_code"]}
         for c in pilots
     ]
-    profiles = json.loads((EXP / PROFILE_FILE).read_text())
-    cases = json.loads((EXP / "cases.json").read_text())["cases"]
+    profiles = json.loads((EXP / PROFILE_FILE).read_text()) if PROFILE_FILE else {}
+    cases = json.loads((EXP / CASES_FILE).read_text())["cases"]
     ids = [c["id"] for c in cities]
     assert len(ids) == 20 and len(set(ids)) == 20, "expected 20 distinct pilot destinations"
-    assert list(profiles) == ids, "profiles.json keys must match the candidate ids in order"
+    assert not PROFILE_FILE or list(profiles) == ids, "profile keys must match the candidate ids in order"
     assert len(cases) == 6
     return cities, profiles, cases
 
@@ -100,12 +133,13 @@ def build_user(arm, task, case, cities, profiles):
 
 
 def plan(cases, only, rep):
-    """Per case alternate A/B and B/A; both tasks per arm."""
+    """Rotate the arm order from case to case (A/B then B/A for two arms); both tasks per arm."""
     out = []
     for i, case in enumerate(cases):
         if only and case["id"] not in only:
             continue
-        for arm in (ARMS if i % 2 == 0 else ARMS[::-1]):
+        k = i % len(ARMS)
+        for arm in ARMS[k:] + ARMS[:k]:
             for task in ("recommend", "detail"):
                 out.append((case, arm, task, rep))
     return out
@@ -166,7 +200,11 @@ def check_output(task, text, allowed):
                 problems.append("facts_count")
             for f in facts if isinstance(facts, list) else []:
                 _sentence(f, problems, "fact")
-            _sentence(c.get("caveat"), problems, "caveat")
+                _sentence(c.get("caveat"), problems, "caveat")
+        if NOTE and data.get("note") not in (None, ""):
+            _sentence(data["note"], problems, "note")
+        elif NOTE and len(cands) < 2:
+            problems.append("note_missing")
     else:
         answer = data.get("answer")
         if not isinstance(answer, list) or not 1 <= len(answer) <= 2:
@@ -181,7 +219,8 @@ def run(args):
     cities, profiles, cases = load_inputs()
     allowed = {c["id"] for c in cities}
     inputs_hash = hashlib.sha256(
-        json.dumps([MODEL, MAX_TOKENS, cities, profiles, cases, SYSTEM, TASKS] + ([C_HEADER] if "C" in ARMS else []),
+        json.dumps([MODEL, MAX_TOKENS, cities, profiles, cases, SYSTEM, TASKS] + ([C_HEADER] if "C" in ARMS else [])
+                   + [SYSTEMS[a] for a in ARMS if a in SYSTEMS],
                    ensure_ascii=False, sort_keys=True).encode()
     ).hexdigest()[:16]
     logged = read_log()
@@ -198,11 +237,14 @@ def run(args):
         sys.exit(f"stopped: {len(done)} logged + {len(todo)} pending exceeds the plan's {MAX_CALLS}-call limit")
 
     if args.dry_run:
-        a = build_user("A", "recommend", cases[0], cities, profiles)
-        b = build_user(ARMS[1], "recommend", cases[0], cities, profiles)
-        assert a.split("\n\n")[0] == b.split("\n\n")[0], "A and B must share the same destination list"
+        users = {arm: build_user(arm, "recommend", cases[0], cities, profiles) for arm in ARMS}
+        assert len({u.split("\n\n")[0] for u in users.values()}) == 1, "all arms must share the same destination list"
         print(f"model {MODEL}, inputs {inputs_hash}, {len(todo)} call(s) pending, {len(done)} already logged")
-        print(f"request size (chars): system {len(SYSTEM)}, A {len(a)}, {ARMS[1]} {len(b)}")
+        sizes = ", ".join(f"{arm} system {len(SYSTEMS.get(arm, SYSTEM))} + user {len(u)}" for arm, u in users.items())
+        print(f"request size (chars): {sizes}")
+        worst = sum(((len(SYSTEMS.get(t[1], SYSTEM)) + len(build_user(t[1], t[2], t[0], cities, profiles))) * 2 * PRICE_IN
+                     + MAX_TOKENS * PRICE_OUT) / 1e6 for t in todo)
+        print(f"worst-case cost of pending calls: ${worst:.4f} (2 tokens per character in, full max_tokens out)")
         print("order:", " ".join(key(*t) for t in todo))
         return
 
@@ -211,9 +253,9 @@ def run(args):
     client = anthropic.Anthropic(max_retries=0)
     LOG.parent.mkdir(parents=True, exist_ok=True)
     for case, arm, task, rep in todo:
-        user = build_user(arm, task, case, cities, profiles)
+        user, system = build_user(arm, task, case, cities, profiles), SYSTEMS.get(arm, SYSTEM)
         # Upper bound for the next call: 2 tokens per character in, a full max_tokens out.
-        worst = ((len(SYSTEM) + len(user)) * 2 * PRICE_IN + MAX_TOKENS * PRICE_OUT) / 1e6
+        worst = ((len(system) + len(user)) * 2 * PRICE_IN + MAX_TOKENS * PRICE_OUT) / 1e6
         spent = cost(read_log())
         if spent + worst > args.max_usd:
             sys.exit(f"stopped: spent ${spent:.4f}, next call could add ${worst:.4f}, over --max-usd {args.max_usd}")
@@ -222,7 +264,7 @@ def run(args):
         start = time.monotonic()
         try:
             resp = client.messages.create(
-                model=MODEL, max_tokens=MAX_TOKENS, system=SYSTEM, messages=[{"role": "user", "content": user}],
+                model=MODEL, max_tokens=MAX_TOKENS, system=system, messages=[{"role": "user", "content": user}],
             )
             # Raw text and usage go into the row before any checking, so a bad reply is never lost.
             row.update(text="".join(b.text for b in resp.content if b.type == "text"), stop_reason=resp.stop_reason,
@@ -256,7 +298,7 @@ def sheet(rep):
         sys.exit(f"no logged calls with rep {rep}")
     if rep == 0 and len(rows) < 24:  # the sheet cannot be extended later
         sys.exit(f"stopped: only {len(rows)} of 24 base calls are logged. Finish the base run first.")
-    cases = {c["id"]: c for c in json.loads((EXP / "cases.json").read_text())["cases"]}
+    cases = {c["id"]: c for c in json.loads((EXP / CASES_FILE).read_text())["cases"]}
     random.Random(20261006).shuffle(rows)
     rows.sort(key=lambda r: (r["case"], r["task"]))  # keeps the shuffled A/B order within each group
     out, keymap = ["# 응답 검수 시트 (방식 가림)", ""], {}
@@ -286,6 +328,5 @@ if __name__ == "__main__":
     p.add_argument("--max-usd", type=float, default=3.0)  # worst case for all 72 calls is about $2.4
     p.add_argument("--run", type=int, default=1, choices=sorted(RUNS))
     a = p.parse_args()
-    ARMS, PROFILE_FILE, log_dir = RUNS[a.run]
-    LOG = EXP / log_dir / "responses.jsonl"
+    configure(a.run)
     sheet(a.rep) if a.sheet else run(a)

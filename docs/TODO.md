@@ -14,8 +14,9 @@ B1·D1·D2의 이전 완료 기록은 [v1 진행 기록](v1/progress.md)에 보�
 - [x] **실행 4 검수 마무리:** 2026-10-07, [결과 집계](../data/exploration/runs4/result-r0.md). 검수자 2명 기준으로 선택 보류이며 이후 실험은 G0으로 진행한다. 계획한 제3 검수는 받지 못했고 틀린 사실 항목은 대부분 미판정으로 남았다.
 - [x] **다음 실험 고정본 작성:** 2026-10-07 고정. [실행 5 계획](v2/run5-plan.md), [에이전트 지침](../data/exploration/guidelines/r5-agents.md), [사례 R1~R12](../data/exploration/drafts/cases-r5.md), 입력 해시 `467f421fb3f74493`. Console의 남은 한도는 확인하지 못했다.
 - [x] **실행 도구 준비·검사:** 2026-10-07, `scripts/run_profile_exploration.py --run 5`. `--dry-run`과 가짜 응답 검사 통과, 실행 1~4 입력 해시 유지. 실제 API 호출은 하지 않았다.
-- [ ] **비교 실행과 결과 기록:** 실행 5는 96호출 중 76건에서 크레딧 부족으로 멈췄다(2026-10-07). [부분 결과](../data/exploration/runs5/result-partial.md)는 새 사례 5개·검수자 1명 기준이며 계획한 판정이 아니다. 남은 것: R10 일부와 R11·R12의 19호출, 가림 검수와 두 번째 검수.
-- [ ] **구독·저장 결정의 후속:** 2026-10-07에 LLM 기능의 구독자 한정 제공, 도시 자료의 앱 번들 배포, 외부 DB 보류를 정했다([추천 구조](v2/recommendation.md#2026-10-07-추가-결정-구독-자료-배포-저장)). 서버와 서버 저장은 Firebase(Cloud Functions, Firestore)로 정하고 제외를 해제했다. 미정: 가격과 상품 형태, 구독자 식별, 무료 사용자 범위, 구독자별 사용량 한도와 그에 필요한 서버 저장. 화면·출시 문서에는 아직 반영하지 않았다.
+- [x] **실행 5:** 96호출 중 76건에서 멈췄고 남은 호출은 하지 않기로 했다(2026-10-07). [부분 결과](../data/exploration/runs5/result-partial.md)가 최종 기록이며 계획한 판정은 아니다.
+- [ ] **실행 6 (Gemini만, 실행 5의 세 구성):** [계획 초안](v2/run6-plan.md)과 [지침](../data/exploration/guidelines/r6-agents.md), 실행 도구(`--run 6`)를 2026-10-07에 준비했다. Claude는 더 실행하지 않는다. 남은 것: 선택 규칙과 Gemini 예산 확정, 결제가 연결된 Gemini API 키, 고정 커밋, 실행과 검수.
+- [ ] **구독·저장 결정의 후속:** 2026-10-07에 LLM 기능의 구독자 한정 제공, 도시 자료의 앱 번들 배포, 외부 DB 보류를 정했다([추천 구조](v2/recommendation.md#2026-10-07-추가-결정-구독-자료-배포-저장)). 서버와 서버 저장은 Firebase(Cloud Functions, Firestore)로 정하고 제외를 해제했다. 무료 사용자에게는 LLM을 쓰지 않는다. 미정: 가격과 상품 형태, 구독자별 사용량 한도와 그에 필요한 서버 저장. 화면·출시 문서에는 아직 반영하지 않았다.
 - [ ] **방식 채택·확대 판정:** [평가](README.md#evaluation)에 따라 결정한다. 과거 D3/V1의 전체 프로필 제작·확대를 자동 재개하지 않는다.
 - [ ] **채택 후 앱 전환:** [기억·이관](README.md#memory), [저장·서버](README.md#storage), [추천](README.md#recommendation), [화면](README.md#screens), [계측](README.md#metrics)을 구현·검증한다.
 - [ ] **출시 검증:** [출시 기준](README.md#release)에 실제 빌드·기기·운영 증거를 남긴다.

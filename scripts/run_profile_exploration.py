@@ -13,6 +13,7 @@
   python3 scripts/run_profile_exploration.py --run 5 --dry-run  # fifth run: web search, notes, Sonnet; cases R1-R12
   python3 scripts/run_profile_exploration.py --run 5 --cases R5 # one case on all four arms, to measure cost first
   python3 scripts/run_profile_exploration.py --run 5 --cases R9 --arms HS,HSC --rep 1  # repeat a split pair
+  python3 scripts/run_profile_exploration.py --run 6 --dry-run  # sixth run: Gemini only, the run-5 design on Flash and Pro
 
 Calls already in the log are skipped, so a run can be resumed. No automatic retry:
 a failure is logged as it is and the run stops, because a failed call reports no
@@ -43,9 +44,13 @@ RUNS = {
             guidelines={"G1": "guidelines/g1-claude.md", "G2": "guidelines/g2-codex.md"}),
     # Run 5 (docs/v2/run5-plan.md): list only vs web search vs web search + notes vs Sonnet with web search.
     5: dict(arms=("H0", "HS", "HSC", "SS"), profiles="profiles-constraints.json", dir="runs5", cases="cases-r5.json",
-            note=True, n_cases=12, max_tokens=4096, max_calls=160, agents="guidelines/r5-agents.md"),
+            note=True, n_cases=12, max_tokens=4096, max_calls=160, agents="guidelines/r5-agents.md", arm_cfg="R5_ARMS"),
+    # Run 6 (docs/v2/run6-plan.md): Gemini only. Flash with search, Flash with search + notes, Pro with search.
+    6: dict(arms=("FS", "FSC", "PS"), profiles="profiles-constraints.json", dir="runs6", cases="cases-r5.json",
+            note=True, n_cases=12, max_tokens=4096, max_calls=120, agents="guidelines/r6-agents.md", arm_cfg="R6_ARMS"),
 }
 HAIKU, SONNET = "claude-haiku-4-5", "claude-sonnet-5-5"
+FLASH, PRO = "gemini-3.8-flash", "gemini-3.1-pro-preview"
 # Run 5 arms. `system` and `notes` name blocks in the agents file; `search` is the web search tool type.
 R5_ARMS = {
     "H0": dict(model=HAIKU, system="list"),
@@ -53,6 +58,13 @@ R5_ARMS = {
     "HSC": dict(model=HAIKU, system="search", search="web_search_20250305", notes="constraints-header"),
     "SS": dict(model=SONNET, system="search", search="web_search_20260209",
                extra=dict(thinking={"type": "adaptive"}, output_config={"effort": "medium"})),
+}
+# Gemini takes no cap on searches; its thinking cannot be switched off, so both models run at their lowest level.
+_GEMINI = dict(system="search2", search="google_search", provider="gemini", thinking_level="low")
+R6_ARMS = {
+    "FS": dict(model=FLASH, **_GEMINI),
+    "FSC": dict(model=FLASH, notes="constraints-header", **_GEMINI),
+    "PS": dict(model=PRO, **_GEMINI),
 }
 MAX_USES = {"recommend": 5, "detail": 3}
 SOURCES_TASK = (
@@ -75,8 +87,12 @@ MAX_CALLS = 72  # plan: 24 base + up to 48 repeats
 # USD per 1M tokens, platform.claude.com/docs/en/about-claude/pricing, checked 2026-10-06.
 PRICE_IN, PRICE_OUT = 1.00, 5.00
 # Run 5. Sonnet price and the web search fee ($10 per 1,000 searches) from the same page, checked 2026-10-07.
-PRICES = {HAIKU: (PRICE_IN, PRICE_OUT), SONNET: (2.00, 10.00)}
+# Gemini: ai.google.dev/gemini-api/docs/pricing, checked 2026-10-07. Flash rate is valid to 2026-12-31; output
+# includes thinking. Searches are billed per query at $14 per 1,000 after 5,000 free a month; the free quota
+# is ignored here so the budget guard errs high.
+PRICES = {HAIKU: (PRICE_IN, PRICE_OUT), SONNET: (2.00, 10.00), FLASH: (0.75, 3.75), PRO: (2.00, 12.00)}
 SEARCH_USD = 0.01
+SEARCH_FEE = {FLASH: 0.014, PRO: 0.014}
 # Assumed input tokens one search adds, for the --max-usd guard only. Unmeasured; replace after the first calls.
 SEARCH_TOKENS = 15000
 
@@ -126,7 +142,7 @@ def configure(run):
     cfg = RUNS[run]
     N_CASES, MAX_TOKENS, MAX_CALLS = cfg.get("n_cases", 6), cfg.get("max_tokens", 1024), cfg.get("max_calls", 72)
     if "agents" in cfg:  # one file, one fenced block per piece of model-facing text
-        ARM_CFG = R5_ARMS
+        ARM_CFG = globals()[cfg["arm_cfg"]]
         BLOCKS = dict(re.findall(r"```text (\S+)\n(.*?)\n```", (EXP / cfg["agents"]).read_text(), re.S))
     ARMS, PROFILE_FILE, NOTE = cfg["arms"], cfg["profiles"], cfg.get("note", False)
     CASES_FILE = cfg.get("cases", "cases.json")
@@ -179,7 +195,7 @@ def worst_usd(arm, task, system, user):
     price_in, price_out = PRICES[cfg.get("model", MODEL)]
     searches = MAX_USES[task] if cfg.get("search") else 0
     return (((len(system) + len(user)) * 2 + searches * SEARCH_TOKENS) * price_in + MAX_TOKENS * price_out) / 1e6 \
-        + searches * SEARCH_USD
+        + searches * SEARCH_FEE.get(cfg.get("model", MODEL), SEARCH_USD)
 
 
 def plan(cases, only, rep):
@@ -207,7 +223,48 @@ def read_log():
 
 def cost(rows):
     return sum((r.get("input_tokens", 0) * PRICES[r["model"]][0] + r.get("output_tokens", 0) * PRICES[r["model"]][1]) / 1e6
-               + r.get("search_requests", 0) * SEARCH_USD for r in rows)
+               + r.get("search_requests", 0) * SEARCH_FEE.get(r["model"], SEARCH_USD) for r in rows)
+
+
+class GeminiError(Exception):
+    pass
+
+
+def call_gemini(model, system, user, thinking_level):
+    """One Interactions API call over plain HTTP. Returns the fields run() logs; the whole reply is kept as `content`."""
+    import os
+    import urllib.error
+    import urllib.request
+    body = {"model": model, "input": user, "system_instruction": system, "store": False,
+            "tools": [{"type": "google_search"}],
+            "generation_config": {"max_output_tokens": MAX_TOKENS, "thinking_level": thinking_level}}
+    req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/interactions",
+                                 data=json.dumps(body).encode(), method="POST",
+                                 headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"], "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            data = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        raise GeminiError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:500]}")
+    except (urllib.error.URLError, TimeoutError, ValueError) as e:
+        raise GeminiError(f"{type(e).__name__}: {e}")
+    steps = data.get("steps") or []
+    texts = lambda step: [c for c in step.get("content") or [] if c.get("type") == "text"]
+    last_other = max((i for i, st in enumerate(steps) if st.get("type") != "model_output"), default=-1)
+    final = "".join(c.get("text", "") for st in steps[last_other + 1:] for c in texts(st))
+    queries = [q for st in steps if st.get("type") == "google_search_call" for q in (st.get("arguments") or {}).get("queries") or []]
+    found = [{"url": r.get("url"), "title": r.get("title")} for st in steps if st.get("type") == "google_search_result"
+             for r in st.get("result") or [] if isinstance(r, dict)]
+    # Pages the model cited inline also count as retrieved, in case the result step lists fewer than it read.
+    found += [{"url": a.get("url"), "title": a.get("title")} for st in steps for c in texts(st)
+              for a in c.get("annotations") or [] if a.get("type") == "url_citation"]
+    usage = data.get("usage") or {}
+    return dict(text="".join(c.get("text", "") for st in steps for c in texts(st)), final_text=final,
+                stop_reason=data.get("status"), content=data, usage=usage,
+                input_tokens=usage.get("total_input_tokens", 0) + usage.get("total_tool_use_tokens", 0),
+                # Thinking is billed at the output rate; count it even if the API reports it separately.
+                output_tokens=usage.get("total_output_tokens", 0) + usage.get("total_thought_tokens", 0),
+                searches=[{"input": {"queries": queries}, "results": found}], search_requests=len(queries))
 
 
 def _url(u):
@@ -361,7 +418,7 @@ def run(args):
         worst = sum(worst_usd(t[1], t[2], SYSTEMS.get(t[1], SYSTEM), build_user(t[1], t[2], t[0], cities, profiles))
                     for t in todo)
         print(f"worst-case cost of pending calls: ${worst:.4f} (2 tokens per character in, full max_tokens out"
-              + (f", every search used at an assumed {SEARCH_TOKENS} tokens and ${SEARCH_USD} each)" if ARM_CFG else ")"))
+              + (f", every search used at an assumed {SEARCH_TOKENS} tokens plus its fee)" if ARM_CFG else ")"))
         print("order:", " ".join(key(*t) for t in todo))
         return
 
@@ -380,30 +437,34 @@ def run(args):
         row = {"key": key(case, arm, task, rep), "case": case["id"], "arm": arm, "task": task, "rep": rep,
                "model": model, "inputs_hash": inputs_hash, "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
         extra = dict(cfg.get("extra", {}))
-        if cfg.get("search"):
+        if cfg.get("search") and cfg.get("provider") != "gemini":
             extra["tools"] = [{"type": cfg["search"], "name": "web_search", "max_uses": MAX_USES[task]}]
         start = time.monotonic()
         try:
-            # No fallback model and no pause_turn continuation: the plan logs such a reply as it is.
-            resp = client.messages.create(
-                model=model, max_tokens=MAX_TOKENS, system=system, messages=[{"role": "user", "content": user}], **extra,
-            )
-            # Raw text and usage go into the row before any checking, so a bad reply is never lost.
-            final, searches = "".join(b.text for b in resp.content if b.type == "text"), []
-            row.update(text=final, stop_reason=resp.stop_reason,
-                       input_tokens=resp.usage.input_tokens, output_tokens=resp.usage.output_tokens)
-            if ARM_CFG:  # with a search tool the answer is the text after the last tool block
-                final, row["text"], searches, row["content"] = read_content(resp.content)
-                tool_usage = getattr(resp.usage, "server_tool_use", None)
-                row.update(final_text=final, searches=searches,
-                           search_requests=getattr(tool_usage, "web_search_requests", 0) or 0)
+            if cfg.get("provider") == "gemini":
+                row.update(call_gemini(model, system, user, cfg["thinking_level"]))
+                final, searches = row["final_text"], row["searches"]
+            else:
+                # No fallback model and no pause_turn continuation: the plan logs such a reply as it is.
+                resp = client.messages.create(
+                    model=model, max_tokens=MAX_TOKENS, system=system, messages=[{"role": "user", "content": user}], **extra,
+                )
+                # Raw text and usage go into the row before any checking, so a bad reply is never lost.
+                final, searches = "".join(b.text for b in resp.content if b.type == "text"), []
+                row.update(text=final, stop_reason=resp.stop_reason,
+                           input_tokens=resp.usage.input_tokens, output_tokens=resp.usage.output_tokens)
+                if ARM_CFG:  # with a search tool the answer is the text after the last tool block
+                    final, row["text"], searches, row["content"] = read_content(resp.content)
+                    tool_usage = getattr(resp.usage, "server_tool_use", None)
+                    row.update(final_text=final, searches=searches,
+                               search_requests=getattr(tool_usage, "web_search_requests", 0) or 0)
             try:
                 row["parsed"], row["format_problems"] = check_output(task, final, allowed)
                 if cfg.get("search") and isinstance(row["parsed"], dict):
                     check_sources(row["parsed"], sentences(task, row["parsed"]), searches, row["format_problems"])
             except Exception as e:  # a checker bug must not cost us the paid response
                 row["parsed"], row["format_problems"] = None, [f"check_crashed:{type(e).__name__}"]
-        except anthropic.APIError as e:
+        except (anthropic.APIError, GeminiError) as e:
             row["error"] = f"{type(e).__name__}: {e}"
         row["latency_s"] = round(time.monotonic() - start, 2)
         with LOG.open("a") as f:

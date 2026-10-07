@@ -31,3 +31,10 @@
 - `drafts/cases-r5.md`: 사례 R1~R12의 문장·판정 기준·확인한 사실. 기존 실패 사례 4개와 새 사례 8개.
 - `cases-r5.json`: 위 파일에서 문장만 옮긴 것.
 - 실행: `--run 5`. 기록은 `runs5/`에 남는다. 76건 기준 [부분 결과](runs5/result-partial.md)가 있다(크레딧 부족으로 중단, 계획한 판정 아님).
+
+## Gemini로 실행 5의 구성 반복 (실행 6, 호출 전)
+
+계획: [run6-plan.md](../../docs/v2/run6-plan.md). 사례는 실행 5의 `cases-r5.json`을 그대로 쓴다.
+
+- `guidelines/r6-agents.md`: 세 방식(Flash + 검색, Flash + 검색 + 제약 입력, Pro + 검색)이 함께 쓰는 `search2` 블록과 제약 입력 안내문. 실행 5의 검색 지침에 형식 규칙을 보강했다.
+- 실행: `--run 6`. 기록은 `runs6/`에 남는다. Gemini 호출에는 `GEMINI_API_KEY`가 필요하다.

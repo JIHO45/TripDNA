@@ -21,4 +21,4 @@
 - `drafts/`: 지침·사례 초안. `cases-c.md`는 지침 고정 뒤에 쓰는 확인용 사례 C1~C6이다.
 - `cases-c.json`: 확인용 사례 C1~C6의 문장. 판정 기준은 `drafts/cases-c.md`.
 - `runs3/`: 실행 3의 기록. `--run 3`으로 실행한다.
-- `runs4/`: 실행 4(같은 세 지침, C1~C6)의 기록. `--run 4`로 실행한다.
+- `runs4/`: 실행 4(같은 세 지침, C1~C6)의 기록. `--run 4`로 실행한다. 결과는 [`runs4/result-r0.md`](runs4/result-r0.md)(검수자 2명 기준, 선택 보류).

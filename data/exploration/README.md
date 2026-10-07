@@ -22,3 +22,12 @@
 - `cases-c.json`: 확인용 사례 C1~C6의 문장. 판정 기준은 `drafts/cases-c.md`.
 - `runs3/`: 실행 3의 기록. `--run 3`으로 실행한다.
 - `runs4/`: 실행 4(같은 세 지침, C1~C6)의 기록. `--run 4`로 실행한다. 결과는 [`runs4/result-r0.md`](runs4/result-r0.md)(검수자 2명 기준, 선택 보류).
+
+## 검색·제약 입력·상위 모델 비교 (실행 5, 호출 전)
+
+계획: [run5-plan.md](../../docs/v2/run5-plan.md). 2026-10-07에 고정했고 아직 호출하지 않았다.
+
+- `guidelines/r5-agents.md`: 모델이 받는 지침 전부. 검색 없는 방식용(`list`), 검색 방식 공용(`search`), 제약 입력 안내문(`constraints-header`) 세 블록과 방식별 조합표가 있다.
+- `drafts/cases-r5.md`: 사례 R1~R12의 문장·판정 기준·확인한 사실. 기존 실패 사례 4개와 새 사례 8개.
+- `cases-r5.json`: 위 파일에서 문장만 옮긴 것.
+- 실행: `--run 5`. 기록은 `runs5/`에 남는다.

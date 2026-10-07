@@ -10,6 +10,9 @@
   python3 scripts/run_profile_exploration.py --run 2 --dry-run  # second run: list vs constraints-only notes
   python3 scripts/run_profile_exploration.py --run 3 --dry-run  # third run: three system prompts, cases N1-N6
   python3 scripts/run_profile_exploration.py --run 4 --dry-run  # fourth run: same prompts, cases C1-C6
+  python3 scripts/run_profile_exploration.py --run 5 --dry-run  # fifth run: web search, notes, Sonnet; cases R1-R12
+  python3 scripts/run_profile_exploration.py --run 5 --cases R5 # one case on all four arms, to measure cost first
+  python3 scripts/run_profile_exploration.py --run 5 --cases R9 --arms HS,HSC --rep 1  # repeat a split pair
 
 Calls already in the log are skipped, so a run can be resumed. No automatic retry:
 a failure is logged as it is and the run stops, because a failed call reports no
@@ -38,7 +41,26 @@ RUNS = {
     # Run 4: the same three prompts, unchanged, on confirmation cases C1-C6.
     4: dict(arms=("G0", "G1", "G2"), profiles=None, dir="runs4", cases="cases-c.json", note=True,
             guidelines={"G1": "guidelines/g1-claude.md", "G2": "guidelines/g2-codex.md"}),
+    # Run 5 (docs/v2/run5-plan.md): list only vs web search vs web search + notes vs Sonnet with web search.
+    5: dict(arms=("H0", "HS", "HSC", "SS"), profiles="profiles-constraints.json", dir="runs5", cases="cases-r5.json",
+            note=True, n_cases=12, max_tokens=4096, max_calls=160, agents="guidelines/r5-agents.md"),
 }
+HAIKU, SONNET = "claude-haiku-4-5", "claude-sonnet-5-5"
+# Run 5 arms. `system` and `notes` name blocks in the agents file; `search` is the web search tool type.
+R5_ARMS = {
+    "H0": dict(model=HAIKU, system="list"),
+    "HS": dict(model=HAIKU, system="search", search="web_search_20250305"),
+    "HSC": dict(model=HAIKU, system="search", search="web_search_20250305", notes="constraints-header"),
+    "SS": dict(model=SONNET, system="search", search="web_search_20260209",
+               extra=dict(thinking={"type": "adaptive"}, output_config={"effort": "medium"})),
+}
+MAX_USES = {"recommend": 5, "detail": 3}
+SOURCES_TASK = (
+    "\nSentences that state a searched fact end with its source number, like [1].\n"
+    'sources: [{"n": 1, "title": "<page title>", "url": "<url>", "published": "<YYYY-MM-DD or unknown>"}], '
+    "only pages returned by your searches; [] if you searched nothing."
+)
+ARM_CFG, BLOCKS, N_CASES = {}, {}, 6  # empty for runs 1-4
 ARMS, PROFILE_FILE, CASES_FILE, NOTE, SYSTEMS = ("A", "B"), "profiles.json", "cases.json", False, {}
 C_HEADER = (
     "Destination notes. `scope` is what the app recommends under each destination id; do not present "
@@ -47,11 +69,16 @@ C_HEADER = (
     "scope to the user. A missing item means not recorded, not absent."
 )
 
-MODEL = "claude-haiku-4-5"
+MODEL = HAIKU
 MAX_TOKENS = 1024
 MAX_CALLS = 72  # plan: 24 base + up to 48 repeats
 # USD per 1M tokens, platform.claude.com/docs/en/about-claude/pricing, checked 2026-10-06.
 PRICE_IN, PRICE_OUT = 1.00, 5.00
+# Run 5. Sonnet price and the web search fee ($10 per 1,000 searches) from the same page, checked 2026-10-07.
+PRICES = {HAIKU: (PRICE_IN, PRICE_OUT), SONNET: (2.00, 10.00)}
+SEARCH_USD = 0.01
+# Assumed input tokens one search adds, for the --max-usd guard only. Unmeasured; replace after the first calls.
+SEARCH_TOKENS = 15000
 
 SYSTEM = """You help a traveller choose among a fixed list of destinations for a travel app.
 
@@ -95,13 +122,18 @@ RECOMMEND_TASK = TASKS["recommend"]
 
 def configure(run):
     """Point the module at one run's arms, inputs, prompts and log."""
-    global ARMS, PROFILE_FILE, CASES_FILE, NOTE, SYSTEMS, LOG
+    global ARMS, PROFILE_FILE, CASES_FILE, NOTE, SYSTEMS, LOG, ARM_CFG, BLOCKS, MAX_TOKENS, MAX_CALLS, N_CASES
     cfg = RUNS[run]
+    N_CASES, MAX_TOKENS, MAX_CALLS = cfg.get("n_cases", 6), cfg.get("max_tokens", 1024), cfg.get("max_calls", 72)
+    if "agents" in cfg:  # one file, one fenced block per piece of model-facing text
+        ARM_CFG = R5_ARMS
+        BLOCKS = dict(re.findall(r"```text (\S+)\n(.*?)\n```", (EXP / cfg["agents"]).read_text(), re.S))
     ARMS, PROFILE_FILE, NOTE = cfg["arms"], cfg["profiles"], cfg.get("note", False)
     CASES_FILE = cfg.get("cases", "cases.json")
     LOG = EXP / cfg["dir"] / "responses.jsonl"
     # A guideline file holds notes for people above a line of three dashes; the model gets the rest.
     SYSTEMS = {arm: (EXP / f).read_text().split("\n---\n", 1)[1].strip() for arm, f in cfg.get("guidelines", {}).items()}
+    SYSTEMS.update({arm: BLOCKS[c["system"]] for arm, c in ARM_CFG.items()})
     TASKS["recommend"] = NOTE_TASK if NOTE else RECOMMEND_TASK
 
 
@@ -117,23 +149,37 @@ def load_inputs():
     ids = [c["id"] for c in cities]
     assert len(ids) == 20 and len(set(ids)) == 20, "expected 20 distinct pilot destinations"
     assert not PROFILE_FILE or list(profiles) == ids, "profile keys must match the candidate ids in order"
-    assert len(cases) == 6
+    assert len(cases) == N_CASES
     return cities, profiles, cases
 
 
 def build_user(arm, task, case, cities, profiles):
-    lines = ["Allowed destinations (id | name | country):"]
+    cfg = ARM_CFG.get(arm, {})
+    # Run 5 gives every arm the call date, which the search rules need to judge how recent a page is.
+    lines = [f"Today: {time.strftime('%Y-%m-%d')}", ""] if ARM_CFG else []
+    lines += ["Allowed destinations (id | name | country):"]
     lines += [f"{c['id']} | {c['name']} | {c['country']}" for c in cities]
     if arm == "B":
         lines += ["", "Destination profiles (drafts; a missing item means not recorded, not absent):",
                   json.dumps(profiles, ensure_ascii=False)]
     if arm == "C":
         lines += ["", C_HEADER, json.dumps(profiles, ensure_ascii=False)]
+    if cfg.get("notes"):
+        lines += ["", BLOCKS[cfg["notes"]], json.dumps(profiles, ensure_ascii=False)]
     lines += ["", "User:", case["user"]]
     if task == "detail":
         lines += ["", "Follow-up question:", case["detail"]]
-    lines += ["", TASKS[task]]
+    lines += ["", TASKS[task] + (SOURCES_TASK if cfg.get("search") else "")]
     return "\n".join(lines)
+
+
+def worst_usd(arm, task, system, user):
+    """Upper bound for one call: 2 tokens per character in, a full max_tokens out, every allowed search used."""
+    cfg = ARM_CFG.get(arm, {})
+    price_in, price_out = PRICES[cfg.get("model", MODEL)]
+    searches = MAX_USES[task] if cfg.get("search") else 0
+    return (((len(system) + len(user)) * 2 + searches * SEARCH_TOKENS) * price_in + MAX_TOKENS * price_out) / 1e6 \
+        + searches * SEARCH_USD
 
 
 def plan(cases, only, rep):
@@ -160,7 +206,53 @@ def read_log():
 
 
 def cost(rows):
-    return sum(r.get("input_tokens", 0) * PRICE_IN + r.get("output_tokens", 0) * PRICE_OUT for r in rows) / 1e6
+    return sum((r.get("input_tokens", 0) * PRICES[r["model"]][0] + r.get("output_tokens", 0) * PRICES[r["model"]][1]) / 1e6
+               + r.get("search_requests", 0) * SEARCH_USD for r in rows)
+
+
+def _url(u):
+    return str(u).split("#")[0].rstrip("/").lower()
+
+
+def read_content(content):
+    """Split a reply into its final text, all text, the searches made and a copy of the blocks for the log."""
+    blocks = [b.model_dump(mode="json") if hasattr(b, "model_dump") else b for b in content]
+    last_other = max((i for i, b in enumerate(blocks) if b["type"] != "text"), default=-1)
+    final = "".join(b["text"] for b in blocks[last_other + 1:])
+    searches = []
+    for b in blocks:
+        # Sonnet's tool version searches from inside code execution; those blocks are logged but are not searches.
+        if b["type"] == "server_tool_use" and b.get("name") == "web_search":
+            searches.append({"input": b.get("input"), "results": []})
+        elif b["type"] == "web_search_tool_result":
+            res = b.get("content")
+            entry = searches[-1] if searches else {"input": None, "results": []}
+            if isinstance(res, list):  # a list on success, a single error object otherwise
+                entry["results"] += [{k: r.get(k) for k in ("url", "title", "page_age")} for r in res if isinstance(r, dict)]
+            else:
+                entry["error"] = res
+            for r in res if isinstance(res, list) else []:
+                r.pop("encrypted_content", None)  # large and unreadable; not needed to review the reply
+    return final, "".join(b["text"] for b in blocks if b["type"] == "text"), searches, blocks
+
+
+def check_sources(data, texts, searches, problems):
+    """Every listed source must be a page a search returned; every [n] marker must have a source."""
+    retrieved = {_url(r["url"]) for s in searches for r in s["results"] if r.get("url")}
+    sources = data.get("sources")
+    if not isinstance(sources, list):
+        problems.append("no_sources_list")
+        return
+    numbers = set()
+    for src in sources:
+        if not isinstance(src, dict) or not src.get("url"):
+            problems.append("source_not_object")
+            continue
+        numbers.add(str(src.get("n")))
+        if _url(src["url"]) not in retrieved:
+            problems.append(f"source_not_retrieved:{src.get('n')}")
+    for n in sorted({n for t in texts if isinstance(t, str) for n in re.findall(r"\[(\d+)\]", t)} - numbers):
+        problems.append(f"marker_without_source:{n}")
 
 
 def _sentence(value, problems, name):
@@ -221,12 +313,21 @@ def check_output(task, text, allowed):
     return data, problems
 
 
+def sentences(task, data):
+    if task == "recommend":
+        cands = [c for c in data.get("candidates") or [] if isinstance(c, dict)]
+        return [f for c in cands for f in (c.get("facts") or []) + [c.get("caveat")]] + [data.get("note")]
+    return (data.get("answer") or []) + [data.get("limits")]
+
+
 def run(args):
     cities, profiles, cases = load_inputs()
     allowed = {c["id"] for c in cities}
     inputs_hash = hashlib.sha256(
         json.dumps([MODEL, MAX_TOKENS, cities, profiles, cases, SYSTEM, TASKS] + ([C_HEADER] if "C" in ARMS else [])
-                   + [SYSTEMS[a] for a in ARMS if a in SYSTEMS],
+                   + [SYSTEMS[a] for a in ARMS if a in SYSTEMS]
+                   # Run 5 adds its arm settings and blocks. The call date is left out so a run can span days.
+                   + ([ARM_CFG, BLOCKS, MAX_USES, SOURCES_TASK] if ARM_CFG else []),
                    ensure_ascii=False, sort_keys=True).encode()
     ).hexdigest()[:16]
     logged = read_log()
@@ -236,7 +337,7 @@ def run(args):
                  "Move that log aside to start a new run; do not mix them.")
     todo = plan(cases, set(args.cases.split(",")) if args.cases else None, args.rep)
     done = {r["key"] for r in logged}
-    todo = [t for t in todo if key(*t) not in done]
+    todo = [t for t in todo if key(*t) not in done and (not args.arms or t[1] in args.arms.split(","))]
     if args.limit:
         todo = todo[: args.limit]
     if len(done) + len(todo) > MAX_CALLS:
@@ -245,12 +346,14 @@ def run(args):
     if args.dry_run:
         users = {arm: build_user(arm, "recommend", cases[0], cities, profiles) for arm in ARMS}
         assert len({u.split("\n\n")[0] for u in users.values()}) == 1, "all arms must share the same destination list"
-        print(f"model {MODEL}, inputs {inputs_hash}, {len(todo)} call(s) pending, {len(done)} already logged")
+        models = ", ".join(sorted({c["model"] for c in ARM_CFG.values()})) or MODEL
+        print(f"model {models}, inputs {inputs_hash}, {len(todo)} call(s) pending, {len(done)} already logged")
         sizes = ", ".join(f"{arm} system {len(SYSTEMS.get(arm, SYSTEM))} + user {len(u)}" for arm, u in users.items())
         print(f"request size (chars): {sizes}")
-        worst = sum(((len(SYSTEMS.get(t[1], SYSTEM)) + len(build_user(t[1], t[2], t[0], cities, profiles))) * 2 * PRICE_IN
-                     + MAX_TOKENS * PRICE_OUT) / 1e6 for t in todo)
-        print(f"worst-case cost of pending calls: ${worst:.4f} (2 tokens per character in, full max_tokens out)")
+        worst = sum(worst_usd(t[1], t[2], SYSTEMS.get(t[1], SYSTEM), build_user(t[1], t[2], t[0], cities, profiles))
+                    for t in todo)
+        print(f"worst-case cost of pending calls: ${worst:.4f} (2 tokens per character in, full max_tokens out"
+              + (f", every search used at an assumed {SEARCH_TOKENS} tokens and ${SEARCH_USD} each)" if ARM_CFG else ")"))
         print("order:", " ".join(key(*t) for t in todo))
         return
 
@@ -260,23 +363,36 @@ def run(args):
     LOG.parent.mkdir(parents=True, exist_ok=True)
     for case, arm, task, rep in todo:
         user, system = build_user(arm, task, case, cities, profiles), SYSTEMS.get(arm, SYSTEM)
-        # Upper bound for the next call: 2 tokens per character in, a full max_tokens out.
-        worst = ((len(system) + len(user)) * 2 * PRICE_IN + MAX_TOKENS * PRICE_OUT) / 1e6
+        cfg = ARM_CFG.get(arm, {})
+        model = cfg.get("model", MODEL)
+        worst = worst_usd(arm, task, system, user)
         spent = cost(read_log())
         if spent + worst > args.max_usd:
             sys.exit(f"stopped: spent ${spent:.4f}, next call could add ${worst:.4f}, over --max-usd {args.max_usd}")
         row = {"key": key(case, arm, task, rep), "case": case["id"], "arm": arm, "task": task, "rep": rep,
-               "model": MODEL, "inputs_hash": inputs_hash, "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+               "model": model, "inputs_hash": inputs_hash, "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+        extra = dict(cfg.get("extra", {}))
+        if cfg.get("search"):
+            extra["tools"] = [{"type": cfg["search"], "name": "web_search", "max_uses": MAX_USES[task]}]
         start = time.monotonic()
         try:
+            # No fallback model and no pause_turn continuation: the plan logs such a reply as it is.
             resp = client.messages.create(
-                model=MODEL, max_tokens=MAX_TOKENS, system=system, messages=[{"role": "user", "content": user}],
+                model=model, max_tokens=MAX_TOKENS, system=system, messages=[{"role": "user", "content": user}], **extra,
             )
             # Raw text and usage go into the row before any checking, so a bad reply is never lost.
-            row.update(text="".join(b.text for b in resp.content if b.type == "text"), stop_reason=resp.stop_reason,
+            final, searches = "".join(b.text for b in resp.content if b.type == "text"), []
+            row.update(text=final, stop_reason=resp.stop_reason,
                        input_tokens=resp.usage.input_tokens, output_tokens=resp.usage.output_tokens)
+            if ARM_CFG:  # with a search tool the answer is the text after the last tool block
+                final, row["text"], searches, row["content"] = read_content(resp.content)
+                tool_usage = getattr(resp.usage, "server_tool_use", None)
+                row.update(final_text=final, searches=searches,
+                           search_requests=getattr(tool_usage, "web_search_requests", 0) or 0)
             try:
-                row["parsed"], row["format_problems"] = check_output(task, row["text"], allowed)
+                row["parsed"], row["format_problems"] = check_output(task, final, allowed)
+                if cfg.get("search") and isinstance(row["parsed"], dict):
+                    check_sources(row["parsed"], sentences(task, row["parsed"]), searches, row["format_problems"])
             except Exception as e:  # a checker bug must not cost us the paid response
                 row["parsed"], row["format_problems"] = None, [f"check_crashed:{type(e).__name__}"]
         except anthropic.APIError as e:
@@ -288,7 +404,8 @@ def run(args):
             sys.exit(f"stopped at {row['key']}: {row['error']}\nThe failure is logged and will not be retried. "
                      "Its cost is unknown to this script: check the Console usage and lower --max-usd by that amount when resuming.")
         print(row["key"], f"in {row['input_tokens']} out {row['output_tokens']} "
-              f"{row['latency_s']}s {row['format_problems'] or 'ok'}")
+              + (f"searches {row['search_requests']} " if "search_requests" in row else "")
+              + f"{row['latency_s']}s {row['format_problems'] or 'ok'}")
     rows = read_log()
     print(f"logged {len(rows)} call(s), total ${cost(rows):.4f}")
 
@@ -302,8 +419,9 @@ def sheet(rep):
     rows = [r for r in read_log() if r["rep"] == rep]
     if not rows:
         sys.exit(f"no logged calls with rep {rep}")
-    if rep == 0 and len(rows) < 24:  # the sheet cannot be extended later
-        sys.exit(f"stopped: only {len(rows)} of 24 base calls are logged. Finish the base run first.")
+    base = N_CASES * len(ARMS) * 2
+    if rep == 0 and len(rows) < base:  # the sheet cannot be extended later
+        sys.exit(f"stopped: only {len(rows)} of {base} base calls are logged. Finish the base run first.")
     cases = {c["id"]: c for c in json.loads((EXP / CASES_FILE).read_text())["cases"]}
     random.Random(20261006).shuffle(rows)
     rows.sort(key=lambda r: (r["case"], r["task"]))  # keeps the shuffled A/B order within each group
@@ -330,6 +448,7 @@ if __name__ == "__main__":
     p.add_argument("--sheet", action="store_true")
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--cases", default="")
+    p.add_argument("--arms", default="")  # run 5 repeats: only the two arms that split
     p.add_argument("--rep", type=int, default=0, choices=[0, 1, 2])
     p.add_argument("--max-usd", type=float, default=3.0)  # worst case for all 72 calls is about $2.4
     p.add_argument("--run", type=int, default=1, choices=sorted(RUNS))

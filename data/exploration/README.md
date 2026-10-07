@@ -30,4 +30,4 @@
 - `guidelines/r5-agents.md`: 모델이 받는 지침 전부. 검색 없는 방식용(`list`), 검색 방식 공용(`search`), 제약 입력 안내문(`constraints-header`) 세 블록과 방식별 조합표가 있다.
 - `drafts/cases-r5.md`: 사례 R1~R12의 문장·판정 기준·확인한 사실. 기존 실패 사례 4개와 새 사례 8개.
 - `cases-r5.json`: 위 파일에서 문장만 옮긴 것.
-- 실행: `--run 5`. 기록은 `runs5/`에 남는다.
+- 실행: `--run 5`. 기록은 `runs5/`에 남는다. 76건 기준 [부분 결과](runs5/result-partial.md)가 있다(크레딧 부족으로 중단, 계획한 판정 아님).

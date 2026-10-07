@@ -219,14 +219,16 @@ def read_content(content):
     blocks = [b.model_dump(mode="json") if hasattr(b, "model_dump") else b for b in content]
     last_other = max((i for i, b in enumerate(blocks) if b["type"] != "text"), default=-1)
     final = "".join(b["text"] for b in blocks[last_other + 1:])
-    searches = []
+    searches, by_id = [], {}
     for b in blocks:
         # Sonnet's tool version searches from inside code execution; those blocks are logged but are not searches.
         if b["type"] == "server_tool_use" and b.get("name") == "web_search":
             searches.append({"input": b.get("input"), "results": []})
+            by_id[b.get("id")] = searches[-1]
         elif b["type"] == "web_search_tool_result":
             res = b.get("content")
-            entry = searches[-1] if searches else {"input": None, "results": []}
+            # Parallel searches arrive as all calls first, then all results: match by id, not by position.
+            entry = by_id.get(b.get("tool_use_id")) or {"input": None, "results": []}
             if isinstance(res, list):  # a list on success, a single error object otherwise
                 entry["results"] += [{k: r.get(k) for k in ("url", "title", "page_age")} for r in res if isinstance(r, dict)]
             else:
@@ -264,6 +266,8 @@ def _sentence(value, problems, name):
         problems.append(f"{name}_not_korean")
     if "http" in value or "www." in value:
         problems.append(f"{name}_link")
+    if "<cite" in value:  # the search tool's citation markup leaking into the sentence
+        problems.append(f"{name}_cite_markup")
     if len(re.findall(r"[.!?。](?=\s|$)", value.strip())) > 1:
         problems.append(f"{name}_maybe_multi_sentence")
 
@@ -272,9 +276,13 @@ def check_output(task, text, allowed):
     """Format check only. Returns (parsed or None, list of problems)."""
     problems = []
     text = text.strip()
+    fenced = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.S)
     if text.startswith("```"):  # still readable, but logged as a format violation
         problems.append("markdown_fence")
         text = text.strip("`").removeprefix("json").strip()
+    elif fenced:  # prose around a fenced object: also readable, also a violation
+        problems += ["markdown_fence", "text_outside_json"]
+        text = fenced.group(1)
     try:
         data = json.loads(text)
     except ValueError:

@@ -1,0 +1,124 @@
+{
+  "note": "Draft for reading only, 2026-10-07. Written by Claude from general knowledge; places, axis values and sentences are not checked against sources and are not app data. Axis keys and ranges follow TripDNA/Resources/countries.json (-1..1). For each axis in matchingAxes, `fit` is shown when the user leans the same way as the city and `caution` when the user leans the other way.",
+  "cities": {
+    "jp-tokyo": {
+      "name": "Tokyo", "nameKo": "도쿄", "countryCode": "JP",
+      "tasteCore": {"natureUrban": 0.8, "energyLevel": 0.3, "planningStyle": 0.5, "socialMode": 0.3},
+      "matchingAxes": ["natureUrban", "planningStyle", "socialMode"],
+      "places": {
+        "ko": ["센소지와 아사쿠사 거리", "시부야 스크램블 교차로", "메이지 신궁"],
+        "en": ["Senso-ji and the Asakusa streets", "Shibuya Scramble Crossing", "Meiji Shrine"]
+      },
+      "sentences": {
+        "natureUrban": {
+          "fit": {"ko": "동네마다 분위기가 다른 거리와 건축을 걸으며 보는 재미가 큰 도시예요.", "en": "Each neighbourhood has its own streets and architecture, so walking the city is the main pleasure."},
+          "caution": {"ko": "공원과 정원은 있지만 탁 트인 자연 속에 머무는 여행과는 거리가 있어요.", "en": "There are parks and gardens, but this is not a trip spent out in open nature."}
+        },
+        "planningStyle": {
+          "fit": {"ko": "가고 싶은 식당과 전시를 미리 정해 두고 움직일수록 알차게 보낼 수 있어요.", "en": "The more you line up restaurants and exhibitions in advance, the more you get out of it."},
+          "caution": {"ko": "인기 있는 곳은 예약 없이 가면 오래 기다리거나 들어가지 못할 수 있어요.", "en": "Popular spots can mean long waits or no entry if you turn up without a booking."}
+        },
+        "socialMode": {
+          "fit": {"ko": "사람들로 북적이는 번화가와 축제 같은 거리 분위기를 즐기기 좋아요.", "en": "Good if you enjoy busy districts and the buzz of crowded streets."},
+          "caution": {"ko": "주요 지역과 지하철은 사람이 많아 조용히 다니고 싶다면 피곤할 수 있어요.", "en": "The main districts and trains are crowded, which can be tiring if you want quiet."}
+        }
+      }
+    },
+    "th-bangkok": {
+      "name": "Bangkok", "nameKo": "방콕", "countryCode": "TH",
+      "tasteCore": {"natureUrban": 0.7, "energyLevel": 0.2, "planningStyle": -0.4, "socialMode": 0.5},
+      "matchingAxes": ["natureUrban", "planningStyle", "socialMode"],
+      "places": {
+        "ko": ["왕궁과 왓 프라깨우", "왓 아룬", "짜뚜짝 주말시장"],
+        "en": ["The Grand Palace and Wat Phra Kaew", "Wat Arun", "Chatuchak Weekend Market"]
+      },
+      "sentences": {
+        "natureUrban": {
+          "fit": {"ko": "사원, 시장, 골목 식당이 뒤섞인 도시의 에너지를 좋아한다면 잘 맞아요.", "en": "A good match if you like the energy of a city where temples, markets and street kitchens sit side by side."},
+          "caution": {"ko": "덥고 복잡한 대도시라 한적한 자연에서 쉬는 여행을 기대하면 맞지 않을 수 있어요.", "en": "It is a hot, dense city, so it may not suit a trip built around quiet nature."}
+        },
+        "planningStyle": {
+          "fit": {"ko": "그날 기분대로 시장과 길거리 음식을 찾아다녀도 하루가 채워지는 곳이에요.", "en": "You can follow your mood from market to street food and the day fills itself."},
+          "caution": {"ko": "교통 체증과 날씨 때문에 시간표대로 촘촘히 움직이기는 어려울 수 있어요.", "en": "Traffic and weather make a tightly timed itinerary hard to keep."}
+        },
+        "socialMode": {
+          "fit": {"ko": "야시장과 번화가처럼 사람들 사이에 섞여 어울리는 분위기가 살아 있어요.", "en": "Night markets and busy streets give you plenty of lively, shared atmosphere."},
+          "caution": {"ko": "어디를 가도 사람과 소음이 많아 혼자 조용히 보내기에는 부담스러울 수 있어요.", "en": "Crowds and noise are everywhere, which can be a lot if you want time to yourself."}
+        }
+      }
+    },
+    "pt-lisbon": {
+      "name": "Lisbon", "nameKo": "리스본", "countryCode": "PT",
+      "tasteCore": {"natureUrban": 0.4, "energyLevel": -0.2, "planningStyle": -0.3, "socialMode": 0.1},
+      "matchingAxes": ["natureUrban", "energyLevel", "planningStyle"],
+      "places": {
+        "ko": ["벨렝 탑", "알파마 지구와 전망대", "28번 트램"],
+        "en": ["Belém Tower", "The Alfama district and its viewpoints", "Tram 28"]
+      },
+      "sentences": {
+        "natureUrban": {
+          "fit": {"ko": "언덕 위 오래된 동네와 타일 건물 사이를 걷는 도시 산책이 중심이에요.", "en": "The heart of it is walking old hillside neighbourhoods and tiled buildings."},
+          "caution": {"ko": "도시 안에서 보내는 시간이 대부분이라 깊은 자연을 원한다면 아쉬울 수 있어요.", "en": "Most of your time is spent in the city, so it may fall short if you want deep nature."}
+        },
+        "energyLevel": {
+          "fit": {"ko": "전망대와 카페에 앉아 느긋하게 시간을 보내기 좋은 도시예요.", "en": "A city that rewards sitting at viewpoints and cafés and taking your time."},
+          "caution": {"ko": "하루를 꽉 채울 액티비티를 기대한다면 조금 심심하게 느껴질 수 있어요.", "en": "If you want days packed with activities, it may feel a little slow."}
+        },
+        "planningStyle": {
+          "fit": {"ko": "정해진 일정 없이 골목을 따라 걷다가 마음에 드는 곳에 들르기 좋아요.", "en": "Easy to wander the lanes without a schedule and stop wherever looks good."},
+          "caution": {"ko": "볼거리가 흩어져 있고 언덕이 많아 시간 단위로 짠 일정은 지키기 어려울 수 있어요.", "en": "Sights are spread out and the hills slow you down, so an hour-by-hour plan is hard to keep."}
+        }
+      }
+    },
+    "nz-queenstown": {
+      "name": "Queenstown", "nameKo": "퀸스타운", "countryCode": "NZ",
+      "tasteCore": {"natureUrban": -0.8, "energyLevel": 0.7, "planningStyle": 0.3, "socialMode": -0.2},
+      "matchingAxes": ["natureUrban", "energyLevel", "planningStyle"],
+      "places": {
+        "ko": ["와카티푸 호수", "스카이라인 곤돌라", "카와라우 다리 번지점프"],
+        "en": ["Lake Wakatipu", "The Skyline Gondola", "Kawarau Bridge bungy"]
+      },
+      "sentences": {
+        "natureUrban": {
+          "fit": {"ko": "호수와 산이 바로 곁에 있어 풍경 속에서 하루를 보내는 여행이 돼요.", "en": "The lake and mountains are right there, so your days are spent in the landscape."},
+          "caution": {"ko": "작은 마을이라 거리, 쇼핑, 미술관 같은 도시의 볼거리는 많지 않아요.", "en": "It is a small town, with little in the way of city streets, shopping or museums."}
+        },
+        "energyLevel": {
+          "fit": {"ko": "트레킹부터 번지점프까지 몸을 쓰는 활동을 골라 할 수 있어요.", "en": "From hiking to bungy, there is plenty of physical activity to choose from."},
+          "caution": {"ko": "액티비티가 중심인 곳이라 쉬기만 하려면 선택지가 좁게 느껴질 수 있어요.", "en": "Activities are the main draw, so options can feel narrow if you only want to rest."}
+        },
+        "planningStyle": {
+          "fit": {"ko": "하고 싶은 액티비티를 미리 정해 두면 날씨에 맞춰 알차게 움직일 수 있어요.", "en": "Deciding your activities ahead lets you make the most of the days the weather allows."},
+          "caution": {"ko": "액티비티는 예약과 날씨에 좌우돼 그날 기분대로 정하기는 어려울 수 있어요.", "en": "Activities depend on bookings and weather, so deciding on the day can be difficult."}
+        }
+      }
+    },
+    "us-honolulu": {
+      "name": "Honolulu", "nameKo": "호놀룰루", "countryCode": "US",
+      "tasteCore": {"natureUrban": -0.1, "energyLevel": -0.4, "planningStyle": -0.2, "socialMode": 0.3},
+      "matchingAxes": ["energyLevel", "socialMode"],
+      "places": {
+        "ko": ["와이키키 해변", "다이아몬드 헤드", "진주만 국립 기념관"],
+        "en": ["Waikiki Beach", "Diamond Head", "Pearl Harbor National Memorial"]
+      },
+      "sentences": {
+        "energyLevel": {
+          "fit": {"ko": "해변에서 쉬다가 가까운 곳을 가볍게 둘러보는 느긋한 일정이 잘 어울려요.", "en": "It suits an easy rhythm of beach time and light outings nearby."},
+          "caution": {"ko": "휴양이 중심인 곳이라 매일 새로운 활동으로 채우려면 호놀룰루 밖으로 눈을 돌려야 할 수 있어요.", "en": "It is built around relaxing, so filling every day with new activities may mean looking beyond the city."}
+        },
+        "socialMode": {
+          "fit": {"ko": "해변과 거리가 늘 여행자로 활기차 사람들 사이에서 어울리기 좋아요.", "en": "The beach and streets are always lively with travellers, good if you like being among people."},
+          "caution": {"ko": "와이키키 일대는 연중 붐벼 한적한 해변을 기대하면 다를 수 있어요.", "en": "Waikiki is busy all year, which may not match hopes of a quiet beach."}
+        }
+      }
+    }
+  },
+  "users": {
+    "U1": {"label": {"ko": "자연·휴식·즉흥·혼자", "en": "nature, rest, spontaneous, solo"}, "axes": {"natureUrban": -0.7, "energyLevel": -0.6, "planningStyle": -0.5, "socialMode": -0.6}, "acceptedAxes": []},
+    "U2": {"label": {"ko": "도시·활동·계획·함께", "en": "city, active, planner, social"}, "axes": {"natureUrban": 0.7, "energyLevel": 0.6, "planningStyle": 0.6, "socialMode": 0.5}, "acceptedAxes": []},
+    "U3": {"label": {"ko": "도시·휴식·즉흥, 사람은 상관없음", "en": "city, rest, spontaneous, crowds either way"}, "axes": {"natureUrban": 0.5, "energyLevel": -0.5, "planningStyle": -0.6, "socialMode": 0.0}, "acceptedAxes": ["socialMode"]},
+    "U4": {"label": {"ko": "자연·활동·계획·혼자", "en": "nature, active, planner, solo"}, "axes": {"natureUrban": -0.6, "energyLevel": 0.7, "planningStyle": 0.5, "socialMode": -0.4}, "acceptedAxes": []},
+    "U5": {"label": {"ko": "아직 뚜렷하지 않음", "en": "no clear leaning yet"}, "axes": {"natureUrban": 0.1, "energyLevel": 0.05, "planningStyle": -0.1, "socialMode": 0.1}, "acceptedAxes": []},
+    "U6": {"label": {"ko": "자연과 도시 모두 좋음, 활동·즉흥·함께", "en": "nature and city both fine, active, spontaneous, social"}, "axes": {"natureUrban": 0.0, "energyLevel": 0.6, "planningStyle": -0.5, "socialMode": 0.6}, "acceptedAxes": ["natureUrban"]}
+  }
+}

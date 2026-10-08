@@ -1,0 +1,245 @@
+{
+ "status": "draft, unreviewed",
+ "author": "Claude Opus 5.5, 2026-10-07. 모델 지식만으로 작성. 검색·출처 대조·사람 검수 없음. 결과를 본 뒤 고치지 않았다.",
+ "category_version": 1,
+ "rubric": {
+  "3": "이 경험만을 목적으로 올 만한 곳",
+  "2": "여행의 주요 일정이 될 만한 곳",
+  "1": "있기는 한 곳",
+  "0": "사실상 없는 곳"
+ },
+ "scope": "그 도시에 숙박하며 같은 여행에서 다닐 수 있는 범위. 숙박이 필요한 원거리 경험은 제외.",
+ "categories": [
+  "city_exploration",
+  "nature_scenery",
+  "food",
+  "relaxation",
+  "culture_history",
+  "activities",
+  "shopping",
+  "nightlife",
+  "meeting_people"
+ ],
+ "grades": {
+  "fr-paris": {
+   "city_exploration": 3,
+   "nature_scenery": 0,
+   "food": 3,
+   "relaxation": 1,
+   "culture_history": 3,
+   "activities": 1,
+   "shopping": 3,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "jp-tokyo": {
+   "city_exploration": 3,
+   "nature_scenery": 1,
+   "food": 3,
+   "relaxation": 1,
+   "culture_history": 2,
+   "activities": 1,
+   "shopping": 3,
+   "nightlife": 3,
+   "meeting_people": 1
+  },
+  "us-new-york": {
+   "city_exploration": 3,
+   "nature_scenery": 0,
+   "food": 3,
+   "relaxation": 0,
+   "culture_history": 3,
+   "activities": 1,
+   "shopping": 3,
+   "nightlife": 3,
+   "meeting_people": 2
+  },
+  "sg-singapore": {
+   "city_exploration": 2,
+   "nature_scenery": 1,
+   "food": 3,
+   "relaxation": 1,
+   "culture_history": 1,
+   "activities": 1,
+   "shopping": 2,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "ae-dubai": {
+   "city_exploration": 2,
+   "nature_scenery": 1,
+   "food": 2,
+   "relaxation": 2,
+   "culture_history": 1,
+   "activities": 2,
+   "shopping": 3,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "tr-istanbul": {
+   "city_exploration": 3,
+   "nature_scenery": 1,
+   "food": 3,
+   "relaxation": 1,
+   "culture_history": 3,
+   "activities": 0,
+   "shopping": 2,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "tw-taipei": {
+   "city_exploration": 2,
+   "nature_scenery": 2,
+   "food": 3,
+   "relaxation": 2,
+   "culture_history": 2,
+   "activities": 1,
+   "shopping": 2,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "jp-kyoto": {
+   "city_exploration": 2,
+   "nature_scenery": 2,
+   "food": 2,
+   "relaxation": 2,
+   "culture_history": 3,
+   "activities": 0,
+   "shopping": 1,
+   "nightlife": 0,
+   "meeting_people": 0
+  },
+  "th-bangkok": {
+   "city_exploration": 2,
+   "nature_scenery": 0,
+   "food": 3,
+   "relaxation": 2,
+   "culture_history": 2,
+   "activities": 1,
+   "shopping": 3,
+   "nightlife": 3,
+   "meeting_people": 2
+  },
+  "pt-lisbon": {
+   "city_exploration": 3,
+   "nature_scenery": 1,
+   "food": 2,
+   "relaxation": 1,
+   "culture_history": 2,
+   "activities": 1,
+   "shopping": 1,
+   "nightlife": 2,
+   "meeting_people": 2
+  },
+  "au-sydney": {
+   "city_exploration": 2,
+   "nature_scenery": 2,
+   "food": 2,
+   "relaxation": 2,
+   "culture_history": 1,
+   "activities": 2,
+   "shopping": 1,
+   "nightlife": 1,
+   "meeting_people": 1
+  },
+  "th-phuket": {
+   "city_exploration": 1,
+   "nature_scenery": 2,
+   "food": 2,
+   "relaxation": 3,
+   "culture_history": 1,
+   "activities": 2,
+   "shopping": 1,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "mx-mexico-city": {
+   "city_exploration": 3,
+   "nature_scenery": 0,
+   "food": 3,
+   "relaxation": 0,
+   "culture_history": 3,
+   "activities": 1,
+   "shopping": 1,
+   "nightlife": 2,
+   "meeting_people": 1
+  },
+  "ca-vancouver": {
+   "city_exploration": 2,
+   "nature_scenery": 3,
+   "food": 2,
+   "relaxation": 1,
+   "culture_history": 1,
+   "activities": 2,
+   "shopping": 1,
+   "nightlife": 1,
+   "meeting_people": 1
+  },
+  "us-honolulu": {
+   "city_exploration": 1,
+   "nature_scenery": 2,
+   "food": 1,
+   "relaxation": 3,
+   "culture_history": 1,
+   "activities": 3,
+   "shopping": 2,
+   "nightlife": 1,
+   "meeting_people": 1
+  },
+  "in-delhi": {
+   "city_exploration": 2,
+   "nature_scenery": 0,
+   "food": 2,
+   "relaxation": 0,
+   "culture_history": 3,
+   "activities": 0,
+   "shopping": 2,
+   "nightlife": 1,
+   "meeting_people": 0
+  },
+  "ma-marrakesh": {
+   "city_exploration": 2,
+   "nature_scenery": 1,
+   "food": 2,
+   "relaxation": 2,
+   "culture_history": 3,
+   "activities": 1,
+   "shopping": 3,
+   "nightlife": 1,
+   "meeting_people": 1
+  },
+  "za-cape-town": {
+   "city_exploration": 2,
+   "nature_scenery": 3,
+   "food": 2,
+   "relaxation": 2,
+   "culture_history": 2,
+   "activities": 3,
+   "shopping": 1,
+   "nightlife": 1,
+   "meeting_people": 1
+  },
+  "au-cairns": {
+   "city_exploration": 0,
+   "nature_scenery": 3,
+   "food": 1,
+   "relaxation": 2,
+   "culture_history": 0,
+   "activities": 3,
+   "shopping": 0,
+   "nightlife": 1,
+   "meeting_people": 2
+  },
+  "nz-queenstown": {
+   "city_exploration": 1,
+   "nature_scenery": 3,
+   "food": 1,
+   "relaxation": 1,
+   "culture_history": 0,
+   "activities": 3,
+   "shopping": 0,
+   "nightlife": 2,
+   "meeting_people": 2
+  }
+ }
+}

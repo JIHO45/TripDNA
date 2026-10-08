@@ -1,0 +1,1 @@
+{"key": "R1-FS-recommend-r0", "case": "R1", "arm": "FS", "task": "recommend", "rep": 0, "model": "gemini-3.8-flash", "inputs_hash": "e0faf259507ef978", "started_at": "2026-10-07T17:23:48+0900", "error": "GeminiError: URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)>", "latency_s": 0.14}

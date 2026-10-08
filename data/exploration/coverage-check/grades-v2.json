@@ -1,0 +1,617 @@
+{
+ "status": "draft, unreviewed",
+ "author": "Claude Opus 5.5, 2026-10-08. 모델 지식만으로 작성. 검색·출처 대조·사람 검수 없음. 계산 결과를 본 뒤 고치지 않았다.",
+ "rubric": {
+  "3": "이 경험만을 목적으로 올 만한 곳",
+  "2": "여행의 주요 일정이 될 만한 곳",
+  "1": "있기는 한 곳",
+  "0": "사실상 없는 곳"
+ },
+ "rules": "큰 컨셉 등급은 세부 중 최댓값. 세부는 2등급 이상만 적는다. 적히지 않은 세부는 기록 없음이다.",
+ "concepts": {
+  "nature": {
+   "label": "자연",
+   "sub": {
+    "scenery": "자연 경관",
+    "hiking": "하이킹·트레킹",
+    "wildlife": "야생·동물"
+   }
+  },
+  "relaxation": {
+   "label": "휴양",
+   "sub": {
+    "beach": "해변·바다",
+    "spa": "온천·스파",
+    "resort": "리조트에서 쉬기"
+   }
+  },
+  "city": {
+   "label": "도시",
+   "sub": {
+    "streets": "골목·거리 산책",
+    "architecture": "건축·랜드마크",
+    "nightview": "야경"
+   }
+  },
+  "food": {
+   "label": "미식",
+   "sub": {
+    "street": "길거리 음식·시장",
+    "dining": "맛집·파인다이닝",
+    "cafe": "카페·디저트",
+    "drinks": "술"
+   }
+  },
+  "culture": {
+   "label": "문화·역사",
+   "sub": {
+    "heritage": "유적·사원",
+    "museums": "미술관·박물관",
+    "traditional": "전통 문화 체험"
+   }
+  },
+  "activities": {
+   "label": "액티비티",
+   "sub": {
+    "water": "수상",
+    "winter": "겨울 스포츠",
+    "extreme": "익스트림",
+    "themepark": "테마파크"
+   }
+  },
+  "shopping": {
+   "label": "쇼핑",
+   "sub": {
+    "markets": "시장·기념품",
+    "brands": "브랜드·아울렛"
+   }
+  },
+  "nightlife": {
+   "label": "나이트라이프",
+   "sub": {
+    "bars": "바·클럽",
+    "livebar": "라이브 바"
+   }
+  },
+  "social": {
+   "label": "교류",
+   "sub": {
+    "travelers": "여행자와 어울리기",
+    "locals": "현지인 만나기"
+   }
+  },
+  "event": {
+   "label": "이벤트",
+   "sub": {
+    "festival": "축제",
+    "sports": "스포츠 직관",
+    "concert": "콘서트·공연"
+   }
+  }
+ },
+ "grades": {
+  "fr-paris": {
+   "top": {
+    "nature": 0,
+    "relaxation": 1,
+    "city": 3,
+    "food": 3,
+    "culture": 3,
+    "activities": 2,
+    "shopping": 3,
+    "nightlife": 2,
+    "social": 1,
+    "event": 2
+   },
+   "sub": {
+    "streets": 3,
+    "architecture": 3,
+    "nightview": 3,
+    "dining": 3,
+    "cafe": 3,
+    "drinks": 2,
+    "museums": 3,
+    "heritage": 2,
+    "themepark": 2,
+    "brands": 3,
+    "markets": 2,
+    "bars": 2,
+    "sports": 2,
+    "concert": 2
+   }
+  },
+  "jp-tokyo": {
+   "top": {
+    "nature": 1,
+    "relaxation": 1,
+    "city": 3,
+    "food": 3,
+    "culture": 2,
+    "activities": 3,
+    "shopping": 3,
+    "nightlife": 3,
+    "social": 1,
+    "event": 2
+   },
+   "sub": {
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 3,
+    "dining": 3,
+    "street": 2,
+    "cafe": 2,
+    "drinks": 3,
+    "heritage": 2,
+    "museums": 2,
+    "traditional": 2,
+    "themepark": 3,
+    "brands": 3,
+    "markets": 2,
+    "bars": 3,
+    "livebar": 2,
+    "concert": 2,
+    "sports": 2
+   }
+  },
+  "us-new-york": {
+   "top": {
+    "nature": 0,
+    "relaxation": 0,
+    "city": 3,
+    "food": 3,
+    "culture": 3,
+    "activities": 1,
+    "shopping": 3,
+    "nightlife": 3,
+    "social": 2,
+    "event": 3
+   },
+   "sub": {
+    "streets": 3,
+    "architecture": 3,
+    "nightview": 3,
+    "dining": 3,
+    "street": 2,
+    "cafe": 2,
+    "drinks": 3,
+    "museums": 3,
+    "brands": 3,
+    "bars": 3,
+    "livebar": 3,
+    "travelers": 2,
+    "concert": 3,
+    "sports": 3
+   }
+  },
+  "sg-singapore": {
+   "top": {
+    "nature": 2,
+    "relaxation": 2,
+    "city": 2,
+    "food": 3,
+    "culture": 1,
+    "activities": 2,
+    "shopping": 2,
+    "nightlife": 2,
+    "social": 1,
+    "event": 2
+   },
+   "sub": {
+    "wildlife": 2,
+    "resort": 2,
+    "architecture": 2,
+    "nightview": 2,
+    "street": 3,
+    "dining": 2,
+    "themepark": 2,
+    "brands": 2,
+    "bars": 2,
+    "sports": 2
+   }
+  },
+  "ae-dubai": {
+   "top": {
+    "nature": 1,
+    "relaxation": 2,
+    "city": 3,
+    "food": 2,
+    "culture": 1,
+    "activities": 2,
+    "shopping": 3,
+    "nightlife": 2,
+    "social": 1,
+    "event": 1
+   },
+   "sub": {
+    "beach": 2,
+    "resort": 2,
+    "architecture": 3,
+    "nightview": 2,
+    "dining": 2,
+    "extreme": 2,
+    "themepark": 2,
+    "water": 2,
+    "brands": 3,
+    "markets": 2,
+    "bars": 2
+   }
+  },
+  "tr-istanbul": {
+   "top": {
+    "nature": 1,
+    "relaxation": 2,
+    "city": 3,
+    "food": 3,
+    "culture": 3,
+    "activities": 0,
+    "shopping": 3,
+    "nightlife": 2,
+    "social": 1,
+    "event": 1
+   },
+   "sub": {
+    "spa": 2,
+    "streets": 3,
+    "architecture": 3,
+    "street": 3,
+    "dining": 2,
+    "cafe": 2,
+    "heritage": 3,
+    "museums": 2,
+    "markets": 3,
+    "bars": 2
+   }
+  },
+  "tw-taipei": {
+   "top": {
+    "nature": 2,
+    "relaxation": 2,
+    "city": 2,
+    "food": 3,
+    "culture": 2,
+    "activities": 1,
+    "shopping": 2,
+    "nightlife": 2,
+    "social": 1,
+    "event": 1
+   },
+   "sub": {
+    "scenery": 2,
+    "hiking": 2,
+    "spa": 2,
+    "streets": 2,
+    "nightview": 2,
+    "street": 3,
+    "cafe": 2,
+    "dining": 2,
+    "museums": 2,
+    "heritage": 2,
+    "markets": 2,
+    "bars": 2
+   }
+  },
+  "jp-kyoto": {
+   "top": {
+    "nature": 2,
+    "relaxation": 2,
+    "city": 3,
+    "food": 2,
+    "culture": 3,
+    "activities": 0,
+    "shopping": 1,
+    "nightlife": 0,
+    "social": 0,
+    "event": 2
+   },
+   "sub": {
+    "scenery": 2,
+    "spa": 2,
+    "streets": 3,
+    "architecture": 2,
+    "dining": 2,
+    "cafe": 2,
+    "heritage": 3,
+    "traditional": 3,
+    "museums": 2,
+    "festival": 2
+   }
+  },
+  "th-bangkok": {
+   "top": {
+    "nature": 0,
+    "relaxation": 2,
+    "city": 2,
+    "food": 3,
+    "culture": 2,
+    "activities": 1,
+    "shopping": 3,
+    "nightlife": 3,
+    "social": 3,
+    "event": 1
+   },
+   "sub": {
+    "spa": 2,
+    "resort": 2,
+    "streets": 2,
+    "nightview": 2,
+    "street": 3,
+    "dining": 2,
+    "heritage": 2,
+    "markets": 3,
+    "brands": 2,
+    "bars": 3,
+    "travelers": 3
+   }
+  },
+  "pt-lisbon": {
+   "top": {
+    "nature": 1,
+    "relaxation": 1,
+    "city": 3,
+    "food": 2,
+    "culture": 2,
+    "activities": 2,
+    "shopping": 1,
+    "nightlife": 2,
+    "social": 2,
+    "event": 1
+   },
+   "sub": {
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 2,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 2,
+    "heritage": 2,
+    "museums": 2,
+    "water": 2,
+    "bars": 2,
+    "livebar": 2,
+    "travelers": 2
+   }
+  },
+  "au-sydney": {
+   "top": {
+    "nature": 2,
+    "relaxation": 2,
+    "city": 2,
+    "food": 2,
+    "culture": 1,
+    "activities": 2,
+    "shopping": 1,
+    "nightlife": 1,
+    "social": 1,
+    "event": 2
+   },
+   "sub": {
+    "scenery": 2,
+    "hiking": 2,
+    "wildlife": 2,
+    "beach": 2,
+    "architecture": 2,
+    "nightview": 2,
+    "dining": 2,
+    "cafe": 2,
+    "water": 2,
+    "sports": 2,
+    "concert": 2
+   }
+  },
+  "th-phuket": {
+   "top": {
+    "nature": 2,
+    "relaxation": 3,
+    "city": 1,
+    "food": 2,
+    "culture": 1,
+    "activities": 2,
+    "shopping": 1,
+    "nightlife": 2,
+    "social": 2,
+    "event": 0
+   },
+   "sub": {
+    "scenery": 2,
+    "beach": 3,
+    "resort": 3,
+    "spa": 2,
+    "street": 2,
+    "water": 2,
+    "bars": 2,
+    "travelers": 2
+   }
+  },
+  "mx-mexico-city": {
+   "top": {
+    "nature": 0,
+    "relaxation": 0,
+    "city": 3,
+    "food": 3,
+    "culture": 3,
+    "activities": 1,
+    "shopping": 2,
+    "nightlife": 2,
+    "social": 1,
+    "event": 2
+   },
+   "sub": {
+    "streets": 3,
+    "architecture": 2,
+    "street": 3,
+    "dining": 3,
+    "heritage": 3,
+    "museums": 3,
+    "markets": 2,
+    "bars": 2,
+    "sports": 2,
+    "festival": 2
+   }
+  },
+  "ca-vancouver": {
+   "top": {
+    "nature": 3,
+    "relaxation": 1,
+    "city": 2,
+    "food": 2,
+    "culture": 1,
+    "activities": 2,
+    "shopping": 1,
+    "nightlife": 1,
+    "social": 1,
+    "event": 1
+   },
+   "sub": {
+    "scenery": 3,
+    "hiking": 3,
+    "wildlife": 2,
+    "streets": 2,
+    "dining": 2,
+    "winter": 2,
+    "water": 2
+   }
+  },
+  "us-honolulu": {
+   "top": {
+    "nature": 2,
+    "relaxation": 3,
+    "city": 1,
+    "food": 1,
+    "culture": 1,
+    "activities": 3,
+    "shopping": 2,
+    "nightlife": 1,
+    "social": 1,
+    "event": 0
+   },
+   "sub": {
+    "scenery": 2,
+    "hiking": 2,
+    "beach": 3,
+    "resort": 3,
+    "water": 3,
+    "brands": 2
+   }
+  },
+  "in-delhi": {
+   "top": {
+    "nature": 0,
+    "relaxation": 0,
+    "city": 2,
+    "food": 2,
+    "culture": 3,
+    "activities": 0,
+    "shopping": 2,
+    "nightlife": 1,
+    "social": 0,
+    "event": 2
+   },
+   "sub": {
+    "streets": 2,
+    "architecture": 2,
+    "street": 2,
+    "heritage": 3,
+    "markets": 2,
+    "festival": 2
+   }
+  },
+  "ma-marrakesh": {
+   "top": {
+    "nature": 1,
+    "relaxation": 2,
+    "city": 3,
+    "food": 2,
+    "culture": 3,
+    "activities": 1,
+    "shopping": 3,
+    "nightlife": 1,
+    "social": 1,
+    "event": 0
+   },
+   "sub": {
+    "spa": 2,
+    "resort": 2,
+    "streets": 3,
+    "architecture": 2,
+    "street": 2,
+    "heritage": 3,
+    "traditional": 2,
+    "markets": 3
+   }
+  },
+  "za-cape-town": {
+   "top": {
+    "nature": 3,
+    "relaxation": 2,
+    "city": 2,
+    "food": 3,
+    "culture": 2,
+    "activities": 3,
+    "shopping": 1,
+    "nightlife": 1,
+    "social": 1,
+    "event": 0
+   },
+   "sub": {
+    "scenery": 3,
+    "hiking": 3,
+    "wildlife": 3,
+    "beach": 2,
+    "streets": 2,
+    "dining": 2,
+    "drinks": 3,
+    "heritage": 2,
+    "water": 2,
+    "extreme": 3
+   }
+  },
+  "au-cairns": {
+   "top": {
+    "nature": 3,
+    "relaxation": 2,
+    "city": 0,
+    "food": 1,
+    "culture": 1,
+    "activities": 3,
+    "shopping": 0,
+    "nightlife": 1,
+    "social": 2,
+    "event": 0
+   },
+   "sub": {
+    "scenery": 3,
+    "wildlife": 3,
+    "hiking": 2,
+    "resort": 2,
+    "water": 3,
+    "extreme": 2,
+    "travelers": 2
+   }
+  },
+  "nz-queenstown": {
+   "top": {
+    "nature": 3,
+    "relaxation": 2,
+    "city": 1,
+    "food": 2,
+    "culture": 0,
+    "activities": 3,
+    "shopping": 0,
+    "nightlife": 2,
+    "social": 2,
+    "event": 0
+   },
+   "sub": {
+    "scenery": 3,
+    "hiking": 3,
+    "spa": 2,
+    "drinks": 2,
+    "extreme": 3,
+    "winter": 3,
+    "water": 2,
+    "bars": 2,
+    "travelers": 2
+   }
+  }
+ }
+}

@@ -1,0 +1,160 @@
+{
+ "fixed_on": "2026-10-08",
+ "cases": [
+  {
+   "id": "T1",
+   "wants": {
+    "meeting_people": 1,
+    "nightlife": 1
+   },
+   "text": "혼자 가요. 호스텔이나 바에서 다른 여행자들이랑 쉽게 어울릴 수 있는 분위기면 좋겠어요.",
+   "target": "혼자 온 여행자가 어울리기 쉬운 환경을 근거로 드는지"
+  },
+  {
+   "id": "T2",
+   "wants": {
+    "food": 1,
+    "shopping": 1
+   },
+   "text": "친구 셋이랑 가요. 야시장에서 이것저것 사 먹으면서 밤늦게까지 돌아다니고 싶어요.",
+   "target": "야시장을 근거로 드는지. 기대 후보: 타이베이·방콕"
+  },
+  {
+   "id": "T3",
+   "wants": {
+    "nature_scenery": 1,
+    "activities": -1
+   },
+   "text": "부모님과 함께라 오래 걷거나 힘든 건 어려워요. 차나 케이블카로 편하게 풍경을 보고 싶어요.",
+   "target": "걷지 않고 볼 수 있는 풍경을 근거로 드는지",
+   "violation": "트레킹·수중 활동 등 고강도 활동 중심 추천"
+  },
+  {
+   "id": "T4",
+   "wants": {
+    "city_exploration": 1,
+    "nature_scenery": 1
+   },
+   "text": "낮에는 도심을 걷고, 하루쯤은 숙소를 옮기지 않고 가까운 자연에 다녀오고 싶어요.",
+   "target": "숙소를 옮기지 않는 당일 자연을 근거로 드는지",
+   "violation": "숙박 이동이 필요한 자연을 당일로 제시"
+  },
+  {
+   "id": "T5",
+   "wants": {
+    "relaxation": 1,
+    "nature_scenery": 1
+   },
+   "text": "아무것도 안 하고 바다 보면서 쉬고 싶어요. 2월에 가요.",
+   "target": "2월 계절 조건을 다루는지",
+   "violation": "케언스를 2월 우기·해파리 시즌 언급 없이 추천 (R9의 확인 사실: 11월~5월)",
+   "violators": [
+    "au-cairns"
+   ]
+  },
+  {
+   "id": "T6",
+   "wants": {
+    "culture_history": 2,
+    "relaxation": 1
+   },
+   "text": "오래된 거리와 사원·유적을 보고, 저녁엔 조용한 숙소에서 쉬고 싶어요. 사람 너무 많은 곳은 힘들어요.",
+   "target": "혼잡 회피를 다루는지"
+  },
+  {
+   "id": "S5",
+   "wants": {
+    "meeting_people": 2,
+    "activities": 1,
+    "nightlife": -1
+   },
+   "text": "혼자 여행하면서 새로운 사람과 대화하고 싶어요. 술자리·클럽은 싫고 낮에 참여하는 활동을 원해요. 동행이 없다는 이유로 혼자 조용히 쉬는 여행을 추천하지는 말아주세요.",
+   "violation": "술자리·클럽 중심 추천, 혼자 쉬는 여행 추천"
+  },
+  {
+   "id": "N5",
+   "wants": {
+    "culture_history": 1,
+    "city_exploration": 1
+   },
+   "text": "오래된 건축물과 골목을 혼자 천천히 걸으며 보고 싶어요. 무릎이 좋지 않아서 가파른 언덕과 계단이 많은 곳은 갈 수 없어요. 쇼핑몰과 밤 문화에는 관심이 없어요.",
+   "violation": "가파른 언덕·계단이 불가피한 장소를 조건에 맞는 것처럼 제시, 유의점으로만 처리"
+  },
+  {
+   "id": "R3",
+   "wants": {
+    "food": 2,
+    "shopping": 1
+   },
+   "text": "서울에서 출발해요. 비행을 힘들어해서 직항으로 4시간이 넘는 곳은 가지 않아요. 길거리 음식과 시장 구경을 제일 좋아해요.",
+   "violation": "인천 직항 4시간 초과 후보 추천",
+   "violators": [
+    "fr-paris",
+    "us-new-york",
+    "sg-singapore",
+    "ae-dubai",
+    "tr-istanbul",
+    "th-bangkok",
+    "pt-lisbon",
+    "au-sydney",
+    "th-phuket",
+    "mx-mexico-city",
+    "ca-vancouver",
+    "us-honolulu",
+    "in-delhi",
+    "ma-marrakesh",
+    "za-cape-town",
+    "au-cairns",
+    "nz-queenstown"
+   ]
+  },
+  {
+   "id": "R9",
+   "wants": {
+    "relaxation": 1,
+    "activities": 1
+   },
+   "text": "12월에 바다에서 수영 실컷 할 수 있는 곳 추천해줘요. 해파리 같은 거 신경 쓰기 싫고, 전신 수트 입거나 그물 안에서만 수영하는 것도 싫어요.",
+   "violation": "케언스 추천",
+   "violators": [
+    "au-cairns"
+   ]
+  },
+  {
+   "id": "R11",
+   "wants": {
+    "activities": 2
+   },
+   "text": "11월 첫째 주에 휴가 내고 스키 타러 가고 싶어요. 실내 스키장 말고 진짜 산에서 타고 싶어요. 어디가 좋아요?",
+   "violation": "밴쿠버·퀸스타운을 그 주 스키 가능으로 추천",
+   "violators": [
+    "ca-vancouver",
+    "nz-queenstown"
+   ]
+  },
+  {
+   "id": "R10",
+   "wants": {},
+   "text": "부모님 모시고 갈 해외 도시 추천해주세요. 아버지가 심장이 안 좋으셔서 의사가 해발 1,500m 넘는 곳은 피하라고 했어요.",
+   "violation": "멕시코시티 추천",
+   "violators": [
+    "mx-mexico-city"
+   ]
+  },
+  {
+   "id": "R12",
+   "wants": {},
+   "text": "이번 주 금요일에 갑자기 휴가가 생겼어요. 한국 일반여권이고 관광으로 4박이에요. 비자든 전자여행허가든 뭐 신청할 필요 없는 데로 추천해줘요.",
+   "violation": "사전 신청이 필요한 곳 추천",
+   "violators": [
+    "us-new-york",
+    "us-honolulu",
+    "ca-vancouver",
+    "au-sydney",
+    "au-cairns",
+    "nz-queenstown",
+    "in-delhi"
+   ]
+  }
+ ]
+}

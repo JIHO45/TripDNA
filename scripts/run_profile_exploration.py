@@ -42,10 +42,10 @@ RUNS = {
     # Run 4: the same three prompts, unchanged, on confirmation cases C1-C6.
     4: dict(arms=("G0", "G1", "G2"), profiles=None, dir="runs4", cases="cases-c.json", note=True,
             guidelines={"G1": "guidelines/g1-claude.md", "G2": "guidelines/g2-codex.md"}),
-    # Run 5 (docs/v2/run5-plan.md): list only vs web search vs web search + notes vs Sonnet with web search.
+    # Run 5 (docs/evaluation/run5-plan.md): list only vs web search vs web search + notes vs Sonnet with web search.
     5: dict(arms=("H0", "HS", "HSC", "SS"), profiles="profiles-constraints.json", dir="runs5", cases="cases-r5.json",
             note=True, n_cases=12, max_tokens=4096, max_calls=160, agents="guidelines/r5-agents.md", arm_cfg="R5_ARMS"),
-    # Run 6 (docs/v2/run6-plan.md): Gemini only. Flash with search, Flash with search + notes, Pro with search.
+    # Run 6 (docs/evaluation/run6-plan.md): Gemini only. Flash with search, Flash with search + notes, Pro with search.
     6: dict(arms=("FS", "FSC", "PS"), profiles="profiles-constraints.json", dir="runs6", cases="cases-r5.json",
             note=True, n_cases=12, max_tokens=4096, max_calls=120, agents="guidelines/r6-agents.md", arm_cfg="R6_ARMS"),
 }
@@ -233,6 +233,7 @@ class GeminiError(Exception):
 def call_gemini(model, system, user, thinking_level):
     """One Interactions API call over plain HTTP. Returns the fields run() logs; the whole reply is kept as `content`."""
     import os
+    import ssl
     import urllib.error
     import urllib.request
     body = {"model": model, "input": user, "system_instruction": system, "store": False,
@@ -241,8 +242,11 @@ def call_gemini(model, system, user, thinking_level):
     req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/interactions",
                                  data=json.dumps(body).encode(), method="POST",
                                  headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"], "Content-Type": "application/json"})
+    # python.org builds on macOS ship without root certificates; the system bundle is there on every Mac.
+    system_ca = "/etc/ssl/cert.pem"
+    tls = ssl.create_default_context(cafile=system_ca if os.path.exists(system_ca) else None)
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=180, context=tls) as resp:
             data = json.loads(resp.read())
     except urllib.error.HTTPError as e:
         raise GeminiError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:500]}")
@@ -253,8 +257,9 @@ def call_gemini(model, system, user, thinking_level):
     last_other = max((i for i, st in enumerate(steps) if st.get("type") != "model_output"), default=-1)
     final = "".join(c.get("text", "") for st in steps[last_other + 1:] for c in texts(st))
     queries = [q for st in steps if st.get("type") == "google_search_call" for q in (st.get("arguments") or {}).get("queries") or []]
+    # In practice the result step carries only Google's search-suggestion HTML; pages come from the citations below.
     found = [{"url": r.get("url"), "title": r.get("title")} for st in steps if st.get("type") == "google_search_result"
-             for r in st.get("result") or [] if isinstance(r, dict)]
+             for r in st.get("result") or [] if isinstance(r, dict) and r.get("url")]
     # Pages the model cited inline also count as retrieved, in case the result step lists fewer than it read.
     found += [{"url": a.get("url"), "title": a.get("title")} for st in steps for c in texts(st)
               for a in c.get("annotations") or [] if a.get("type") == "url_citation"]
@@ -295,9 +300,16 @@ def read_content(content):
     return final, "".join(b["text"] for b in blocks if b["type"] == "text"), searches, blocks
 
 
-def check_sources(data, texts, searches, problems):
-    """Every listed source must be a page a search returned; every [n] marker must have a source."""
+def _domain(u):
+    return re.sub(r"^(https?://)?(www\.)?", "", str(u).lower()).split("/")[0]
+
+
+def check_sources(data, texts, searches, problems, by_domain=False):
+    """Every listed source must be a page a search returned; every [n] marker must have a source.
+    Gemini reports what it read only as redirect links titled with the site's domain, so there
+    (`by_domain`) a source passes on its domain, and a redirect link it wrote itself is marked unchecked."""
     retrieved = {_url(r["url"]) for s in searches for r in s["results"] if r.get("url")}
+    domains = {_domain(r["title"]) for s in searches for r in s["results"] if r.get("title")} if by_domain else set()
     sources = data.get("sources")
     if not isinstance(sources, list):
         problems.append("no_sources_list")
@@ -308,7 +320,11 @@ def check_sources(data, texts, searches, problems):
             problems.append("source_not_object")
             continue
         numbers.add(str(src.get("n")))
-        if _url(src["url"]) not in retrieved:
+        if _url(src["url"]) in retrieved or _domain(src["url"]) in domains:
+            continue
+        if by_domain and "grounding-api-redirect" in src["url"]:
+            problems.append(f"source_redirect_unchecked:{src.get('n')}")
+        else:
             problems.append(f"source_not_retrieved:{src.get('n')}")
     for n in sorted({n for t in texts if isinstance(t, str) for n in re.findall(r"\[(\d+)\]", t)} - numbers):
         problems.append(f"marker_without_source:{n}")
@@ -461,7 +477,8 @@ def run(args):
             try:
                 row["parsed"], row["format_problems"] = check_output(task, final, allowed)
                 if cfg.get("search") and isinstance(row["parsed"], dict):
-                    check_sources(row["parsed"], sentences(task, row["parsed"]), searches, row["format_problems"])
+                    check_sources(row["parsed"], sentences(task, row["parsed"]), searches, row["format_problems"],
+                                  by_domain=cfg.get("provider") == "gemini")
             except Exception as e:  # a checker bug must not cost us the paid response
                 row["parsed"], row["format_problems"] = None, [f"check_crashed:{type(e).__name__}"]
         except (anthropic.APIError, GeminiError) as e:

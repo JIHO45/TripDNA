@@ -1,0 +1,209 @@
+{
+ "note": "wants: 2 꼭 원함, 1 좋아함, -1 피하고 싶음. 없는 항목은 미확인. llm은 실행 5·6의 검색 방식들이 추천에 낸 도시의 합집합.",
+ "cases": [
+  {
+   "id": "T1",
+   "src": "design",
+   "note": "도쿄 예시 A: 사람 만나기·밤 문화",
+   "wants": {
+    "meeting_people": 1,
+    "nightlife": 1
+   },
+   "expect_in_top3": [
+    "jp-tokyo"
+   ]
+  },
+  {
+   "id": "T2",
+   "src": "design",
+   "note": "도쿄 예시 B: 미식·쇼핑",
+   "wants": {
+    "food": 1,
+    "shopping": 1
+   },
+   "expect_in_top3": [
+    "jp-tokyo"
+   ]
+  },
+  {
+   "id": "T3",
+   "src": "design",
+   "note": "고강도 활동 없이 자연",
+   "wants": {
+    "nature_scenery": 1,
+    "activities": -1
+   },
+   "expect_top": [
+    "ca-vancouver"
+   ]
+  },
+  {
+   "id": "T4",
+   "src": "design",
+   "note": "도시도 자연도 좋아함",
+   "wants": {
+    "city_exploration": 1,
+    "nature_scenery": 1
+   },
+   "expect_in_top3": [
+    "za-cape-town",
+    "ca-vancouver"
+   ]
+  },
+  {
+   "id": "T5",
+   "src": "design",
+   "note": "휴양: 휴식·자연. 만능 도시가 이기지 않는지",
+   "wants": {
+    "relaxation": 1,
+    "nature_scenery": 1
+   },
+   "expect_not_in_top3": [
+    "sg-singapore",
+    "jp-tokyo",
+    "us-new-york"
+   ]
+  },
+  {
+   "id": "T6",
+   "src": "design",
+   "note": "문화·역사는 꼭, 휴식도",
+   "wants": {
+    "culture_history": 2,
+    "relaxation": 1
+   },
+   "expect_in_top3": [
+    "jp-kyoto",
+    "ma-marrakesh"
+   ]
+  },
+  {
+   "id": "S5",
+   "src": "cases.json",
+   "note": "혼자, 낮 활동으로 사람 만나기, 술자리·클럽 싫음",
+   "wants": {
+    "meeting_people": 2,
+    "activities": 1,
+    "nightlife": -1
+   },
+   "llm": []
+  },
+  {
+   "id": "N5",
+   "src": "cases-n.json",
+   "note": "오래된 건축·골목 산책, 쇼핑몰·밤 문화 무관심. 언덕·계단 조건은 분류로 못 옮김",
+   "wants": {
+    "culture_history": 1,
+    "city_exploration": 1
+   },
+   "unmapped": "가파른 언덕·계단 불가"
+  },
+  {
+   "id": "R3",
+   "src": "cases-r5.json",
+   "note": "길거리 음식·시장이 제일. 직항 4시간 조건은 분류로 못 옮김",
+   "wants": {
+    "food": 2,
+    "shopping": 1
+   },
+   "unmapped": "인천 직항 4시간 이내",
+   "violators": [
+    "fr-paris",
+    "us-new-york",
+    "sg-singapore",
+    "ae-dubai",
+    "tr-istanbul",
+    "th-bangkok",
+    "pt-lisbon",
+    "au-sydney",
+    "th-phuket",
+    "mx-mexico-city",
+    "ca-vancouver",
+    "us-honolulu",
+    "in-delhi",
+    "ma-marrakesh",
+    "za-cape-town",
+    "au-cairns",
+    "nz-queenstown"
+   ],
+   "violators_note": "사례 파일에 도시별 값은 없음. 인천 직항 4시간 이내를 도쿄·교토(간사이)·타이베이로 본 것은 작성자 판단, 미검증",
+   "llm": [
+    "tw-taipei",
+    "jp-tokyo"
+   ]
+  },
+  {
+   "id": "R9",
+   "src": "cases-r5.json",
+   "note": "12월 바다 수영. '바다 수영' 분류 없음 → 휴식·액티비티로 근사",
+   "wants": {
+    "relaxation": 1,
+    "activities": 1
+   },
+   "unmapped": "12월 해파리 시즌 제외",
+   "violators": [
+    "au-cairns"
+   ],
+   "llm": [
+    "th-phuket",
+    "us-honolulu",
+    "au-sydney",
+    "ae-dubai"
+   ]
+  },
+  {
+   "id": "R10",
+   "src": "cases-r5.json",
+   "note": "부모님 동반, 해발 1,500m 이하. 원하는 경험 언급 없음",
+   "wants": {},
+   "unmapped": "도심 해발 1,500m 미만",
+   "violators": [
+    "mx-mexico-city"
+   ],
+   "llm": [
+    "sg-singapore",
+    "pt-lisbon",
+    "fr-paris",
+    "jp-tokyo",
+    "jp-kyoto",
+    "us-honolulu"
+   ]
+  },
+  {
+   "id": "R11",
+   "src": "cases-r5.json",
+   "note": "11월 첫 주 야외 스키. '스키' 분류 없음 → 액티비티로 근사",
+   "wants": {
+    "activities": 2
+   },
+   "unmapped": "해당 주 운영 스키장",
+   "violators": [
+    "ca-vancouver",
+    "nz-queenstown"
+   ],
+   "llm": [
+    "jp-tokyo"
+   ]
+  },
+  {
+   "id": "R12",
+   "src": "cases-r5.json",
+   "note": "사전 신청 불필요. 원하는 경험 언급 없음",
+   "wants": {},
+   "unmapped": "사증·전자여행허가 불필요",
+   "violators": [
+    "us-new-york",
+    "us-honolulu",
+    "ca-vancouver",
+    "au-sydney",
+    "au-cairns",
+    "nz-queenstown",
+    "in-delhi"
+   ],
+   "llm": [
+    "jp-tokyo",
+    "tw-taipei"
+   ]
+  }
+ ]
+}

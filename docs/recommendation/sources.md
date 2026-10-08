@@ -1,6 +1,6 @@
 # 사실 근거와 출처
 
-상태: v2의 검색 비교 방식과 향후 출력 검증 기준. 이전: [설명 계약](../recommendation/explanations.md). 검색 도입 여부는 [추천 구조](../README.md#recommendation), 실험별 접근 권한·채점은 [평가](../README.md#evaluation)가 담당한다.
+상태: 검색 비교 방식과 향후 출력 검증 기준. 검색 도입 여부는 [추천 구조](../README.md#recommendation), 실험별 접근 권한·채점은 [평가](../README.md#evaluation)가 담당한다.
 
 ## 검색과 날짜
 

@@ -50,3 +50,19 @@
 ## 저장소에 올리지 않는 기록 (2026-10-12)
 
 Google 검색을 쓴 Gemini 응답의 원본은 저장소에 넣지 않는다: `runs6/responses.jsonl`, `runs6-stream/timings.jsonl`, `chips-vs-llm/responses.jsonl`. [Gemini API 추가 약관](https://ai.google.dev/gemini-api/terms)의 “Google 검색을 사용한 그라운딩” 조항이 그라운딩된 결과의 복사·배급과 링크의 저장을 제한하기 때문이다(2026-10-12 확인). 파일은 실행한 기기에만 있고 `.gitignore`에 적혀 있다. 결과 문서의 집계는 그 원본에서 계산한 것이며, 원본이 없는 곳에서는 `--report`와 재집계를 할 수 없다. 같은 조항은 표시한 결과의 텍스트 보관을 최대 30일로 제한한다. 기기의 원본을 언제 지울지는 정하지 않았다.
+
+## 도시 자료 초안 (2026-10-12)
+
+- `city-draft/`: 파일럿 20곳(처음 5곳에서 확장)의 세부 29개 등급, 시즌, 근교, 핵심 경험 문장 초안(사람 검수 전). [`draft.json`](city-draft/draft.json)이 통합본이고 [`notes.md`](city-draft/notes.md)에 1↔2 기준 예시와 경계 칸이 있다. `draft-codex.json`·`notes-codex.md`는 통합 전 Codex 수정안이다. 형식 검사: `scripts/check_city_draft.py`.
+
+- `city-draft/draft-codex.json`: 2026-10-12 검수 후 작성한 수정 대안. 여행권 명시·미확인 값·부분 출처 대조를 포함하며 사람 검수 전이다. [판정 근거와 형식 검사](city-draft/notes-codex.md). 기존안과 앱 데이터는 대체하지 않는다.
+- `fixed-data-check/`: 위 20곳 자료만 준 LLM이 등급·시즌·조건을 지키는지 보는 실험. 실행마다 자료·사례·지침을 `run{n}/`에 고정한다. 실행 1(검색 없음 13건): [계획](fixed-data-check/plan.md), [결과](fixed-data-check/result.md)(판정자 AI 1명, 잠정). 실행 2(고친 지침으로 검색 없음과 있음 비교): [계획](fixed-data-check/run2/plan.md), 26건의 [결과](fixed-data-check/run2/result.md)(판정자 AI 1명, 잠정). 실행: `scripts/run_fixed_data_check.py --run N`. 응답 원본은 저장소에 올리지 않는다.
+- `memo-check/`: 같은 요청에서 지난 여행 메모만 바꿨을 때 추천이 타당하게 달라지는지를 세 방식(요청만 준 일반 질문, 메모를 덧붙인 일반 질문, TripDNA 방식)으로 비교하는 실험. [계획](memo-check/plan.md), 두 차례 47건의 [결과](memo-check/result.md)(검수자 1명, 잠정). 둘째 실행은 개인화 지침만 주고 도시 자료를 뺀 방식을 더했다. 실행 2(`memo-check/run2/`)는 후보마다 강한 경험의 이름만 보내는 방식을 더해 다섯 방식을 14개 사례로 비교한다. [계획](memo-check/run2/plan.md), 92건의 [결과](memo-check/run2/result.md)(검수자 1명, 잠정). `city-draft/draft.json`은 같은 날 등급 표기를 이름으로 바꿨고, 앞선 실험의 고정본(`fixed-data-check/run*/draft.json`, `memo-check/draft.json`)은 이전 숫자 표기 그대로다. 실행: `scripts/run_memo_check.py`.
+- `memo-check/run3/`: 사용자의 실제 여행 메모와 실제 요청으로 하는 비교. 일반 질문, 지침만(기준선), 지침+강한 경험의 이름, 확인 질문에 답한 뒤의 네 가지. [계획](memo-check/run3/plan.md), 8건의 [결과](memo-check/run3/result.md)(검수자는 메모를 쓴 사용자, 요청 2건). 실행: `scripts/run_real_memo.py`. 사용자가 적는 `my-trips.md`와 기록은 저장소에 올리지 않는다.
+- `memo-check/run4/`: 같은 실제 메모로 조건 처리만 바꾼 실행. 확인 질문이 뜻이 갈리는 조건(예산의 범위 등)도 묻고, 조건을 확인된 불충족·확인된 충족·미확인으로 가른다. [계획](memo-check/run4/plan.md), 8건의 [결과](memo-check/run4/result.md)(검수자는 메모를 쓴 사용자, 요청 2건). 실행: `scripts/run_real_memo.py`.
+- `memo-check/run5/`: 같은 실제 메모로 조건 처리 문단만 다시 바꾼 실행. 근거 없이 빼거나 충족이라 하지 않고 미확인으로 두며, 비용과 안전을 단정하지 않는다. [계획](memo-check/run5/plan.md), 6건의 [결과](memo-check/run5/result.md)(사용자 판정 없음, AI 두 세션이 읽음).
+
+## 비용 확인 단계의 시험 (2026-10-13)
+
+- `cost-check/`: 추천 후보 몇 곳의 항공료와 4성급 숙박비를 검색으로 찾게 하고 코드가 예산과 비교한다. 조건을 추천 호출과 따로 확인하는 단계가 쓸 만한 값을 내는지 본다. [계획](cost-check/plan.md), 실행 1(도시 6곳)의 [결과](cost-check/result.md): 검색은 실행됐으나 요청한 날짜의 가격을 얻지 못했다. 실행 2는 도시 한 곳의 정확한 날짜 견적만 묻는다(호출 전). 실행: `scripts/run_cost_check.py`. 응답 원본은 저장소에 올리지 않는다.
+- `memo-check/run6/`: 예산을 판정하지 않고 후보마다 예상 비용의 범위를 보여주기로 한 결정(2026-10-13)에 따라, 모델이 내는 항공·숙박·하루 지출의 범위가 쓸 만한지와 호출마다 얼마나 달라지는지를 본다. [계획](memo-check/run6/plan.md), 호출 전.

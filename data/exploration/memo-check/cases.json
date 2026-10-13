@@ -1,0 +1,205 @@
+{
+ "status": "2026-10-12 고정. 첫 호출 뒤에는 고치지 않는다. 작성: Claude Opus 5.5. 사람 확인 전.",
+ "fields": "방식은 셋이다. A: 이번 요청만 전달한 일반 질문. B: 같은 요청에 지난 여행 메모를 자연스러운 말로 덧붙인 일반 질문. T: TripDNA 방식(개인화 지침, 도시 자료, 코드가 만든 후보와 기준 순서). A와 B에는 20곳의 이름만 주고 도시 자료는 주지 않는다. A는 메모와 무관하므로 요청마다 두 번, T의 M0도 두 번 돌려 호출 간 흔들림을 본다. T에서는 다녀온 도시를 코드가 후보에서 빼고, B에서는 사용자가 빼 달라고 말한다. prefer: 상위 3곳에 그중 min곳 이상 있어야 한다. expect_unused: T의 used_memories가 비어야 한다. count_words: 상위 3곳의 이유에 이 낱말이 나온 도시 수(통과·실패 없음). forbid_words: 이유에 나오면 안 되는 낱말. watch: 사람이 읽을 점. 이 기준은 B와 T에 똑같이 적용한다.",
+ "requests": [
+  {
+   "id": "R1",
+   "month": null,
+   "main": "food",
+   "detail": null,
+   "subs": [],
+   "text": null,
+   "variants": [
+    {
+     "id": "M0",
+     "memos": []
+    },
+    {
+     "id": "M1",
+     "memos": [
+      {
+       "city": "tr-istanbul",
+       "stars": 4,
+       "good": "현지 음식이 맛있었다.",
+       "bad": "시장이 너무 붐비고 정신없어서 힘들었다."
+      }
+     ],
+     "count_words": "시장|야시장|노점",
+     "watch": "붐비는 시장을 중심으로 한 도시를 다시 앞에 두는가. 음식 자체를 싫어한 것으로 넓히는가."
+    },
+    {
+     "id": "M2",
+     "memos": [
+      {
+       "city": "th-bangkok",
+       "stars": 5,
+       "good": "유명 식당보다 시장에서 이것저것 사 먹는 게 제일 좋았다.",
+       "bad": ""
+      }
+     ],
+     "prefer": {
+      "ids": [
+       "tr-istanbul",
+       "mx-mexico-city",
+       "tw-taipei",
+       "sg-singapore"
+      ],
+      "min": 2
+     },
+     "count_words": "시장|야시장|노점",
+     "watch": "길거리 음식이 강한 도시가 앞으로 오는가. 길거리 음식 등급이 더 낮은 도쿄·파리·뉴욕보다 앞에 두는가."
+    },
+    {
+     "id": "M3",
+     "memos": [
+      {
+       "city": "ae-dubai",
+       "stars": 4,
+       "good": "음식이 좋았다.",
+       "bad": ""
+      }
+     ],
+     "forbid_words": "중동|아랍",
+     "watch": "무엇을 먹었는지 모르는 메모다. 중동 음식을 좋아한다고 만들어 내는가. 순서가 M0과 크게 달라지는가."
+    }
+   ]
+  },
+  {
+   "id": "R2",
+   "month": null,
+   "main": "relaxation",
+   "detail": null,
+   "subs": [],
+   "text": null,
+   "variants": [
+    {
+     "id": "M0",
+     "memos": []
+    },
+    {
+     "id": "M1",
+     "memos": [
+      {
+       "city": "th-phuket-island",
+       "stars": 2,
+       "good": "마사지는 좋았다.",
+       "bad": "리조트에만 있으니 지루했다."
+      }
+     ],
+     "prefer": {
+      "ids": [
+       "th-bangkok",
+       "tw-taipei",
+       "tr-istanbul",
+       "ma-marrakesh"
+      ],
+      "min": 2
+     },
+     "count_words": "리조트|풀빌라",
+     "watch": "리조트 중심 도시(호놀룰루, 두바이)를 리조트를 이유로 앞에 두는가. 마사지·스파가 강한 도시가 앞으로 오는가."
+    },
+    {
+     "id": "M2",
+     "memos": [
+      {
+       "city": "us-honolulu",
+       "stars": 5,
+       "good": "바다에서 하루 종일 놀았다.",
+       "bad": ""
+      }
+     ],
+     "prefer": {
+      "ids": [
+       "th-phuket-island",
+       "au-sydney",
+       "ae-dubai",
+       "za-cape-town"
+      ],
+      "min": 2
+     },
+     "watch": "해변이 강한 도시가 앞으로 오는가."
+    },
+    {
+     "id": "M3",
+     "memos": [
+      {
+       "city": "th-bangkok",
+       "stars": 5,
+       "good": "유명 식당보다 시장에서 이것저것 사 먹는 게 제일 좋았다.",
+       "bad": ""
+      }
+     ],
+     "count_words": "시장|야시장|노점|음식|미식",
+     "watch": "지난 여행의 음식 경험 때문에 이번 휴양 여행을 미식 여행으로 바꾸는가. 동점을 가르는 데만 쓰는 것은 괜찮다."
+    }
+   ]
+  },
+  {
+   "id": "R3",
+   "month": null,
+   "main": "nature",
+   "detail": null,
+   "subs": [],
+   "text": null,
+   "variants": [
+    {
+     "id": "M0",
+     "memos": []
+    },
+    {
+     "id": "M1",
+     "memos": [
+      {
+       "city": "fr-paris",
+       "stars": 3,
+       "good": "",
+       "bad": "날씨가 계속 흐려서 아쉬웠다."
+      }
+     ],
+     "expect_unused": true,
+     "watch": "그 여행의 날씨를 취향으로 쓰는가(예: 맑은 곳을 권함)."
+    },
+    {
+     "id": "M2",
+     "memos": [
+      {
+       "city": "jp-tokyo",
+       "stars": 5,
+       "good": "",
+       "bad": ""
+      }
+     ],
+     "expect_unused": true,
+     "watch": "메모 없는 별점에서 이유를 지어내는가(예: 대도시를 좋아함)."
+    }
+   ]
+  },
+  {
+   "id": "R4",
+   "month": null,
+   "main": "nightlife",
+   "detail": null,
+   "subs": [],
+   "text": null,
+   "variants": [
+    {
+     "id": "M0",
+     "memos": []
+    },
+    {
+     "id": "M1",
+     "memos": [
+      {
+       "city": "th-bangkok",
+       "stars": 2,
+       "good": "",
+       "bad": "밤에 시끄럽고 클럽 분위기가 싫었다."
+      }
+     ],
+     "count_words": "클럽",
+     "watch": "이번 요청이 나이트라이프다. 요청을 거부하거나 후보를 비우지 않는가. 클럽보다 라이브 바가 강한 곳을 앞에 두는가, 그렇다면 메모를 근거로 밝히는가."
+    }
+   ]
+  }
+ ]
+}

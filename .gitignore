@@ -52,3 +52,11 @@ AuthKey_*.p8
 data/exploration/runs6/responses.jsonl
 data/exploration/runs6-stream/timings.jsonl
 data/exploration/chips-vs-llm/responses.jsonl
+data/exploration/fixed-data-check/*/responses.jsonl
+data/exploration/memo-check/**/responses-*.jsonl
+data/exploration/memo-check/**/sheet*-*.md
+data/exploration/memo-check/**/key*-*.json
+data/exploration/memo-check/run*/my-*.md
+data/exploration/memo-check/run[3-9]/responses.jsonl
+data/exploration/memo-check/run[3-9]/key.json
+data/exploration/cost-check/**/responses.jsonl

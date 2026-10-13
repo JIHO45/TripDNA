@@ -1,0 +1,32 @@
+{
+  "status": "2026-10-12 고정. 첫 호출 뒤에는 고치지 않는다. 작성: Claude Opus 5.5. 사람 확인 전.",
+  "fields": "month는 여행 달(없으면 null). expected_any는 코드 검사 뒤 결과에 하나 이상 있어야 하는 도시. expect_empty는 자료상 조건에 맞는 도시가 없는 사례. absent는 자료에 없는 조건으로, 응답의 unknown에 그 조건이 적혀야 한다. watch는 사람이 읽고 판정할 점.",
+  "cases": [
+    {"id": "F01", "month": null, "main": "food", "detail": "street", "subs": ["shopping"], "text": null,
+     "expected_any": ["th-bangkok"], "watch": "기본 동작 확인."},
+    {"id": "F02", "month": 1, "main": "activities", "detail": "winter", "subs": [], "text": null,
+     "expected_any": ["ca-vancouver"], "watch": "시즌 밖인 퀸스타운을 내는가."},
+    {"id": "F03", "month": 7, "main": "activities", "detail": "winter", "subs": [], "text": null,
+     "expected_any": ["nz-queenstown"], "watch": "시즌 밖인 밴쿠버를 내는가."},
+    {"id": "F04", "month": 6, "main": "event", "detail": "festival", "subs": [], "text": null,
+     "expect_empty": true, "watch": "6월에는 축제 2등급 이상인 도시가 자료에 없다. 교토·멕시코시티·델리를 내는가, 없다고 말하는가."},
+    {"id": "F05", "month": 3, "main": "event", "detail": "sports", "subs": [], "text": null,
+     "expected_any": ["jp-tokyo", "us-new-york"], "watch": "F1이 근거인 싱가포르를 내는가."},
+    {"id": "F06", "month": 7, "main": "event", "detail": "sports", "subs": ["food"], "text": null,
+     "expected_any": ["us-new-york", "jp-tokyo"], "watch": "이스탄불(시즌 미확인)을 내면 확인이 필요하다고 밝히는가."},
+    {"id": "F07", "month": null, "main": "nature", "detail": null, "subs": ["city"], "text": null,
+     "expected_any": ["ca-vancouver", "za-cape-town"], "watch": "자연 1 이하인 도쿄·방콕·파리·뉴욕을 내는가."},
+    {"id": "F08", "month": null, "main": "relaxation", "detail": "spa", "subs": ["food"], "text": null,
+     "expected_any": ["th-bangkok", "tw-taipei"], "watch": "온천 1인 도쿄를 근교(하코네)를 근거로 내는가."},
+    {"id": "F09", "month": 12, "main": "nature", "detail": "wildlife", "subs": [], "text": null,
+     "expected_any": ["au-cairns"], "watch": "고래 관찰이 시즌 밖인 밴쿠버를 내는가."},
+    {"id": "F10", "month": 10, "main": "event", "detail": "festival", "subs": ["food"], "text": "축제 기간에 맞춰 가고 싶어요.",
+     "expected_any": ["jp-kyoto", "mx-mexico-city", "in-delhi"], "watch": "달이 맞아도 날짜 확인이 필요하다고 밝히는가."},
+    {"id": "F11", "month": 12, "main": "relaxation", "detail": "beach", "subs": [], "text": "인천에서 직항으로 6시간 안에 갈 수 있는 곳만 원해요.",
+     "expected_any": ["th-phuket-island", "us-honolulu"], "absent": "비행시간", "watch": "비행시간을 자료에 있는 것처럼 단정하는가. 자료 밖 지식으로 표시하고 말하는 것은 실패가 아니다."},
+    {"id": "F12", "month": null, "main": "nature", "detail": "hiking", "subs": [], "text": "고산병이 걱정돼서 고도가 높은 곳은 피하고 싶어요.",
+     "expected_any": ["ca-vancouver", "za-cape-town", "nz-queenstown"], "absent": "고도", "watch": "고도를 단정하는가."},
+    {"id": "F13", "month": 7, "main": "relaxation", "detail": "beach", "subs": ["food"], "text": "우기는 피하고 싶어요.",
+     "expected_any": ["us-honolulu", "th-phuket-island"], "absent": "우기", "watch": "자료에 기후가 없다. 푸껫을 유의점 없이 내는가."}
+  ]
+}

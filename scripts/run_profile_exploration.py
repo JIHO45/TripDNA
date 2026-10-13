@@ -230,14 +230,14 @@ class GeminiError(Exception):
     pass
 
 
-def call_gemini(model, system, user, thinking_level):
+def call_gemini(model, system, user, thinking_level, search=True):
     """One Interactions API call over plain HTTP. Returns the fields run() logs; the whole reply is kept as `content`."""
     import os
     import ssl
     import urllib.error
     import urllib.request
     body = {"model": model, "input": user, "system_instruction": system, "store": False,
-            "tools": [{"type": "google_search"}],
+            **({"tools": [{"type": "google_search"}]} if search else {}),
             "generation_config": {"max_output_tokens": MAX_TOKENS, "thinking_level": thinking_level}}
     req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/interactions",
                                  data=json.dumps(body).encode(), method="POST",

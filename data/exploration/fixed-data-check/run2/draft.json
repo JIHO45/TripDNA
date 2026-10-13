@@ -1,0 +1,1277 @@
+{
+ "status": "draft, unreviewed by a human",
+ "author": "Claude Opus 5.5, 2026-10-12. 같은 날의 첫 초안과 Codex 수정안(draft-codex.json)을 합쳤다. 모델 지식으로 썼고 일부 사실만 Codex 세션이 공식 출처와 대조했다(notes.md의 대조 기록). 뒤의 15곳은 대조한 사실이 없다. 사람 검수 없음.",
+ "rubric": {
+  "3": "이 경험만을 목적으로 올 만한 곳",
+  "2": "여행의 주요 일정이 될 만한 곳",
+  "1": "있기는 한 곳",
+  "0": "추천 근거로 삼을 만한 경험을 찾지 못한 곳(없다는 증명이 아니다)"
+ },
+ "rules": [
+  "세부 29개에 모두 0~3을 적는다. 큰 컨셉 등급은 세부 중 최댓값이며 저장하지 않고 계산한다.",
+  "등급은 가능한 시기에 갔을 때의 수준이다. 그 등급을 지지하는 경험(core에 적은 경험)이 열리지 않는 달이 있으면 season에 가능한 달(1~12)을 적는다. 등급에 못 미치는 대체 경험이나 제한 운영 기간은 달에 넣지 않는다. season이 없으면 달 제한이 없다는 뜻이다. 날씨에 따른 시기(우기, 벚꽃·단풍)는 season에 넣지 않는다. 달은 확인한 해의 일정에 따른 것이어서 해마다 다시 확인한다.",
+  "달이 제한될 것 같은데 확인하지 못한 세부는 season_unverified에 적는다. 시기 조건이 있는 추천에서 이 세부는 충족도 탈락도 아닌 확인 필요로 다룬다.",
+  "이벤트 컨셉의 세부와 season이 있는 세부는 달이 맞아도 방문일의 개최·운영을 따로 확인해야 한다.",
+  "사용자가 시기를 넣었으면 시즌 밖 세부를 뺀 나머지로 큰 컨셉 등급, 부 컨셉 합산, 보여줄 문장을 계산한다. 시즌 밖 세부가 있다고 도시를 빼지 않는다.",
+  "등급과 core는 그 도시 여행으로 자연스럽게 묶이는 범위(scope)만 근거로 삼는다. 같은 숙소를 거점으로 당일에 그 경험을 할 수 있고 그 도시 여행의 흔한 일정인지를 본다. 별도 목적지로 다녀오는 근교는 nearby에 장소와 관련 세부만 적고 등급에 넣지 않는다. 범위는 도시마다 사람이 판단한다.",
+  "핵심 경험 문장(core)은 2등급 이상 세부에만 쓴다. 가격·운영시간·예약처럼 바뀌는 사실과 날씨 조건은 쓰지 않는다.",
+  "현지인 만나기(locals)는 2등급의 정의가 없어 20곳 모두 1 이하다. 정의를 정하기 전에는 추천 선택지에서 뺀다."
+ ],
+ "concepts_from": "data/exploration/coverage-check/grades-v2.json",
+ "cities": {
+  "jp-tokyo": {
+   "name": {
+    "ko": "도쿄",
+    "en": "Tokyo"
+   },
+   "country": "JP",
+   "scope": "도쿄 도심(23구)과 우라야스의 도쿄 디즈니리조트",
+   "grades": {
+    "scenery": 1,
+    "hiking": 1,
+    "wildlife": 1,
+    "beach": 0,
+    "spa": 1,
+    "resort": 0,
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 3,
+    "street": 2,
+    "dining": 3,
+    "cafe": 2,
+    "drinks": 3,
+    "heritage": 2,
+    "museums": 2,
+    "traditional": 2,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 3,
+    "markets": 2,
+    "brands": 3,
+    "bars": 3,
+    "livebar": 2,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 2
+   },
+   "season": {},
+   "nearby": {
+    "하코네": [
+     "scenery",
+     "spa"
+    ],
+    "가마쿠라": [
+     "heritage",
+     "beach"
+    ],
+    "다카오산": [
+     "hiking"
+    ]
+   },
+   "core": {
+    "streets": "시부야·신주쿠의 번화가와 시모키타자와·야나카 같은 동네 골목을 걷는다. 동네마다 분위기가 크게 다르다.",
+    "architecture": "도쿄 스카이트리와 도쿄타워, 도쿄역 마루노우치 역사, 오모테산도의 현대 건축을 본다.",
+    "nightview": "시부야 스카이, 도쿄도청, 롯폰기 힐스 같은 전망대에서 도심 야경을 본다.",
+    "street": "츠키지 장외시장과 아메요코 시장에서 해산물과 간식을 사서 가게 앞에서 먹는다.",
+    "dining": "스시, 라멘, 야키토리, 이자카야를 저렴한 가게부터 오마카세·가이세키까지 넓은 가격대로 고른다.",
+    "cafe": "오래된 킷사텐과 스페셜티 커피 가게, 디저트 가게를 찾아다닌다.",
+    "drinks": "이자카야와 신주쿠 골든가이 같은 작은 술집 골목, 사케·위스키·칵테일 바를 다닌다.",
+    "heritage": "아사쿠사 센소지와 메이지 신궁을 둘러본다.",
+    "museums": "우에노의 도쿄국립박물관·국립서양미술관과 롯폰기의 모리미술관·국립신미술관을 본다.",
+    "traditional": "다도와 기모노 체험을 하고 가부키 공연을 본다.",
+    "themepark": "도쿄 디즈니랜드와 디즈니씨에서 하루 이상을 보낸다.",
+    "markets": "아사쿠사 나카미세 거리의 기념품, 아키하바라의 캐릭터·애니메이션 상품, 드럭스토어와 잡화점을 돈다.",
+    "brands": "긴자, 오모테산도, 신주쿠의 백화점과 브랜드 매장을 돈다.",
+    "bars": "신주쿠, 시부야, 롯폰기의 바와 클럽에서 밤늦게까지 논다.",
+    "livebar": "재즈 클럽과 시모키타자와 등의 라이브 하우스에서 공연을 본다.",
+    "sports": "봄부터 가을까지 도쿄돔과 진구 구장에서 프로야구를 본다. 료고쿠 국기관의 스모 대회는 1·5·9월에 열리고, 겨울에는 프로농구 등 실내 종목의 경기가 있다.",
+    "concert": "도쿄돔, 부도칸 같은 대형 공연장의 콘서트를 일정에 맞춰 본다."
+   },
+   "season_unverified": []
+  },
+  "th-bangkok": {
+   "name": {
+    "ko": "방콕",
+    "en": "Bangkok"
+   },
+   "country": "TH",
+   "scope": "방콕 시내",
+   "grades": {
+    "scenery": 0,
+    "hiking": 0,
+    "wildlife": 0,
+    "beach": 0,
+    "spa": 2,
+    "resort": 1,
+    "streets": 2,
+    "architecture": 1,
+    "nightview": 2,
+    "street": 3,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 1,
+    "heritage": 2,
+    "museums": 1,
+    "traditional": 1,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 1,
+    "markets": 3,
+    "brands": 2,
+    "bars": 3,
+    "livebar": 1,
+    "travelers": 3,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 1
+   },
+   "season": {},
+   "nearby": {
+    "아유타야": [
+     "heritage"
+    ]
+   },
+   "core": {
+    "spa": "동네 마사지 가게부터 호텔 스파까지 타이 마사지를 자주 받는다.",
+    "streets": "차이나타운 야왈랏과 탈랏 노이의 골목, 올드타운을 걷는다.",
+    "nightview": "루프톱 바에서 도심 야경을 보고, 짜오프라야 강변에서 조명이 켜진 왓 아룬을 본다.",
+    "street": "야왈랏과 야시장에서 팟타이, 쏨땀, 망고 찰밥 같은 길거리 음식을 먹는다.",
+    "dining": "동네 식당부터 타이 파인다이닝까지 타이 요리를 여러 가격대로 먹는다.",
+    "cafe": "아리, 통로, 에까마이의 카페를 찾아다닌다.",
+    "heritage": "왕궁과 왓 프라깨우, 왓 포의 와불, 왓 아룬을 본다.",
+    "markets": "짜뚜짝 주말 시장과 야시장에서 옷, 잡화, 기념품을 산다.",
+    "brands": "시암 파라곤, 센트럴월드, 아이콘시암 같은 대형 쇼핑몰을 돈다.",
+    "bars": "루프톱 바, 수쿰윗·통로의 바와 클럽, 카오산 로드에서 밤을 보낸다.",
+    "travelers": "카오산 로드 일대의 호스텔과 게스트하우스에 묵으며 다른 여행자를 만난다.",
+    "sports": "라차담넌 경기장에서 무에타이 경기를 본다."
+   },
+   "season_unverified": []
+  },
+  "ca-vancouver": {
+   "name": {
+    "ko": "밴쿠버",
+    "en": "Vancouver"
+   },
+   "country": "CA",
+   "scope": "밴쿠버 시, 리치먼드, 노스쇼어(노스밴쿠버·웨스트밴쿠버)의 산과 숲. 도심에서 출발하는 고래 관찰 투어 포함",
+   "grades": {
+    "scenery": 3,
+    "hiking": 3,
+    "wildlife": 2,
+    "beach": 1,
+    "spa": 0,
+    "resort": 0,
+    "streets": 2,
+    "architecture": 1,
+    "nightview": 1,
+    "street": 1,
+    "dining": 2,
+    "cafe": 1,
+    "drinks": 1,
+    "heritage": 0,
+    "museums": 1,
+    "traditional": 1,
+    "water": 2,
+    "winter": 2,
+    "extreme": 1,
+    "themepark": 1,
+    "markets": 1,
+    "brands": 1,
+    "bars": 1,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 1
+   },
+   "season": {
+    "wildlife": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11
+    ],
+    "winter": [
+     12,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "nearby": {
+    "스쿼미시": [
+     "hiking",
+     "scenery"
+    ],
+    "휘슬러": [
+     "winter"
+    ]
+   },
+   "core": {
+    "scenery": "스탠리 파크의 해안 산책로에서 바다와 노스쇼어의 산을 함께 보고, 캐필라노 서스펜션 브리지에서 숲을 본다.",
+    "hiking": "그라우스 그라인드, 린 캐니언 등 노스쇼어의 숲길과 산길을 걷는다.",
+    "wildlife": "고래 관찰 투어에 참여한다. 범고래·혹등고래 등이 관찰되지만 종류와 관찰 여부는 그날마다 다르다.",
+    "streets": "개스타운, 그랜빌 아일랜드, 예일타운을 걷는다.",
+    "dining": "해산물과 스시, 리치먼드의 중식을 먹는다.",
+    "water": "잉글리시 베이, 폴스 크리크, 딥 코브에서 카약과 패들보드를 탄다.",
+    "winter": "도심에서 가까운 그라우스, 사이프러스, 시모어 스키장에서 스키와 스노보드를 탄다.",
+    "sports": "NHL 밴쿠버 커넉스의 아이스하키, 축구(MLS), 캐나디안 풋볼의 홈경기를 일정에 맞춰 본다."
+   },
+   "season_unverified": []
+  },
+  "th-phuket-island": {
+   "name": {
+    "ko": "푸껫",
+    "en": "Phuket"
+   },
+   "country": "TH",
+   "scope": "푸껫 본섬과 본섬에서 당일로 다녀오는 섬 투어(팡아만, 피피 섬, 라차 섬)",
+   "grades": {
+    "scenery": 2,
+    "hiking": 1,
+    "wildlife": 1,
+    "beach": 3,
+    "spa": 2,
+    "resort": 3,
+    "streets": 2,
+    "architecture": 1,
+    "nightview": 0,
+    "street": 2,
+    "dining": 1,
+    "cafe": 1,
+    "drinks": 1,
+    "heritage": 1,
+    "museums": 0,
+    "traditional": 1,
+    "water": 2,
+    "winter": 0,
+    "extreme": 1,
+    "themepark": 1,
+    "markets": 1,
+    "brands": 1,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 2,
+    "locals": 0,
+    "festival": 1,
+    "sports": 1,
+    "concert": 0
+   },
+   "season": {},
+   "nearby": {},
+   "core": {
+    "scenery": "프롬텝 곶 등의 전망 지점에서 해안과 일몰을 보고, 당일 투어로 팡아만의 석회암 섬과 피피 섬을 본다.",
+    "streets": "올드타운의 옛 상점가 거리를 걸으며 건물과 가게를 구경한다.",
+    "beach": "파통, 카론, 카타, 방타오 등 서해안 해변에서 쉰다.",
+    "spa": "해변 마사지 가게와 리조트 스파에서 타이 마사지를 받는다.",
+    "resort": "해변 리조트나 풀빌라에서 숙소 중심으로 쉰다.",
+    "street": "야시장과 올드타운에서 현지 음식과 해산물을 먹는다.",
+    "water": "스노클링과 다이빙을 하고, 보트로 피피 섬·라차 섬 등을 도는 섬 투어를 한다.",
+    "bars": "파통의 방라 로드에서 바와 클럽을 다닌다.",
+    "travelers": "파통과 올드타운의 호스텔에 묵으며 다른 여행자를 만난다."
+   },
+   "season_unverified": []
+  },
+  "jp-kyoto": {
+   "name": {
+    "ko": "교토",
+    "en": "Kyoto"
+   },
+   "country": "JP",
+   "scope": "교토 시내(아라시야마·후시미 포함)와 가메오카의 축구 경기장",
+   "grades": {
+    "scenery": 2,
+    "hiking": 1,
+    "wildlife": 1,
+    "beach": 0,
+    "spa": 1,
+    "resort": 1,
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 1,
+    "street": 2,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 1,
+    "heritage": 3,
+    "museums": 2,
+    "traditional": 3,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 1,
+    "markets": 1,
+    "brands": 1,
+    "bars": 1,
+    "livebar": 0,
+    "travelers": 1,
+    "locals": 0,
+    "festival": 2,
+    "sports": 1,
+    "concert": 1
+   },
+   "season": {
+    "festival": [
+     5,
+     7,
+     10
+    ]
+   },
+   "nearby": {
+    "나라": [
+     "wildlife",
+     "heritage"
+    ],
+    "우지": [
+     "cafe"
+    ]
+   },
+   "core": {
+    "scenery": "아라시야마의 대나무 숲을 걷고, 봄에는 벚꽃, 가을에는 단풍을 본다.",
+    "streets": "기온의 하나미코지, 산넨자카·니넨자카, 폰토초의 옛 거리를 걷는다.",
+    "architecture": "금각사, 기요미즈데라의 본당 무대, 전통 목조 가옥(마치야)을 본다.",
+    "street": "니시키 시장에서 절임과 간식을 고르고, 구입한 가게 앞이나 안의 정해진 자리에서 먹는다.",
+    "dining": "가이세키, 두부 요리, 교토 가정식(오반자이)을 먹는다.",
+    "cafe": "말차 디저트 가게와 오래된 킷사텐을 찾아다닌다.",
+    "heritage": "후시미 이나리의 도리이 길, 기요미즈데라, 금각사·은각사, 니조성을 본다.",
+    "museums": "교토국립박물관, 교토시 교세라 미술관, 교토 국제 만화 박물관을 본다.",
+    "traditional": "다도를 체험하고 기모노를 빌려 입고 걷는다.",
+    "festival": "5월의 아오이 마쓰리, 7월의 기온 마쓰리, 10월의 지다이 마쓰리를 본다."
+   },
+   "season_unverified": []
+  },
+  "fr-paris": {
+   "name": {
+    "ko": "파리",
+    "en": "Paris"
+   },
+   "country": "FR",
+   "scope": "파리 시내와 마른라발레의 디즈니랜드 파리",
+   "grades": {
+    "scenery": 1,
+    "hiking": 0,
+    "wildlife": 1,
+    "beach": 0,
+    "spa": 1,
+    "resort": 0,
+    "streets": 3,
+    "architecture": 3,
+    "nightview": 3,
+    "street": 1,
+    "dining": 3,
+    "cafe": 3,
+    "drinks": 2,
+    "heritage": 2,
+    "museums": 3,
+    "traditional": 1,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 2,
+    "markets": 2,
+    "brands": 3,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 2
+   },
+   "season": {},
+   "nearby": {
+    "베르사유": [
+     "heritage",
+     "architecture"
+    ]
+   },
+   "core": {
+    "streets": "마레, 몽마르트르, 생제르맹데프레의 거리와 센 강변을 걷는다.",
+    "architecture": "에펠탑, 개선문, 노트르담 대성당, 사크레쾨르 대성당과 오스만 양식의 거리를 본다.",
+    "nightview": "조명이 켜진 에펠탑을 보고 센 강 유람선이나 몽마르트르 언덕에서 야경을 본다.",
+    "dining": "동네 비스트로와 브라스리부터 파인다이닝까지 프랑스 요리를 먹는다.",
+    "cafe": "테라스 카페에 앉아 쉬고, 빵집과 과자점에서 빵과 디저트를 고른다.",
+    "drinks": "와인 바에서 프랑스 여러 산지의 와인을 마신다.",
+    "heritage": "노트르담 대성당, 생트샤펠, 팡테옹, 앵발리드를 본다.",
+    "museums": "루브르 박물관, 오르세 미술관, 오랑주리 미술관, 로댕 미술관을 본다.",
+    "themepark": "디즈니랜드 파리에서 하루를 보낸다.",
+    "markets": "생투앙 벼룩시장과 센 강변의 헌책 노점을 구경한다.",
+    "brands": "샹젤리제와 생토노레 거리, 갤러리 라파예트·프랭탕 백화점을 돈다.",
+    "bars": "마레, 오베르캄프, 피갈의 바를 다닌다.",
+    "sports": "늦봄의 프랑스 오픈 테니스나 파리 생제르맹의 축구 홈경기를 일정에 맞춰 본다.",
+    "concert": "오페라 가르니에와 오페라 바스티유의 오페라·발레, 필하모니 드 파리의 연주회를 본다."
+   },
+   "season_unverified": []
+  },
+  "us-new-york": {
+   "name": {
+    "ko": "뉴욕",
+    "en": "New York"
+   },
+   "country": "US",
+   "scope": "뉴욕 시(맨해튼, 브루클린 등 5개 자치구)",
+   "grades": {
+    "scenery": 1,
+    "hiking": 0,
+    "wildlife": 1,
+    "beach": 1,
+    "spa": 0,
+    "resort": 0,
+    "streets": 3,
+    "architecture": 3,
+    "nightview": 3,
+    "street": 2,
+    "dining": 3,
+    "cafe": 2,
+    "drinks": 3,
+    "heritage": 1,
+    "museums": 3,
+    "traditional": 0,
+    "water": 1,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 1,
+    "markets": 1,
+    "brands": 3,
+    "bars": 3,
+    "livebar": 3,
+    "travelers": 2,
+    "locals": 1,
+    "festival": 1,
+    "sports": 3,
+    "concert": 3
+   },
+   "season": {},
+   "nearby": {
+    "우드버리": [
+     "brands"
+    ]
+   },
+   "core": {
+    "streets": "소호, 그리니치빌리지, 브루클린의 윌리엄스버그·덤보를 걷고 하이라인 공원길을 걷는다.",
+    "architecture": "엠파이어 스테이트 빌딩, 크라이슬러 빌딩, 브루클린 브리지, 자유의 여신상을 본다.",
+    "nightview": "고층 전망대와 타임스스퀘어에서 야경을 보고, 브루클린에서 맨해튼의 스카이라인을 본다.",
+    "street": "조각 피자, 베이글, 푸드 카트 음식을 먹고 첼시 마켓을 돈다.",
+    "dining": "세계 각국의 요리를 스테이크하우스부터 파인다이닝까지 넓은 가격대로 고른다.",
+    "cafe": "스페셜티 커피 가게와 베이커리를 찾아다닌다.",
+    "drinks": "칵테일 바, 루프톱 바, 크래프트 맥주 가게를 다닌다.",
+    "museums": "메트로폴리탄 미술관, 뉴욕 현대미술관(MoMA), 미국 자연사 박물관, 구겐하임 미술관을 본다.",
+    "brands": "5번가와 소호의 브랜드 매장, 백화점을 돈다.",
+    "bars": "로어이스트사이드, 이스트빌리지, 브루클린의 바와 클럽에서 밤늦게까지 논다.",
+    "livebar": "그리니치빌리지와 할렘의 재즈 클럽에서 공연을 본다.",
+    "travelers": "호스텔과 도보 투어에서 다른 여행자를 만난다.",
+    "sports": "야구(양키스·메츠), 농구(닉스·네츠), 아이스하키(레인저스)를 일정에 맞춰 본다. 늦여름에는 US 오픈 테니스가 열린다.",
+    "concert": "브로드웨이 뮤지컬을 보고, 링컨 센터와 매디슨 스퀘어 가든의 공연을 일정에 맞춰 본다."
+   },
+   "season_unverified": []
+  },
+  "sg-singapore": {
+   "name": {
+    "ko": "싱가포르",
+    "en": "Singapore"
+   },
+   "country": "SG",
+   "scope": "싱가포르 전역(센토사 섬 포함)",
+   "grades": {
+    "scenery": 1,
+    "hiking": 1,
+    "wildlife": 2,
+    "beach": 1,
+    "spa": 1,
+    "resort": 2,
+    "streets": 1,
+    "architecture": 2,
+    "nightview": 2,
+    "street": 3,
+    "dining": 2,
+    "cafe": 1,
+    "drinks": 1,
+    "heritage": 1,
+    "museums": 2,
+    "traditional": 1,
+    "water": 1,
+    "winter": 0,
+    "extreme": 1,
+    "themepark": 2,
+    "markets": 1,
+    "brands": 2,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 1
+   },
+   "season": {
+    "sports": [
+     9,
+     10
+    ]
+   },
+   "nearby": {},
+   "core": {
+    "wildlife": "싱가포르 동물원과 나이트 사파리에서 동물을 가까이에서 본다.",
+    "resort": "센토사 섬의 리조트나 호텔 수영장에서 쉰다.",
+    "architecture": "마리나 베이 샌즈, 가든스 바이 더 베이의 슈퍼트리, 주얼 창이를 본다.",
+    "nightview": "마리나 베이의 야경과 조명 쇼를 본다.",
+    "street": "호커 센터에서 치킨라이스, 락사, 사테를 먹는다.",
+    "dining": "칠리 크랩을 먹고 중국·말레이·인도 요리 식당을 고른다.",
+    "themepark": "센토사의 유니버설 스튜디오 싱가포르에서 하루를 보낸다.",
+    "brands": "오차드 로드와 마리나 베이 샌즈의 쇼핑몰을 돈다.",
+    "bars": "클락 키와 루프톱 바에서 밤을 보낸다.",
+    "sports": "가을에 열리는 F1 싱가포르 그랑프리의 야간 시가지 경주를 본다.",
+    "museums": "싱가포르 국립미술관, 싱가포르 국립박물관, 아트사이언스 뮤지엄을 본다."
+   },
+   "season_unverified": []
+  },
+  "ae-dubai": {
+   "name": {
+    "ko": "두바이",
+    "en": "Dubai"
+   },
+   "country": "AE",
+   "scope": "두바이 시내와 두바이의 사막 투어 지역",
+   "grades": {
+    "scenery": 1,
+    "hiking": 0,
+    "wildlife": 1,
+    "beach": 2,
+    "spa": 1,
+    "resort": 2,
+    "streets": 1,
+    "architecture": 3,
+    "nightview": 2,
+    "street": 1,
+    "dining": 2,
+    "cafe": 1,
+    "drinks": 1,
+    "heritage": 1,
+    "museums": 1,
+    "traditional": 1,
+    "water": 2,
+    "winter": 1,
+    "extreme": 2,
+    "themepark": 2,
+    "markets": 2,
+    "brands": 3,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 0,
+    "festival": 1,
+    "sports": 1,
+    "concert": 1
+   },
+   "season": {},
+   "nearby": {
+    "아부다비": [
+     "themepark",
+     "architecture"
+    ],
+    "하타": [
+     "hiking"
+    ]
+   },
+   "core": {
+    "beach": "JBR 해변과 카이트 비치에서 쉰다.",
+    "resort": "팜 주메이라 등의 해변 리조트에서 숙소 중심으로 쉰다.",
+    "architecture": "부르즈 할리파, 부르즈 알 아랍, 팜 주메이라, 두바이 프레임을 본다.",
+    "nightview": "두바이 분수 쇼와 두바이 마리나의 야경을 본다.",
+    "dining": "세계 각국의 요리를 내는 레스토랑과 호텔 식당을 고른다.",
+    "water": "제트스키, 카이트서핑, 패들보드를 탄다.",
+    "extreme": "사막에서 사륜구동차로 모래 언덕을 달리고 샌드보드를 탄다. 스카이다이빙을 한다.",
+    "themepark": "실내 테마파크와 워터파크에서 하루를 보낸다.",
+    "markets": "금 시장과 향신료 시장을 구경한다.",
+    "brands": "두바이 몰과 몰 오브 디 에미리트를 돈다.",
+    "bars": "호텔 바, 루프톱 라운지, 비치 클럽에서 밤을 보낸다."
+   },
+   "season_unverified": []
+  },
+  "tr-istanbul": {
+   "name": {
+    "ko": "이스탄불",
+    "en": "Istanbul"
+   },
+   "country": "TR",
+   "scope": "이스탄불 시내(유럽·아시아 양쪽)",
+   "grades": {
+    "scenery": 1,
+    "hiking": 0,
+    "wildlife": 0,
+    "beach": 0,
+    "spa": 2,
+    "resort": 0,
+    "streets": 3,
+    "architecture": 3,
+    "nightview": 1,
+    "street": 3,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 1,
+    "heritage": 3,
+    "museums": 2,
+    "traditional": 1,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 0,
+    "markets": 3,
+    "brands": 1,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 1
+   },
+   "season": {},
+   "nearby": {
+    "프린스 제도": [
+     "scenery",
+     "streets"
+    ]
+   },
+   "core": {
+    "spa": "전통 목욕탕(하맘)에서 목욕과 때밀이를 받는다.",
+    "streets": "술탄아흐메트, 갈라타·카라쾨이, 발랏의 골목과 이스티클랄 거리를 걷는다.",
+    "architecture": "아야 소피아, 블루 모스크, 쉴레이마니예 모스크, 갈라타 탑을 본다.",
+    "street": "시미트, 고등어 샌드위치, 케밥 같은 길거리 음식을 먹는다.",
+    "dining": "메제와 생선 요리를 내는 선술집(메이하네)과 케밥 식당에서 먹는다.",
+    "cafe": "터키식 커피와 차를 마시고 바클라바를 먹는다.",
+    "heritage": "아야 소피아, 톱카프 궁전, 예레바탄 지하 저수지, 블루 모스크를 본다.",
+    "museums": "이스탄불 고고학 박물관과 이스탄불 현대 미술관을 본다.",
+    "markets": "그랜드 바자르와 향신료 시장(이집션 바자르)을 돈다.",
+    "bars": "베이오을루와 카드쾨이의 바를 다닌다.",
+    "sports": "갈라타사라이, 페네르바흐체, 베식타시의 축구 홈경기를 일정에 맞춰 본다."
+   },
+   "season_unverified": [
+    "sports"
+   ]
+  },
+  "tw-taipei": {
+   "name": {
+    "ko": "타이베이",
+    "en": "Taipei"
+   },
+   "country": "TW",
+   "scope": "타이베이 시(양밍산, 베이터우 포함)",
+   "grades": {
+    "scenery": 2,
+    "hiking": 2,
+    "wildlife": 1,
+    "beach": 0,
+    "spa": 2,
+    "resort": 0,
+    "streets": 2,
+    "architecture": 1,
+    "nightview": 2,
+    "street": 3,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 1,
+    "heritage": 2,
+    "museums": 2,
+    "traditional": 1,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 1,
+    "markets": 2,
+    "brands": 1,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 1,
+    "concert": 1
+   },
+   "season": {},
+   "nearby": {
+    "지우펀·스펀": [
+     "scenery",
+     "streets"
+    ],
+    "예류": [
+     "scenery"
+    ]
+   },
+   "core": {
+    "scenery": "양밍산 국립공원에서 화산 지형과 초원을 본다.",
+    "hiking": "샹산(코끼리산)과 양밍산의 등산로를 걷는다.",
+    "spa": "베이터우에서 온천을 한다.",
+    "streets": "융캉제, 디화제, 시먼딩을 걷는다.",
+    "nightview": "타이베이 101 전망대와 샹산에서 도심 야경을 본다.",
+    "street": "스린, 라오허제, 닝샤 야시장에서 길거리 음식을 먹는다.",
+    "dining": "샤오룽바오, 우육면, 훠궈를 먹는다.",
+    "cafe": "버블티와 망고 빙수를 먹고 카페를 찾아다닌다.",
+    "heritage": "룽산쓰와 중정기념당을 본다.",
+    "museums": "국립고궁박물원을 본다.",
+    "markets": "디화제의 차와 건어물, 야시장의 잡화, 펑리수 같은 기념품을 산다.",
+    "bars": "신이 지구와 둥취의 바를 다닌다."
+   },
+   "season_unverified": []
+  },
+  "pt-lisbon": {
+   "name": {
+    "ko": "리스본",
+    "en": "Lisbon"
+   },
+   "country": "PT",
+   "scope": "리스본 시내(벨렝 포함)와 전철로 다녀오는 카스카이스 해안",
+   "grades": {
+    "scenery": 1,
+    "hiking": 0,
+    "wildlife": 1,
+    "beach": 1,
+    "spa": 0,
+    "resort": 0,
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 2,
+    "street": 1,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 2,
+    "heritage": 2,
+    "museums": 2,
+    "traditional": 1,
+    "water": 2,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 0,
+    "markets": 1,
+    "brands": 1,
+    "bars": 2,
+    "livebar": 2,
+    "travelers": 2,
+    "locals": 1,
+    "festival": 1,
+    "sports": 1,
+    "concert": 1
+   },
+   "season": {},
+   "nearby": {
+    "신트라": [
+     "heritage",
+     "architecture"
+    ]
+   },
+   "core": {
+    "streets": "알파마, 바이샤, 시아두의 언덕길과 골목을 걷고 28번 트램을 탄다.",
+    "architecture": "타일(아줄레주)로 덮인 건물, 코메르시우 광장, 산타 주스타 엘리베이터를 본다.",
+    "nightview": "언덕 위 전망대에서 일몰과 야경을 본다.",
+    "dining": "해산물과 대구(바칼랴우) 요리를 먹는다.",
+    "cafe": "에그타르트(파스텔 드 나타)를 먹고 오래된 카페와 제과점에 간다.",
+    "drinks": "체리주(진지냐)와 포르투갈 와인, 포트와인을 마신다.",
+    "heritage": "벨렝 탑, 제로니무스 수도원, 상 조르즈 성을 본다.",
+    "museums": "굴벤키안 미술관과 국립 아줄레주 박물관을 본다.",
+    "bars": "바이후 알투와 카이스 두 소드레의 바를 다닌다.",
+    "livebar": "알파마와 바이후 알투의 파두 하우스에서 파두 공연을 듣는다.",
+    "travelers": "호스텔과 도보 투어에서 다른 여행자를 만난다.",
+    "water": "카스카이스 쪽 해안에서 서핑 강습을 받는다."
+   },
+   "season_unverified": []
+  },
+  "au-sydney": {
+   "name": {
+    "ko": "시드니",
+    "en": "Sydney"
+   },
+   "country": "AU",
+   "scope": "시드니 도심과 해안 교외(본다이, 맨리 등)",
+   "grades": {
+    "scenery": 2,
+    "hiking": 2,
+    "wildlife": 2,
+    "beach": 2,
+    "spa": 0,
+    "resort": 1,
+    "streets": 1,
+    "architecture": 2,
+    "nightview": 2,
+    "street": 1,
+    "dining": 2,
+    "cafe": 2,
+    "drinks": 1,
+    "heritage": 1,
+    "museums": 1,
+    "traditional": 1,
+    "water": 2,
+    "winter": 0,
+    "extreme": 1,
+    "themepark": 1,
+    "markets": 1,
+    "brands": 1,
+    "bars": 1,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 2,
+    "concert": 2
+   },
+   "season": {},
+   "nearby": {
+    "블루마운틴": [
+     "scenery",
+     "hiking"
+    ]
+   },
+   "core": {
+    "scenery": "시드니 하버와 해안 절벽의 풍경을 본다.",
+    "hiking": "본다이에서 쿠지까지의 해안 산책로, 스핏에서 맨리까지의 길을 걷는다.",
+    "wildlife": "타롱가 동물원에서 코알라와 캥거루를 본다. 겨울부터 봄까지는 고래 관찰 투어가 있다.",
+    "beach": "본다이, 맨리, 쿠지 해변에서 수영하고 쉰다.",
+    "architecture": "시드니 오페라 하우스와 하버 브리지를 본다.",
+    "nightview": "서큘러 키에서 오페라 하우스와 하버 브리지의 야경을 본다.",
+    "dining": "해산물과 현대 호주 요리를 먹는다.",
+    "cafe": "카페에서 플랫 화이트와 브런치를 먹는다.",
+    "water": "해변에서 서핑 강습을 받고 하버에서 카약을 탄다.",
+    "sports": "럭비 리그, 호주식 풋볼, 여름의 크리켓 경기를 일정에 맞춰 본다.",
+    "concert": "시드니 오페라 하우스의 오페라와 연주회를 본다."
+   },
+   "season_unverified": []
+  },
+  "mx-mexico-city": {
+   "name": {
+    "ko": "멕시코시티",
+    "en": "Mexico City"
+   },
+   "country": "MX",
+   "scope": "멕시코시티 시내(코요아칸, 소치밀코 포함)와 당일로 다녀오는 테오티우아칸",
+   "grades": {
+    "scenery": 0,
+    "hiking": 0,
+    "wildlife": 1,
+    "beach": 0,
+    "spa": 0,
+    "resort": 0,
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 1,
+    "street": 3,
+    "dining": 3,
+    "cafe": 1,
+    "drinks": 1,
+    "heritage": 3,
+    "museums": 3,
+    "traditional": 1,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 1,
+    "markets": 2,
+    "brands": 1,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 2,
+    "sports": 2,
+    "concert": 1
+   },
+   "season": {
+    "festival": [
+     10,
+     11
+    ]
+   },
+   "nearby": {},
+   "core": {
+    "streets": "역사 지구(센트로 이스토리코), 로마·콘데사, 코요아칸을 걷는다.",
+    "architecture": "예술 궁전(팔라시오 데 베야스 아르테스), 메트로폴리탄 대성당, 독립 기념탑을 본다.",
+    "street": "타코 노점과 시장 안 식당에서 길거리 음식을 먹는다.",
+    "dining": "전통 식당부터 멕시코 요리 파인다이닝까지 여러 가격대로 먹는다.",
+    "heritage": "당일로 테오티우아칸의 피라미드에 다녀오고, 시내에서 템플로 마요르 유적과 소칼로 광장, 차풀테펙 성을 본다. 소치밀코 운하에서 배를 탄다.",
+    "museums": "국립 인류학 박물관과 프리다 칼로 박물관을 본다.",
+    "markets": "시우다델라 공예품 시장과 코요아칸 시장에서 공예품을 산다.",
+    "bars": "로마·콘데사의 바와 메스칼 바를 다닌다.",
+    "festival": "10월 말에서 11월 초의 죽은 자의 날 행사를 본다.",
+    "sports": "아레나 멕시코의 프로레슬링(루차 리브레)이나 축구 경기를 일정에 맞춰 본다."
+   },
+   "season_unverified": []
+  },
+  "us-honolulu": {
+   "name": {
+    "ko": "호놀룰루",
+    "en": "Honolulu"
+   },
+   "country": "US",
+   "scope": "오아후 섬 전체(와이키키, 노스쇼어 포함)",
+   "grades": {
+    "scenery": 2,
+    "hiking": 2,
+    "wildlife": 1,
+    "beach": 3,
+    "spa": 1,
+    "resort": 3,
+    "streets": 1,
+    "architecture": 1,
+    "nightview": 1,
+    "street": 1,
+    "dining": 1,
+    "cafe": 1,
+    "drinks": 1,
+    "heritage": 2,
+    "museums": 1,
+    "traditional": 2,
+    "water": 3,
+    "winter": 0,
+    "extreme": 1,
+    "themepark": 1,
+    "markets": 1,
+    "brands": 2,
+    "bars": 1,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 0,
+    "sports": 0,
+    "concert": 0
+   },
+   "season": {},
+   "nearby": {},
+   "core": {
+    "scenery": "다이아몬드 헤드와 누우아누 팔리 전망대에서 풍경을 보고 동쪽 해안 도로를 달린다.",
+    "hiking": "다이아몬드 헤드, 마노아 폭포, 코코 헤드의 등산로를 걷는다.",
+    "beach": "와이키키, 라니카이, 노스쇼어의 해변에서 수영하고 쉰다.",
+    "resort": "와이키키와 코올리나의 해변 리조트에서 숙소 중심으로 쉰다.",
+    "water": "서핑 강습을 받고 하나우마 베이에서 스노클링을 한다.",
+    "brands": "알라모아나 센터, 와이키키의 칼라카우아 거리, 와이켈레 아울렛을 돈다.",
+    "heritage": "진주만 국립 기념관과 이올라니 궁전을 본다.",
+    "traditional": "루아우에서 하와이 음식을 먹고 훌라 공연을 본다."
+   },
+   "season_unverified": []
+  },
+  "in-delhi": {
+   "name": {
+    "ko": "델리",
+    "en": "Delhi"
+   },
+   "country": "IN",
+   "scope": "델리 시내(올드 델리, 뉴델리)",
+   "grades": {
+    "scenery": 0,
+    "hiking": 0,
+    "wildlife": 0,
+    "beach": 0,
+    "spa": 0,
+    "resort": 0,
+    "streets": 2,
+    "architecture": 2,
+    "nightview": 0,
+    "street": 2,
+    "dining": 1,
+    "cafe": 1,
+    "drinks": 0,
+    "heritage": 3,
+    "museums": 1,
+    "traditional": 1,
+    "water": 0,
+    "winter": 0,
+    "extreme": 0,
+    "themepark": 0,
+    "markets": 2,
+    "brands": 1,
+    "bars": 1,
+    "livebar": 0,
+    "travelers": 0,
+    "locals": 0,
+    "festival": 2,
+    "sports": 1,
+    "concert": 0
+   },
+   "season": {
+    "festival": [
+     2,
+     3,
+     10,
+     11
+    ]
+   },
+   "nearby": {
+    "아그라": [
+     "heritage"
+    ]
+   },
+   "core": {
+    "streets": "올드 델리 찬드니 초크의 골목을 걷거나 릭샤로 돈다.",
+    "architecture": "인디아 게이트, 로터스 템플, 악샤르담 사원을 본다.",
+    "street": "찬드니 초크에서 차트, 파라타 같은 길거리 음식을 먹는다.",
+    "heritage": "레드 포트, 후마윤 묘, 쿠트브 미나르, 자마 마스지드를 본다.",
+    "markets": "찬드니 초크의 시장과 딜리 하트에서 직물과 공예품을 산다.",
+    "festival": "봄의 홀리와 가을의 디왈리 기간에 도시의 축제 분위기를 본다."
+   },
+   "season_unverified": []
+  },
+  "ma-marrakesh": {
+   "name": {
+    "ko": "마라케시",
+    "en": "Marrakesh"
+   },
+   "country": "MA",
+   "scope": "마라케시 시내(메디나, 신시가지, 팔므레)",
+   "grades": {
+    "scenery": 1,
+    "hiking": 0,
+    "wildlife": 0,
+    "beach": 0,
+    "spa": 2,
+    "resort": 2,
+    "streets": 3,
+    "architecture": 2,
+    "nightview": 1,
+    "street": 2,
+    "dining": 1,
+    "cafe": 1,
+    "drinks": 0,
+    "heritage": 3,
+    "museums": 1,
+    "traditional": 2,
+    "water": 0,
+    "winter": 0,
+    "extreme": 1,
+    "themepark": 0,
+    "markets": 3,
+    "brands": 0,
+    "bars": 1,
+    "livebar": 0,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 0,
+    "sports": 0,
+    "concert": 0
+   },
+   "season": {},
+   "nearby": {
+    "아틀라스 산맥": [
+     "hiking",
+     "scenery"
+    ],
+    "아가파이 사막": [
+     "scenery",
+     "extreme"
+    ]
+   },
+   "core": {
+    "spa": "전통 목욕탕(하맘)에서 목욕과 마사지를 받는다.",
+    "resort": "안뜰이 있는 전통 가옥 숙소(리아드)나 수영장이 있는 리조트에서 쉰다.",
+    "streets": "메디나의 골목을 걷고 제마 엘프나 광장에서 사람 구경을 한다.",
+    "architecture": "바히아 궁전, 쿠투비아 모스크의 첨탑, 마조렐 정원을 본다.",
+    "street": "저녁에 제마 엘프나 광장의 노점에서 구이와 타진을 먹는다.",
+    "heritage": "사디안 왕릉, 벤 유세프 마드라사, 엘 바디 궁전을 본다.",
+    "traditional": "모로코 요리 교실에 참여하고 공예 공방을 구경한다.",
+    "markets": "수크에서 가죽 제품, 등, 향신료, 카펫을 흥정해 산다."
+   },
+   "season_unverified": []
+  },
+  "za-cape-town": {
+   "name": {
+    "ko": "케이프타운",
+    "en": "Cape Town"
+   },
+   "country": "ZA",
+   "scope": "케이프타운 시내, 케이프 반도(케이프 포인트, 볼더스 비치, 콘스탄시아), 당일로 다녀오는 스텔렌보스 와인 산지",
+   "grades": {
+    "scenery": 3,
+    "hiking": 3,
+    "wildlife": 2,
+    "beach": 2,
+    "spa": 1,
+    "resort": 1,
+    "streets": 2,
+    "architecture": 1,
+    "nightview": 1,
+    "street": 1,
+    "dining": 2,
+    "cafe": 1,
+    "drinks": 3,
+    "heritage": 2,
+    "museums": 2,
+    "traditional": 1,
+    "water": 2,
+    "winter": 0,
+    "extreme": 2,
+    "themepark": 0,
+    "markets": 1,
+    "brands": 1,
+    "bars": 1,
+    "livebar": 1,
+    "travelers": 1,
+    "locals": 1,
+    "festival": 1,
+    "sports": 1,
+    "concert": 0
+   },
+   "season": {},
+   "nearby": {
+    "허마너스": [
+     "wildlife"
+    ],
+    "간스바이": [
+     "extreme",
+     "wildlife"
+    ]
+   },
+   "core": {
+    "scenery": "테이블 마운틴에 올라 도시와 바다를 보고, 채프먼스 피크 해안 도로와 케이프 포인트를 돈다.",
+    "hiking": "테이블 마운틴과 라이언스 헤드의 등산로를 오른다.",
+    "wildlife": "볼더스 비치에서 아프리카펭귄을 보고 하우트 베이에서 배를 타고 물개를 본다.",
+    "beach": "캠프스 베이와 클리프턴 해변에서 쉰다.",
+    "streets": "색색의 집이 늘어선 보캅과 V&A 워터프런트를 걷는다.",
+    "dining": "해산물과 케이프 말레이 요리를 먹는다.",
+    "drinks": "콘스탄시아와 스텔렌보스의 와이너리를 돌며 와인을 시음한다.",
+    "heritage": "로벤 섬과 디스트릭트 식스 박물관에서 아파르트헤이트의 역사를 본다.",
+    "water": "뮤젠버그에서 서핑을 하고 바다 카약을 탄다.",
+    "extreme": "시그널 힐에서 패러글라이딩을 하고 테이블 마운틴에서 하강(압세일)을 한다.",
+    "museums": "자이츠 아프리카 현대미술관(Zeitz MOCAA)을 본다."
+   },
+   "season_unverified": []
+  },
+  "au-cairns": {
+   "name": {
+    "ko": "케언스",
+    "en": "Cairns"
+   },
+   "country": "AU",
+   "scope": "케언스 시내와 북부 해변(팜 코브), 쿠란다, 케언스에서 출발하는 그레이트 배리어 리프 보트",
+   "grades": {
+    "scenery": 3,
+    "hiking": 2,
+    "wildlife": 3,
+    "beach": 1,
+    "spa": 0,
+    "resort": 2,
+    "streets": 0,
+    "architecture": 0,
+    "nightview": 0,
+    "street": 1,
+    "dining": 1,
+    "cafe": 1,
+    "drinks": 0,
+    "heritage": 0,
+    "museums": 0,
+    "traditional": 1,
+    "water": 3,
+    "winter": 0,
+    "extreme": 2,
+    "themepark": 0,
+    "markets": 1,
+    "brands": 0,
+    "bars": 1,
+    "livebar": 0,
+    "travelers": 2,
+    "locals": 0,
+    "festival": 0,
+    "sports": 0,
+    "concert": 0
+   },
+   "season": {},
+   "nearby": {
+    "데인트리·케이프 트리뷸레이션": [
+     "scenery",
+     "hiking",
+     "wildlife"
+    ],
+    "포트 더글러스": [
+     "resort",
+     "beach"
+    ]
+   },
+   "core": {
+    "scenery": "그레이트 배리어 리프의 산호초를 보고, 케이블카나 관광 열차로 쿠란다의 열대우림을 본다.",
+    "hiking": "쿠란다 쪽 배런 협곡 국립공원의 열대우림 산책로를 걷는다.",
+    "wildlife": "리프에서 산호와 열대어, 바다거북을 본다.",
+    "resort": "팜 코브의 해변 리조트에서 숙소 중심으로 쉰다.",
+    "water": "보트를 타고 리프에 나가 스노클링과 스쿠버 다이빙을 한다.",
+    "extreme": "번지 점프, 급류 래프팅, 스카이다이빙을 한다.",
+    "travelers": "배낭여행자 호스텔과 리프 투어에서 다른 여행자를 만난다."
+   },
+   "season_unverified": []
+  },
+  "nz-queenstown": {
+   "name": {
+    "ko": "퀸스타운",
+    "en": "Queenstown"
+   },
+   "country": "NZ",
+   "scope": "퀸스타운과 와카티푸 분지(애로타운, 깁스턴, 코로넷 피크, 리마커블스), 글레노키",
+   "grades": {
+    "scenery": 3,
+    "hiking": 3,
+    "wildlife": 1,
+    "beach": 0,
+    "spa": 2,
+    "resort": 1,
+    "streets": 1,
+    "architecture": 0,
+    "nightview": 0,
+    "street": 0,
+    "dining": 1,
+    "cafe": 1,
+    "drinks": 2,
+    "heritage": 1,
+    "museums": 0,
+    "traditional": 0,
+    "water": 2,
+    "winter": 3,
+    "extreme": 3,
+    "themepark": 0,
+    "markets": 0,
+    "brands": 0,
+    "bars": 2,
+    "livebar": 1,
+    "travelers": 2,
+    "locals": 0,
+    "festival": 0,
+    "sports": 0,
+    "concert": 0
+   },
+   "season": {
+    "winter": [
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   "nearby": {
+    "밀퍼드 사운드": [
+     "scenery"
+    ],
+    "와나카": [
+     "scenery",
+     "winter"
+    ]
+   },
+   "core": {
+    "scenery": "와카티푸 호수와 리마커블스 산맥을 보고, 곤돌라를 타고 올라 전망을 본다. 글레노키까지 호숫가 도로를 달린다.",
+    "hiking": "퀸스타운 힐과 벤 로몬드를 오르고 루트번 트랙의 초입 구간을 걷는다.",
+    "spa": "산과 강을 보며 온천탕에 몸을 담근다.",
+    "drinks": "깁스턴 밸리의 와이너리에서 와인을 시음한다.",
+    "water": "제트보트와 래프팅을 하고 호수에서 카약을 탄다.",
+    "winter": "코로넷 피크와 리마커블스 스키장에서 스키와 스노보드를 탄다.",
+    "extreme": "번지 점프, 스카이다이빙, 캐니언 스윙을 한다.",
+    "bars": "시내 중심가의 바에서 밤을 보낸다.",
+    "travelers": "호스텔과 액티비티 투어에서 다른 여행자를 만난다."
+   },
+   "season_unverified": []
+  }
+ }
+}

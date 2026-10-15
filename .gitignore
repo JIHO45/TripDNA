@@ -53,6 +53,7 @@ data/exploration/runs6/responses.jsonl
 data/exploration/runs6-stream/timings.jsonl
 data/exploration/chips-vs-llm/responses.jsonl
 data/exploration/fixed-data-check/*/responses.jsonl
+data/exploration/contract-check/**/responses.jsonl
 data/exploration/memo-check/**/responses-*.jsonl
 data/exploration/memo-check/**/sheet*-*.md
 data/exploration/memo-check/**/key*-*.json

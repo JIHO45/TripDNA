@@ -1,0 +1,31 @@
+{
+  "status": "2026-10-15 초안. 첫 호출 전. 사례·기대는 AI가 만들었고 사람 검수 전이다.",
+  "fields": "실행 2에서 새로 더한 사례다. 실행 1과의 비교에는 넣지 않고 새 입력 계약의 검증으로 따로 센다. 필드 뜻은 ../cases.json과 같고, 다음이 더해졌다. include_visited: 다녀온 곳 포함 여부(true 기본, false면 지난 여행의 city_id 도시를 이번 추천에서 뺀다). trips[].city_id: 지난 여행 도시의 ID. date_check: 축제·경기·공연에 기대는 카드마다 정확한 날짜 확인 안내가 있어야 한다(코드는 유의점의 '날짜·일정' 단어로만 센다).",
+  "cases": [
+    {"id": "V1", "from": "C04", "month": null, "main": "food", "detail": "street", "subs": [],
+     "text": null, "include_visited": true,
+     "trips": [{"id": "t1", "city": "방콕", "city_id": "th-bangkok", "stars": 3, "note": "시장 음식은 정말 좋았는데 너무 시끄럽고 붐벼서 지쳤다. 조용한 곳이면 좋겠다."}],
+     "watch": "방콕을 다시 추천해도 규칙 위반이 아니다. 메모의 '조용한 곳'을 순서나 유의점에 반영하는가."},
+    {"id": "V2", "from": "C04", "month": null, "main": "food", "detail": "street", "subs": [],
+     "text": null, "include_visited": false,
+     "trips": [{"id": "t1", "city": "방콕", "city_id": "th-bangkok", "stars": 3, "note": "시장 음식은 정말 좋았는데 너무 시끄럽고 붐벼서 지쳤다. 조용한 곳이면 좋겠다."}],
+     "expect_override": null, "forbid": ["city:th-bangkok"],
+     "watch": "다녀온 곳 제외 설정에서 방콕이 나오지 않는가. 메모는 여전히 다른 도시의 순서에 쓸 수 있다."},
+    {"id": "V3", "from": "C05", "month": null, "main": "culture", "detail": null, "subs": [],
+     "text": null, "include_visited": true,
+     "trips": [{"id": "t1", "city": "이스탄불", "city_id": "tr-istanbul", "stars": 5, "note": null}],
+     "watch": "메모 없는 별점의 이유를 추측하지 않는가. 별점만으로 순서를 크게 바꾸는지 기록한다."},
+    {"id": "E1", "month": 10, "main": "event", "detail": "festival", "subs": ["food"],
+     "text": "축제 기간이 아니면 가지 않을 거예요. 축제 날짜에 맞는 곳만 원해요.", "free_text": "required", "date_check": true,
+     "must_include": ["jp-kyoto", "mx-mexico-city", "in-delhi"],
+     "watch": "필수로 추출하는가. 카드마다 정확한 날짜 확인을 안내하는가. 달은 자료에 있어도 방문 날짜의 개최는 확인되지 않았다."},
+    {"id": "E2", "month": 10, "main": "event", "detail": "festival", "subs": ["food"],
+     "text": "축제가 열리면 좋겠지만 꼭 그렇지 않아도 괜찮아요.", "free_text": "preferred", "date_check": true,
+     "must_include": ["jp-kyoto", "mx-mexico-city", "in-delhi"],
+     "watch": "선호로 추출하는가. 선호여도 축제에 기대는 카드에는 날짜 확인을 안내하는가."},
+    {"id": "X1", "month": null, "main": "food", "detail": "cafe", "subs": [],
+     "text": "일본은 계속 빼 주세요. 조용한 카페가 많은 곳이면 좋겠어요.", "exclude": ["country:JP"], "free_text": "preferred",
+     "expect_override": null, "forbid": ["country:JP"],
+     "watch": "C03과 같은 유형의 다른 문장. 제외의 재확인을 조건으로 뽑지 않는가. '조용한 카페'는 선호 조건이다."}
+  ]
+}

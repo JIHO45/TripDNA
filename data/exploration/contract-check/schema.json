@@ -1,0 +1,103 @@
+{
+  "$comment": "docs/llm/README.md 5절의 응답 예시를 옮긴 첫 실험용 schema. 모델 API의 structured output이 이 기능 범위를 받는지는 확인하지 않았다.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request", "candidates", "failed", "passed_over", "memories_used", "note"],
+  "properties": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["understanding", "conditions", "exclusion_overrides", "depends_on"],
+      "properties": {
+        "understanding": {"type": "string"},
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "text", "type", "required", "quote"],
+            "properties": {
+              "id": {"type": "string"},
+              "text": {"type": "string"},
+              "type": {"type": "string", "enum": ["period", "duration", "budget", "flight_time", "altitude", "weather", "other"]},
+              "required": {"type": "boolean"},
+              "quote": {"type": "string"}
+            }
+          }
+        },
+        "exclusion_overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["target", "quote"],
+            "properties": {"target": {"type": "string"}, "quote": {"type": "string"}}
+          }
+        },
+        "depends_on": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reason", "caveat", "order_note", "conditions"],
+        "properties": {
+          "id": {"type": "string"},
+          "reason": {"type": "string"},
+          "caveat": {"type": "string"},
+          "order_note": {"type": "string"},
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "value", "scope", "ref", "llm_status"],
+              "properties": {
+                "id": {"type": "string"},
+                "value": {"type": "string"},
+                "scope": {"type": "string"},
+                "ref": {"type": "string"},
+                "llm_status": {"type": "string", "enum": ["met", "not_met", "unknown"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "failed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "condition_id", "value", "ref"],
+        "properties": {
+          "id": {"type": "string"},
+          "condition_id": {"type": "string"},
+          "value": {"type": "string"},
+          "ref": {"type": "string"}
+        }
+      }
+    },
+    "passed_over": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "why"],
+        "properties": {"id": {"type": "string"}, "why": {"type": "string"}}
+      }
+    },
+    "memories_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trip_id", "how"],
+        "properties": {"trip_id": {"type": "string"}, "how": {"type": "string"}}
+      }
+    },
+    "note": {"type": "string"}
+  }
+}

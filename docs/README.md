@@ -13,6 +13,10 @@
 
 [추천 구조](recommendation/README.md): 여행권·접근 조건·매칭과 LLM 처리 책임.
 
+### llm
+
+[LLM 적용 방식](llm/README.md): 일반적인 적용 방법 정리와 적용 계획 초안. 결정은 추천 구조를 따른다.
+
 ### memory
 
 [사용자 기억·조건·제외와 이관](recommendation/memory.md): 독립 경험 상태·근거·학습 경계.

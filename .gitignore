@@ -54,6 +54,9 @@ data/exploration/runs6-stream/timings.jsonl
 data/exploration/chips-vs-llm/responses.jsonl
 data/exploration/fixed-data-check/*/responses.jsonl
 data/exploration/contract-check/**/responses.jsonl
+data/exploration/core-experience-ab/responses.jsonl
+data/exploration/core-experience-ab/judging.md
+data/exploration/core-experience-ab/judging_key.json
 data/exploration/memo-check/**/responses-*.jsonl
 data/exploration/memo-check/**/sheet*-*.md
 data/exploration/memo-check/**/key*-*.json

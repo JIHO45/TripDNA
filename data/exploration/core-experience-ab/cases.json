@@ -1,0 +1,18 @@
+{
+  "status": "2026-10-17 초안. 첫 호출 전. 사례와 고정한 해석은 AI가 정했고 사람 검수 전이다.",
+  "fields": "id: 계약 확인 실험의 사례 ID(요청·지난 여행·제외는 그 사례를 그대로 쓴다). conditions: 이번 실험에서 고정한 조건 해석. level은 필수·핵심·보조, status는 앱이 확인했는지. 카드 3장은 스크립트가 코드의 기준 순서에서 제외를 반영해 고른다(사례 파일에 적지 않는다).",
+  "cases": [
+    {"id": "F01", "conditions": []},
+    {"id": "F03", "conditions": []},
+    {"id": "F05", "conditions": []},
+    {"id": "F07", "conditions": []},
+    {"id": "F08", "conditions": []},
+    {"id": "F09", "conditions": []},
+    {"id": "F10", "conditions": [{"text": "축제 기간에 맞춰 방문", "level": "보조", "status": "확인 필요"}]},
+    {"id": "F13", "conditions": [{"text": "우기 피하기", "level": "필수", "status": "확인 필요"}]},
+    {"id": "C04", "conditions": []},
+    {"id": "C05", "conditions": []},
+    {"id": "E1", "conditions": [{"text": "축제 날짜가 여행 기간과 맞는 곳만", "level": "필수", "status": "확인 필요"}]},
+    {"id": "X1", "conditions": [{"text": "조용한 카페가 많은 곳", "level": "보조", "status": "확인 필요"}]}
+  ]
+}

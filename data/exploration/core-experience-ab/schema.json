@@ -1,0 +1,21 @@
+{
+  "$comment": "핵심 경험 A/B 실험의 응답 형식. 카드 설명만 쓴다.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cards"],
+  "properties": {
+    "cards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reason", "caveat"],
+        "properties": {
+          "id": {"type": "string"},
+          "reason": {"type": "string"},
+          "caveat": {"type": "string"}
+        }
+      }
+    }
+  }
+}

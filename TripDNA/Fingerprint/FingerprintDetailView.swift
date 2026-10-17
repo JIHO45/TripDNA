@@ -9,6 +9,8 @@ final class FingerprintDetailViewModel {
     }
 
     var vector: UserTasteVector?
+    /// 새 지문(여행별 주 컨셉 횟수). 5축 벡터와 무관하게 여행 기록에서만 센다.
+    var conceptFingerprint: ConceptFingerprint?
     var evidenceTrips: [Trip] = []
     var frequentTags: [TagCount] = []
     var isLoading = false
@@ -27,6 +29,7 @@ final class FingerprintDetailViewModel {
         defer { isLoading = false }
         vector = try? await dependencies.store.currentUTV()
         let trips = await dependencies.allTrips()
+        conceptFingerprint = ConceptFingerprint(trips: trips)
         evidenceTrips = trips
             .filter { $0.status == .evaluated }
             .sorted { ($0.evaluatedAt ?? .distantPast) > ($1.evaluatedAt ?? .distantPast) }
@@ -62,23 +65,27 @@ struct FingerprintDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                if let vector = viewModel.vector {
-                    hero(vector)
-                    axisRowsCard(vector)
-                    evidenceTripsCard
-                    frequentTagsCard
-                    blurryAxesCard(vector)
+                if let fingerprint = viewModel.conceptFingerprint {
+                    conceptCard(fingerprint)
                 } else if viewModel.isLoading {
                     LoadingView().frame(height: 280)
                 } else {
                     EmptyStateView(
                         systemImage: "touchid",
                         title: "아직 지문이 없어요",
-                        message: "여행을 등록하고 평가하면 지문이 생성돼요.",
+                        message: "다녀온 여행을 등록하고 무엇을 하러 갔는지 고르면 지문이 쌓여요.",
                         actionTitle: "여행 등록하러 가기",
                         action: { router.selectedTab = .trips }
                     )
                     .frame(height: 280)
+                }
+                // ponytail: 이전 5축 화면을 아래에 그대로 둔다. 철회된 설계라 제거 여부는 사용자 결정 대기.
+                if let vector = viewModel.vector {
+                    hero(vector)
+                    axisRowsCard(vector)
+                    evidenceTripsCard
+                    frequentTagsCard
+                    blurryAxesCard(vector)
                 }
             }
             .padding(DNASpacing.lg)
@@ -124,6 +131,34 @@ struct FingerprintDetailView: View {
             }
         }
         .task { await viewModel.load(dependencies) }
+    }
+
+    // MARK: - 컨셉 지문
+
+    private func conceptCard(_ fingerprint: ConceptFingerprint) -> some View {
+        SectionCard(title: "내가 다녀온 여행") {
+            Text(fingerprint.top.map { "\($0.labelKo) 여행" }.joined(separator: " · "))
+                .font(.title3.bold())
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("가장 많이 다녀온 여행이에요. 출장·가족 방문은 세지 않아요.")
+                .font(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+            ForEach(fingerprint.entries, id: \.concept) { entry in
+                HStack {
+                    Text(entry.concept.labelKo)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    Spacer()
+                    // 여행 한 건마다 점 하나씩 쌓는다.
+                    Text(String(repeating: "●", count: min(entry.count, 12)))
+                        .foregroundStyle(Color.dnaData)
+                        .accessibilityHidden(true)
+                    Text("\(entry.count)번")
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                .font(.subheadline)
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 
     // MARK: - 히어로 (3B)

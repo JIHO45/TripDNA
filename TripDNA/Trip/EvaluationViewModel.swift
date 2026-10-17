@@ -7,9 +7,8 @@ enum EvaluationStep: Equatable {
     case revisit
     case bestCountry
     case comparison
-    case positiveTags
-    case tagAttribution
-    case negativeTags
+    /// 방문 도시마다 한 페이지. 값은 `cityReviews`의 위치다.
+    case cityReview(Int)
     case processing
     case result
 }
@@ -29,18 +28,18 @@ final class EvaluationViewModel {
     private var allTrips: [Trip] = []
     private var evaluationService: EvaluationService?
     var photos: [DailyPhoto] = []
-    var positiveTagOptions: [TagDefinition] = []
-    var negativeTagOptions: [TagDefinition] = []
 
     var step: EvaluationStep = .intro
     var satisfaction: Int?
     var revisitAnswer: RevisitAnswer?
     var bestLegCountryCode: String?
     var comparisonResult: ComparisonResult?
-    var positiveTagIDs: [String] = []
-    var negativeTagIDs: [String] = []
-    /// taste 라우팅 태그 → 귀속 국가 코드. "전체 여행"이면 키를 넣지 않는다.
-    var tagLegAttribution: [String: String] = [:]
+    /// 도시별 별점·메모. 메모는 입력 그대로 두고 제출할 때 공백만 정리한다.
+    var cityReviews: [CityReview] = []
+    // 태그 선택 UI는 2026-10-08에 없앴다. 이전 평가의 태그는 수정 제출 때 그대로 넘겨 보존한다.
+    private var positiveTagIDs: [String] = []
+    private var negativeTagIDs: [String] = []
+    private var tagLegAttribution: [String: String] = [:]
 
     var isSubmitting = false
     /// 이미 제출한 평가를 고치는 중. 이전 답이 채워진 채로 시작한다.
@@ -75,32 +74,13 @@ final class EvaluationViewModel {
         return ordered
     }
 
-    var polarityTags: [TagDefinition] {
-        positiveTagOptions.filter { $0.group == .polarity }
-    }
-
-    var interestTags: [TagDefinition] {
-        positiveTagOptions.filter { $0.group == .interest }
-    }
-
-    /// 선택된 긍정 태그 중 taste 라우팅이 있는 것만 — 기존 평가 입력의 귀속 대상.
-    var tasteTagsNeedingAttribution: [TagDefinition] {
-        positiveTagOptions.filter { tag in
-            positiveTagIDs.contains(tag.id) && tag.routing.contains(.taste)
-        }
-    }
-
-    /// intro~negativeTags 사이 실제 진행 스텝(동적).
+    /// intro~마지막 도시 사이 실제 진행 스텝(동적).
     var flowSteps: [EvaluationStep] {
         var steps: [EvaluationStep] = [.intro, .satisfaction, .revisit]
         if isMultiLeg { steps.append(.bestCountry) }
         // 비교는 만족도 확정 후 앵커가 있을 때만 의미 있다. 없으면 advance()에서 자동 생략.
         steps.append(.comparison)
-        steps.append(.positiveTags)
-        if isMultiLeg && !tasteTagsNeedingAttribution.isEmpty {
-            steps.append(.tagAttribution)
-        }
-        steps.append(.negativeTags)
+        steps.append(contentsOf: cityReviews.indices.map(EvaluationStep.cityReview))
         return steps
     }
 
@@ -119,8 +99,8 @@ final class EvaluationViewModel {
             return "1/3 판정"
         case .comparison:
             return "2/3 비교"
-        case .positiveTags, .tagAttribution, .negativeTags:
-            return "3/3 취향"
+        case .cityReview:
+            return "3/3 도시별 기록"
         case .processing, .result:
             return "완료"
         }
@@ -131,9 +111,7 @@ final class EvaluationViewModel {
         allTrips = await dependencies.allTrips()
         evaluationService = dependencies.evaluationService
         photos = (try? await dependencies.store.photos(tripID: tripID)) ?? []
-        let tags = await dependencies.allTags()
-        positiveTagOptions = tags.filter { $0.group != .negative }
-        negativeTagOptions = tags.filter { $0.group == .negative }
+        cityReviews = trip?.reviewTargets ?? []
         if let firstLeg = trip?.legs.first, trip?.legs.count == 1 {
             bestLegCountryCode = firstLeg.countryCode
         }
@@ -155,6 +133,19 @@ final class EvaluationViewModel {
         positiveTagIDs = evaluation.positiveTagIDs
         negativeTagIDs = evaluation.negativeTagIDs
         tagLegAttribution = evaluation.tagLegAttribution
+        // 저장된 도시 평가를 같은 도시 자리에 채운다. 구간이 바뀌어 없어진 도시는 남기지 않는다.
+        for saved in evaluation.cityReviews ?? [] {
+            if let index = cityReviews.firstIndex(where: {
+                $0.countryCode == saved.countryCode && $0.city == saved.city
+            }) {
+                cityReviews[index] = saved
+            }
+        }
+    }
+
+    /// 마지막 페이지(도시가 없으면 비교)에서 제출한다.
+    var isLastStep: Bool {
+        flowSteps.last == step
     }
 
     func start() {
@@ -187,28 +178,13 @@ final class EvaluationViewModel {
         }
     }
 
-    func togglePositive(_ tagID: String) {
-        if let index = positiveTagIDs.firstIndex(of: tagID) {
-            positiveTagIDs.remove(at: index)
-            tagLegAttribution[tagID] = nil
-        } else if positiveTagIDs.count < 5 {
-            positiveTagIDs.append(tagID)
-        }
-    }
-
-    func toggleNegative(_ tagID: String) {
-        if let index = negativeTagIDs.firstIndex(of: tagID) {
-            negativeTagIDs.remove(at: index)
-        } else if negativeTagIDs.count < 3 {
-            negativeTagIDs.append(tagID)
-        }
-    }
-
-    func setAttribution(tagID: String, countryCode: String?) {
-        if let countryCode {
-            tagLegAttribution[tagID] = countryCode
-        } else {
-            tagLegAttribution[tagID] = nil
+    /// 빈 메모는 nil로, 아무것도 적지 않은 도시는 미상으로 빼고 남긴다.
+    var submittedCityReviews: [CityReview] {
+        cityReviews.compactMap { review in
+            var review = review
+            review.liked = review.liked?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            review.disliked = review.disliked?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            return review.isEmpty ? nil : review
         }
     }
 
@@ -234,9 +210,6 @@ final class EvaluationViewModel {
                 return TripComparison(versusTripID: anchor.id, result: comparisonResult ?? .skipped)
             }()
 
-            // 선택된 taste 태그에 대해서만 귀속을 남긴다.
-            let attribution = tagLegAttribution.filter { positiveTagIDs.contains($0.key) }
-
             let evaluation = try TripEvaluation(
                 satisfaction: satisfaction,
                 wouldRepeat: wouldRepeat,
@@ -244,7 +217,8 @@ final class EvaluationViewModel {
                 comparison: comparison,
                 positiveTagIDs: positiveTagIDs,
                 negativeTagIDs: negativeTagIDs,
-                tagLegAttribution: attribution,
+                tagLegAttribution: tagLegAttribution,
+                cityReviews: submittedCityReviews,
                 source: .postTrip
             )
             let result = isRevising
@@ -265,7 +239,7 @@ final class EvaluationViewModel {
             step = .result
         } catch {
             errorMessage = "평가를 저장하지 못했어요. 입력값을 확인해주세요."
-            step = .negativeTags
+            step = flowSteps.last ?? .intro
         }
     }
 
@@ -297,4 +271,8 @@ final class EvaluationViewModel {
             step = .intro
         }
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

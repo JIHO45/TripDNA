@@ -396,6 +396,12 @@ struct TripDetailView: View {
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
 
+                if let concepts = trip.concepts {
+                    Text(([concepts.primary] + concepts.secondary).map(\.labelKo).joined(separator: " · "))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.dnaData)
+                }
+
                 if let evaluation = trip.evaluation, !evaluation.skipped {
                     HStack(spacing: DNASpacing.sm) {
                         if let satisfaction = evaluation.satisfaction {
@@ -434,6 +440,22 @@ struct TripDetailView: View {
                                 summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaWarning)
                             }
                         }
+                    }
+
+                    ForEach(Array((evaluation.cityReviews ?? []).enumerated()), id: \.offset) { _, review in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(review.city ?? CountryCatalog.name(for: review.countryCode))\(review.rating.map { " · ★\($0)" } ?? "")")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                            if let liked = review.liked {
+                                Text("좋았던 점: \(liked)")
+                            }
+                            if let disliked = review.disliked {
+                                Text("아쉬웠던 점: \(disliked)")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
                     }
                 } else {
                     Text("평가를 생략한 여행이에요. 방문 기록만 남아 있어요.")

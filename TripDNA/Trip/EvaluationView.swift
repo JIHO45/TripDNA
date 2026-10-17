@@ -124,9 +124,7 @@ struct EvaluationView: View {
                 case .revisit: revisitStep
                 case .bestCountry: bestCountryStep
                 case .comparison: comparisonStep
-                case .positiveTags: positiveTagsStep
-                case .tagAttribution: attributionStep
-                case .negativeTags: negativeTagsStep
+                case .cityReview(let index): cityReviewStep(index)
                 default: EmptyView()
                 }
             }
@@ -284,102 +282,46 @@ struct EvaluationView: View {
 
     // MARK: - 취향 태그
 
-    private var positiveTagsStep: some View {
-        VStack(spacing: 0) {
+    // MARK: - 도시별 기록
+
+    private func cityReviewStep(_ index: Int) -> some View {
+        let review = viewModel.cityReviews[index]
+        return VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                    Text("좋았던 걸 골라주세요")
+                    Text(review.city ?? "\(CountryCatalog.name(for: review.countryCode)) (도시 미상)")
                         .font(.title3.bold())
                         .foregroundStyle(Color.dnaTextPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("최대 5개 · 없어도 괜찮아요")
+                    Text("모두 선택 사항이에요. 비워 두면 방문 기록만 남아요.")
                         .font(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
 
-                    if !viewModel.polarityTags.isEmpty {
-                        tagSection(title: "성향", tags: viewModel.polarityTags, isPositive: true)
-                    }
-                    if !viewModel.interestTags.isEmpty {
-                        tagSection(title: "관심사", tags: viewModel.interestTags, isPositive: true)
-                    }
-                }
-                .padding(DNASpacing.lg)
-            }
-            DNABottomCTA {
-                Button(viewModel.positiveTagIDs.isEmpty ? "건너뛰기" : "다음") {
-                    viewModel.advance()
-                }
-                .buttonStyle(.dnaPrimary)
-            }
-        }
-    }
-
-    private var attributionStep: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                    Text("그 좋았던 건\n어느 나라에서였나요?")
-                        .font(.title3.bold())
-                        .foregroundStyle(Color.dnaTextPrimary)
-                    Text("전체 여행에서 느낀 것이면 '전체 여행에서'를 골라주세요.")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-
-                    ForEach(viewModel.tasteTagsNeedingAttribution) { tag in
-                        VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                            Text(tag.labelKo)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.dnaTextPrimary)
-                            DNAFlowLayout(spacing: 8) {
-                                DNATagChip(
-                                    title: "전체 여행에서",
-                                    isSelected: viewModel.tagLegAttribution[tag.id] == nil
-                                ) {
-                                    viewModel.setAttribution(tagID: tag.id, countryCode: nil)
-                                }
-                                ForEach(viewModel.uniqueCountryCodes, id: \.self) { code in
-                                    DNATagChip(
-                                        title: CountryCatalog.name(for: code),
-                                        isSelected: viewModel.tagLegAttribution[tag.id] == code
-                                    ) {
-                                        viewModel.setAttribution(tagID: tag.id, countryCode: code)
-                                    }
-                                }
+                    HStack(spacing: DNASpacing.sm) {
+                        ForEach(1...5, id: \.self) { star in
+                            Button {
+                                // 같은 별을 다시 누르면 별점을 지운다.
+                                viewModel.cityReviews[index].rating = review.rating == star ? nil : star
+                            } label: {
+                                Image(systemName: star <= (review.rating ?? 0) ? "star.fill" : "star")
+                                    .font(.title2)
+                                    .foregroundStyle(Color.dnaData)
+                                    .frame(minWidth: 44, minHeight: 44)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("별 \(star)개")
+                            .accessibilityAddTraits(review.rating == star ? .isSelected : [])
                         }
-                        .padding(DNASpacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                                .fill(Color.dnaSurface1)
-                        )
                     }
-                }
-                .padding(DNASpacing.lg)
-            }
-            DNABottomCTA {
-                Button("다음") { viewModel.advance() }
-                    .buttonStyle(.dnaPrimary)
-            }
-        }
-    }
+                    .sensoryFeedback(.selection, trigger: review.rating)
 
-    private var negativeTagsStep: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                    Text("아쉬웠던 점이 있나요?")
-                        .font(.title3.bold())
-                        .foregroundStyle(Color.dnaTextPrimary)
-                    Text("최대 3개 · 선택 사항이에요")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
+                    memoField("좋았던 점", text: memoBinding(index, \.liked))
+                    memoField("아쉬웠던 점", text: memoBinding(index, \.disliked))
 
-                    tagSection(title: "아쉬웠던 것", tags: viewModel.negativeTagOptions, isPositive: false)
-
-                    Text("제출한 뒤에도 여행 상세에서 고칠 수 있어요. 여행끼리의 순서는 랭킹 보드에서 바꿔요.")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                        .padding(.top, DNASpacing.sm)
+                    if viewModel.isLastStep {
+                        Text("제출한 뒤에도 여행 상세에서 고칠 수 있어요. 여행끼리의 순서는 랭킹 보드에서 바꿔요.")
+                            .font(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
 
                     if let message = viewModel.errorMessage {
                         Text(message)
@@ -390,49 +332,44 @@ struct EvaluationView: View {
                 .padding(DNASpacing.lg)
             }
             DNABottomCTA {
-                Button {
-                    Task { await viewModel.submit(dependencies: dependencies, session: session) }
-                } label: {
-                    if viewModel.isSubmitting {
-                        ProgressView().tint(Color.dnaCanvas)
-                    } else {
-                        Text(viewModel.isRevising ? "수정 완료" : "평가 완료")
+                if viewModel.isLastStep {
+                    Button {
+                        Task { await viewModel.submit(dependencies: dependencies, session: session) }
+                    } label: {
+                        if viewModel.isSubmitting {
+                            ProgressView().tint(Color.dnaCanvas)
+                        } else {
+                            Text(viewModel.isRevising ? "수정 완료" : "평가 완료")
+                        }
                     }
+                    .buttonStyle(.dnaPrimary(isDisabled: viewModel.isSubmitting))
+                    .disabled(viewModel.isSubmitting)
+                } else {
+                    Button("다음 도시") { viewModel.advance() }
+                        .buttonStyle(.dnaPrimary)
                 }
-                .buttonStyle(.dnaPrimary(isDisabled: viewModel.isSubmitting))
-                .disabled(viewModel.isSubmitting)
             }
         }
     }
 
-    private func tagSection(title: String, tags: [TagDefinition], isPositive: Bool) -> some View {
+    private func memoField(_ title: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(title)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.dnaTextSecondary)
-            DNAFlowLayout(spacing: 8) {
-                ForEach(tags) { tag in
-                    let selected = isPositive
-                        ? viewModel.positiveTagIDs.contains(tag.id)
-                        : viewModel.negativeTagIDs.contains(tag.id)
-                    let locked = isPositive
-                        ? (!selected && viewModel.positiveTagIDs.count >= 5)
-                        : (!selected && viewModel.negativeTagIDs.count >= 3)
-                    DNATagChip(
-                        title: tag.labelKo,
-                        isSelected: selected
-                    ) {
-                        if isPositive {
-                            viewModel.togglePositive(tag.id)
-                        } else {
-                            viewModel.toggleNegative(tag.id)
-                        }
-                    }
-                    .disabled(locked)
-                    .opacity(locked ? 0.35 : 1)
-                }
-            }
+            TextField("자유롭게 적어주세요", text: text, axis: .vertical)
+                .lineLimit(3...8)
+                .padding(DNASpacing.md)
+                .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control))
+                .foregroundStyle(Color.dnaTextPrimary)
         }
+    }
+
+    private func memoBinding(_ index: Int, _ keyPath: WritableKeyPath<CityReview, String?>) -> Binding<String> {
+        Binding(
+            get: { viewModel.cityReviews[index][keyPath: keyPath] ?? "" },
+            set: { viewModel.cityReviews[index][keyPath: keyPath] = $0 }
+        )
     }
 
     // MARK: - 결과

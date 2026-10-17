@@ -14,12 +14,14 @@ nonisolated struct TripService {
         legs: [TripLeg],
         companion: Companion,
         purpose: TripPurpose,
+        concepts: TripConcepts? = nil,
         now: Date = Date()
     ) async throws -> Trip {
         let trip = try Trip(
             legs: legs,
             companion: companion,
             purpose: purpose,
+            concepts: concepts,
             createdAt: now
         )
         try await trips.create(trip)
@@ -61,10 +63,11 @@ nonisolated struct TripService {
         id: String,
         legs: [TripLeg],
         companion: Companion,
-        purpose: TripPurpose
+        purpose: TripPurpose,
+        concepts: TripConcepts?
     ) async throws -> Trip {
         var trip = try await requiredTrip(id: id)
-        try trip.updateDetails(legs: legs, companion: companion, purpose: purpose)
+        try trip.updateDetails(legs: legs, companion: companion, purpose: purpose, concepts: concepts)
         try await trips.update(trip)
         return trip
     }

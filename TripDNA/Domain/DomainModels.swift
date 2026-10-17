@@ -137,6 +137,83 @@ nonisolated struct TripLeg: Codable, Equatable, Sendable {
     }
 }
 
+/// 여행별 큰 컨셉. ID는 `data/experience-categories.json` v1의 9개에 `event`를 더한 것이다
+/// (docs/recommendation/memory.md "두 단계 컨셉"). 세부 컨셉은 아직 받지 않는다.
+nonisolated enum TripConcept: String, CaseIterable, Codable, Sendable {
+    case cityExploration = "city_exploration"
+    case natureScenery = "nature_scenery"
+    case food
+    case relaxation
+    case cultureHistory = "culture_history"
+    case activities
+    case shopping
+    case nightlife
+    case meetingPeople = "meeting_people"
+    case event
+}
+
+/// 여가 여행의 주 컨셉 1개와 부 컨셉 0~2개.
+nonisolated struct TripConcepts: Codable, Equatable, Sendable {
+    let primary: TripConcept
+    let secondary: [TripConcept]
+
+    init(primary: TripConcept, secondary: [TripConcept] = []) throws {
+        guard secondary.count <= 2,
+              Set(secondary).count == secondary.count,
+              !secondary.contains(primary) else {
+            throw DomainValidationError.invalidConcepts
+        }
+        self.primary = primary
+        self.secondary = secondary
+    }
+}
+
+/// 취향 지문: 다녀온 여가 여행의 주 컨셉 횟수. 성향 추정값이 아니라 발자취다
+/// (docs/screens/home-and-fingerprint.md "취향 지문"). 의무 여행과 아직 끝나지 않은 여행은 세지 않는다.
+nonisolated struct ConceptFingerprint: Equatable, Sendable {
+    struct Entry: Equatable, Sendable {
+        let concept: TripConcept
+        let count: Int
+    }
+
+    /// 횟수 내림차순. 같은 횟수는 `TripConcept.allCases` 순서.
+    let entries: [Entry]
+
+    /// 1위 컨셉들. 동점이면 함께 담는다.
+    var top: [TripConcept] {
+        guard let best = entries.first?.count else { return [] }
+        return entries.filter { $0.count == best }.map(\.concept)
+    }
+
+    /// 셀 여행이 없으면 nil.
+    init?(trips: [Trip], now: Date = Date()) {
+        let today = Calendar.current.startOfDay(for: now)
+        var counts: [TripConcept: Int] = [:]
+        for trip in trips where trip.purpose == .leisure {
+            let finished = trip.endedAt != nil || (trip.legs.map(\.endDate).max() ?? .distantFuture) < today
+            guard finished, let primary = trip.concepts?.primary else { continue }
+            counts[primary, default: 0] += 1
+        }
+        guard !counts.isEmpty else { return nil }
+        // sorted는 안정 정렬이 아니므로 동점 순서를 allCases 위치로 고정한다.
+        entries = TripConcept.allCases.enumerated()
+            .compactMap { index, concept in counts[concept].map { (index, Entry(concept: concept, count: $0)) } }
+            .sorted { ($0.1.count, -$0.0) > ($1.1.count, -$1.0) }
+            .map(\.1)
+    }
+}
+
+/// 방문 도시 하나의 평가. 도시 없이 나라만 기록된 구간은 `city`가 nil이다.
+nonisolated struct CityReview: Codable, Equatable, Sendable {
+    let countryCode: String
+    let city: String?
+    var rating: Int?
+    var liked: String?
+    var disliked: String?
+
+    var isEmpty: Bool { rating == nil && liked == nil && disliked == nil }
+}
+
 nonisolated struct TripComparison: Codable, Equatable, Sendable {
     let versusTripID: String?
     let result: ComparisonResult
@@ -150,6 +227,8 @@ nonisolated struct TripEvaluation: Codable, Equatable, Sendable {
     let positiveTagIDs: [String]
     let negativeTagIDs: [String]
     let tagLegAttribution: [String: String]
+    /// 도시별 별점·메모. 이 필드가 생기기 전의 기록에는 없다.
+    let cityReviews: [CityReview]?
     let source: EvaluationSource
     let skipped: Bool
 
@@ -161,6 +240,7 @@ nonisolated struct TripEvaluation: Codable, Equatable, Sendable {
         positiveTagIDs: [String] = [],
         negativeTagIDs: [String] = [],
         tagLegAttribution: [String: String] = [:],
+        cityReviews: [CityReview] = [],
         source: EvaluationSource,
         skipped: Bool = false
     ) throws {
@@ -179,6 +259,9 @@ nonisolated struct TripEvaluation: Codable, Equatable, Sendable {
         guard negativeTagIDs.count <= 3 else {
             throw DomainValidationError.tooManyNegativeTags
         }
+        guard cityReviews.allSatisfy({ $0.rating.map((1...5).contains) ?? true }) else {
+            throw DomainValidationError.invalidCityReview
+        }
 
         self.satisfaction = satisfaction
         self.wouldRepeat = wouldRepeat
@@ -187,6 +270,7 @@ nonisolated struct TripEvaluation: Codable, Equatable, Sendable {
         self.positiveTagIDs = positiveTagIDs
         self.negativeTagIDs = negativeTagIDs
         self.tagLegAttribution = tagLegAttribution.mapValues { $0.uppercased() }
+        self.cityReviews = cityReviews.isEmpty ? nil : cityReviews
         self.source = source
         self.skipped = skipped
     }
@@ -197,6 +281,8 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
     private(set) var legs: [TripLeg]
     private(set) var companion: Companion
     private(set) var purpose: TripPurpose
+    /// 여가 여행의 컨셉. 의무 여행과 이 필드가 생기기 전의 기록에는 없다.
+    private(set) var concepts: TripConcepts?
     private(set) var status: TripStatus
     private(set) var evaluation: TripEvaluation?
     private(set) var coverPhotoStoragePath: String?
@@ -211,15 +297,20 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
         legs: [TripLeg],
         companion: Companion,
         purpose: TripPurpose,
+        concepts: TripConcepts? = nil,
         createdAt: Date = Date()
     ) throws {
         guard !legs.isEmpty else {
             throw DomainValidationError.tripRequiresLeg
         }
+        guard purpose == .leisure || concepts == nil else {
+            throw DomainValidationError.invalidConcepts
+        }
         self.id = id
         self.legs = legs
         self.companion = companion
         self.purpose = purpose
+        self.concepts = concepts
         self.status = .planned
         self.createdAt = createdAt
     }
@@ -274,14 +365,18 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
         coverPhotoStoragePath = storagePath
     }
 
-    /// 구간·동행·성격만 수정한다. 상태·평가는 유지하되, 평가가 새 구간과 충돌하면 실패한다.
+    /// 구간·동행·성격·컨셉만 수정한다. 상태·평가는 유지하되, 평가가 새 구간과 충돌하면 실패한다.
     mutating func updateDetails(
         legs: [TripLeg],
         companion: Companion,
-        purpose: TripPurpose
+        purpose: TripPurpose,
+        concepts: TripConcepts?
     ) throws {
         guard !legs.isEmpty else {
             throw DomainValidationError.tripRequiresLeg
+        }
+        guard purpose == .leisure || concepts == nil else {
+            throw DomainValidationError.invalidConcepts
         }
         let previousLegs = self.legs
         let previousCompanion = self.companion
@@ -299,6 +394,7 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
                 throw error
             }
         }
+        self.concepts = concepts
     }
 
     mutating func mirrorRankPosition(_ position: Int?) throws {
@@ -320,6 +416,22 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
         guard evaluation.tagLegAttribution.values.allSatisfy(countries.contains) else {
             throw DomainValidationError.invalidTagAttribution
         }
+        guard (evaluation.cityReviews ?? []).allSatisfy({ countries.contains($0.countryCode) }) else {
+            throw DomainValidationError.invalidCityReview
+        }
+    }
+
+    /// 평가할 방문 도시. 도시가 없는 구간은 나라 단위로 남긴다(그 나라의 도시로 배분하지 않는다).
+    var reviewTargets: [CityReview] {
+        var seen = Set<String>()
+        var targets: [CityReview] = []
+        for leg in legs {
+            let cities: [String?] = leg.cities.isEmpty ? [nil] : leg.cities
+            for city in cities where seen.insert("\(leg.countryCode)|\(city ?? "")").inserted {
+                targets.append(CityReview(countryCode: leg.countryCode, city: city))
+            }
+        }
+        return targets
     }
 }
 
@@ -495,4 +607,6 @@ nonisolated enum DomainValidationError: Error, Equatable {
     case invalidTagAttribution
     case invalidRankPosition
     case duplicateRankingTrip
+    case invalidConcepts
+    case invalidCityReview
 }

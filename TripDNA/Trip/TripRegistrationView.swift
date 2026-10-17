@@ -42,6 +42,8 @@ final class TripRegistrationViewModel {
     var legs: [TripLegDraft]
     var companion: Companion = .alone
     var purpose: TripPurpose = .leisure
+    var primaryConcept: TripConcept?
+    var secondaryConcepts: [TripConcept] = []
     var isSubmitting = false
     var errorMessage: String?
     var duplicateWarning = false
@@ -71,10 +73,33 @@ final class TripRegistrationViewModel {
         }
         companion = trip.companion
         purpose = trip.purpose
+        primaryConcept = trip.concepts?.primary
+        secondaryConcepts = trip.concepts?.secondary ?? []
     }
 
     var canSubmit: Bool {
         !legs.isEmpty && legs.allSatisfy(\.isComplete)
+            && (purpose == .obligation || primaryConcept != nil)
+    }
+
+    /// 의무 여행은 컨셉 없이 방문만 남긴다.
+    var builtConcepts: TripConcepts? {
+        guard purpose == .leisure, let primaryConcept else { return nil }
+        return try? TripConcepts(primary: primaryConcept, secondary: secondaryConcepts)
+    }
+
+    func selectPrimary(_ concept: TripConcept) {
+        primaryConcept = concept
+        secondaryConcepts.removeAll { $0 == concept }
+    }
+
+    func toggleSecondary(_ concept: TripConcept) {
+        guard concept != primaryConcept else { return }
+        if let index = secondaryConcepts.firstIndex(of: concept) {
+            secondaryConcepts.remove(at: index)
+        } else if secondaryConcepts.count < 2 {
+            secondaryConcepts.append(concept)
+        }
     }
 
     /// 여행 전체가 오늘 이전에 끝났으면 과거 여행으로 취급한다.
@@ -132,7 +157,8 @@ final class TripRegistrationViewModel {
                     id: editingTripID,
                     legs: builtLegs,
                     companion: companion,
-                    purpose: purpose
+                    purpose: purpose,
+                    concepts: builtConcepts
                 )
                 try? await EvaluationNotificationService.scheduleIfEnabled(for: updated)
                 didSave = true
@@ -150,7 +176,8 @@ final class TripRegistrationViewModel {
             let created = try await dependencies.tripService.createTrip(
                 legs: builtLegs,
                 companion: companion,
-                purpose: purpose
+                purpose: purpose,
+                concepts: builtConcepts
             )
             try? await EvaluationNotificationService.scheduleIfEnabled(for: created)
             if shouldShowNotificationPriming {
@@ -160,7 +187,7 @@ final class TripRegistrationViewModel {
                 didSave = true
             }
         } catch let error as DomainValidationError
-            where error == .invalidBestLeg || error == .invalidTagAttribution {
+            where error == .invalidBestLeg || error == .invalidTagAttribution || error == .invalidCityReview {
             errorMessage = "평가에 쓰인 나라가 빠져 있어요. 평가된 여행은 그 나라를 남겨 주세요."
         } catch {
             errorMessage = "여행 정보를 확인해주세요. 국가와 날짜가 올바른지 확인이 필요해요."
@@ -198,6 +225,9 @@ struct TripRegistrationView: View {
                 legsSection
                 companionSection
                 purposeSection
+                if viewModel.purpose == .leisure {
+                    conceptSection
+                }
                 if let message = viewModel.errorMessage {
                     Text(message)
                         .font(.caption)
@@ -209,7 +239,9 @@ struct TripRegistrationView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: DNASpacing.md) {
             VStack(spacing: DNASpacing.sm) {
-                Text(viewModel.canSubmit ? "여행지와 일정을 확인한 뒤 저장해주세요." : "여행지를 선택하고 일정을 확인해주세요.")
+                Text(viewModel.canSubmit ? "여행지와 일정을 확인한 뒤 저장해주세요."
+                     : viewModel.legs.allSatisfy(\.isComplete) ? "무엇을 하러 가는지 골라주세요."
+                     : "여행지를 선택하고 일정을 확인해주세요.")
                     .font(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .multilineTextAlignment(.center)
@@ -473,14 +505,43 @@ struct TripRegistrationView: View {
                 selectionButton("휴가 · 여행", icon: "sun.max", isSelected: viewModel.purpose == .leisure) {
                     viewModel.purpose = .leisure
                 }
-                selectionButton("출장 · 행사", icon: "briefcase", isSelected: viewModel.purpose == .obligation) {
+                selectionButton("출장 · 가족 방문", icon: "briefcase", isSelected: viewModel.purpose == .obligation) {
                     viewModel.purpose = .obligation
                 }
             }
             if viewModel.purpose == .obligation {
-                Text("출장·행사로 다녀온 여행은 취향에 적게 반영돼요.")
+                Text("가야 해서 간 여행은 컨셉 없이 방문 기록만 남겨요.")
                     .font(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
+            }
+        }
+    }
+
+    private var conceptSection: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.md) {
+            sectionHeading("무엇을 하러 가나요?", subtitle: "가장 큰 목적 하나를 골라주세요.")
+            DNAFlowLayout(spacing: 8) {
+                ForEach(TripConcept.allCases, id: \.self) { concept in
+                    DNATagChip(title: concept.labelKo, isSelected: viewModel.primaryConcept == concept) {
+                        viewModel.selectPrimary(concept)
+                    }
+                }
+            }
+            if let primary = viewModel.primaryConcept {
+                Text("함께 즐긴 것 (최대 2개, 선택)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.dnaTextSecondary)
+                DNAFlowLayout(spacing: 8) {
+                    ForEach(TripConcept.allCases.filter { $0 != primary }, id: \.self) { concept in
+                        let selected = viewModel.secondaryConcepts.contains(concept)
+                        let locked = !selected && viewModel.secondaryConcepts.count >= 2
+                        DNATagChip(title: concept.labelKo, isSelected: selected) {
+                            viewModel.toggleSecondary(concept)
+                        }
+                        .disabled(locked)
+                        .opacity(locked ? 0.35 : 1)
+                    }
+                }
             }
         }
     }

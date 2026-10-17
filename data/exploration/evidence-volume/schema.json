@@ -1,0 +1,22 @@
+{
+  "$comment": "자료량 편향 실험의 응답 형식. 도시마다 선호의 근거만 보고한다.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cities"],
+  "properties": {
+    "cities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "ref", "quote"],
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"type": "string", "enum": ["met", "unknown"]},
+          "ref": {"type": "string"},
+          "quote": {"type": "string"}
+        }
+      }
+    }
+  }
+}

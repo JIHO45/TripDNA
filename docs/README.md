@@ -27,7 +27,7 @@
 
 ### candidates
 
-후보의 원문은 [destination-candidates.json](../data/planning/destination-candidates.json)이다. 선정 근거는 [후보 선정 기록](data/destination-selection.md), 보존한 도시 자료의 형식은 [자료 형식](data/city-format.md)에 있다. 두 문서는 후보와 파일 형식을 해석하는 기록이며 자료 제작 재개를 뜻하지 않는다.
+후보의 원문은 [destination-candidates.json](../data/planning/destination-candidates.json)이다. 새 도시 등급 자료의 계약과 검수 순서는 [도시 자료 제작 형식](data/destination-format.md), 판정 기준과 도시 추가 순서는 [등급 판정 절차](data/destination-grading.md), 초안은 [103곳 자료](../data/destinations/catalog.json)에 있다. 2026-10-17에 제작을 재개했으며 출시 검수·앱 적용은 별개다. [후보 선정 기록](data/destination-selection.md)과 [예전 상세 자료 형식](data/city-format.md)은 당시 기록으로 보존한다.
 
 ### storage
 
@@ -60,7 +60,7 @@
 - 빈 추천 결과·재호출 횟수·코드 순위 계산·입력 후보 범위·평가 입력 상한·도시 자료 제작: [추천 구조의 미정 목록](recommendation/README.md#미정).
 - 메모 전송과 도시 요청 집계의 동의·보관·삭제 계약: [저장·전송](data/storage-and-privacy.md).
 - 구독 가격·제공 범위가 미정이므로 구독 화면의 구체적 문구·동작은 확정 후 반영한다. 현재 화면은 무료 무제한 호출을 약속하지 않는다.
-- 기존 도시 파일 형식과 고정 실험 계획은 당시 기록이다. 새 등급·핵심 경험 자료의 형식이나 새 구성의 검증 완료로 읽지 않는다.
+- 기존 상세 도시 파일 형식과 고정 실험 계획은 당시 기록이다. [새 등급·핵심 경험 자료](data/destination-format.md)는 제작 초안이며 출시 검수·앱 적용은 남아 있다.
 
 ## 문서를 쓰는 규칙
 

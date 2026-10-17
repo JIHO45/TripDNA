@@ -1,0 +1,58 @@
+{
+  "status": "2026-10-17 초안. 첫 호출 전. 요청·선호 해석·대상 도시는 AI가 정했고 사람 검수 전이다.",
+  "fields": "request: 요청(컨셉·자유문장). preference: 고정한 선호 해석(level은 핵심·보조, keywords는 근거 문장이 그 선호를 말하는지 코드가 보는 단어). targets: 자료량을 바꿀 도시. control은 원문에 그 선호의 근거 문장이 없는 대조 도시. 후보는 기준 순서 상위 7곳(대상 도시는 모두 포함된다).",
+  "levels": {
+    "L0": "대상 도시의 문장 없음",
+    "L1": "대상 도시의 문장 가운데 선호 단어가 든 문장을 뺌",
+    "L2": "원문(미식·쇼핑 세부의 문장)",
+    "L3": "원문 + 선호와 무관한 다른 컨셉의 문장(양만 늘림)"
+  },
+  "cases": [
+    {
+      "id": "N1",
+      "month": null,
+      "main": "food",
+      "detail": "street",
+      "subs": [],
+      "text": "이번 여행은 야시장이 중심이에요. 야시장을 여러 곳 돌고 싶어요.",
+      "preference": {
+        "text": "야시장 중심",
+        "level": "핵심",
+        "keywords": [
+          "야시장"
+        ]
+      },
+      "targets": {
+        "tw-taipei": "has",
+        "th-bangkok": "has",
+        "sg-singapore": "control"
+      }
+    },
+    {
+      "id": "S1",
+      "month": null,
+      "main": "food",
+      "detail": "street",
+      "subs": [],
+      "text": "해산물을 많이 먹을 수 있으면 좋겠어요.",
+      "preference": {
+        "text": "해산물을 많이 먹기",
+        "level": "보조",
+        "keywords": [
+          "해산물",
+          "고등어",
+          "새우",
+          "생선",
+          "크랩",
+          "조개",
+          "오징어"
+        ]
+      },
+      "targets": {
+        "tr-istanbul": "has",
+        "th-phuket-island": "has",
+        "tw-taipei": "control"
+      }
+    }
+  ]
+}

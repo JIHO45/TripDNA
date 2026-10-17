@@ -1,0 +1,1182 @@
+{
+  "schema_version": 1,
+  "updated_on": "2026-10-17",
+  "status": "draft",
+  "author": "Claude Opus 5.5; 모델 지식 초안; Codex 2026-10-17 로이스 피크 범위 오류 수정. 일부 출처 대조는 docs/data/grade-anchors-review-2026-10-17.md, 사람 승인 없음",
+  "note": "등급 판정 절차(docs/data/destination-grading.md)의 기준표. make_time·choose만 담았다. 사례는 기준이지 현재 catalog 값의 확인이 아니며, 현재 값과 다른 사례는 재판정 후보다. 범위는 catalog의 scope를 따른다. boundary.side는 above(이 등급으로 판정), below(한 단계 아래로 판정) 제안이다.",
+  "subs": {
+    "scenery": {
+      "choose": {
+        "status": "draft",
+        "rule": "범위 안의 자연 경관 자체가 세계적 수준이어서, 경관을 보러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "nz-queenstown", "experience": "와카티푸 호수와 리마커블스 산맥이 시내를 둘러싼 경관", "reason": "시내 어디서나 보이는 호수·산악 경관이 방문의 주된 이유다."},
+          {"city": "za-cape-town", "experience": "테이블 마운틴과 케이프 반도의 해안 경관", "reason": "도시 바로 옆 산과 해안 절벽이 대표적인 여행 동기다."}
+        ],
+        "boundary": {"city": "ca-vancouver", "experience": "바다와 노스쇼어 산이 가까운 경관, 스탠리 파크", "side": "below", "reason": "아름답지만 경관 하나보다 도시와 자연의 조합으로 고르는 곳이다. 퀸스타운·케이프타운과 같은 수준인지 판정이 필요하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "전망 지점·해안 산책로·도시 안 자연 공원 등 경관을 보러 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "hk-hong-kong", "experience": "빅토리아 피크와 드래곤스 백 능선에서 보는 바다와 섬", "reason": "도심에서 가까운 산과 해안 경관이 흔한 별도 일정이다."},
+          {"city": "au-sydney", "experience": "시드니 하버와 본다이–쿠지 해안 산책로의 절벽 경관", "reason": "해안 산책로가 반나절 일정으로 자주 잡힌다."}
+        ],
+        "boundary": {"city": "fr-nice", "experience": "성곽 언덕(콜린 뒤 샤토)에서 내려다보는 앙주 만", "side": "below", "reason": "전망은 뛰어나지만 산책 중 들르는 짧은 지점이라 일정 하나로 잡기엔 작다."}
+      }
+    },
+    "hiking": {
+      "choose": {
+        "status": "draft",
+        "rule": "도시를 거점으로 당일 산행 코스가 다양하고 대표 트레일이 있어, 산행을 위해 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "nz-queenstown", "experience": "벤 로먼드 트랙의 당일 산행", "reason": "퀸스타운 범위의 산행 경험을 비교한다. 로이스 피크는 와나카에 있어 제외했다. 벤 로먼드만으로 choose를 지지하는지는 사람 판정 전이다."},
+          {"city": "za-cape-town", "experience": "테이블 마운틴 등반로와 라이언스 헤드", "reason": "도심에서 오르는 대표 트레일이 여럿이다."}
+        ],
+        "boundary": {"city": "ca-vancouver", "experience": "그라우스 그라인드와 노스쇼어 산길", "side": "above", "reason": "대중교통으로 닿는 산행 코스가 많아 산행 목적 여행이 성립한다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "범위 안에 반나절~하루짜리 산행 코스가 있어 그 도시 여행의 대표 일정 중 하나가 된다.",
+        "examples": [
+          {"city": "hk-hong-kong", "experience": "드래곤스 백 트레일", "reason": "도심에서 가까운 대표 트레일로 흔히 따로 일정을 잡는다."},
+          {"city": "kr-seoul", "experience": "북한산·인왕산 등산로", "reason": "도시 안에서 오르는 산이 흔한 여행 일정이다."}
+        ],
+        "boundary": {"city": "ch-zurich", "experience": "위틀리베르크 언덕 산행", "side": "below", "reason": "짧은 언덕 산책 수준이라 산행을 위해 일정을 따로 잡는다고 보기 어렵다."}
+      }
+    },
+    "wildlife": {
+      "choose": {
+        "status": "draft",
+        "rule": "야생 동물이나 그 지역 고유 생물을 관찰하는 경험이 그 자체로 이 도시를 고르는 이유가 된다.",
+        "examples": [
+          {"city": "au-cairns", "experience": "그레이트배리어리프 당일 투어에서 보는 산호와 해양 생물", "reason": "리프 생물 관찰이 케언스 방문의 주된 이유다."}
+        ],
+        "gap": "103곳 안에서 두 번째 대표 사례를 찾지 못했다.",
+        "boundary": {"city": "za-cape-town", "experience": "볼더스 비치의 아프리카펭귄 군락과 계절 고래 관찰", "side": "below", "reason": "인상적이지만 이것만으로 케이프타운을 고르기보다 대표 일정 중 하나다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "이름난 관찰지나 계절 관찰 투어가 있어 동물을 보러 일정 하나를 따로 잡을 만하다. 일반 동물원은 if_there다.",
+        "examples": [
+          {"city": "za-cape-town", "experience": "볼더스 비치의 아프리카펭귄 군락", "reason": "펭귄 군락 방문이 흔한 반나절 일정이다."},
+          {"city": "ca-vancouver", "experience": "계절 고래 관찰 투어", "reason": "시즌에 일부러 잡는 투어다."}
+        ],
+        "boundary": {"city": "sg-singapore", "experience": "나이트 사파리와 싱가포르 동물원", "side": "above", "reason": "동물원이지만 야간 사파리는 이름난 별도 일정이다. 일반 동물원과 구분하는 근거를 확인해야 한다."}
+      }
+    },
+    "beach": {
+      "choose": {
+        "status": "draft",
+        "rule": "물빛·모래·수영 여건이 뛰어나 해변에서 보내는 시간 자체가 이 도시를 고르는 이유다.",
+        "examples": [
+          {"city": "mx-cancun", "experience": "호텔 존의 카리브해 백사장", "reason": "해변이 여행의 중심이다."},
+          {"city": "do-punta-cana", "experience": "바바로 해변 등 카리브해 백사장", "reason": "해변에서 쉬려고 고르는 대표 목적지다."}
+        ],
+        "boundary": {"city": "br-rio-de-janeiro", "experience": "코파카바나·이파네마 해변", "side": "above", "reason": "수영 여건보다 해변 문화가 중심이지만 해변이 도시 여행의 핵심이다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "도시 여행 중 해변에서 반나절 이상 보낼 만하다.",
+        "examples": [
+          {"city": "es-barcelona", "experience": "바르셀로네타 해변", "reason": "도심 해변에서 반나절을 보내는 일정이 흔하다."},
+          {"city": "au-sydney", "experience": "본다이·맨리 해변", "reason": "수영과 서핑을 하러 따로 가는 해변이다."}
+        ],
+        "boundary": {"city": "fr-nice", "experience": "프롬나드 데 장글레 앞 자갈 해변", "side": "above", "reason": "자갈 해변이지만 도심 해변에서 수영·일광욕이 대표 일정이다."}
+      }
+    },
+    "spa": {
+      "choose": {
+        "status": "draft",
+        "rule": "온천·목욕 문화가 그 도시의 대표 정체성이어서 이것을 위해 도시를 고를 만하다.",
+        "examples": [
+          {"city": "hu-budapest", "experience": "세체니·루다시 등 온천 목욕탕", "reason": "도시 안 역사적 온천 목욕탕 문화가 방문 동기다."}
+        ],
+        "gap": "103곳 안에서 두 번째 대표 사례를 찾지 못했다. 삿포로 조잔케이는 범위 판단이 필요하다.",
+        "boundary": {"city": "tr-istanbul", "experience": "역사적 하맘에서 목욕과 때밀이", "side": "below", "reason": "대표 체험이지만 하맘만으로 이스탄불을 고르지는 않는다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "목욕·온천·스파 체험을 위해 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "tr-istanbul", "experience": "역사적 하맘", "reason": "일부러 시간을 내는 대표 체험이다."},
+          {"city": "th-bangkok", "experience": "태국 마사지와 스파", "reason": "저렴하고 수준 높은 마사지가 흔한 별도 일정이다."}
+        ],
+        "boundary": {"city": "jp-tokyo", "experience": "도심 센토와 온천 테마 시설", "side": "below", "reason": "목욕 시설은 있으나 온천 목적의 일정은 하코네 등 근교로 간다."}
+      }
+    },
+    "resort": {
+      "choose": {
+        "status": "draft",
+        "rule": "리조트·숙소 안에서 쉬는 것 자체가 여행 목적이며 리조트 선택지가 이 도시를 고르는 이유다.",
+        "examples": [
+          {"city": "mx-cancun", "experience": "호텔 존의 올인클루시브 리조트", "reason": "리조트에 머무는 것이 여행의 중심이다."},
+          {"city": "do-punta-cana", "experience": "해변 올인클루시브 리조트", "reason": "리조트 휴식이 대표 목적이다."}
+        ],
+        "boundary": {"city": "us-las-vegas", "experience": "스트립의 대형 리조트 호텔과 수영장", "side": "below", "reason": "리조트가 핵심이지만 쉬기보다 쇼·카지노의 거점이어서 '리조트에서 쉬기'로는 한 단계 아래다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "리조트·호텔 시설에서 쉬는 날을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "ae-dubai", "experience": "해변 리조트와 호텔 수영장", "reason": "호텔에서 하루를 보내는 일정이 흔하다."},
+          {"city": "sg-singapore", "experience": "센토사 리조트와 도심 호텔 수영장", "reason": "호텔 시설을 즐기는 일정이 흔하다."}
+        ],
+        "boundary": {"city": "th-bangkok", "experience": "강변 고급 호텔에서의 호캉스", "side": "above", "reason": "가격 대비 고급 호텔이 많아 호캉스가 흔한 일정이다."}
+      }
+    },
+    "streets": {
+      "choose": {
+        "status": "draft",
+        "rule": "동네마다 분위기가 다르고 오래 걸어도 볼거리가 이어져, 걷는 것 자체가 이 도시를 고르는 이유다.",
+        "examples": [
+          {"city": "fr-paris", "experience": "마레·생제르맹·몽마르트르 산책", "reason": "동네 산책이 여행의 중심이다."},
+          {"city": "it-venice", "experience": "차 없는 운하 골목과 다리", "reason": "도시 전체를 걷는 경험이 방문 동기다."}
+        ],
+        "boundary": {"city": "pt-porto", "experience": "히베이라와 언덕 골목", "side": "above", "reason": "도시 규모는 작지만 구시가 골목이 여행의 중심이다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "특정 동네를 걷는 데 반나절을 쓸 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "소호·코벤트가든·노팅힐 산책", "reason": "동네 산책이 흔한 별도 일정이다."},
+          {"city": "es-madrid", "experience": "라 라티나와 말라사냐의 거리", "reason": "동네를 걷는 반나절 일정이 흔하다."}
+        ],
+        "boundary": {"city": "de-frankfurt", "experience": "뢰머베르크 구시가와 작센하우젠", "side": "below", "reason": "구시가 범위가 작아 다른 일정 사이에 걷는 수준이다."}
+      }
+    },
+    "architecture": {
+      "choose": {
+        "status": "draft",
+        "rule": "세계적인 건축이 여럿 있거나 도시 경관 자체가 건축 명소여서, 건축을 보러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "es-barcelona", "experience": "사그라다 파밀리아·카사 바트요·구엘 공원 등 가우디 건축", "reason": "건축 관람이 방문의 주된 이유다."},
+          {"city": "ae-dubai", "experience": "부르즈 할리파와 초고층 스카이라인", "reason": "현대 건축 경관이 대표 동기다."}
+        ],
+        "boundary": {"city": "au-sydney", "experience": "오페라 하우스와 하버 브리지", "side": "below", "reason": "오페라 하우스는 세계적 상징이지만 건축 묶음이 적어 그것만으로 시드니를 고르기엔 약하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "랜드마크·건축 관람에 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "cn-shanghai", "experience": "와이탄의 근대 건축과 푸둥 스카이라인", "reason": "건축 관람이 흔한 별도 일정이다."},
+          {"city": "it-milan", "experience": "밀라노 대성당과 갤러리아 비토리오 에마누엘레 2세", "reason": "대표 랜드마크 관람이 반나절 일정이다."}
+        ],
+        "boundary": {"city": "us-los-angeles", "experience": "그리피스 천문대·월트 디즈니 콘서트홀·게티 센터", "side": "below", "reason": "랜드마크가 흩어져 있고 건축 자체가 일정의 목적이 되는 경우가 드물다."}
+      }
+    },
+    "nightview": {
+      "choose": {
+        "status": "draft",
+        "rule": "야경이 그 도시의 대표 이미지이고, 야경을 보러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "hk-hong-kong", "experience": "빅토리아 피크와 침사추이에서 보는 빅토리아 하버 스카이라인", "reason": "야경이 방문의 대표 동기다."},
+          {"city": "us-new-york", "experience": "엠파이어 스테이트 빌딩·탑 오브 더 록에서 보는 맨해튼", "reason": "전망대 야경이 대표 일정이자 동기다."}
+        ],
+        "boundary": {"city": "hu-budapest", "experience": "조명이 켜진 국회의사당과 도나우강", "side": "below", "reason": "대표 일정이지만 야경 하나보다 온천·건축과 묶여 선택된다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "전망대·야간 산책 등 야경을 보러 저녁 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "kr-seoul", "experience": "남산서울타워와 한강 야경", "reason": "야경 감상이 흔한 저녁 일정이다."},
+          {"city": "my-kuala-lumpur", "experience": "페트로나스 트윈타워 야경과 KL 타워 전망대", "reason": "야경을 보러 저녁을 비우는 일정이 흔하다."}
+        ],
+        "boundary": {"city": "it-rome", "experience": "조명이 켜진 유적 야간 산책과 자니콜로 언덕 전망", "side": "above", "reason": "전망대 중심은 아니지만 야간 유적 산책이 흔한 저녁 일정이다."}
+      }
+    },
+    "street": {
+      "choose": {
+        "status": "draft",
+        "rule": "노점·시장 음식 문화가 그 도시의 대표 매력이어서 이것을 먹으러 도시를 고를 만하다.",
+        "examples": [
+          {"city": "th-bangkok", "experience": "야오와랏과 거리 노점 음식", "reason": "길거리 음식이 방문의 대표 동기다."},
+          {"city": "tw-taipei", "experience": "스린·라오허제 야시장", "reason": "야시장 음식이 여행의 중심이다."}
+        ],
+        "boundary": {"city": "jp-osaka", "experience": "도톤보리의 다코야키·오코노미야키", "side": "above", "reason": "서서 먹는 가게와 노점 음식 문화가 여행 동기다. 식당 음식(dining)과 구분이 필요하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "시장·노점 음식을 먹으러 끼니 하나 이상을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "버러 마켓 음식 노점", "reason": "시장 음식을 먹으러 일부러 가는 일정이다."},
+          {"city": "es-barcelona", "experience": "라 보케리아 시장", "reason": "시장 음식이 흔한 별도 일정이다."}
+        ],
+        "boundary": {"city": "fr-paris", "experience": "동네 시장과 크레프 노점", "side": "below", "reason": "시장이 있으나 파리 미식의 중심은 식당이다."}
+      }
+    },
+    "dining": {
+      "choose": {
+        "status": "draft",
+        "rule": "지역 요리의 깊이나 미식 명성 때문에 식당 음식을 먹으러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "jp-tokyo", "experience": "스시·라멘부터 오마카세·가이세키까지", "reason": "식당 미식이 방문의 대표 동기다."},
+          {"city": "fr-paris", "experience": "비스트로와 미쉐린 레스토랑", "reason": "미식 명성이 여행 동기다."}
+        ],
+        "boundary": {"city": "it-bologna", "experience": "탈리아텔레 알 라구·토르텔리니 등 에밀리아 요리", "side": "above", "reason": "도시 규모는 작지만 요리가 방문 동기다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "특정 요리나 식당을 위해 끼니를 일부러 계획할 만하다.",
+        "examples": [
+          {"city": "it-rome", "experience": "카르보나라·카초 에 페페를 내는 트라토리아", "reason": "로마식 파스타를 먹으러 끼니를 계획한다."},
+          {"city": "es-madrid", "experience": "타파스와 코시도 마드릴레뇨", "reason": "지역 요리를 찾아 끼니를 계획한다."}
+        ],
+        "boundary": {"city": "nl-amsterdam", "experience": "인도네시아 라이스타펠", "side": "below", "reason": "알려진 경험이지만 도시 미식 전체로는 부수적이다."}
+      }
+    },
+    "cafe": {
+      "choose": {
+        "status": "draft",
+        "rule": "카페·디저트 문화가 그 도시의 정체성이어서 이것을 위해 도시를 고를 만하다.",
+        "examples": [
+          {"city": "at-vienna", "experience": "전통 카페하우스와 케이크", "reason": "카페하우스 문화가 대표 동기다."},
+          {"city": "au-melbourne", "experience": "스페셜티 커피와 골목 카페", "reason": "커피 문화가 방문 동기다."}
+        ],
+        "boundary": {"city": "fr-paris", "experience": "카페 테라스와 파티스리", "side": "above", "reason": "파티스리와 카페 테라스가 대표 동기다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "카페·디저트 가게를 찾아다니는 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "kr-seoul", "experience": "성수·연남동 카페 거리", "reason": "카페 탐방이 흔한 별도 일정이다."},
+          {"city": "it-rome", "experience": "에스프레소 바와 젤라토 가게", "reason": "일부러 찾아가는 가게가 많다."}
+        ],
+        "boundary": {"city": "gb-london", "experience": "호텔과 찻집의 애프터눈 티", "side": "above", "reason": "애프터눈 티는 일부러 예약하는 체험이다. 전통 문화 체험과 구분이 필요하다."}
+      }
+    },
+    "drinks": {
+      "choose": {
+        "status": "draft",
+        "rule": "지역 술과 그 문화(양조장·와이너리·고유 술집)가 이 도시를 고르는 이유다.",
+        "examples": [
+          {"city": "de-munich", "experience": "비어홀·비어가든과 바이에른 맥주", "reason": "맥주 문화가 방문 동기다."},
+          {"city": "pt-porto", "experience": "빌라 노바 드 가이아의 포트와인 저장고", "reason": "포트와인 시음이 대표 동기다."}
+        ],
+        "boundary": {"city": "za-cape-town", "experience": "콘스탄시아 와이너리(스텔렌보스는 범위 밖)", "side": "below", "reason": "범위에서 스텔렌보스를 빼면 와인만으로 도시를 고르는 근거가 약하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "술집·양조장·시음을 위해 저녁 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "전통 펍", "reason": "펍 방문이 흔한 별도 일정이다."},
+          {"city": "cz-prague", "experience": "체코 맥주 펍", "reason": "맥주를 마시러 일부러 가는 일정이다."}
+        ],
+        "boundary": {"city": "us-new-york", "experience": "칵테일 바와 루프톱 바", "side": "above", "reason": "칵테일 바를 찾아 저녁을 따로 잡을 만하지만 술 자체로 뉴욕을 고르지는 않는다. 현재 choose는 한 단계 높다."}
+      }
+    },
+    "heritage": {
+      "choose": {
+        "status": "draft",
+        "rule": "세계적인 유적·사원이 여럿 있어 이것을 보러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "it-rome", "experience": "콜로세움·포로 로마노·판테온", "reason": "고대 유적이 방문의 주된 이유다."},
+          {"city": "jp-kyoto", "experience": "후시미 이나리·기요미즈데라 등 사찰과 신사", "reason": "사찰과 신사가 여행의 중심이다."}
+        ],
+        "boundary": {"city": "eg-cairo", "experience": "기자 피라미드(범위 포함)", "side": "above", "reason": "범위에 기자를 넣었기 때문에 choose다. 범위에서 빼면 판정이 달라진다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "유적·사원·궁궐 관람에 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "런던탑과 웨스트민스터 사원", "reason": "흔한 별도 관람 일정이다."},
+          {"city": "kr-seoul", "experience": "경복궁·창덕궁 등 조선 궁궐", "reason": "궁궐 관람이 흔한 반나절 일정이다."}
+        ],
+        "boundary": {"city": "us-new-york", "experience": "자유의 여신상과 엘리스섬", "side": "above", "reason": "배를 타고 반나절을 쓰는 흔한 일정이다. 현재 if_there는 낮을 수 있다."}
+      }
+    },
+    "museums": {
+      "choose": {
+        "status": "draft",
+        "rule": "세계적 컬렉션이 여럿 있어 미술관·박물관을 보러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "fr-paris", "experience": "루브르와 오르세", "reason": "미술관 관람이 방문 동기다."},
+          {"city": "gb-london", "experience": "대영박물관·내셔널 갤러리·테이트", "reason": "세계적 컬렉션이 여럿이다."}
+        ],
+        "boundary": {"city": "qa-doha", "experience": "이슬람 미술관과 카타르 국립박물관", "side": "below", "reason": "시설 수준은 높지만 컬렉션 수가 적어 그것만으로 고르기엔 약하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "미술관·박물관 관람에 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "es-barcelona", "experience": "피카소 미술관과 카탈루냐 미술관", "reason": "흔한 별도 관람 일정이다."},
+          {"city": "de-munich", "experience": "알테 피나코테크", "reason": "미술관 관람에 반나절을 쓴다."}
+        ],
+        "boundary": {"city": "cz-prague", "experience": "프라하 국립미술관", "side": "below", "reason": "미술관이 있으나 일정의 중심은 구시가와 성이다. 현재 none은 낮다."}
+      }
+    },
+    "traditional": {
+      "choose": {
+        "status": "draft",
+        "rule": "전통 문화 체험이나 공연이 그 도시의 정체성이어서 이것을 위해 도시를 고를 만하다.",
+        "examples": [
+          {"city": "jp-kyoto", "experience": "기온의 게이샤 문화, 다도, 전통 공예 체험", "reason": "전통 문화가 방문의 주된 이유다."},
+          {"city": "es-seville", "experience": "플라멩코 공연과 타블라오", "reason": "플라멩코가 대표 동기다."}
+        ],
+        "boundary": {"city": "ar-buenos-aires", "experience": "탱고 공연과 밀롱가", "side": "above", "reason": "탱고가 도시의 정체성이자 방문 동기다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "전통 문화 체험·공연을 위해 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "kr-seoul", "experience": "한복을 입고 궁궐 둘러보기", "reason": "흔한 체험 일정이다."},
+          {"city": "jp-tokyo", "experience": "가부키 공연과 다도 체험", "reason": "일부러 예약하는 체험이다."}
+        ],
+        "boundary": {"city": "th-bangkok", "experience": "태국 요리 교실", "side": "above", "reason": "체험형 일정으로 흔히 따로 잡는다. 요리 교실을 전통 문화 체험으로 볼지 판정이 필요하다."}
+      }
+    },
+    "water": {
+      "choose": {
+        "status": "draft",
+        "rule": "다이빙·스노클링·서핑 등 수상 활동이 이 도시를 고르는 이유다.",
+        "examples": [
+          {"city": "au-cairns", "experience": "외곽 리프 다이빙과 스노클링", "reason": "수상 활동이 방문의 주된 이유다."},
+          {"city": "us-honolulu", "experience": "와이키키 서핑 강습과 하나우마 베이 스노클링", "reason": "수상 활동이 대표 동기다."}
+        ],
+        "boundary": {"city": "th-phuket-island", "experience": "당일 섬 투어의 스노클링·다이빙", "side": "below", "reason": "투어에 의존하고 당일 범위 판정이 남아 있어 한 단계 아래로 둔다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "수상 활동을 위해 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "ae-dubai", "experience": "제트스키와 카이트서핑", "reason": "흔한 별도 활동 일정이다."},
+          {"city": "mx-cancun", "experience": "스노클링과 패들보드", "reason": "해변 휴양 중 따로 잡는 활동이다."}
+        ],
+        "boundary": {"city": "tr-antalya", "experience": "항구 보트 투어", "side": "below", "reason": "보트 투어는 흔하지만 체험형 수상 활동은 근교에 의존한다."}
+      }
+    },
+    "winter": {
+      "choose": {
+        "status": "draft",
+        "rule": "범위 안 스키장의 수준 때문에 겨울 스포츠를 하러 이 도시를 고를 만하다(시즌 한정).",
+        "examples": [
+          {"city": "nz-queenstown", "experience": "코로넷 피크·리마커블스 스키장", "reason": "스키 시즌의 주된 방문 이유다."}
+        ],
+        "gap": "103곳 안에서 두 번째 대표 사례를 찾지 못했다.",
+        "boundary": {"city": "ca-vancouver", "experience": "그라우스·사이프러스 산 스키장(휘슬러는 범위 밖)", "side": "below", "reason": "도심 가까운 스키장이지만 스키 목적이라면 휘슬러를 고른다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "시즌에 겨울 스포츠를 위해 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "ca-vancouver", "experience": "그라우스·사이프러스 산 스키", "reason": "시내에서 당일로 다녀오는 스키 일정이다."},
+          {"city": "no-oslo", "experience": "홀멘콜렌 일대 크로스컨트리 스키", "reason": "시내에서 닿는 스키 코스가 있다."}
+        ],
+        "boundary": {"city": "jp-sapporo", "experience": "삿포로 시내 테이네 스키장(니세코는 범위 밖)", "side": "above", "reason": "시내 스키장이 당일 일정으로 흔하다."}
+      }
+    },
+    "extreme": {
+      "choose": {
+        "status": "draft",
+        "rule": "번지점프·스카이다이빙 등 익스트림 활동이 이 도시를 고르는 이유다.",
+        "examples": [
+          {"city": "nz-queenstown", "experience": "카와라우 다리 번지점프·제트보트·스카이다이빙", "reason": "익스트림 활동의 대표 목적지다."}
+        ],
+        "gap": "103곳 안에서 두 번째 대표 사례를 찾지 못했다.",
+        "boundary": {"city": "za-cape-town", "experience": "라이언스 헤드 패러글라이딩", "side": "below", "reason": "대표 활동이지만 그것만으로 도시를 고르지는 않는다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "익스트림 활동을 위해 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "ae-dubai", "experience": "팜 주메이라 스카이다이빙과 사막 듄 배싱", "reason": "흔한 별도 활동 일정이다."},
+          {"city": "au-cairns", "experience": "스카이다이빙과 번지점프", "reason": "일부러 예약하는 활동이다."}
+        ],
+        "boundary": {"city": "sg-singapore", "experience": "센토사의 짚라인과 체험 시설", "side": "below", "reason": "체험 시설 수준이라 부수 경험이다."}
+      }
+    },
+    "themepark": {
+      "choose": {
+        "status": "draft",
+        "rule": "테마파크 때문에 이 도시를 고를 만하다(여러 파크, 또는 단독 방문 동기가 되는 파크).",
+        "examples": [
+          {"city": "us-orlando", "experience": "월트 디즈니 월드와 유니버설 올랜도", "reason": "테마파크가 방문의 주된 이유다."},
+          {"city": "jp-tokyo", "experience": "도쿄 디즈니랜드와 디즈니씨(범위 포함)", "reason": "디즈니씨는 단독 방문 동기가 된다."}
+        ],
+        "boundary": {"city": "sg-singapore", "experience": "센토사의 유니버설 스튜디오 싱가포르", "side": "below", "reason": "파크 하나의 규모로는 그것만으로 도시를 고르기 약하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "테마파크에서 하루를 보내는 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "hk-hong-kong", "experience": "홍콩 디즈니랜드와 오션파크", "reason": "흔한 하루 일정이다."},
+          {"city": "kr-seoul", "experience": "롯데월드 어드벤처", "reason": "도시 안에서 하루를 보내는 일정이다."}
+        ],
+        "boundary": {"city": "gb-london", "experience": "리브즈던의 워너 브러더스 스튜디오 투어", "side": "above", "reason": "하루를 따로 잡는 일정이지만 스튜디오 투어를 테마파크로 볼지 판정이 필요하다."}
+      }
+    },
+    "markets": {
+      "choose": {
+        "status": "draft",
+        "rule": "시장 구경과 기념품 쇼핑이 그 도시의 대표 매력이어서 이것을 위해 도시를 고를 만하다.",
+        "examples": [
+          {"city": "tr-istanbul", "experience": "그랜드 바자르와 이집션 바자르", "reason": "역사적 시장이 방문 동기다."},
+          {"city": "ma-marrakesh", "experience": "메디나의 수크", "reason": "수크 구경이 여행의 중심이다."}
+        ],
+        "boundary": {"city": "th-bangkok", "experience": "짜뚜짝 주말시장", "side": "above", "reason": "대형 시장 구경이 대표 동기다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "시장·기념품 거리를 돌아보는 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "jp-tokyo", "experience": "아키하바라와 아사쿠사 나카미세", "reason": "흔한 쇼핑 일정이다."},
+          {"city": "gb-london", "experience": "포토벨로 로드와 캠던 시장", "reason": "일부러 찾는 시장이다."}
+        ],
+        "boundary": {"city": "it-florence", "experience": "산 로렌초 가죽 시장", "side": "above", "reason": "가죽 제품 시장이 흔한 쇼핑 일정이다."}
+      }
+    },
+    "brands": {
+      "choose": {
+        "status": "draft",
+        "rule": "대형 몰·브랜드 거리·가격 이점 때문에 쇼핑하러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "ae-dubai", "experience": "두바이 몰과 몰 오브 디 에미리트", "reason": "쇼핑이 대표 방문 동기다."},
+          {"city": "it-milan", "experience": "콰드릴라테로 델라 모다의 패션 브랜드", "reason": "패션 쇼핑이 방문 동기다."}
+        ],
+        "boundary": {"city": "hk-hong-kong", "experience": "침사추이·코즈웨이베이의 면세 쇼핑", "side": "above", "reason": "면세와 대형 몰 밀집으로 쇼핑 목적 방문이 흔하다. 현재 make_time은 낮을 수 있다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "백화점·브랜드 거리 쇼핑에 일정 하나를 따로 잡을 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "리젠트 스트리트와 백화점", "reason": "흔한 쇼핑 일정이다."},
+          {"city": "kr-seoul", "experience": "명동과 백화점·화장품 매장", "reason": "쇼핑에 반나절을 쓰는 일정이 흔하다."}
+        ],
+        "boundary": {"city": "es-barcelona", "experience": "파세이그 데 그라시아의 매장", "side": "below", "reason": "매장은 많지만 건축 관람 중 들르는 수준이다."}
+      }
+    },
+    "bars": {
+      "choose": {
+        "status": "draft",
+        "rule": "클럽·바 문화가 그 도시의 대표 매력이어서 밤놀이를 위해 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "de-berlin", "experience": "테크노 클럽", "reason": "클럽 문화가 방문 동기다."},
+          {"city": "us-las-vegas", "experience": "스트립의 대형 나이트클럽", "reason": "밤놀이가 대표 동기다."}
+        ],
+        "boundary": {"city": "hu-budapest", "experience": "폐허 바", "side": "below", "reason": "독특한 대표 일정이지만 그것만으로 도시를 고르지는 않는다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "바·클럽에 가는 밤 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "소호·쇼디치의 바", "reason": "흔한 밤 일정이다."},
+          {"city": "es-madrid", "experience": "말라사냐·추에카의 늦은 밤 바", "reason": "밤 문화가 흔한 일정이다."}
+        ],
+        "boundary": {"city": "it-rome", "experience": "트라스테베레의 바", "side": "below", "reason": "저녁 식사 뒤 들르는 수준이다."}
+      }
+    },
+    "livebar": {
+      "choose": {
+        "status": "draft",
+        "rule": "라이브 음악을 하는 바·클럽이 그 도시의 정체성이어서 이것을 위해 도시를 고를 만하다.",
+        "examples": [
+          {"city": "us-new-york", "experience": "그리니치빌리지의 재즈 클럽", "reason": "재즈 클럽이 방문 동기다."},
+          {"city": "ie-dublin", "experience": "펍의 아일랜드 전통음악 세션", "reason": "펍 음악 문화가 대표 동기다."}
+        ],
+        "boundary": {"city": "br-rio-de-janeiro", "experience": "라파의 삼바 바", "side": "below", "reason": "대표 밤 일정이지만 그것만으로 도시를 고르기보다 해변·카니발과 묶인다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "라이브 바·클럽에 가는 밤 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "로니 스콧츠와 캠던의 공연장", "reason": "흔한 밤 일정이다."},
+          {"city": "pt-lisbon", "experience": "알파마의 파두 하우스", "reason": "파두를 들으러 저녁을 비운다."}
+        ],
+        "boundary": {"city": "jp-tokyo", "experience": "재즈 클럽과 시모키타자와 라이브 하우스", "side": "above", "reason": "공연장이 많아 일부러 찾는 밤 일정이 된다."}
+      }
+    },
+    "travelers": {
+      "choose": {
+        "status": "draft",
+        "rule": "다른 여행자와 어울리는 것이 이 도시를 고르는 이유가 될 만한 여행자 거점이다. 일반 호스텔과 투어 동승만으로는 해당하지 않는다.",
+        "examples": [],
+        "gap": "103곳 안에서 대표 사례를 찾지 못했다.",
+        "boundary": {"city": "th-bangkok", "experience": "카오산 로드 여행자 거리", "side": "below", "reason": "여행자 교류의 대표 거리지만 그것만으로 방콕을 고르지는 않는다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "여행자와 어울리는 장소·프로그램을 위해 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "th-bangkok", "experience": "카오산 로드의 여행자 바와 펍 크롤", "reason": "여행자끼리 어울리러 일부러 가는 거리다."}
+        ],
+        "gap": "103곳 안에서 두 번째 대표 사례를 찾지 못했다.",
+        "boundary": {"city": "th-phuket-island", "experience": "빠통 해변의 여행자 바", "side": "below", "reason": "바는 bars 세부에 반영되며, 여행자 교류 자체를 위한 일정이라는 근거는 약하다."}
+      }
+    },
+    "locals": {
+      "undefined": "상위 단계 정의 전이다. 모든 도시를 if_there 이하로 둔다(제작 형식·검사기와 같음)."
+    },
+    "festival": {
+      "choose": {
+        "status": "draft",
+        "rule": "특정 축제를 위해 그 시기에 이 도시를 고를 만하다. 달을 반드시 확인한다.",
+        "examples": [
+          {"city": "br-rio-de-janeiro", "experience": "리우 카니발", "reason": "축제 기간 방문의 주된 이유다."},
+          {"city": "de-munich", "experience": "옥토버페스트", "reason": "축제 자체가 방문 동기다."}
+        ],
+        "boundary": {"city": "jp-sapporo", "experience": "삿포로 눈축제", "side": "above", "reason": "겨울 삿포로 방문의 대표 동기다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "축제 시기와 겹치면 일부러 일정을 맞출 만하다.",
+        "examples": [
+          {"city": "jp-tokyo", "experience": "아사쿠사 산자 마쓰리 등 지역 축제", "reason": "시기가 맞으면 일정을 맞추는 축제다."},
+          {"city": "nl-amsterdam", "experience": "왕의 날", "reason": "그 시기 방문이면 일정을 맞출 축제다."}
+        ],
+        "boundary": {"city": "kr-busan", "experience": "부산국제영화제와 불꽃축제", "side": "below", "reason": "일반 여행자에게는 관람 일정이 제한적이다."}
+      }
+    },
+    "sports": {
+      "choose": {
+        "status": "draft",
+        "rule": "세계적 구단이나 대회 때문에 경기를 보러 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "es-barcelona", "experience": "FC 바르셀로나 홈경기", "reason": "구단 경기 관람이 방문 동기다."},
+          {"city": "gb-london", "experience": "프리미어리그 구단 경기와 윔블던", "reason": "구단과 대회가 방문 동기다."}
+        ],
+        "boundary": {"city": "us-new-york", "experience": "양키스·닉스 등 여러 프로 구단 경기", "side": "below", "reason": "선택지는 많지만 특정 구단·대회 하나로 도시를 고르는 동기는 약하다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "경기 관람을 위해 일정 하나를 맞출 만하다.",
+        "examples": [
+          {"city": "jp-tokyo", "experience": "도쿄돔 프로야구와 료고쿠 스모", "reason": "일정이 맞으면 따로 잡는 관람이다."},
+          {"city": "hk-hong-kong", "experience": "해피밸리 야간 경마", "reason": "일부러 찾는 대표 일정이다."}
+        ],
+        "boundary": {"city": "it-rome", "experience": "스타디오 올림피코의 세리에 A 경기", "side": "above", "reason": "두 구단의 홈경기가 흔한 관람 일정이다."}
+      }
+    },
+    "concert": {
+      "choose": {
+        "status": "draft",
+        "rule": "뮤지컬·오페라·콘서트 관람을 위해 이 도시를 고를 만하다.",
+        "examples": [
+          {"city": "gb-london", "experience": "웨스트엔드 뮤지컬", "reason": "공연 관람이 방문 동기다."},
+          {"city": "us-new-york", "experience": "브로드웨이 뮤지컬", "reason": "공연 관람이 대표 동기다."}
+        ],
+        "boundary": {"city": "kr-seoul", "experience": "K-팝 콘서트", "side": "above", "reason": "팬에게는 공연이 방문 동기지만 날짜 의존이 크다."}
+      },
+      "make_time": {
+        "status": "draft",
+        "rule": "공연 관람을 위해 저녁 일정을 따로 잡을 만하다.",
+        "examples": [
+          {"city": "it-milan", "experience": "라 스칼라 오페라", "reason": "일부러 예약하는 공연이다."},
+          {"city": "au-sydney", "experience": "오페라 하우스 공연", "reason": "공연을 보러 저녁을 비운다."}
+        ],
+        "boundary": {"city": "it-rome", "experience": "카라칼라 욕장의 여름 오페라", "side": "below", "reason": "시즌 한정이며 여행 일정에서 부수적이다."}
+      }
+    }
+  },
+  "calibration": {
+    "updated_on": "2026-10-17",
+    "status": "draft",
+    "questions": {
+      "substitutability": "대체 가능성: 다른 여행지의 비슷한 경험으로 무엇을 대체할 수 있고, 무엇을 대체할 수 없는가?",
+      "purpose": "독립적인 방문 목적: 다른 볼거리를 빼도 여행지 선택 또는 별도 일정의 이유가 남는가?",
+      "specificity": "경험의 구체성: 범위 안에서 실제로 무엇을 보고·하고·참여할 수 있는가?"
+    },
+    "rules": [
+      "그 경험을 좋아하는 여행자를 전제로 비교한다. 존재 확인은 등급 확정이 아니다.",
+      "각 세부의 두 경계에 비교 쌍을 둔다. 개수·시간·유명도는 보조 근거이며 고정 컷오프나 점수 합산을 쓰지 않는다.",
+      "두 사례의 차이를 설명하지 못하면 같은 등급 제안 또는 보류로 남긴다. 같은 등급 쌍은 경계 양쪽을 확보한 것으로 세지 않는다.",
+      "시즌·입장·운영 조건은 별도 확인한다. 미확인을 if_there나 none으로 치환하지 않는다.",
+      "도시 안 약한 경험 하나만 골라 도시 등급을 낮추지 않는다. 제안은 비교한 경험의 근거이며 도시 전체 재판정 전 상위 경험 누락을 확인한다.",
+      "출처의 사실과 모델의 판정 이유를 구분한다. 출처 수나 검색량으로 등급을 정하지 않는다.",
+      "경계 제안은 출처에서 확인한 사실에 근거한 모델 판단이다. split도 객관적으로 입증된 등급 차이가 아니며, 반례를 검수한 뒤 사람이 승인한다."
+    ],
+    "pairs": [
+      {
+        "sub": "architecture",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "es-barcelona",
+            "experience": "사그라다 파밀리아 내부·탑의 건축 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://sagradafamilia.org/en/sagrada-familia-and-tower",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "성당과 탑을 관람하는 방문 상품을 확인했다. 건축 전체의 도시 등급을 출처가 정해 주지는 않는다."
+            }
+          },
+          {
+            "city": "au-sydney",
+            "experience": "오페라 하우스 건축 투어",
+            "proposal": "choose",
+            "source": {
+              "url": "https://www.sydneyoperahouse.com/tours/architectural-tour",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "건축가·기술자·시공자가 건축물을 만든 과정을 다루는 전용 투어가 있다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "두 사례 모두 해당 건물 자체를 보려는 경험이다. 다른 도시의 일반 건축 투어로 같은 대상을 대체할 수 없다.",
+          "purpose": "건축 선호자가 건물 자체를 방문 목적으로 삼을 수 있다는 같은 논리를 적용한다. 명소 개수 차이만으로 시드니를 내리지 않는다.",
+          "specificity": "외관을 우연히 보는 경험이 아니라 구체적인 내부·건축 관람이다. 범위는 두 도시의 catalog에서 확인한다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 choose 제안. 기존 시드니 make_time 제안의 개수 근거를 철회할 후보이며, 경계를 가르는 쌍으로는 부적합하다.",
+        "remaining": "choose와 make_time을 가르는 하위 상대를 추가로 찾아야 한다. 건물 고유성만으로 모든 도시의 건축을 choose로 올리지는 않는다."
+      },
+      {
+        "sub": "architecture",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "it-milan",
+            "experience": "대성당과 테라스의 건축 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.duomomilano.it/en/experiences-milan-cathedral/",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "대성당을 관람하는 전용 가이드 투어가 안내된다."
+            }
+          },
+          {
+            "city": "us-los-angeles",
+            "experience": "Getty Center 건축 투어",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.getty.edu/calendar/center-architecture-tour/",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "미술품 관람과 별도로 건축 투어가 안내된다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "둘 다 건축 자체를 이해하는 관람이다. 다른 건축물로 대체 가능하다는 이유만으로 부수 경험이 되지는 않는다.",
+          "purpose": "건축 관람에 별도 시간을 배정할 근거가 양쪽에 있다. 소요 시간·건물 간 거리는 하향의 자동 기준이 아니다.",
+          "specificity": "특정 관람 프로그램을 확인했다. 출처는 목적 있는 방문의 근거이지 여행 동기 조사 자료는 아니다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 로스앤젤레스를 if_there로 둘 설명이 부족하다. choose를 배제하는 판정은 아니다.",
+        "remaining": "if_there 상대는 아직 확보하지 못했다. 도시의 약한 건물 하나만 골라 그 도시 전체를 if_there로 정하지 않는다."
+      },
+      {
+        "sub": "museums",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "fr-paris",
+            "experience": "루브르 컬렉션 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://collections.louvre.fr/en/",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "기관이 작품 컬렉션 정보를 공개한다. 데이터베이스의 모든 작품이 현재 전시된다는 뜻은 아니다."
+            }
+          },
+          {
+            "city": "qa-doha",
+            "experience": "이슬람 미술관 컬렉션 관람",
+            "proposal": null,
+            "source": {
+              "url": "https://mia.org.qa/en/about-us/collection/",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "여러 지역·시대에 걸친 이슬람 미술 컬렉션이 소개된다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "파리는 다양한 컬렉션, 도하는 특정 문화권 컬렉션을 비교한다. 폭이 넓다는 이유만으로 특정 주제의 깊이보다 높게 두지 않는다.",
+          "purpose": "이슬람 미술 선호자에게 도하가 독립적인 여행 동기가 되는지를 박물관 개수만으로 배제할 수 없다.",
+          "specificity": "양쪽 관람 대상은 확인했다. 개별 주요 작품의 현재 전시 여부와 실제 관람 경험을 더 비교해야 한다."
+        },
+        "outcome": "unresolved",
+        "reason": "파리 choose를 기준 후보로 두되 도하의 choose/make_time은 보류한다. 현재 자료로 경계 차이를 설명하지 못했다.",
+        "remaining": "주제에 관심 있는 여행자의 관점에서 대체하기 어려운 작품·전시 경험을 추가 대조한다. 출처의 홍보 문구는 등급 증명이 아니다."
+      },
+      {
+        "sub": "museums",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "de-munich",
+            "experience": "알테 피나코테크 컬렉션 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.pinakothek.de/en/alte-pinakothek",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "컬렉션·전시·방문 안내가 있다."
+            }
+          },
+          {
+            "city": "cz-prague",
+            "experience": "프라하 국립미술관 컬렉션 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.ngprague.cz/en/about/10-reasons-to-visit",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "여러 건물의 컬렉션과 관람 경험을 소개한다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "각 컬렉션을 보는 경험이다. 소장품의 주제·깊이는 추가 비교 대상이며 시설 수로 등급을 계산하지 않는다.",
+          "purpose": "양쪽 모두 작품 관람을 따로 계획할 근거가 있다. 프라하에 구시가 관광이 있다는 이유는 미술관 하향 근거가 아니다.",
+          "specificity": "범위 안 기관은 확인했다. 원하는 전시·건물의 개관 여부는 여행 시점에 별도로 확인해야 한다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 프라하를 if_there로 두는 원안과의 차이는 미술관 자체의 관람 목적을 인정하는 것이다.",
+        "remaining": "if_there 도시 사례는 미확보다. 뮌헨·프라하의 choose 가능성까지 배제한 결과가 아니다."
+      },
+      {
+        "sub": "sports",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "gb-london",
+            "experience": "윔블던 테니스 대회 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://www.wtatennis.com/tournaments/904/the-championships-wimbledon-wimbledon-gbr/2026",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "WTA 공식 대회 안내에서 윔블던의 그랜드슬램 지위를 확인했다."
+            }
+          },
+          {
+            "city": "us-new-york",
+            "experience": "US Open 테니스 대회 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://careers.usopen.org/about-us/",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "주최 측이 뉴욕에서 열리는 그랜드슬램 대회로 설명한다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "같은 종목·그랜드슬램 대회 관람끼리 비교한다. 도시별 구단 수나 일반 관광객의 선호로 비교하지 않는다.",
+          "purpose": "테니스 선호자가 특정 대회 관람에 맞춰 도시를 선택한다는 동일한 판정 논리를 적용한다.",
+          "specificity": "각 대회는 별개의 장소·시기에 열린다. 일정·입장 가능성은 별도 확인하며 대회가 없는 기간의 관람을 약속하지 않는다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 choose 제안. 뉴욕만 make_time으로 낮출 근거가 없으며, 기존 경계의 US Open 누락을 보완하는 비교다.",
+        "remaining": "상·하위 경계를 보여 주는 쌍은 아니다. 다른 도시의 경기 관람과 비교하더라도 종목·팬 관심도의 차이를 도시 등급 차이로 오인하지 않는다."
+      },
+      {
+        "sub": "sports",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "hk-hong-kong",
+            "experience": "해피밸리 경마 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://entertainment.hkjc.com/en-us/visit-us/happy-valley-racecourse",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "운영사가 방문객 관람·입장 동선을 안내한다. 베팅 참여를 판정 조건으로 삼지 않는다."
+            }
+          },
+          {
+            "city": "it-rome",
+            "experience": "스타디오 올림피코의 AS Roma 경기 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.asroma.com/en/tickets/men",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "구단이 경기 입장권과 관람 안내를 제공한다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "종목은 다르지만 경기일에 맞춰 실제 경기를 관람하는 경험을 비교한다. 경기장 외관 방문은 포함하지 않는다.",
+          "purpose": "두 경험 모두 관람 일정·입장 계획을 따로 잡을 이유가 있다. 특정 팀·종목 팬의 choose 가능성은 별도다.",
+          "specificity": "경기 관람의 존재를 확인했으며, 특정 날짜의 경기·좌석·입장 자격은 미검수다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 경기장 방문만 가능한 경험과 구분할 필요는 있으나 그것을 곧바로 다른 도시의 if_there 근거로 쓰지 않는다.",
+        "remaining": "if_there 도시 사례 미확보. 종목 차이를 통제할 수 있는 비교 상대도 추가 검토한다."
+      },
+      {
+        "sub": "concert",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "gb-london",
+            "experience": "웨스트엔드 뮤지컬 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://officiallondontheatre.com/theatre-tickets/today/?offers=1",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "공연업계 공식 안내에서 작품별 공연·예매를 확인했다. 할인·가격은 비교하지 않는다."
+            }
+          },
+          {
+            "city": "it-milan",
+            "experience": "라 스칼라 오페라 관람",
+            "proposal": null,
+            "source": {
+              "url": "https://www.teatroallascala.org/en/season/2025-2026/index.html",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "극장이 시즌별 오페라 공연을 안내한다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "뮤지컬과 오페라라는 장르 차이가 있다. 작품 선택 폭과 특정 극장·공연 경험 중 어느 쪽이 여행 동기가 되는지는 선호자에 따라 다르다.",
+          "purpose": "런던은 choose인데 밀라노는 make_time이라고 정할 만큼 독립적인 방문 목적의 차이를 설명하지 못했다.",
+          "specificity": "양쪽 실제 공연 프로그램을 확인했다. 시즌별 공연과 예매 조건을 등급과 분리한다."
+        },
+        "outcome": "unresolved",
+        "reason": "런던 choose 기준 후보는 유지하되 밀라노 choose/make_time은 보류한다. 기존 make_time 대표라는 사실을 정답으로 쓰지 않는다.",
+        "remaining": "가능하면 같은 장르의 비교를 추가한다. 공연 수·상시 운영만으로 상하를 가르지 않는다."
+      },
+      {
+        "sub": "concert",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "au-sydney",
+            "experience": "시드니 오페라 하우스의 오페라 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://opera.org.au/whats-on/sydney/",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "공연 주체가 시드니 오페라 하우스 공연을 안내한다. 목록의 다른 장소 공연까지 범위 없이 합치지 않는다."
+            }
+          },
+          {
+            "city": "it-rome",
+            "experience": "로마 오페라 극장의 시즌 공연 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.operaroma.it/en/stagione/",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "극장의 시즌·공연장별 목록을 확인했다. 모든 여름 공연을 카라칼라 욕장으로 단정하지 않는다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "오페라의 실제 공연 관람끼리 비교한다. 건물 외관이나 공연장 투어와 구분한다.",
+          "purpose": "관람 가능한 시기에는 양쪽 모두 공연을 골라 시간을 낼 근거가 있다. 로마만 시즌 한정이라는 이유로 낮추지 않는다.",
+          "specificity": "공식 공연 목록이 있다. 방문 날짜의 공연·장소·좌석 확보는 아직 확인하지 않았다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 로마 if_there 하향 이유였던 시즌 한정을 등급에서 분리한다.",
+        "remaining": "if_there 도시 사례 미확보. 작품·극장 선호자에게 choose인지도 별도 비교가 필요하다."
+      },
+      {
+        "sub": "architecture",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "es-barcelona",
+            "experience": "사그라다 파밀리아 내부·탑의 건축 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://sagradafamilia.org/en/sagrada-familia-and-tower",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "성당과 탑을 관람하는 방문 상품을 확인했다. 건축 전체의 도시 등급을 출처가 정해 주지는 않는다."
+            }
+          },
+          {
+            "city": "ca-vancouver",
+            "experience": "중앙도서관·컨벤션센터·Marine Building·UBC 인류학박물관의 건축 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.destinationvancouver.com/inspirations/city/unique-buildings-in-vancouver-learn-about-the-city-s-past-present-and-future",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "관광청의 건축 동선에 도심 건물과 UBC 건축물이 함께 소개된다. UBC는 현재 scope에 포함된다. 2024년 글이므로 개별 내부 투어의 현재 운영을 보증하지 않는다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "가우디의 특정 건축물을 원래 장소에서 관람하는 목적과 여러 현대 도시의 건축을 탐색하는 유형을 비교한다. 밴쿠버 건축물이 서로 대체되는 동일품이라는 뜻은 아니다.",
+          "purpose": "건축 관람 자체를 좋아하되 특정 건축가의 추종자라는 추가 조건은 두지 않는다. 사그라다 파밀리아를 직접 보기 위한 목적지 선택과 밴쿠버 여행 중 구성하는 건축 동선을 경계 후보로 제안한다.",
+          "specificity": "양쪽의 구체적인 관람 대상·동선을 확인했다. 밴쿠버의 강한 반례인 UBC 인류학박물관과 지속가능 건축 컨벤션센터도 포함해 비교했다."
+        },
+        "outcome": "split",
+        "reason": "바르셀로나 choose / 밴쿠버 make_time의 경계 초안. 차이는 건물 수·시간이 아니라 특정 건축 경험이 목적지 선택을 이끄는 정도라는 모델 판단이다. 출처는 방문 대상의 존재만 뒷받침하며 이 등급 차이를 입증하지 않는다.",
+        "remaining": "UBC 건축·서해안 모더니즘 선호자에게 밴쿠버도 choose인지 사람이 검수해야 한다. 독립적인 방문 동기의 차이에 동의하지 않으면 same 또는 unresolved로 바꾼다."
+      },
+      {
+        "sub": "architecture",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "ca-vancouver",
+            "experience": "중앙도서관·컨벤션센터·Marine Building·UBC 인류학박물관의 건축 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.destinationvancouver.com/inspirations/city/unique-buildings-in-vancouver-learn-about-the-city-s-past-present-and-future",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "관광청의 건축 동선에 도심 건물과 UBC 건축물이 함께 소개된다. UBC는 현재 scope에 포함된다. 2024년 글이므로 개별 내부 투어의 현재 운영을 보증하지 않는다."
+            }
+          },
+          {
+            "city": "nz-queenstown",
+            "experience": "애로타운 역사 건물·유산 산책",
+            "proposal": null,
+            "source": {
+              "url": "https://www.queenstownnz.co.nz/stories/post/7-heritage-walks-in-and-around-queenstown/",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "관광청이 유산 산책 동선을 안내한다. 글의 Macetown 등 다른 지역까지 catalog 범위에 포함시키지는 않는다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "도심 건축 동선과 역사 건물 산책을 비교하지만, 근현대 건축과 정착 시대 건축의 장르 차이를 우열로 바꿀 수 없다.",
+          "purpose": "퀸스타운의 건물을 단순히 스쳐 보는 경험이라고 가정했으나, 유산을 보러 따로 걷는 동선이 있어 if_there로 확정할 수 없다.",
+          "specificity": "애로타운이 현재 범위 안임을 확인했다. 건축 감상과 역사·골목 걷기를 어느 경험으로 분류할지 추가 확인해야 한다."
+        },
+        "outcome": "unresolved",
+        "reason": "밴쿠버 make_time / 퀸스타운 보류. 퀸스타운을 하위 사례로 채택하지 않았다.",
+        "remaining": "유산 동선의 건축 체험을 분리해 검수하고, 건축만을 위한 방문 가치가 충분하면 make_time 쪽에 둔다. 분류 불확실성을 낮은 등급으로 처리하지 않는다."
+      },
+      {
+        "sub": "museums",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "fr-paris",
+            "experience": "루브르 컬렉션 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://collections.louvre.fr/en/",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "기관이 작품 컬렉션 정보를 공개한다. 데이터베이스의 모든 작품이 현재 전시된다는 뜻은 아니다."
+            }
+          },
+          {
+            "city": "nz-queenstown",
+            "experience": "애로타운 Lakes District Museum의 지역 생활사·골드러시 전시",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.lakesdistrictmuseum.nz/",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "지역 역사 전시·갤러리·교육 프로그램을 운영하는 박물관을 확인했다. 애로타운은 catalog 범위 안이다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "파리는 작품·컬렉션 자체를 보려는 관람, 애로타운은 지역 생활사를 현장에서 이해하는 전시를 비교한다. 특정 지역 전시도 고유하므로 단순 대체 가능/불가능 이분법을 쓰지 않는다.",
+          "purpose": "박물관 관람을 좋아하되 특정 지역사 연구자라는 조건은 붙이지 않는다. 컬렉션 자체를 위해 목적지를 고르는 경험과 방문 지역을 이해하려고 박물관 일정을 넣는 경험을 구분하는 초안이다.",
+          "specificity": "지역 박물관을 전시 규모만 보고 낮추지 않고 실제 전시·갤러리·교육 내용을 확인했다. 애로타운이 퀸스타운 범위 안임을 확인했다."
+        },
+        "outcome": "split",
+        "reason": "파리 choose / 퀸스타운 make_time의 경계 초안. 지역 맥락을 이해하는 별도 방문 가치가 있으므로 퀸스타운을 none 또는 if_there에 두지 않는다. 여행 동기의 차이는 출처가 아닌 모델 판정이다.",
+        "remaining": "특정 컬렉션 선호자의 여행 동기를 어느 정도까지 도시 기준에 반영할지 사람 검수가 필요하다. 박물관 크기나 소장품 수를 필수 조건으로 만들지 않는다."
+      },
+      {
+        "sub": "museums",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "nz-queenstown",
+            "experience": "애로타운 Lakes District Museum의 지역 생활사·골드러시 전시",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.lakesdistrictmuseum.nz/",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "지역 역사 전시·갤러리·교육 프로그램을 운영하는 박물관을 확인했다. 애로타운은 catalog 범위 안이다."
+            }
+          },
+          {
+            "city": "mx-cancun",
+            "experience": "칸쿤 호텔존 Museo Maya의 마야 유물 전시",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://lugares.inah.gob.mx/en/node/4284",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "INAH가 칸쿤 호텔존의 박물관과 연결된 San Miguelito 유적을 안내한다. 박물관 전시를 비교하며 툴룸·치첸이트사 방문 경험은 합치지 않는다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "두 곳 모두 방문 지역의 역사·문화를 전시로 이해하는 경험이다. 유적과 박물관은 분류를 나누며 유적의 가치를 박물관에 그대로 더하지 않는다.",
+          "purpose": "칸쿤이 휴양지라는 도시 이미지와 무관하게 박물관 자체를 위해 시간을 낼 근거가 있다. 해변 일정 중 들를 수 있다는 것은 하향 이유가 아니다.",
+          "specificity": "호텔존 범위 안의 전시 시설을 확인했다. 칸쿤의 기존 if_there는 비교의 정답으로 사용하지 않았다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 칸쿤은 if_there 기준 후보에서 제외한다.",
+        "remaining": "make_time 아래 사례는 여전히 미확보다. 두 기관의 전시 운영·시즌 전수 검수는 남아 있다."
+      },
+      {
+        "sub": "sports",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "es-barcelona",
+            "experience": "FC Barcelona 홈경기 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://www.fcbarcelona.com/en/tickets/football",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "구단 공식 사이트가 1군 경기 관람권을 안내한다. 방문 동기 강도를 수치로 증명한 자료는 아니다."
+            }
+          },
+          {
+            "city": "jp-kyoto",
+            "experience": "가메오카 Sanga Stadium의 교토 상가 J1 경기 관람",
+            "proposal": null,
+            "source": {
+              "url": "https://www.sanga-fc.jp/ticket/english_ticket_page",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "구단이 J1 경기 관람·방문객 입장권을 안내한다. 가메오카의 축구 경기장은 현재 catalog scope에 명시되어 있다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "같은 축구 종목의 프로 홈경기를 비교한다. 명성이나 리그 이름만으로 팬에게 제공되는 경험 차이가 자동 결정되지는 않는다.",
+          "purpose": "바르셀로나 팬은 목적 방문, 교토 팬은 부수 관람이라고 서로 다른 관심 수준을 가정할 수 없다. 일반 축구 관심자 기준인지 특정 구단 팬 기준인지에 따라 경계가 달라진다.",
+          "specificity": "가메오카 경기장이 catalog 범위 안이고 관람 절차도 확인됐다. 시내 농구 관람 가능성도 별도로 발견되어 축구장 외관만 보는 도시로 취급할 수 없다."
+        },
+        "outcome": "unresolved",
+        "reason": "바르셀로나 choose 기준 후보 / 교토 choose·make_time 경계 보류. 낮은 기존 값이나 구단 명성만으로 split을 만들지 않았다.",
+        "remaining": "관심 수준을 동일하게 놓은 판정 규칙을 확정해야 한다. 교토의 경기 관람은 적어도 make_time 후보로 아래 경계에서도 비교한다."
+      },
+      {
+        "sub": "sports",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "it-rome",
+            "experience": "스타디오 올림피코의 AS Roma 경기 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.asroma.com/en/tickets/men",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "구단이 경기 입장권과 관람 안내를 제공한다."
+            }
+          },
+          {
+            "city": "jp-kyoto",
+            "experience": "가메오카 Sanga Stadium의 교토 상가 J1 경기 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.sanga-fc.jp/ticket/english_ticket_page",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "구단이 J1 경기 관람·방문객 입장권을 안내한다. 가메오카의 축구 경기장은 현재 catalog scope에 명시되어 있다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "둘 다 실제 프로축구 경기 관람이다. 경기장 투어·스포츠 바 TV 시청으로 대체하지 않는다.",
+          "purpose": "양쪽 모두 경기일·입장을 맞춰 별도 관람 일정을 잡는 경험이다. 교토의 다른 문화 관광이 유명하다는 이유로 낮추지 않는다.",
+          "specificity": "로마와 교토 모두 공식 경기 관람 안내가 있다. 교토 scope에 가메오카 축구장이 이미 포함되어 있어 별도 범위 확장은 필요 없다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 교토는 if_there 기준 후보에서 제외한다. 이 결과는 교토의 choose 가능성을 부정하지 않는다.",
+        "remaining": "경기일·좌석·입장 자격은 미확인이다. 경기 관람이 가능한 낮은 등급 도시를 찾더라도 일반적인 시설 존재만으로 등급을 정하지 않는다."
+      },
+      {
+        "sub": "concert",
+        "boundary": "choose",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "gb-london",
+            "experience": "웨스트엔드 뮤지컬 관람",
+            "proposal": "choose",
+            "source": {
+              "url": "https://officiallondontheatre.com/theatre-tickets/today/?offers=1",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "공연업계 공식 안내에서 작품별 공연·예매를 확인했다. 할인·가격은 비교하지 않는다."
+            }
+          },
+          {
+            "city": "ca-vancouver",
+            "experience": "Queen Elizabeth Theatre의 Broadway Across Canada 순회 뮤지컬 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.broadway.org/theatres/queen-elizabeth-theatre-vancouver",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "Broadway League의 극장 안내에서 Broadway Across Canada 공연 시리즈와 공연 일정을 확인했다. 특정 날짜 예매 가능 여부는 확인하지 않았다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "뮤지컬 장르로 맞춰 웨스트엔드 현지 공연 경험과 여러 도시를 도는 순회 공연 시리즈를 비교한다. 순회 공연의 예술적 수준이 낮다는 뜻은 아니다.",
+          "purpose": "특정 배우만을 따라가는 조건 없이 뮤지컬 관람을 좋아하는 여행자를 가정한다. 현지 공연 문화 자체를 찾아가는 목적 방문과 여행 중 맞는 순회 작품을 관람하는 일정을 경계 후보로 삼는다.",
+          "specificity": "밴쿠버의 실제 순회 공연 일정을 확인했다. 심포니·오페라 등 다른 공연 경험도 살폈으므로 라이브 바만 있다는 가정으로 낮추지 않는다."
+        },
+        "outcome": "split",
+        "reason": "런던 choose / 밴쿠버 make_time의 경계 초안. 판단 차이는 현지에서 경험하려는 공연 문화와 다른 도시에서도 만날 수 있는 순회 관람의 대체 가능성이다. 공연 수·상시 운영 여부로 나누지 않는다.",
+        "remaining": "밴쿠버 고유 제작·특별 출연·음악제까지 포함하면 choose가 되는지 추가 검수한다. 이 비교는 순회 공연만으로 도시 전체의 상한을 확정하지 않는다."
+      },
+      {
+        "sub": "concert",
+        "boundary": "make_time",
+        "status": "draft",
+        "cases": [
+          {
+            "city": "ca-vancouver",
+            "experience": "Queen Elizabeth Theatre의 Broadway Across Canada 순회 뮤지컬 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.broadway.org/theatres/queen-elizabeth-theatre-vancouver",
+              "checked": "search_excerpt",
+              "checked_on": "2026-10-17",
+              "fact": "Broadway League의 극장 안내에서 Broadway Across Canada 공연 시리즈와 공연 일정을 확인했다. 특정 날짜 예매 가능 여부는 확인하지 않았다."
+            }
+          },
+          {
+            "city": "nz-queenstown",
+            "experience": "AWE Festival의 퀸스타운 공연장 실내악 관람",
+            "proposal": "make_time",
+            "source": {
+              "url": "https://www.worldsedgefestival.com/2026-performances-and-events",
+              "checked": "page",
+              "checked_on": "2026-10-17",
+              "fact": "2026 프로그램에 퀸스타운 Te Atamira 공연이 명시되어 있다. 축제의 와나카·크롬웰 공연은 합치지 않는다. 확인한 것은 2026년 프로그램이며 다음 해 일정은 미확인이다."
+            }
+          }
+        ],
+        "comparison": {
+          "substitutability": "장르는 다르지만 실제 프로그램·공연장에 맞춰 관람하는 경험이다. 무료 커뮤니티 공연이나 바의 배경 음악만으로 비교하지 않는다.",
+          "purpose": "퀸스타운에도 날짜에 맞춰 일부러 관람할 수 있는 실내악 공연이 확인됐다. 계절 한정이라는 이유로 if_there로 낮추지 않는다.",
+          "specificity": "2026 AWE 프로그램 중 퀸스타운 Te Atamira 공연만 근거로 쓴다. 다음 해 개최·입장 가능성은 미확인이다."
+        },
+        "outcome": "same",
+        "reason": "양쪽 make_time 제안. 퀸스타운은 if_there 기준 후보에서 제외한다. 2026년 경험 확인을 연중·매년 가능하다는 뜻으로 확대하지 않는다.",
+        "remaining": "두 도시의 choose 가능성과 방문 시점의 공연 가능 여부는 별도다. make_time↔if_there 경계는 추가 후보가 필요하다."
+      }
+    ]
+  }
+}

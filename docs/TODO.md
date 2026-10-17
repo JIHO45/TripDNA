@@ -2,6 +2,15 @@
 
 기준일: 2026-10-08. 이 문서는 **상태·다음 행동·산출물·실제 검증**만 기록한다. 기준은 [현재 문서 목차](README.md), 과거 작업 번호·완료 근거는 git 태그 `docs-versioned-2026-10-07`의 `docs/v1/progress.md`에 있다. 정책·실험 결과를 여기에 다시 쓰지 않는다.
 
+## 도시 자료 103곳 확장 — 2026-10-17
+
+- [x] **초안 작성:** [도시 자료](../data/destinations/catalog.json), [형식·검수 순서](data/destination-format.md). 기존 20곳 재판정과 추가 83곳을 합쳐 103곳, 세부 2,987칸, 핵심 경험 789항목. 기존 등급 24칸 변경 기록을 남겼다. 신규 83곳의 과소평가를 19곳 43칸 보정하고 core 메모 15문장을 정리했다(`revisions`). 추가 비교 실험과 LLM API 호출은 하지 않았다.
+- [x] **자료 검사:** `check_destination_draft.py`, `test_destination_draft.py`의 테스트 4개(잘못된 자료 15종 포함), 기존 `check_destination_candidates.py`, `check_city_draft.py` 통과. 출시 검사 `--release`는 예상대로 거부한다.
+- [ ] **출시용 검수:** 0곳 완료. 시즌 255칸 미확인. 신규 도시의 none ↔ if_there 경계는 기존 20곳보다 보수적이며 미보정이다. 후보 진입·순위 경계, 범위, 시즌부터 검수한다. 기후·비행시간·비용은 이번 확장에 포함하지 않는다. 앱 연결도 하지 않았다.
+- [ ] **등급 기준 정비:** [판정 절차](data/destination-grading.md)를 정했다(문서만). [기준표 초안](data/grade-anchors.md) 작성(28개 세부 × 2등급, `locals`는 미정의, 경계 사례 56건, 현재 값과 다른 사례 14건). [모델 검수](data/grade-anchors-review-2026-10-17.md): 잠정 유지 17·수정 제안 18·보류 21건, 승인 0건. 공통 질문과 우선 4개 세부의 비교 8쌍 작성(같은 등급 제안 6·보류 2, 경계 양쪽 확보 0). 자료 검사·Python 테스트 10개·Xcode 빌드·공백/링크 검사 통과, graphify 갱신(기존 Swift 2곳 부분 추출 경고). Swift 앱 코드는 변경하지 않아 XCTest는 실행하지 않았다. 다음: 비교 쌍의 하위 상대·보류 근거 보강 및 분류 경계 수정 → 사람 검수 → 103곳 세부별 동일 재판정 → 묶음별 분포 경고 확인. `if_there` 기준·조사 상태·묶음 표시·분포 경고는 아직 구현하지 않았다.
+- [x] **Xcode 빌드:** 지정된 iOS Simulator 빌드가 최종 종료 코드 0으로 통과했다. 첫 시도는 샌드박스 접근 제한, 다음 시도는 자동 승인 검토의 사용량 한도 오류로 막혔으나 계속 진행 요청 후 권한 확대 재시도에 성공했다. Swift 앱 코드를 바꾸지 않아 앱 단위·UI 테스트는 실행하지 않았다.
+- [x] **최종 확인:** 문서 로컬 링크 경로 119개와 `git diff --check` 통과. `graphify update .` 실행 완료(3,189 nodes, 6,769 edges). 기존 `AppDependencies.swift`, `LedgerServices.swift`의 부분 추출 경고와 커뮤니티 이름 갱신 안내가 남았다. 문서 의미 추출·LLM 재명명은 실행하지 않았다.
+
 ## 현재 구현과 보존 자료
 
 현행 앱의 연결은 [AppDependencies](../TripDNA/App/AppDependencies.swift)의 국가 자료·RecommendationService와 [SwiftDataStore](../TripDNA/Infrastructure/SwiftDataStore.swift)에 있다. 이번 작업은 문서 변경이며 도시·LLM·검색 앱 구현을 추가하지 않았다.

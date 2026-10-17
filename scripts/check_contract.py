@@ -8,6 +8,8 @@
     .venv/bin/python scripts/check_contract.py --run       # 호출. GEMINI_API_KEY, ANTHROPIC_API_KEY 필요. 기록된 호출은 건너뛴다
     python3 scripts/check_contract.py --report             # 기록을 계약대로 검사해 출력
     (실행 2 이후는 --exp 2를 붙인다. 지침·사례·기록이 run2/에 있다. 실행 2 계획: data/exploration/contract-check/run2/plan.md)
+    (실행 3은 --exp 3. 필수·선호 분류의 흔들림을 잰다. 계획: data/exploration/contract-check/run3/plan.md)
+    (실행 4는 --exp 4. 지침 v3와 신호 (d). 계획: data/exploration/contract-check/run4/plan.md)
 """
 import argparse
 import json
@@ -108,13 +110,14 @@ def schema_errors(s, v, path="$"):
     return out
 
 
-def inspect(case, text):
-    """응답 원문 → JSON 파싱 → schema 검사 → 계약 검사. 앞 단계에서 실패하면 형식 실패로 끝낸다."""
+def inspect(case, text, merge=None):
+    """응답 원문 → JSON 파싱 → schema 검사 → 계약 검사. 앞 단계에서 실패하면 형식 실패로 끝낸다.
+    merge: 신호 (d)를 쓸지. None이면 실행 번호로 정한다(실행 4부터)."""
     data = fd.parse(text)
     errors = schema_errors(SCHEMA, data) if data is not None else ["JSON을 읽지 못함"]
     if errors:
         return data, {"cards": [], "problems": [f"형식 실패: {e}" for e in errors], "unverified_drops": []}
-    return data, check(case, data)
+    return data, check(case, data, merge)
 
 
 def season_unverified(cid, case):
@@ -149,7 +152,16 @@ def visible_texts(data):
     yield "note", data.get("note")
 
 
-def check(case, data):
+APP_IDS = {"period", "duration", "budget"}
+
+
+def merged_app_fields(data, text):
+    """quote가 비어 있지 않고 사용자 원문에 그대로 있는 앱 입력 조건의 ID."""
+    return [c.get("id") for c in (data.get("request") or {}).get("conditions") or []
+            if c.get("id") in APP_IDS and (c.get("quote") or "").strip() and c["quote"].strip() in (text or "")]
+
+
+def check(case, data, merge=None):
     """응답을 계약대로 검사한다. 반환: cards(표시 후보), problems(위반), unverified_drops(검증 안 된 탈락)."""
     problems, text = [], case.get("text") or ""
     req = data.get("request") or {}
@@ -172,6 +184,11 @@ def check(case, data):
         problems.append("시기 조건이 요청 해석에 없음")
     free = [i for i in conds if i not in NOT_JUDGED | {"period"}]
     required = [i for i in free if conds[i].get("required")]
+    # 신호 (d), 실행 4부터: 앱 입력 조건의 quote가 사용자 원문에서 왔으면 요구가 앱 입력에 합쳐진 것이다.
+    # 그 요구는 코드가 확인하지 못했으므로 카드를 "확인 필요"로 둔다. 실행 1~3의 판정은 이 신호 없이 기록했다
+    merged = merged_app_fields(data, text) if (EXP >= 4 if merge is None else merge) else []
+    for i in merged:
+        problems.append(f"앱 입력에 자유문장 합침: {i}")
 
     cards, seen = [], set()
     for c in data.get("candidates") or []:
@@ -196,7 +213,7 @@ def check(case, data):
             elif reported[i].get("llm_status") == "met":
                 problems.append(f"{cid}: 조건 {i}를 LLM이 충족으로 표시(근거 인정 안 됨)")
         # ponytail: 자유문장 조건은 비교할 자료가 없어 전부 unconfirmed다. 비행·기후 자료와 인정 출처가 생기면 유형별 비교를 더한다
-        cards.append({"id": cid, "label": "확인 필요" if required or season_unverified(cid, case) else "확인됨"})
+        cards.append({"id": cid, "label": "확인 필요" if required or merged or season_unverified(cid, case) else "확인됨"})
 
     # 조건 탈락 재검증: 코드가 불충족을 확인한 것(지금은 시즌)만 인정한다. 카드로 되살리지는 않는다
     unverified = []
@@ -323,6 +340,43 @@ def self_check():
     d = {"request": {"conditions": [{"id": "period"}]}, "candidates": [{"id": two[0], "caveat": "정확한 날짜를 확인하세요"},
                                                                         {"id": two[1], "caveat": ""}]}
     assert expectations(fest, d, check(fest, d)) == [f"기대 날짜 확인 안내 없음: {two[1]}"]
+    # 안전장치 모의 규칙: (a) 원문 근거의 필수 표현, (b) 사실 유형. E2의 "꼭 그렇지 않아도"처럼 부정은 (a)가 잘못 올린다
+    for q in ("인천에서 직항으로 6시간 안에 갈 수 있는 곳만 원해요.", "고도가 높은 곳은 피하고 싶어요.", "축제 기간이 아니면 가지 않을 거예요."):
+        assert MUST.search(q), q
+    assert not MUST.search("가능하면 비행시간이 짧은 곳이면 좋겠어요.") and MUST.search("꼭 그렇지 않아도 괜찮아요.")
+    pref = lambda typ, quote: {"request": {"conditions": [{"id": "period", "required": True},
+                                                           {"id": "f1", "type": typ, "required": False, "quote": quote}]}}
+    rain = pref("weather", "우기는 피하고 싶어요.")
+    assert not needs_check(rain) and needs_check(rain, "a") and needs_check(rain, "b")
+    short = pref("flight_time", "가능하면 비행시간이 짧은 곳이면 좋겠어요.")
+    assert not needs_check(short, "a") and needs_check(short, "b")
+    assert not needs_check({"request": {"conditions": [{"id": "budget", "required": True}]}}, "b")
+    only_period = {"request": {"conditions": [{"id": "period", "required": True}]}, "candidates": []}
+    assert "기대 조건 추출 없음" in expectations({"id": "P", "month": 10, "detail": "festival", "free_text": "preferred"},
+                                             only_period, {"cards": []})
+    assert "기대 조건 추출 없음" not in expectations({"id": "P", "month": 10, "detail": "festival"}, only_period, {"cards": []})
+    # 신호 (d): 앱 입력 조건의 quote가 사용자 원문에서 왔으면 합침. 실행 4부터 카드를 "확인 필요"로 둔다
+    global EXP
+    fest = {"id": "K", "month": 10, "main": "event", "detail": "festival", "subs": [], "text": "축제 기간이 아니면 안 가요.",
+            "free_text": "required"}
+    top3 = base_order(fest)[:3]
+    m = {"request": {"conditions": [{"id": "period", "required": True, "quote": "축제 기간이 아니면 안 가요."}]},
+         "candidates": [{"id": c} for c in top3]}
+    assert merged_app_fields(m, fest["text"]) == ["period"] and merged_app_fields(m, "다른 문장") == []
+    assert merged_app_fields({"request": {"conditions": [{"id": "period", "quote": ""}]}}, fest["text"]) == []
+    saved, EXP = EXP, 3
+    assert all(c["label"] == "확인됨" for c in check(fest, m)["cards"])  # 실행 1~3의 계약
+    EXP = 4
+    r4 = check(fest, m)
+    assert all(c["label"] == "확인 필요" for c in r4["cards"]) and "앱 입력에 자유문장 합침: period" in r4["problems"]
+    assert needs_check(m, "d", fest["text"]) and not needs_check(m)
+    assert check(fest, m, merge=False)["cards"][0]["label"] == "확인됨" and check(fest, m, merge=True)["cards"][0]["label"] == "확인 필요"
+    EXP = saved
+    # 컨셉만 반복한 사례(free_text none): 조건을 뽑으면 기대 불일치, 안 뽑으면 추출 누락으로 세지 않는다
+    none = dict(fest, free_text="none")
+    one = {"request": {"conditions": [{"id": "f1", "text": "축제", "required": False}]}, "candidates": []}
+    assert any("기대 조건 없음인데 뽑음" in x for x in expectations(none, one, {"cards": []}))
+    assert expectations(none, {"request": {"conditions": []}, "candidates": []}, {"cards": []}) == []
     print("self_check ok")
 
 
@@ -343,21 +397,32 @@ def log_path(exp=None):
     return run_dir(exp) / "responses.jsonl"
 
 
+def run_cfg(exp=None):
+    """실행 2부터의 run{n}/cases.json. select·reps·prompt·measure를 둘 수 있다(실행 3)."""
+    exp = exp or EXP
+    return json.loads((run_dir(exp) / "cases.json").read_text()) if exp > 1 else {}
+
+
 def load_cases(exp=None):
-    """실행 1의 사례(회귀 13 + 새 계약 8)에 그 실행에서 더한 사례를 붙인다. 더한 사례는 new=True."""
+    """실행 1의 사례(회귀 13 + 새 계약 8)에 실행 2부터 더한 사례를 붙인다. 더한 사례는 new=True.
+    그 실행에 select가 있으면 그 사례만 쓴다."""
     exp = exp or EXP
     old = [c for p in (fd.BASE / "run2/cases.json", BASE / "cases.json") for c in json.loads(p.read_text())["cases"]]
-    new = json.loads((run_dir(exp) / "cases.json").read_text())["cases"] if exp > 1 else []
-    return old + [dict(c, new=True) for c in new]
+    # 앞선 실행에서 더한 사례는 다음 실행에서 기존 사례다. new=True는 이 실행에서 더한 것뿐이다
+    pool = old + [dict(c, new=True) if e == exp else c for e in range(2, exp + 1) for c in run_cfg(e)["cases"]]
+    select = run_cfg(exp).get("select")
+    return [c for c in pool if c["id"] in select] if select else pool
 
 
 def system_prompt():
-    body = (run_dir() / "prompt.md").read_text().split("\n---\n", 1)[1].strip()
+    body = (run_dir() / run_cfg().get("prompt", "prompt.md")).read_text().split("\n---\n", 1)[1].strip()
     return f"{body}\n\nSchema:\n{(BASE / 'schema.json').read_text().strip()}"
 
 
 def todo():
-    return [(c, arm, r) for c in load_cases() for arm, cfg in ARMS.items() for r in range(1, cfg["reps"] + 1)]
+    reps, case_reps = run_cfg().get("reps", {}), run_cfg().get("case_reps", {})
+    n = lambda c, arm: case_reps.get(c["id"], reps.get(arm, ARMS[arm]["reps"]))
+    return [(c, arm, r) for c in load_cases() for arm in ARMS for r in range(1, n(c, arm) + 1)]
 
 
 def worst_usd(model, system, user):
@@ -405,6 +470,9 @@ def run(dry):
         except Exception as e:  # 실패는 기록하고 멈춘다. 그 줄을 지우고 다시 돌리면 이어서 한다
             row["error"] = f"{type(e).__name__}: {e}"
         row["latency_s"] = round(time.monotonic() - start, 2)
+        if "error" not in row:  # 기록 시점의 검사 결과를 (d) 없이와 (d) 적용으로 함께 남긴다. 판정은 보고서가 다시 계산한다
+            row["checks"] = {name: (lambda res: {"cards": res["cards"], "problems": res["problems"]})(inspect(case, row["final_text"], m)[1])
+                             for name, m in (("without_d", False), ("with_d", True))}
         with log_path().open("a") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
         if "error" in row:
@@ -415,7 +483,7 @@ def run(dry):
         print(f"호출 {len(todo())}회, 최대 합계 ${total:.2f} (상한 ${MAX_USD})")
 
 
-KINDS = [("기대 날짜", "날짜 안내 없음"), ("기대 표시", "표시 상태 불일치"), ("기대", "사례 기대 불일치"), ("형식", "형식 실패"), ("목록에 없는", "목록 밖 ID"), ("중복", "중복"), ("제외 위반", "제외 위반"),
+KINDS = [("기대 조건 없음인데", "불필요한 조건 추출"), ("기대 조건 추출", "조건 추출 누락"), ("합침", "앱 입력 합침"), ("기대 날짜", "날짜 안내 없음"), ("기대 표시", "표시 상태 불일치"), ("기대", "사례 기대 불일치"), ("형식", "형식 실패"), ("목록에 없는", "목록 밖 ID"), ("중복", "중복"), ("제외 위반", "제외 위반"),
          ("예외", "예외 근거"), ("시기 조건", "시기 조건 누락"), ("보고 없음", "조건 보고 누락"),
          ("충족으로 표시", "LLM met"), ("검증되지 않은 탈락", "검증 안 된 탈락"), ("말없이 빠짐", "말없이 빠짐"),
          ("필수 후보", "필수 후보 없음"), ("입력에 없는 여행", "여행 ID"), ("내부 표현", "내부 표현"),
@@ -433,34 +501,41 @@ def expectations(case, data, r):
         if bad:
             out.append(f"기대 금지 {rule}: {bad}")
     required = case.get("stated") or case.get("free_text") == "required"
+    # 자유문장 조건이 있는 사례에서 조건을 하나도 뽑지 않았으면, 카드 표시가 맞아도 따로 센다.
+    # ponytail: 최소 검사. 엉뚱한 조건 하나나 일부 누락은 통과한다. 사례별 기대 조건은 원문으로 판독한다
+    if (case.get("stated") or case.get("free_text") in ("required", "preferred")) and not free_conditions(data):
+        out.append("기대 조건 추출 없음")
+    if case.get("free_text") == "none" and free_conditions(data):  # 컨셉만 반복한 문장
+        out.append(f"기대 조건 없음인데 뽑음: {[c.get('text') for c in free_conditions(data)]}")
     for c in r["cards"]:
         want = "확인 필요" if required or season_unverified(c["id"], case) else "확인됨"
         if c["label"] != want:
             out.append(f"기대 표시 {c['id']} {want}, 응답 {c['label']}")
     if case.get("expect_empty") and r["cards"]:
         out.append("기대 빈 결과")
-    # 축제·경기·공연에 기대는 카드는 정확한 날짜 확인을 안내해야 한다. 단어로만 센다(날짜·일정)
+    # 축제·경기·공연에 기대는 카드는 정확한 날짜 확인을 안내해야 한다. 단어로만 센다(날짜·일정·일자).
+    # "일자"는 실행 3 판독에서 "개최 일자를 확인"을 놓친 것을 보고 더했다(2026-10-17)
     if case.get("date_check") or (case["detail"] in EVENTS and case["month"]):
         caveats = {c.get("id"): c.get("caveat") or "" for c in data.get("candidates") or []}
         for c in r["cards"]:
-            if not re.search("날짜|일정", caveats.get(c["id"], "")):
+            if not re.search("날짜|일정|일자", caveats.get(c["id"], "")):
                 out.append(f"기대 날짜 확인 안내 없음: {c['id']}")
     return out
 
 
-def problems_of(case, text):
-    data, r = inspect(case, text)
+def problems_of(case, text, merge=None):
+    data, r = inspect(case, text, merge)
     ok = not any(p.startswith("형식 실패") for p in r["problems"])
     return (data if ok else None), r, r["problems"] + (expectations(case, data, r) if ok else [])
 
 
-def tally_rows(cases, rows):
-    """{arm: {"calls": n, "with": 문제 있는 응답 수, 종류: 건수}}"""
+def tally_rows(cases, rows, merge=None):
+    """{arm: {"calls": n, 종류: 문제가 있던 응답 수}}"""
     out = {}
     for row in rows:
         t = out.setdefault(row["arm"], {"calls": 0})
         t["calls"] += 1
-        kinds = {next((name for word, name in KINDS if word in p), "기타") for p in problems_of(cases[row["case"]], row["final_text"])[2]}
+        kinds = {next((name for word, name in KINDS if word in p), "기타") for p in problems_of(cases[row["case"]], row["final_text"], merge)[2]}
         for k in kinds:  # 응답 수로 센다. 한 응답의 같은 종류 여러 건은 1로
             t[k] = t.get(k, 0) + 1
     return out
@@ -496,15 +571,95 @@ def report():
         if done:
             print(f"[{arm}] 호출 {len(done)}건 | 비용 ${fd.rp.cost(done):.4f} | 지연 평균 "
                   f"{sum(r['latency_s'] for r in done) / len(done):.1f}s | 문제 {tally[arm] or '없음'}")
-    if EXP > 1:
-        # 입력이 같은 기존 사례만 실행 1과 비교한다. 이번 실행에서 더한 사례는 따로 센다. 수치는 문제가 있던 응답 수다
+    if run_cfg().get("measure") == "required":
+        classification(cases, rows)
+    if EXP >= 4:
+        merge_effect(cases, rows)
+    if EXP > 1 and not run_cfg().get("select"):
+        # 입력이 같은 기존 사례만 비교 대상 실행과 비교한다. 이번 실행에서 더한 사례는 따로 센다. 수치는 문제가 있던 응답 수다.
+        # 사례별로 반복을 늘린 경우 비교에는 실행 2와 같은 반복(Flash 1, Haiku 2)까지만 넣는다
+        base = run_cfg().get("compare_with", 1)
         old = {k for k, c in cases.items() if not c.get("new")}
-        prev = [r for r in fd.read_log(log_path(1)) if "error" not in r and r["case"] in old]
-        print(f"\n## 기존 사례 {len(old)}개: 실행 1 대 실행 {EXP} (같은 입력, 지침만 다름)")
-        for name, rs in ((f"실행 1", prev), (f"실행 {EXP}", [r for r in rows if r["case"] in old])):
-            print(f"[{name}] {tally_rows(cases, rs)}")
-        print(f"\n## 이번에 더한 사례: {sorted(set(cases) - old)} (실행 1과 비교하지 않는다)")
+        prev = [r for r in fd.read_log(log_path(base)) if "error" not in r and r["case"] in old]
+        same = [r for r in rows if r["case"] in old and r["rep"] <= ARMS[r["arm"]]["reps"]]
+        print(f"\n## 기존 사례 {len(old)}개: 실행 {base} 대 실행 {EXP} (같은 입력, 지침만 다름)")
+        # 지침의 효과는 (d) 없이 끼리 비교한다. (d)는 실행 4부터의 계약이라 따로 적는다
+        for name, rs, m in ((f"실행 {base}", prev, False), (f"실행 {EXP} (d 없이)", same, False), (f"실행 {EXP} (d 적용)", same, True)):
+            if name.endswith("(d 적용)") and EXP < 4:
+                continue
+            print(f"[{name}] {tally_rows(cases, rs, m)}")
+        print(f"\n## 이번에 더한 사례: {sorted(set(cases) - old)} (비교 대상 아님)")
         print(tally_rows(cases, [r for r in rows if r["case"] not in old]))
+
+
+# 안전장치 (a)의 시험 규칙: 원문 근거에 필수를 뜻하는 표현이 있으면 코드가 필수로 올린다. 부정("꼭 그렇지 않아도")은 가리지 못한다
+MUST = re.compile(r"곳만|데만|만 원해|만 가|꼭|반드시|피하고 싶|아니면|싫")
+FACT_TYPES = {"flight_time", "weather", "altitude"}  # 안전장치 (b): 선호여도 확인하지 못하면 확인 필요로 보일 유형
+
+
+def free_conditions(data):
+    return [c for c in (data.get("request") or {}).get("conditions") or [] if c.get("id") not in NOT_JUDGED | {"period"}]
+
+
+def needs_check(data, rule=None, text=""):
+    """카드에 "확인 필요"를 붙일지. rule=None은 실행 1~3의 계약, "a"는 원문 근거 규칙, "b"는 사실 유형 규칙,
+    "d"는 앱 입력 합침 신호(실행 4부터의 계약)."""
+    fs = free_conditions(data)
+    if rule == "d":
+        return any(c.get("required") for c in fs) or bool(merged_app_fields(data, text))
+    if rule == "a":
+        return any(c.get("required") or MUST.search(c.get("quote") or "") for c in fs)
+    if rule == "b":
+        return any(c.get("required") or c.get("type") in FACT_TYPES for c in fs)
+    return any(c.get("required") for c in fs)
+
+
+def classification(cases, rows):
+    """사례·모델별 필수·선호 분류와, 같은 응답에 안전장치 (a)(b)(c)를 적용했을 때 표시가 기대와 맞는 비율."""
+    print("\n## 필수·선호 분류와 안전장치 모의 적용 (추가 호출 없음)")
+    print("기대: 필수 사례는 '확인 필요', 선호 사례는 '확인됨'이 맞다. (c)는 같은 사례·모델의 응답 두 개를 짝지어 하나라도 필수면 필수로 본 경우다")
+    for cid in [c for c in cases if any(r["case"] == c for r in rows)]:
+        case = cases[cid]
+        want = bool(case.get("stated") or case.get("free_text") == "required")
+        for arm in ARMS:
+            ds = [problems_of(case, r["final_text"])[0] for r in rows if r["case"] == cid and r["arm"] == arm]
+            ds = [d for d in ds if d]  # 형식 실패는 뺀다
+            if not ds:
+                continue
+            kinds = ["없음" if not free_conditions(d) else "필수" if needs_check(d) else "선호" for d in ds]
+            ok = lambda rule: sum(needs_check(d, rule, case.get("text")) == want for d in ds)
+            pairs = [(x, y) for i, x in enumerate(ds) for y in ds[i + 1:]]
+            pair_ok = sum((needs_check(x) or needs_check(y)) == want for x, y in pairs)
+            print(f"{cid} [{arm}] 기대 {'필수' if want else '선호'} | n={len(ds)} 필수 {kinds.count('필수')} 선호 {kinds.count('선호')} "
+                  f"조건 없음 {kinds.count('없음')} | 표시가 맞음: 지금 {ok(None)}/{len(ds)}, (a) {ok('a')}/{len(ds)}, "
+                  f"(b) {ok('b')}/{len(ds)}, (c) {pair_ok}/{len(pairs)}, (d) {ok('d')}/{len(ds)}")
+
+
+def merge_effect(cases, rows):
+    """응답마다 (d) 없이와 (d) 적용의 카드 표시를 비교한다. 표시가 맞는지는 사례 기대(필수·선호·시즌)로 본다."""
+    def shown_ok(case, text, m):
+        data, r, probs = problems_of(case, text, m)
+        return data is not None and not any(p.startswith("기대 표시") for p in probs), r
+    print("\n## 신호 (d)의 전·후 (같은 응답, 검사만 다름)")
+    print("고침: (d) 없이 틀린 표시가 (d)로 맞음. 오차단: (d) 없이 맞던 표시가 (d)로 틀림. 놓침: (d)를 적용해도 틀림")
+    for arm in ARMS:
+        n = hit = fixed = broke = missed = 0
+        for row in [r for r in rows if r["arm"] == arm]:
+            case = cases[row["case"]]
+            before, _ = shown_ok(case, row["final_text"], False)
+            after, r = shown_ok(case, row["final_text"], True)
+            n += 1
+            merged = [p for p in r["problems"] if p.startswith("앱 입력에 자유문장 합침")]
+            hit += bool(merged)
+            fixed += (not before) and after
+            broke += before and not after
+            missed += not after
+            if merged or before != after or not after:
+                data = fd.parse(row["final_text"]) or {}
+                quotes = [(c.get("id"), c.get("quote")) for c in (data.get("request") or {}).get("conditions") or [] if c.get("id") in APP_IDS]
+                print(f"   {row['key']}: (d) {'걸림' if merged else '안 걸림'}, 표시 {'맞음' if before else '틀림'} → {'맞음' if after else '틀림'} | 앱 입력 quote {quotes}")
+        if n:
+            print(f"[{arm}] 응답 {n} | (d) 걸림 {hit} | 고침 {fixed} | 오차단 {broke} | 놓침 {missed}")
 
 
 def main():

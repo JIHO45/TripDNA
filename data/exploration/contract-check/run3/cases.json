@@ -1,0 +1,9 @@
+{
+  "status": "2026-10-16 초안. 첫 호출 전.",
+  "fields": "새 사례는 없다. select: 앞선 실행의 사례 가운데 이번에 부를 것. reps: 모델별 반복 수(실행 1·2의 값을 덮는다). prompt: 쓸 지침 파일(이 폴더 기준). measure: required면 보고서가 필수·선호 분류표와 안전장치 모의 적용을 출력한다.",
+  "select": ["F11", "F12", "F13", "C07", "E1", "E2"],
+  "reps": {"flash": 10, "haiku": 10},
+  "prompt": "../run2/prompt.md",
+  "measure": "required",
+  "cases": []
+}

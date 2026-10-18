@@ -228,4 +228,19 @@ nonisolated struct DailyPhotoService {
         ))
         return photo
     }
+
+    /// 이미 저장된 그날 사진의 반응만 바꾼다. 기록이 없으면 아무것도 하지 않는다.
+    func updateReaction(tripID: String, tripDayIndex: Int, reaction: DayReaction) async throws {
+        guard let existing = try await photos.photos(tripID: tripID)
+            .first(where: { $0.tripDayIndex == tripDayIndex }) else { return }
+        try await photos.upsert(DailyPhoto(
+            id: existing.id,
+            tripID: existing.tripID,
+            tripDayIndex: existing.tripDayIndex,
+            storagePath: existing.storagePath,
+            selection: existing.selection,
+            dayReaction: reaction,
+            createdAt: existing.createdAt
+        ))
+    }
 }

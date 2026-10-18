@@ -21,6 +21,23 @@ struct RecordLifecycleTests {
         #expect(try await reopened.feedback().isEmpty)
     }
 
+    @Test @MainActor func dailyPhotoExistsAfterConfirmWithoutReaction() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let service = dependencies.dailyPhotoService
+        _ = try await service.saveSelection(
+            tripID: "trip", tripDayIndex: 1, storagePath: "a.jpg", selection: .manual, reaction: nil
+        )
+        let saved = try #require(try await dependencies.store.photos(tripID: "trip").first)
+        #expect(saved.selection == .manual)
+        #expect(saved.dayReaction == nil)
+
+        try await service.updateReaction(tripID: "trip", tripDayIndex: 1, reaction: .good)
+        let updated = try await dependencies.store.photos(tripID: "trip")
+        #expect(updated.count == 1)
+        #expect(updated.first?.dayReaction == .good)
+        #expect(updated.first?.storagePath == "a.jpg")
+    }
+
     @Test @MainActor func deletingTripRemovesItsRecord() async throws {
         let dependencies = AppDependencies(persistence: .inMemory)
         let start = Date().addingTimeInterval(7 * 24 * 60 * 60)

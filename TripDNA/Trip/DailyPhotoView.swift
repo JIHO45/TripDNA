@@ -75,6 +75,10 @@ struct DailyPhotoView: View {
                 .first { $0.tripDayIndex == resolvedDayIndex }
             isReplacing = existing != nil
         }
+        .onDisappear {
+            // 확정하지 않고 떠나면 고르기만 한 원본 파일을 정리한다.
+            if stage == .pick || stage == .preview { discardSelectedFile() }
+        }
     }
 
     @ViewBuilder
@@ -205,6 +209,7 @@ struct DailyPhotoView: View {
                 .disabled(isSaving)
 
                 Button("다른 사진 고르기") {
+                    discardSelectedFile()
                     saveFailed = false
                     makeCroppedImage = nil
                     previewImage = nil
@@ -313,6 +318,8 @@ struct DailyPhotoView: View {
 
         // Move and Scale로 맞춘 영역을 크롭해 저장한다.
         let croppedPath = makeCroppedImage?().flatMap { try? LocalPhotoStore.saveImage($0) }
+        let previousPath = try? await dependencies.store.photos(tripID: trip.id)
+            .first { $0.tripDayIndex == resolvedDayIndex }?.storagePath
         do {
             // 교체일 때 반응 nil이면 기존 반응이 유지된다.
             _ = try await dependencies.dailyPhotoService.saveSelection(
@@ -328,6 +335,8 @@ struct DailyPhotoView: View {
             saveFailed = true
             return
         }
+        // 교체된 이전 사진과 크롭 전 원본은 대표 사진·다른 기록에서 쓰지 않을 때만 지운다.
+        try? await dependencies.deleteUnusedPhotoFiles([previousPath, selectedPath].compactMap { $0 })
 
         // 이미 남긴 날을 바꾸는 경우: 반응·동의는 건너뛰고 바로 끝낸다.
         if isReplacing {
@@ -342,6 +351,12 @@ struct DailyPhotoView: View {
         } else {
             withAnimation { stage = .reaction }
         }
+    }
+
+    private func discardSelectedFile() {
+        guard let path = selectedPath else { return }
+        selectedPath = nil
+        Task { try? await dependencies.deleteUnusedPhotoFiles([path]) }
     }
 
     private func finish(with reaction: DayReaction?) async {

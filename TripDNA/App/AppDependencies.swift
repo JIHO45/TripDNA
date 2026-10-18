@@ -112,9 +112,14 @@ final class AppDependencies {
         try await store.deletePhotos(tripID: tripID)
         try await removeFromRanking(tripID: tripID, userID: userID)
         EvaluationNotificationService.cancel(for: tripID)
-        let otherTrips = try await store.trips()
-        let otherPhotos = try await store.photos(tripID: nil)
-        let inUse = Set(otherTrips.compactMap(\.coverPhotoStoragePath) + otherPhotos.map(\.storagePath))
+        try await deleteUnusedPhotoFiles(paths)
+    }
+
+    /// 대표 사진이나 하루 한 장 기록이 가리키지 않는 사진 파일만 지운다.
+    func deleteUnusedPhotoFiles(_ paths: [String]) async throws {
+        let trips = try await store.trips()
+        let photos = try await store.photos(tripID: nil)
+        let inUse = Set(trips.compactMap(\.coverPhotoStoragePath) + photos.map(\.storagePath))
         try LocalPhotoStore.delete(paths: paths.filter { !inUse.contains($0) })
     }
 

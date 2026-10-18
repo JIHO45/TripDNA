@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Testing
+import UIKit
 @testable import TripDNA
 
 struct RecordLifecycleTests {
@@ -36,6 +37,32 @@ struct RecordLifecycleTests {
         #expect(updated.count == 1)
         #expect(updated.first?.dayReaction == .good)
         #expect(updated.first?.storagePath == "a.jpg")
+    }
+
+    @Test @MainActor func replacingDailyPhotoDeletesOnlyUnusedFiles() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let leg = try TripLeg(countryCode: "JP", startDate: .now, endDate: .now.addingTimeInterval(86400))
+        let trip = try await dependencies.tripService.createTrip(legs: [leg], companion: .alone, purpose: .leisure)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { _ in }
+        let cover = try LocalPhotoStore.saveImage(image)
+        let old = try LocalPhotoStore.saveImage(image)
+        let original = try LocalPhotoStore.saveImage(image)
+        let cropped = try LocalPhotoStore.saveImage(image)
+        defer { try? LocalPhotoStore.delete(paths: [cover, old, original, cropped]) }
+        let service = dependencies.dailyPhotoService
+        _ = try await service.saveSelection(tripID: trip.id, tripDayIndex: 1, storagePath: cover, selection: .manual, reaction: nil)
+        _ = try await dependencies.tripService.setCoverPhoto(tripID: trip.id, storagePath: cover)
+        _ = try await service.saveSelection(tripID: trip.id, tripDayIndex: 2, storagePath: old, selection: .manual, reaction: nil)
+
+        // 1일차(대표 사진)와 2일차를 교체하고, 크롭 전 원본과 이전 파일을 정리한다.
+        _ = try await service.saveSelection(tripID: trip.id, tripDayIndex: 1, storagePath: cropped, selection: .manual, reaction: nil)
+        _ = try await service.saveSelection(tripID: trip.id, tripDayIndex: 2, storagePath: original, selection: .manual, reaction: nil)
+        try await dependencies.deleteUnusedPhotoFiles([cover, old, original, cropped])
+
+        #expect(LocalPhotoStore.image(at: cover) != nil)
+        #expect(LocalPhotoStore.image(at: old) == nil)
+        #expect(LocalPhotoStore.image(at: original) != nil)
+        #expect(LocalPhotoStore.image(at: cropped) != nil)
     }
 
     @Test @MainActor func deletingTripRemovesItsRecord() async throws {

@@ -22,14 +22,19 @@ final class AppDependencies {
     let quizService = TasteQuizService()
 
     var interestTagIDs: Set<String> = []
-    /// 자국은 "새로운 여행지 추천" 대상이 될 수 없으므로 항상 후보에서 제외한다.
+    /// 사는 나라는 기본으로 후보에서 제외하고, 추천 조건의 "사는 나라도 포함"으로 매번 넣을 수 있다.
     /// 온보딩(홈 국가 확인 단계) 또는 설정 화면에서 사용자가 직접 확정한 값만 신뢰하며,
     /// 확정 전까지는 nil로 두어 추측값을 사실로 취급하지 않는다.
     private(set) var homeCountryCode: String?
 
-    func excludedCountryCodes(visited: Set<String>) -> Set<String> {
-        guard let homeCountryCode else { return visited }
+    func excludedCountryCodes(visited: Set<String>, includingHomeCountry: Bool = false) -> Set<String> {
+        guard let homeCountryCode, !includingHomeCountry else { return visited }
         return visited.union([homeCountryCode])
+    }
+
+    /// 사는 나라가 추천 목록에 있을 때만 "사는 나라도 포함" 토글과 안내를 보여준다.
+    var canIncludeHomeCountry: Bool {
+        homeCountryCode.map { CountryCatalog.profiles[$0] != nil } ?? false
     }
 
     /// 서버가 없으므로 기기에 남는 프로필이 계정 역할을 한다. 이 id로 원장·지문을 묶는다.

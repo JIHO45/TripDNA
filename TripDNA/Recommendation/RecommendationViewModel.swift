@@ -33,14 +33,19 @@ enum BudgetLevel: String, CaseIterable, Identifiable, Sendable {
 
 struct RecommendationFilter: Equatable {
     var budget: BudgetLevel?
+    /// "사는 나라도 포함". 기본 끔이며 기기에 저장하지 않는다.
+    var includeHomeCountry = false
 
-    var isActive: Bool { budget != nil }
+    var isActive: Bool { budget != nil || includeHomeCountry }
 
     /// 메인 화면 상단에 노출할 활성 필터 요약.
     var summaryKo: [String] {
         var parts: [String] = []
         if let budget {
             parts.append("예산 \(budget.labelKo)")
+        }
+        if includeHomeCountry {
+            parts.append("사는 나라 포함")
         }
         return parts
     }
@@ -321,7 +326,8 @@ final class RecommendationViewModel {
             visited: visitedCountryCodes
                 .union(sessionExcluded)
                 .union(budgetExcludedCountryCodes())
-                .union(alsoExcluding)
+                .union(alsoExcluding),
+            includingHomeCountry: filter.includeHomeCountry
         )
         lastExcludedCountries = excluded
         return (try? await dependencies.recommendationService.generateThreeSlots(

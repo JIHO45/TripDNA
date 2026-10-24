@@ -14,6 +14,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     private var storedProfile: UserProfile?
     private var storedInterestTagIDs: Set<String> = []
     private var storedWantedTiers: WantedConceptTiers?
+    private var storedOnboardingDraft: OnboardingDraft?
     private(set) var storedEvents: [AnalyticsEvent]
 
     init(
@@ -175,6 +176,10 @@ nonisolated final class InMemoryAppStore: AppStore {
 
     func saveWantedTiers(_ tiers: WantedConceptTiers) async throws { storedWantedTiers = tiers }
 
+    func loadOnboardingDraft() async throws -> OnboardingDraft? { storedOnboardingDraft }
+
+    func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws { storedOnboardingDraft = draft }
+
     func append(_ event: AnalyticsEvent) async throws {
         guard !storedEvents.contains(where: { $0.id == event.id }) else {
             throw RepositoryError.duplicateID
@@ -199,6 +204,7 @@ nonisolated final class InMemoryAppStore: AppStore {
         storedProfile = nil
         storedInterestTagIDs.removeAll()
         storedWantedTiers = nil
+        storedOnboardingDraft = nil
         storedEvents.removeAll()
     }
 }

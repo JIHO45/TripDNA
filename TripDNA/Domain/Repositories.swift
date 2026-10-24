@@ -53,6 +53,9 @@ protocol UserProfileRepository {
     func saveInterestTagIDs(_ ids: Set<String>) async throws
     func loadWantedTiers() async throws -> WantedConceptTiers?
     func saveWantedTiers(_ tiers: WantedConceptTiers) async throws
+    /// 온보딩 도중 앱이 꺼져도 이어가기 위한 임시 진행 상태. nil을 저장하면 지운다.
+    func loadOnboardingDraft() async throws -> OnboardingDraft?
+    func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws
 }
 
 nonisolated enum AnalyticsEventType: String, Codable, Sendable {

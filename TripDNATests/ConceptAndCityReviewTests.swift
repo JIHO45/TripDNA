@@ -181,4 +181,40 @@ struct ConceptAndCityReviewTests {
         #expect(loaded?.tier(of: .shopping) == 2)
         #expect(loaded?.tier(of: .nightlife) == nil)
     }
+
+    @Test @MainActor func onboardingDraftRestoresStepAndInputsWithoutDuplicatingTrips() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let trip = try await dependencies.tripService.createTrip(
+            legs: [leg("JP", ["교토"])], companion: .unknown, purpose: .leisure, now: past
+        )
+        let first = OnboardingViewModel()
+        await first.restore(dependencies)
+        first.homeCountryCode = "KR"
+        first.entryMode = .photoScan
+        first.recordedTrips = [OnboardingTripSummary(id: trip.id, title: "교토", period: "", concepts: nil)]
+        first.conceptQueue = [trip.id]
+        first.stage = .concepts
+        first.placeConcept(.food, in: 1)
+        first.tiers.avoidNote = "긴 이동"
+        await first.saveDraft(dependencies)
+
+        let second = OnboardingViewModel()
+        await second.restore(dependencies)
+        #expect(second.stage == .concepts)
+        #expect(second.homeCountryCode == "KR")
+        #expect(second.recordedTrips.map(\.id) == [trip.id])
+        #expect(second.tiers.tier(of: .food) == 1)
+        #expect(second.tiers.avoidNote == "긴 이동")
+        #expect(await dependencies.allTrips().count == 1)
+
+        // 후보 검토 중에 꺼졌다면 입력 경로 선택으로 돌아온다.
+        second.stage = .candidates
+        await second.saveDraft(dependencies)
+        let third = OnboardingViewModel()
+        await third.restore(dependencies)
+        #expect(third.stage == .entryModeSelection)
+
+        try await dependencies.store.deleteAllUserData()
+        #expect(try await dependencies.store.loadOnboardingDraft() == nil)
+    }
 }

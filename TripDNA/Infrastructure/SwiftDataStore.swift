@@ -199,6 +199,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
         static let interestTags = "interestTags"
         static let tastePrior = "tastePrior"
         static let wantedTiers = "wantedTiers"
+        static let onboardingDraft = "onboardingDraft"
     }
 
     private let container: ModelContainer
@@ -450,6 +451,19 @@ actor SwiftDataAppStore: nonisolated AppStore {
 
     func saveWantedTiers(_ tiers: WantedConceptTiers) async throws {
         try saveSingleton(tiers, key: SingletonKey.wantedTiers)
+    }
+
+    func loadOnboardingDraft() async throws -> OnboardingDraft? {
+        try singleton(OnboardingDraft.self, key: SingletonKey.onboardingDraft)
+    }
+
+    func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws {
+        if let draft {
+            try saveSingleton(draft, key: SingletonKey.onboardingDraft)
+        } else if let row = try singletonRow(key: SingletonKey.onboardingDraft) {
+            modelContext.delete(row)
+            try modelContext.save()
+        }
     }
 
     // MARK: 이벤트

@@ -35,6 +35,8 @@ struct OnboardingFlowView: View {
             .transition(.opacity)
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.stage)
+        .task { await viewModel.restore(dependencies) }
+        .onChange(of: viewModel.draft) { Task { await viewModel.saveDraft(dependencies) } }
         // "직접 등록"은 여행 탭의 여행 등록 화면을 그대로 쓴다.
         .sheet(isPresented: $viewModel.showsManualRegistration) {
             NavigationStack {

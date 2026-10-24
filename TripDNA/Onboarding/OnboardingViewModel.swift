@@ -54,9 +54,20 @@ enum OnboardingFormat {
     }
 }
 
+/// 앱이 꺼져도 온보딩을 이어가기 위해 저장하는 진행 상태. 사진 후보와 사진 id는 담지 않는다.
+nonisolated struct OnboardingDraft: Codable, Equatable, Sendable {
+    var stage: String
+    var entryMode: String?
+    var homeCountryCode: String?
+    var recordedTripIDs: [String]
+    var conceptQueue: [String]
+    var conceptIndex: Int
+    var tiers: WantedConceptTiers
+}
+
 @Observable
 final class OnboardingViewModel {
-    enum Stage: Equatable {
+    enum Stage: String, Equatable {
         case hook
         case homeCountry
         case entryModeSelection
@@ -70,7 +81,7 @@ final class OnboardingViewModel {
         case summary
     }
 
-    enum EntryMode {
+    enum EntryMode: String {
         case photoScan
         case manual
         case preferencesOnly
@@ -130,6 +141,47 @@ final class OnboardingViewModel {
     }
 
     var hasTierAnswers: Bool { !tiers.isEmpty }
+
+    // MARK: 진행 상태 저장·복원
+
+    /// 복원이 끝나기 전에는 저장하지 않아 저장된 진행 상태를 덮어쓰지 않는다.
+    private(set) var isRestored = false
+
+    var draft: OnboardingDraft {
+        OnboardingDraft(
+            stage: stage.rawValue, entryMode: entryMode?.rawValue, homeCountryCode: homeCountryCode,
+            recordedTripIDs: recordedTrips.map(\.id), conceptQueue: conceptQueue,
+            conceptIndex: conceptIndex, tiers: tiers
+        )
+    }
+
+    func saveDraft(_ dependencies: AppDependencies) async {
+        guard isRestored else { return }
+        try? await dependencies.store.saveOnboardingDraft(draft)
+    }
+
+    /// 저장된 진행 상태로 돌아간다. 사진 후보는 저장하지 않으므로 후보 검토 중이었다면
+    /// 입력 경로 선택으로 돌아가고, 사진 권한은 자동으로 다시 요청하지 않는다.
+    func restore(_ dependencies: AppDependencies) async {
+        defer { isRestored = true }
+        guard !isRestored, stage == .hook,
+              let saved = try? await dependencies.store.loadOnboardingDraft(),
+              let savedStage = Stage(rawValue: saved.stage) else { return }
+        var trips: [OnboardingTripSummary] = []
+        for id in saved.recordedTripIDs {
+            if let trip = try? await dependencies.store.trip(id: id) { trips.append(Self.summary(of: trip)) }
+        }
+        recordedTrips = trips
+        homeCountryCode = saved.homeCountryCode
+        entryMode = saved.entryMode.flatMap(EntryMode.init(rawValue:))
+        conceptQueue = saved.conceptQueue
+        conceptIndex = saved.conceptIndex
+        tiers = saved.tiers
+        switch savedStage {
+        case .photoPriming, .photoScanning, .noCandidates, .candidates: stage = .entryModeSelection
+        default: stage = savedStage
+        }
+    }
 
     // MARK: 스테이지 전환
 
@@ -351,7 +403,10 @@ final class OnboardingViewModel {
     func finish(dependencies: AppDependencies, session: SessionStore, router: AppRouter, openRecommendation: Bool) {
         router.selectedTab = openRecommendation ? .recommendation : .home
         session.onboardingPhase = .completed
-        Task { await dependencies.markOnboardingCompleted() }
+        Task {
+            try? await dependencies.store.saveOnboardingDraft(nil)
+            await dependencies.markOnboardingCompleted()
+        }
     }
 
     private static func summary(of trip: Trip) -> OnboardingTripSummary {

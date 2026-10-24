@@ -273,7 +273,7 @@ final class OnboardingViewModel {
                     endDate: candidate.endDate
                 )
                 let trip = try await dependencies.tripService.createTrip(
-                    legs: [leg], companion: .alone, purpose: .leisure, now: candidate.startDate
+                    legs: [leg], companion: .unknown, purpose: .leisure, now: candidate.startDate
                 )
                 recordedTrips.append(Self.summary(of: trip))
             }

@@ -32,6 +32,27 @@ struct TripLegDraft: Identifiable {
     }
 }
 
+/// ⓪ 어떤 여행을 남길까요. 등록 뒤 여행의 진행 상태와 기본 날짜를 정한다.
+enum Scenario: Equatable {
+    case planned, current, past
+
+    var titleKo: String {
+        switch self {
+        case .planned: "갈 예정인 여행"
+        case .current: "지금 여행 중"
+        case .past: "다녀온 여행"
+        }
+    }
+
+    var subtitleKo: String {
+        switch self {
+        case .planned: "정해진 만큼만 적어도 돼요"
+        case .current: "오늘부터 기록을 시작해요"
+        case .past: "다녀온 여행을 직접 등록해요"
+        }
+    }
+}
+
 @Observable
 final class TripRegistrationViewModel {
     /// UI-6C-5: 첫 예정·현재 여행 등록 성공 시 1회만 노출하는 알림 프라이밍.
@@ -40,7 +61,9 @@ final class TripRegistrationViewModel {
     /// `nil`이면 신규 등록, 값이 있으면 해당 여행 수정.
     let editingTripID: String?
     var legs: [TripLegDraft]
-    var companion: Companion = .alone
+    /// 새 등록에서 고르는 여행 시점. 수정할 때는 nil이다.
+    var scenario: Scenario?
+    var companion: Companion = .unknown
     var purpose: TripPurpose = .leisure
     var primaryConcept: TripConcept?
     var secondaryConcepts: [TripConcept] = []
@@ -49,6 +72,7 @@ final class TripRegistrationViewModel {
     var duplicateWarning = false
     var didSave = false
     var showNotificationPriming = false
+    var primingPlaceTitle = ""
 
     var isEditing: Bool { editingTripID != nil }
 
@@ -77,9 +101,70 @@ final class TripRegistrationViewModel {
         secondaryConcepts = trip.concepts?.secondary ?? []
     }
 
+    /// 필수는 여행 시점(새 등록)과 나라 하나다. 컨셉·동행은 비워 둘 수 있다.
     var canSubmit: Bool {
-        !legs.isEmpty && legs.allSatisfy(\.isComplete)
-            && (purpose == .obligation || primaryConcept != nil)
+        !legs.isEmpty && legs.allSatisfy(\.isComplete) && (isEditing || scenario != nil)
+    }
+
+    /// 시점을 고르면 그에 맞는 기본 날짜로 구간을 다시 놓는다. 날짜는 ④에서 고칠 수 있다.
+    func select(_ scenario: Scenario) {
+        self.scenario = scenario
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let offset: Int
+        switch scenario {
+        case .planned: offset = 30
+        case .current: offset = 0
+        case .past: offset = -10
+        }
+        var cursor = calendar.date(byAdding: .day, value: offset, to: today) ?? today
+        for index in legs.indices {
+            let span = max(0, nights(of: legs[index]))
+            legs[index].startDate = cursor
+            legs[index].endDate = calendar.date(byAdding: .day, value: span, to: cursor) ?? cursor
+            cursor = legs[index].endDate
+        }
+    }
+
+    func nights(of leg: TripLegDraft) -> Int {
+        let calendar = Calendar.current
+        return calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: leg.startDate), to: calendar.startOfDay(for: leg.endDate)
+        ).day ?? 0
+    }
+
+    /// 시작일을 바꿔도 박 수는 그대로 둔다.
+    func setStart(_ date: Date, legIndex: Int) {
+        let span = max(0, nights(of: legs[legIndex]))
+        legs[legIndex].startDate = date
+        legs[legIndex].endDate = Calendar.current.date(byAdding: .day, value: span, to: date) ?? date
+    }
+
+    func setNights(_ nights: Int, legIndex: Int) {
+        let start = legs[legIndex].startDate
+        legs[legIndex].endDate = Calendar.current.date(byAdding: .day, value: max(0, nights), to: start) ?? start
+    }
+
+    /// 부 컨셉 제목. 다녀온 여행은 "함께 한 것", 아니면 "함께 하고 싶은 것".
+    var secondaryTitle: String {
+        (scenario == .past || (scenario == nil && isPastTrip)) ? "함께 한 것" : "함께 하고 싶은 것"
+    }
+
+    var conceptSummary: String? {
+        primaryConcept.map { ([$0] + secondaryConcepts).joinedLabelKo() }
+    }
+
+    /// "11월 14일 – 17일 · 3박 4일". 구간이 여럿이면 첫 구간만 보여준다.
+    var whenSummary: String? {
+        guard let leg = legs.first else { return nil }
+        let calendar = Calendar.current
+        let start = calendar.dateComponents([.month, .day], from: leg.startDate)
+        let end = calendar.dateComponents([.month, .day], from: leg.endDate)
+        let span = nights(of: leg)
+        let range = span == 0
+            ? "\(start.month ?? 0)월 \(start.day ?? 0)일"
+            : "\(start.month ?? 0)월 \(start.day ?? 0)일 – \(end.month ?? 0)월 \(end.day ?? 0)일"
+        return span == 0 ? range : "\(range) · \(span)박 \(span + 1)일"
     }
 
     /// 의무 여행은 컨셉 없이 방문만 남긴다.
@@ -108,10 +193,7 @@ final class TripRegistrationViewModel {
         return lastEnd < Calendar.current.startOfDay(for: Date())
     }
 
-    var primaryCTATitle: String {
-        if isEditing { return "변경 저장" }
-        return isPastTrip ? "과거 여행 저장" : "여행 등록"
-    }
+    var primaryCTATitle: String { isEditing ? "변경 저장" : "여행 등록" }
 
     func addLeg() {
         var newLeg = TripLegDraft()
@@ -179,7 +261,18 @@ final class TripRegistrationViewModel {
                 purpose: purpose,
                 concepts: builtConcepts
             )
-            try? await EvaluationNotificationService.scheduleIfEnabled(for: created)
+            // 시점에 맞춰 진행 상태를 정한다. 다녀온 여행은 평가를 기다리는 여행이 된다.
+            var stored = created
+            switch scenario {
+            case .current:
+                stored = try await dependencies.tripService.startTrip(id: created.id, at: builtLegs[0].startDate)
+            case .past:
+                stored = try await dependencies.tripService.endTrip(id: created.id, at: builtLegs[builtLegs.count - 1].endDate)
+            case .planned, nil:
+                break
+            }
+            primingPlaceTitle = stored.placeTitleKo
+            try? await EvaluationNotificationService.scheduleIfEnabled(for: stored)
             if shouldShowNotificationPriming {
                 UserDefaults.standard.set(true, forKey: Self.notificationPrimingShownKey)
                 showNotificationPriming = true
@@ -195,61 +288,70 @@ final class TripRegistrationViewModel {
     }
 
     private var shouldShowNotificationPriming: Bool {
-        !isEditing && !isPastTrip && !UserDefaults.standard.bool(forKey: Self.notificationPrimingShownKey)
+        !isEditing && scenario != .past && !isPastTrip && !UserDefaults.standard.bool(forKey: Self.notificationPrimingShownKey)
     }
 }
 
-/// UI-6C: 구간(다국가)·동행·성격을 입력하는 여행 등록·수정 폼.
+/// 여행 등록·수정: 단계 카드로 하나씩 연다. 필수는 여행 시점(새 등록)과 나라 하나뿐이다.
 struct TripRegistrationView: View {
     var onSaved: (() -> Void)?
     @Environment(AppDependencies.self) private var dependencies
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var viewModel: TripRegistrationViewModel
     @State private var countryPickerTarget: CountryPickerTarget?
+    @State private var openStep: Step?
+
+    private enum Step: Hashable {
+        case scenario, kind, where_, concept, companion, when
+    }
 
     init(prefilledCountryCode: String?, onCreated: (() -> Void)? = nil) {
         self.onSaved = onCreated
         _viewModel = State(initialValue: TripRegistrationViewModel(prefilledCountryCode: prefilledCountryCode))
+        _openStep = State(initialValue: .scenario)
     }
 
     init(editing trip: Trip, onSaved: (() -> Void)? = nil) {
         self.onSaved = onSaved
         _viewModel = State(initialValue: TripRegistrationViewModel(editing: trip))
+        _openStep = State(initialValue: .where_)
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DNASpacing.xl) {
-                introduction
-                legsSection
-                companionSection
-                purposeSection
-                if viewModel.purpose == .leisure {
-                    conceptSection
+            VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                if !viewModel.isEditing {
+                    card(.scenario, "⓪", "어떤 여행을 남길까요?", viewModel.scenario?.titleKo, scenarioBody)
                 }
+                card(.kind, "①", "어떤 여행", kindSummary, kindBody)
+                card(.where_, "②", "어디로", whereSummary, whereBody)
+                if viewModel.purpose == .leisure {
+                    card(.concept, "③", "여행 컨셉", viewModel.conceptSummary, conceptBody)
+                } else {
+                    Text("출장은 여행 컨셉 없이 방문 기록만 남겨요. 내 여행 지문에는 세지 않아요.")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                        .padding(DNASpacing.md)
+                }
+                card(.companion, "", "누구와 · 선택", viewModel.companion == .unknown ? nil : viewModel.companion.labelKo, companionBody)
+                card(.when, "④", "언제 · 얼마나", viewModel.whenSummary, whenBody)
                 if let message = viewModel.errorMessage {
                     Text(message)
-                        .font(.caption)
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaError)
                 }
             }
-            .padding(.horizontal, DNASpacing.lg)
+            .padding(.horizontal, DNASpacing.gutter)
             .padding(.vertical, DNASpacing.md)
         }
-        .safeAreaInset(edge: .bottom, spacing: DNASpacing.md) {
-            VStack(spacing: DNASpacing.sm) {
-                Text(viewModel.canSubmit ? "여행지와 일정을 확인한 뒤 저장해주세요."
-                     : viewModel.legs.allSatisfy(\.isComplete) ? "무엇을 하러 가는지 골라주세요."
-                     : "여행지를 선택하고 일정을 확인해주세요.")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                    .multilineTextAlignment(.center)
+        .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            DNABottomCTA {
                 Button {
                     Task { await viewModel.submit(dependencies) }
                 } label: {
                     if viewModel.isSubmitting {
-                        ProgressView().tint(Color.dnaCanvas)
+                        ProgressView().tint(.white)
                     } else {
                         Text(viewModel.primaryCTATitle)
                     }
@@ -257,28 +359,8 @@ struct TripRegistrationView: View {
                 .buttonStyle(.dnaPrimary(isDisabled: !viewModel.canSubmit || viewModel.isSubmitting))
                 .disabled(!viewModel.canSubmit || viewModel.isSubmitting)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, DNASpacing.lg)
-            .padding(.vertical, DNASpacing.md)
-            .background {
-                ZStack {
-                    if reduceTransparency {
-                        Color.dnaCanvas
-                    } else {
-                        Rectangle().fill(.regularMaterial)
-                        Color.dnaCanvas.opacity(0.72)
-                    }
-                }
-                .ignoresSafeArea(edges: .bottom)
-            }
-            .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(Color.dnaDivider)
-                    .frame(height: 0.5)
-                    .allowsHitTesting(false)
-            }
         }
-        .dnaBackground()
+        .background(Color.dnaSheet)
         .tint(Color.dnaTextPrimary)
         .disabled(viewModel.isSubmitting)
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -307,7 +389,7 @@ struct TripRegistrationView: View {
         .sheet(isPresented: $viewModel.showNotificationPriming, onDismiss: {
             viewModel.didSave = true
         }) {
-            NotificationPrimingSheet(trips: dependencies.store) {
+            NotificationPrimingSheet(trips: dependencies.store, placeTitle: viewModel.primingPlaceTitle) {
                 viewModel.showNotificationPriming = false
             }
             .presentationDetents([.medium])
@@ -333,22 +415,118 @@ struct TripRegistrationView: View {
         }
     }
 
-    private var introduction: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            Text(viewModel.isEditing ? "여행의 기록을\n다듬어볼까요?" : "다음 여행도,\n지난 여행도 한곳에.")
-                .font(.largeTitle.weight(.regular))
-                .foregroundStyle(Color.dnaTextPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text("여행지와 일정, 함께한 사람을 남겨주세요.")
-                .font(.subheadline)
-                .foregroundStyle(Color.dnaTextSecondary)
+    // MARK: - 카드 틀
+
+    private func card<Body: View>(
+        _ step: Step, _ number: String, _ title: String, _ summary: String?, _ body: Body
+    ) -> some View {
+        let isOpen = openStep == step
+        return VStack(alignment: .leading, spacing: DNASpacing.md) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { openStep = isOpen ? nil : step }
+            } label: {
+                HStack(spacing: DNASpacing.xs) {
+                    if !number.isEmpty {
+                        Text(number)
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextTertiary)
+                    }
+                    Text(title)
+                        .dnaFont(.cardTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    Spacer(minLength: DNASpacing.xs)
+                    if !isOpen {
+                        Text(summary ?? "미정")
+                            .dnaFont(.caption)
+                            .foregroundStyle(summary == nil ? Color.dnaTextTertiary : Color.dnaTextSecondary)
+                            .lineLimit(1)
+                    }
+                    Image(systemName: isOpen ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.dnaTextTertiary)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isHeader)
+
+            if isOpen { body }
         }
-        .padding(.top, DNASpacing.sm)
+        .padding(.horizontal, DNASpacing.md)
+        .padding(.vertical, DNASpacing.xxs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 
-    private var legsSection: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.md) {
-            sectionHeading("여행지와 일정", subtitle: "여러 나라를 방문한다면 순서대로 추가해주세요.")
+    private func optionRow(_ title: String, _ subtitle: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .dnaFont(.cardTitle)
+                    Text(subtitle)
+                        .dnaFont(.caption)
+                        .opacity(0.75)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(isSelected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
+            .padding(DNASpacing.md)
+            .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+            .background(
+                isSelected ? Color.dnaSelectedBackground : Color.dnaSurface1,
+                in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - ⓪ 어떤 여행을 남길까요
+
+    private var scenarioBody: some View {
+        VStack(spacing: DNASpacing.xs) {
+            ForEach([Scenario.planned, .current, .past], id: \.self) { scenario in
+                optionRow(scenario.titleKo, scenario.subtitleKo, isSelected: viewModel.scenario == scenario) {
+                    viewModel.select(scenario)
+                    withAnimation { openStep = .kind }
+                }
+            }
+        }
+        .padding(.bottom, DNASpacing.sm)
+    }
+
+    // MARK: - ① 어떤 여행
+
+    private var kindSummary: String {
+        viewModel.purpose == .leisure ? "여가 여행" : "출장 · 가족 방문"
+    }
+
+    private var kindBody: some View {
+        VStack(spacing: DNASpacing.xs) {
+            optionRow("여가 여행", "컨셉을 붙여 지문에 쌓여요", isSelected: viewModel.purpose == .leisure) {
+                viewModel.purpose = .leisure
+                withAnimation { openStep = .where_ }
+            }
+            optionRow("출장 · 가족 방문", "방문 기록만 남겨요", isSelected: viewModel.purpose == .obligation) {
+                viewModel.purpose = .obligation
+                withAnimation { openStep = .where_ }
+            }
+        }
+        .padding(.bottom, DNASpacing.sm)
+    }
+
+    // MARK: - ② 어디로
+
+    private var whereSummary: String? {
+        guard let first = viewModel.legs.first, first.countryCode.count == 2 else { return nil }
+        let name = first.cities.first ?? countryDisplayName(first.countryCode)
+        return viewModel.legs.count > 1 ? "\(name) 외 \(viewModel.legs.count - 1)곳" : name
+    }
+
+    private var whereBody: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
             ForEach(Array(viewModel.legs.enumerated()), id: \.element.id) { index, leg in
                 legCard(leg: leg, index: index)
             }
@@ -356,36 +534,41 @@ struct TripRegistrationView: View {
                 viewModel.addLeg()
             } label: {
                 Label("다음 여행지 추가", systemImage: "plus")
-                    .font(.subheadline.weight(.medium))
+                    .dnaFont(.button)
                     .foregroundStyle(Color.dnaTextSecondary)
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-        }
-    }
-
-    private func sectionHeading(_ title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(Color.dnaTextPrimary)
-            Text(subtitle)
-                .font(.caption)
+            Text("목록에 없는 도시도 적을 수 있어요.")
+                .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
+                .padding(.bottom, DNASpacing.sm)
         }
     }
 
     private func legCard(leg: TripLegDraft, index: Int) -> some View {
-        VStack(alignment: .leading, spacing: DNASpacing.md) {
+        VStack(alignment: .leading, spacing: DNASpacing.xs) {
             HStack {
-                Text(String(format: "%02d", index + 1))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(Color.dnaTextSecondary)
-                Text("여행지")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                Spacer()
+                Text("\(index + 1)")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextTertiary)
+                Button {
+                    countryPickerTarget = CountryPickerTarget(legID: leg.id)
+                } label: {
+                    HStack {
+                        Text(leg.countryCode.isEmpty ? "나라 선택 · 필수" : countryDisplayName(leg.countryCode))
+                            .dnaFont(.cardTitle)
+                            .foregroundStyle(leg.countryCode.isEmpty ? Color.dnaTextSecondary : Color.dnaTextPrimary)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.dnaTextTertiary)
+                    }
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                 if viewModel.legs.count > 1 {
                     Button {
                         viewModel.removeLeg(id: leg.id)
@@ -400,74 +583,23 @@ struct TripRegistrationView: View {
                     .accessibilityLabel("여행지 \(index + 1) 삭제")
                 }
             }
-
-            Button {
-                countryPickerTarget = CountryPickerTarget(legID: leg.id)
-            } label: {
-                HStack(spacing: DNASpacing.sm) {
-                    Image(systemName: "globe.asia.australia")
-                        .font(.title2.weight(.light))
-                        .frame(width: 44, height: 44)
-                        .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: 14))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(leg.countryCode.isEmpty ? "어디로 떠나나요?" : countryDisplayName(leg.countryCode))
-                            .font(.title3.weight(.medium))
-                        Text(leg.countryCode.isEmpty ? "국가 선택 · 필수" : "여행지 변경")
-                            .font(.caption)
-                            .foregroundStyle(Color.dnaTextSecondary)
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-                .foregroundStyle(Color.dnaTextPrimary)
-                .frame(minHeight: 56)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            Rectangle().fill(Color.dnaDivider).frame(height: 1)
-
             if let binding = legBinding(id: leg.id) {
-                VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                    TextField("도시 (예: 도쿄, 오사카)", text: binding.cityText)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                        .padding(.horizontal, DNASpacing.sm)
-                        .frame(minHeight: 48)
-                        .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: 14))
-                    Text("방문할 도시를 남겨주세요. 여러 도시는 쉼표로 구분하세요.")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-
-                VStack(spacing: DNASpacing.sm) {
-                    DatePicker("시작일", selection: binding.startDate, displayedComponents: .date)
-                    DatePicker("종료일", selection: binding.endDate, displayedComponents: .date)
-                }
-                .datePickerStyle(.compact)
-                .font(.subheadline)
-                .foregroundStyle(Color.dnaTextSecondary)
-            }
-
-            if leg.hasDateError {
-                Label("종료일은 시작일 이후여야 해요.", systemImage: "exclamationmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaError)
+                TextField("도시 (예: 교토, 오사카)", text: binding.cityText)
+                    .dnaFont(.body)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .padding(.horizontal, DNASpacing.sm)
+                    .frame(minHeight: 48)
+                    .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
             if !leg.countryCode.isEmpty, CountryCatalog.profiles[leg.countryCode.uppercased()] == nil {
                 Text("이 나라의 추천 분석은 준비 중이에요. 등록은 그대로 할 수 있어요.")
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
         }
-        .padding(DNASpacing.md)
-        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card))
-        .overlay {
-            RoundedRectangle(cornerRadius: DNARadius.card)
-                .strokeBorder(leg.hasDateError ? Color.dnaError.opacity(0.5) : Color.dnaDivider, lineWidth: 1)
-        }
+        .padding(DNASpacing.sm)
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
     }
 
     private func legBinding(id: TripLegDraft.ID) -> Binding<TripLegDraft>? {
@@ -481,105 +613,80 @@ struct TripRegistrationView: View {
         )
     }
 
-    private var companionSection: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.md) {
-            sectionHeading("누구와 함께하나요?", subtitle: "함께한 사람에 따라 여행의 모습도 달라지죠.")
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DNASpacing.sm) {
-                ForEach(Companion.allCases, id: \.self) { companion in
-                    selectionButton(
-                        companion.labelKo,
-                        icon: companionIcon(companion),
-                        isSelected: viewModel.companion == companion
-                    ) {
-                        viewModel.companion = companion
-                    }
-                }
-            }
-        }
+    // MARK: - ③ 여행 컨셉
+
+    private var conceptBody: some View {
+        TripConceptPicker(
+            primary: viewModel.primaryConcept,
+            secondary: viewModel.secondaryConcepts,
+            secondaryTitle: viewModel.secondaryTitle,
+            onPrimary: { viewModel.selectPrimary($0) },
+            onSecondary: { viewModel.toggleSecondary($0) }
+        )
+        .padding(.bottom, DNASpacing.sm)
     }
 
-    private var purposeSection: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.md) {
-            sectionHeading("어떤 여행인가요?", subtitle: "여행의 목적에 맞게 취향을 반영할게요.")
-            VStack(spacing: DNASpacing.sm) {
-                selectionButton("휴가 · 여행", icon: "sun.max", isSelected: viewModel.purpose == .leisure) {
-                    viewModel.purpose = .leisure
-                }
-                selectionButton("출장 · 가족 방문", icon: "briefcase", isSelected: viewModel.purpose == .obligation) {
-                    viewModel.purpose = .obligation
-                }
-            }
-            if viewModel.purpose == .obligation {
-                Text("가야 해서 간 여행은 컨셉 없이 방문 기록만 남겨요.")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            }
-        }
-    }
+    // MARK: - 누구와
 
-    private var conceptSection: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.md) {
-            sectionHeading("무엇을 하러 가나요?", subtitle: "가장 큰 목적 하나를 골라주세요.")
-            DNAFlowLayout(spacing: 8) {
-                ForEach(TripConcept.allCases, id: \.self) { concept in
-                    DNATagChip(title: concept.labelKo, isSelected: viewModel.primaryConcept == concept) {
-                        viewModel.selectPrimary(concept)
-                    }
-                }
-            }
-            if let primary = viewModel.primaryConcept {
-                Text("함께 즐긴 것 (최대 2개, 선택)")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.dnaTextSecondary)
-                DNAFlowLayout(spacing: 8) {
-                    ForEach(TripConcept.allCases.filter { $0 != primary }, id: \.self) { concept in
-                        let selected = viewModel.secondaryConcepts.contains(concept)
-                        let locked = !selected && viewModel.secondaryConcepts.count >= 2
-                        DNATagChip(title: concept.labelKo, isSelected: selected) {
-                            viewModel.toggleSecondary(concept)
+    private var companionBody: some View {
+        let options: [Companion] = [.alone, .friends, .couple, .family, .colleagues]
+        return VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DNASpacing.xs) {
+                    ForEach(options, id: \.self) { companion in
+                        DNATagChip(title: companion.labelKo, isSelected: viewModel.companion == companion) {
+                            // 같은 항목을 다시 누르면 입력하지 않은 상태로 돌아간다.
+                            viewModel.companion = viewModel.companion == companion ? .unknown : companion
                         }
-                        .disabled(locked)
-                        .opacity(locked ? 0.35 : 1)
                     }
                 }
             }
+            Text("비워 두면 동행은 기록하지 않아요.")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .padding(.bottom, DNASpacing.sm)
         }
     }
 
-    private func selectionButton(_ title: String, icon: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.body)
-                    .accessibilityHidden(true)
-                Text(title)
-                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.subheadline)
-                    .foregroundStyle(isSelected ? Color.dnaTextPrimary : Color.dnaTextTertiary)
-                    .accessibilityHidden(true)
-            }
-            .foregroundStyle(isSelected ? Color.dnaTextPrimary : Color.dnaTextSecondary)
-            .padding(DNASpacing.md)
-            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-            .background(isSelected ? Color.dnaElevated : Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control))
-            .overlay {
-                RoundedRectangle(cornerRadius: DNARadius.control)
-                    .strokeBorder(isSelected ? Color.dnaTextSecondary.opacity(0.5) : Color.dnaDivider, lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
+    // MARK: - ④ 언제 · 얼마나
 
-    private func companionIcon(_ companion: Companion) -> String {
-        switch companion {
-        case .alone: "person"
-        case .couple: "person.2"
-        case .family: "house"
-        case .friends: "person.3"
+    private var whenBody: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            ForEach(Array(viewModel.legs.enumerated()), id: \.element.id) { index, leg in
+                VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                    if viewModel.legs.count > 1 {
+                        Text("여행지 \(index + 1)")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
+                    DatePicker(
+                        "시작일",
+                        selection: Binding(
+                            get: { leg.startDate },
+                            set: { viewModel.setStart($0, legIndex: index) }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .dnaFont(.body)
+                    Stepper(
+                        value: Binding(
+                            get: { viewModel.nights(of: leg) },
+                            set: { viewModel.setNights($0, legIndex: index) }
+                        ),
+                        in: 0...60
+                    ) {
+                        let nights = viewModel.nights(of: leg)
+                        Text(nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일")
+                            .dnaFont(.body)
+                    }
+                }
+                .padding(DNASpacing.sm)
+                .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+            }
+            Text("날짜는 나중에 여행 정보 수정에서 바꿀 수 있어요.")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .padding(.bottom, DNASpacing.sm)
         }
     }
 
@@ -621,62 +728,61 @@ private struct CountryPickerSheet: View {
     }
 }
 
-/// 첫 예정·현재 여행 등록 직후 알림 권한을 요청한다.
+/// 첫 예정·현재 여행 등록 직후, 무엇을 알려주는지 설명하고 고른 경우에만 알림 권한을 요청한다.
 private struct NotificationPrimingSheet: View {
     let trips: any AppStore
+    let placeTitle: String
     let onClose: () -> Void
     @State private var isRequesting = false
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            ZStack {
-                Circle()
-                    .fill(Color.dnaSurface2)
-                    .frame(width: 88, height: 88)
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 40))
+        VStack(alignment: .leading, spacing: DNASpacing.md) {
+            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                Text("\(placeTitle) 여행을 등록했어요")
+                    .dnaFont(.heroTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-            }
-            VStack(spacing: DNASpacing.xs) {
-                Text("여행이 끝나면\n30초 평가를 알려드릴게요")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                Text("평가할수록 다음 추천이 더 정확해져요.")
-                    .font(.subheadline)
+                Text("여행 중과 여행이 끝난 뒤에 알려드릴까요?")
+                    .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
-            .padding(.horizontal, DNASpacing.lg)
+            VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                Label("여행 중 하루 한 장 남기기", systemImage: "camera")
+                Label("여행이 끝나면 평가 요청", systemImage: "star")
+            }
+            .dnaFont(.body)
+            .foregroundStyle(Color.dnaTextPrimary)
+            .padding(DNASpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             Spacer(minLength: 0)
-            DNABottomCTA {
-                if let errorMessage {
-                    Text(errorMessage).font(.footnote).foregroundStyle(Color.dnaAction)
-                }
-                Button("알림 받기") {
-                    Task {
-                        isRequesting = true
-                        defer { isRequesting = false }
-                        do {
-                            let all = try await trips.trips()
-                            if try await EvaluationNotificationService.enable(for: all) {
-                                onClose()
-                            } else {
-                                errorMessage = "알림을 사용하려면 설정에서 허용해 주세요."
-                            }
-                        } catch {
-                            errorMessage = "알림을 예약하지 못했어요. 다시 시도해 주세요."
+            if let errorMessage {
+                Text(errorMessage).dnaFont(.caption).foregroundStyle(Color.dnaError)
+            }
+            Button("알림 받기") {
+                Task {
+                    isRequesting = true
+                    defer { isRequesting = false }
+                    do {
+                        let all = try await trips.trips()
+                        if try await EvaluationNotificationService.enable(for: all) {
+                            onClose()
+                        } else {
+                            errorMessage = "알림을 사용하려면 설정에서 허용해 주세요."
                         }
+                    } catch {
+                        errorMessage = "알림을 예약하지 못했어요. 다시 시도해 주세요."
                     }
                 }
-                    .buttonStyle(.dnaPrimary)
-                    .disabled(isRequesting)
-                Button("나중에") { onClose() }
-                    .buttonStyle(.dnaGhost)
             }
+            .buttonStyle(.dnaPrimary)
+            .disabled(isRequesting)
+            Button("나중에") { onClose() }
+                .buttonStyle(.dnaGhost)
+                .frame(maxWidth: .infinity)
         }
-        .background(AppCanvas())
+        .padding(DNASpacing.gutter)
+        .background(Color.dnaSheet)
         .interactiveDismissDisabled()
     }
 }

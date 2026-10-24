@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// UI-6F~6H: 상태별 히어로 카드와 하루 한 장 타임라인을 담은 여행 상세.
+/// 여행 상세. 지난 여행은 대표 사진·도시별 평가·하루 한 장·일정을, 여행 중은 오늘의 한 장을 앞세운다.
 struct TripDetailView: View {
     let tripID: String
     @Environment(AppDependencies.self) private var dependencies
@@ -15,10 +15,10 @@ struct TripDetailView: View {
     @State private var confirmingTripDeletion = false
     @State private var confirmingEvaluationDeletion = false
     @State private var deletionError: String?
-    @State private var photoPageDay = 1
     @State private var photoDayEdit: PhotoDayEdit?
-
-    private let satisfactionEmojis = ["😞", "😕", "😐", "😊", "🤩"]
+    @State private var showingConceptEdit = false
+    @State private var editPrimary: TripConcept?
+    @State private var editSecondary: [TripConcept] = []
 
     private struct PhotoDayEdit: Identifiable, Hashable {
         let dayIndex: Int
@@ -45,27 +45,26 @@ struct TripDetailView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            if viewModel.trip != nil {
+            if let trip = viewModel.trip {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("수정") { showingEdit = true }
-                        .tint(Color.dnaData)
+                    if isPast(trip) {
+                        Button { showingShare = true } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel("공유")
+                        .accessibilityIdentifier("trip.sharePreview")
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        if let trip = viewModel.trip,
-                           trip.status == .evaluated || trip.status == .skippedEvaluation {
-                            Button("평가 고치기") {
-                                showingEvaluation = true
-                            }
-                            Button("평가 삭제", role: .destructive) {
-                                confirmingEvaluationDeletion = true
-                            }
+                        Button("여행 정보 수정") { showingEdit = true }
+                        if trip.status == .evaluated || trip.status == .skippedEvaluation {
+                            Button("평가 고치기") { showingEvaluation = true }
+                            Button("평가 삭제", role: .destructive) { confirmingEvaluationDeletion = true }
                         }
-                        Button("여행 삭제", role: .destructive) {
-                            confirmingTripDeletion = true
-                        }
+                        Button("여행 삭제", role: .destructive) { confirmingTripDeletion = true }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "ellipsis")
                     }
                     .accessibilityLabel("여행 관리")
                 }
@@ -73,17 +72,16 @@ struct TripDetailView: View {
         }
         .onAppear {
             // 첫 진입과 DailyPhotoView 등에서 돌아온 경우 모두 여기서 읽는다.
-            Task {
-                await viewModel.load(tripID: tripID, dependencies: dependencies)
-                syncPhotoPageSelection()
-            }
+            Task { await viewModel.load(tripID: tripID, dependencies: dependencies) }
         }
         .sheet(isPresented: $showingCoverPicker) {
-            coverPickerSheet
+            CoverPhotoPickerSheet(photos: viewModel.photos) { path in
+                Task { await viewModel.setCoverPhoto(path, dependencies: dependencies) }
+            }
         }
         .sheet(isPresented: $showingShare) {
             if let trip = viewModel.trip {
-                ShareCardSheet(kind: .trip, title: "여행 공유", disclosure: "기록한 만족도, 내 여행 랭킹과 긍정 태그가 포함돼요.", allowsDestinationNames: true) { showsDestinationNames in
+                ShareCardSheet(kind: .trip, title: "여행 공유", disclosure: "기록한 별점과 내 여행 랭킹이 포함돼요.", allowsDestinationNames: true) { showsDestinationNames in
                     TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: showsDestinationNames)
                 }
             }
@@ -92,20 +90,20 @@ struct TripDetailView: View {
             if let trip = viewModel.trip {
                 NavigationStack {
                     TripRegistrationView(editing: trip) {
-                        Task {
-                            await viewModel.load(tripID: tripID, dependencies: dependencies)
-                            syncPhotoPageSelection()
-                        }
+                        Task { await viewModel.load(tripID: tripID, dependencies: dependencies) }
                     }
                 }
-                .preferredColorScheme(.dark)
             }
         }
+        .sheet(isPresented: $showingConceptEdit, onDismiss: saveEditedConcepts) {
+            TripConceptEditSheet(
+                primary: $editPrimary,
+                secondary: $editSecondary,
+                secondaryTitle: viewModel.trip.map(isPast) == false ? "함께 하고 싶은 것" : "함께 한 것"
+            )
+        }
         .fullScreenCover(isPresented: $showingEvaluation, onDismiss: {
-            Task {
-                await viewModel.load(tripID: tripID, dependencies: dependencies)
-                syncPhotoPageSelection()
-            }
+            Task { await viewModel.load(tripID: tripID, dependencies: dependencies) }
         }) {
             EvaluationView(tripID: tripID)
         }
@@ -114,13 +112,13 @@ struct TripDetailView: View {
                 DailyPhotoView(trip: trip, dayIndex: edit.dayIndex)
             }
         }
-        .confirmationDialog("여행을 종료할까요?", isPresented: $confirmingEnd, titleVisibility: .visible) {
-            Button("여행 종료", role: .destructive) {
+        .confirmationDialog("여행을 끝낼까요?", isPresented: $confirmingEnd, titleVisibility: .visible) {
+            Button("여행 끝내기", role: .destructive) {
                 Task { await viewModel.end(dependencies: dependencies) }
             }
             Button("계속 여행하기", role: .cancel) {}
         } message: {
-            Text("종료하면 30초 평가를 시작할 수 있어요.")
+            Text("끝내면 도시별 평가를 남길 수 있어요.")
         }
         .confirmationDialog("이 여행을 삭제할까요?", isPresented: $confirmingTripDeletion, titleVisibility: .visible) {
             Button("여행과 사진 삭제", role: .destructive) {
@@ -156,220 +154,355 @@ struct TripDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private func content(for trip: Trip) -> some View {
-        let showPhotoPager = trip.status != .planned && viewModel.totalDays > 0
-        let hasTripPhotos = photoPageItems.contains { $0.storagePath != nil }
+    private func isPast(_ trip: Trip) -> Bool {
+        switch trip.status {
+        case .ended, .evaluated, .skippedEvaluation: true
+        case .planned, .active: false
+        }
+    }
 
+    // MARK: - 본문
+
+    private func content(for trip: Trip) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if showPhotoPager {
-                    TripPhotoPager(
-                        items: photoPageItems,
-                        selection: $photoPageDay,
-                        prefersCompact: !hasTripPhotos,
-                        usesPortraitHero: hasTripPhotos,
-                        emptyDayMessage: "이 날은 아직 사진이 없어요",
-                        usesScrollHeroEffect: true,
-                        onEditDay: { day in
-                            photoDayEdit = PhotoDayEdit(dayIndex: day)
-                        },
-                        canEditDay: { day in
-                            canEditPhoto(day: day, trip: trip)
-                        }
-                    )
-                    .padding(.bottom, DNASpacing.sm)
+                if trip.status != .planned {
+                    hero(trip)
                 }
-
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                    heroSection(trip)
+                    header(trip)
+                    switch trip.status {
+                    case .planned:
+                        plannedActions(trip)
+                    case .active:
+                        activeActions
+                    case .ended, .evaluated, .skippedEvaluation:
+                        conceptRow(trip)
+                        if let rank = trip.rankPosition { rankRow(rank) }
+                        cityReviewsSection(trip)
+                    }
+                    if trip.status != .planned {
+                        dailyPhotosSection(trip)
+                    }
                     legsSection(trip)
                     if trip.status == .planned && dependencies.affiliateActivitiesEnabled {
                         activitiesSection(trip)
                     }
-                    infoSection(trip)
+                    if trip.purpose == .obligation {
+                        Text("출장은 여행 컨셉 없이 방문 기록만 남겨요. 내 여행 지문에는 세지 않아요.")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
                 }
-                .padding(DNASpacing.lg)
+                .padding(.horizontal, DNASpacing.gutter)
+                .padding(.vertical, DNASpacing.lg)
             }
         }
-        .tripPhotoHeroScrollSpace()
-        .ignoresSafeArea(edges: showPhotoPager && hasTripPhotos ? .top : [])
-        .refreshable {
-            await viewModel.load(tripID: tripID, dependencies: dependencies)
-            syncPhotoPageSelection()
+        .ignoresSafeArea(edges: trip.status == .planned ? [] : .top)
+        .refreshable { await viewModel.load(tripID: tripID, dependencies: dependencies) }
+    }
+
+    /// 대표 사진 → 오늘/첫 하루 한 장 → 빈 자리 순서로 보여준다. 사진 위 글자는 흰색이다.
+    private func hero(_ trip: Trip) -> some View {
+        let path = trip.coverPhotoStoragePath
+            ?? viewModel.photos.sorted { $0.tripDayIndex < $1.tripDayIndex }.first?.storagePath
+        return ZStack(alignment: .bottomLeading) {
+            if let path {
+                TripPhotoImage(storagePath: path)
+            } else {
+                Color.dnaSurface2
+                Image(systemName: "photo")
+                    .font(.largeTitle)
+                    .foregroundStyle(Color.dnaTextTertiary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            if trip.status == .active {
+                LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .center, endPoint: .bottom)
+                Text("여행 중 · \(viewModel.currentDayIndex)일째 / \(viewModel.totalDays)일")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.white)
+                    .padding(DNASpacing.gutter)
+            } else {
+                Button { showingCoverPicker = true } label: {
+                    Text("사진 바꾸기")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, DNASpacing.sm)
+                        .frame(minHeight: 36)
+                        .dnaGlass(in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(DNASpacing.md)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .frame(height: 300)
+        .frame(maxWidth: .infinity)
+        .clipped()
+    }
+
+    private func header(_ trip: Trip) -> some View {
+        VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+            Text(trip.placeTitleKo)
+                .dnaFont(.screenTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text(metaLine(trip))
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
         }
     }
 
-    private var photoPageItems: [TripPhotoPageItem] {
-        (1...max(1, viewModel.totalDays)).map { day in
-            TripPhotoPageItem(
-                dayIndex: day,
-                storagePath: viewModel.photo(forDay: day)?.storagePath
+    /// "2026년 9월 3일 – 9일 · 여가 · 친구 3명". 입력하지 않은 동행은 쓰지 않는다.
+    private func metaLine(_ trip: Trip) -> String {
+        let year = trip.legs.first.map { Calendar.current.component(.year, from: $0.startDate) }
+        var parts = [year.map { "\($0)년 " + trip.shortDateRangeKo } ?? trip.shortDateRangeKo]
+        if trip.purpose == .obligation {
+            parts.append("출장")
+        } else if trip.status != .active {
+            parts.append("여가")
+        }
+        if !trip.companion.labelKo.isEmpty { parts.append(trip.companion.labelKo) }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: - 예정 · 여행 중
+
+    private func plannedActions(_ trip: Trip) -> some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            if let days = trip.daysUntilStart {
+                Text("D-\(days)")
+                    .dnaFont(.heroTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+            }
+            if trip.concepts != nil { conceptRow(trip) }
+            Text("여행이 시작되면 매일 한 장의 사진으로 하루를 남길 수 있어요.")
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
+            Button("여행 시작") {
+                Task { await viewModel.start(dependencies: dependencies) }
+            }
+            .buttonStyle(.dnaPrimary)
+            Label("여행이 끝나는 날 평가를 알려드릴게요.", systemImage: "bell")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+        }
+    }
+
+    private var activeActions: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            HStack(spacing: DNASpacing.sm) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("오늘의 한 장")
+                        .dnaFont(.sectionTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    Text(viewModel.todayPhoto == nil ? "아직 안 남겼어요" : "남겼어요")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(DNASpacing.md)
+            .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+
+            Button(viewModel.todayPhoto == nil ? "오늘의 한 장 고르기" : "오늘의 사진 바꾸기") {
+                photoDayEdit = PhotoDayEdit(dayIndex: viewModel.currentDayIndex)
+            }
+            .buttonStyle(.dnaPrimary)
+
+            Text("여행이 끝나는 날 평가를 알려드릴게요")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .frame(maxWidth: .infinity)
+
+            Button("일찍 돌아왔어요 · 여행 끝내기") { confirmingEnd = true }
+                .buttonStyle(.dnaGhost)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - 지난 여행
+
+    private func conceptRow(_ trip: Trip) -> some View {
+        HStack(spacing: DNASpacing.xs) {
+            if let concepts = trip.concepts {
+                ForEach([concepts.primary] + concepts.secondary, id: \.self) { concept in
+                    Text(concept.labelKo)
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                        .padding(.horizontal, DNASpacing.sm)
+                        .frame(minHeight: 32)
+                        .background(Color.dnaSurface1, in: Capsule())
+                }
+            }
+            if trip.purpose == .leisure {
+                Button("컨셉 고치기") {
+                    editPrimary = trip.concepts?.primary
+                    editSecondary = trip.concepts?.secondary ?? []
+                    showingConceptEdit = true
+                }
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaActionText)
+                .frame(minHeight: 44)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func saveEditedConcepts() {
+        guard let trip = viewModel.trip, trip.purpose == .leisure, let editPrimary,
+              let edited = try? TripConcepts(primary: editPrimary, secondary: editSecondary),
+              edited != trip.concepts else { return }
+        Task {
+            _ = try? await dependencies.tripService.updateTrip(
+                id: trip.id, legs: trip.legs, companion: trip.companion, purpose: trip.purpose, concepts: edited
             )
+            await viewModel.load(tripID: tripID, dependencies: dependencies)
         }
     }
 
-    private func syncPhotoPageSelection() {
-        let days = photoPageItems.map(\.dayIndex)
-        guard !days.isEmpty else { return }
-        if days.contains(viewModel.currentDayIndex) {
-            photoPageDay = viewModel.currentDayIndex
-        } else if let firstWithPhoto = photoPageItems.first(where: { $0.storagePath != nil })?.dayIndex {
-            photoPageDay = firstWithPhoto
-        } else {
-            photoPageDay = days[0]
-        }
-    }
-
-    // MARK: - 상태별 히어로
-
-    @ViewBuilder
-    private func heroSection(_ trip: Trip) -> some View {
-        switch trip.status {
-        case .planned: plannedHero(trip)
-        case .active: activeHero(trip)
-        case .ended: endedHero(trip)
-        case .evaluated, .skippedEvaluation: evaluatedHero(trip)
-        }
-    }
-
-    /// UI-6F: 예정 여행.
-    private func plannedHero(_ trip: Trip) -> some View {
-        heroCard {
-            VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                HStack {
-                    StatusPill(status: trip.status)
-                    Spacer()
-                }
-                Text(trip.dateRangeKo)
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                Text("여행이 시작되면 매일 한 장의 사진으로 하루를 남길 수 있어요.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.dnaTextSecondary)
-
-                Button {
-                    Task { await viewModel.start(dependencies: dependencies) }
-                } label: {
-                    Text("여행 시작")
-                }
-                .buttonStyle(.dnaPrimary)
-                .padding(.top, DNASpacing.xs)
-
-                Label("여행이 끝나면 30초 평가를 알려드릴게요.", systemImage: "bell")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
+    private func rankRow(_ rank: Int) -> some View {
+        NavigationLink {
+            RankingBoardView()
+        } label: {
+            HStack {
+                Text("내 랭킹 \(rank)위")
+                    .dnaFont(.cardTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.dnaTextTertiary)
             }
+            .padding(DNASpacing.md)
+            .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
         }
+        .buttonStyle(.plain)
     }
 
-    /// UI-6G: 현재 여행. N일차와 오늘의 한 장 상태를 크게 보여준다.
-    private func activeHero(_ trip: Trip) -> some View {
-        heroCard {
-            VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                HStack {
-                    StatusPill(status: trip.status)
-                    Spacer()
-                    Text(trip.dateRangeKo)
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(viewModel.currentDayIndex)일차")
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                    Text("/ \(viewModel.totalDays)일")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-
-                HStack(spacing: DNASpacing.xs) {
-                    Image(systemName: viewModel.todayPhoto == nil ? "camera" : "checkmark.circle.fill")
-                        .foregroundStyle(viewModel.todayPhoto == nil ? Color.dnaWarning : Color.dnaData)
-                    Text(viewModel.todayPhoto == nil ? "오늘의 한 장을 아직 남기지 않았어요" : "오늘의 한 장을 남겼어요")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.9))
-                    Spacer(minLength: 0)
-                    if viewModel.todayPhoto != nil {
-                        Button {
-                            photoDayEdit = PhotoDayEdit(dayIndex: viewModel.currentDayIndex)
-                        } label: {
-                            Text("사진 바꾸기")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.dnaData)
+    private func cityReviewsSection(_ trip: Trip) -> some View {
+        let saved = trip.evaluation?.cityReviews ?? []
+        return VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            Text("도시별 평가")
+                .dnaFont(.sectionTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            ForEach(Array(trip.reviewTargets.enumerated()), id: \.offset) { _, target in
+                let review = saved.first { $0.countryCode == target.countryCode && $0.city == target.city }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(target.city ?? CountryCatalog.name(for: target.countryCode))
+                            .dnaFont(.cardTitle)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                        Spacer()
+                        if let rating = review?.rating {
+                            Text("★ \(rating)")
+                                .dnaFont(.cardTitle)
+                                .foregroundStyle(Color.dnaTextPrimary)
                         }
-                        .buttonStyle(.plain)
+                    }
+                    if let review {
+                        if let liked = review.liked { memoLine("좋았던 점", liked) }
+                        if let disliked = review.disliked { memoLine("아쉬웠던 점", disliked) }
+                    } else {
+                        HStack {
+                            Text("아직 평가 전")
+                                .dnaFont(.caption)
+                                .foregroundStyle(Color.dnaTextSecondary)
+                            Spacer()
+                            Button("평가하기") { showingEvaluation = true }
+                                .dnaFont(.caption)
+                                .foregroundStyle(Color.dnaActionText)
+                                .frame(minHeight: 44)
+                        }
                     }
                 }
-                .padding(DNASpacing.sm)
+                .padding(DNASpacing.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
-                )
-
-                if viewModel.todayPhoto == nil {
-                    Button {
-                        photoDayEdit = PhotoDayEdit(dayIndex: viewModel.currentDayIndex)
-                    } label: {
-                        Text("오늘의 한 장 고르기")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Capsule(style: .continuous).fill(Color.dnaAction))
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, DNASpacing.xs)
-                }
-
-                Button("여행 종료") {
-                    confirmingEnd = true
-                }
-                .buttonStyle(.dnaSecondary)
+                .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             }
         }
     }
 
-    /// UI-6H(평가 미완료): 30초 평가 강조.
-    private func endedHero(_ trip: Trip) -> some View {
-        heroCard(borderColor: Color.dnaWarning.opacity(0.45)) {
-            VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                HStack {
-                    StatusPill(status: trip.status)
-                    Spacer()
-                    Text(trip.dateRangeKo)
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-                Text("여행은 어땠나요?")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                Text("약 30초면 다음 추천이 더 정확해져요.")
-                    .font(.subheadline)
+    private func memoLine(_ title: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title)
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextTertiary)
+            Text(text)
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextPrimary)
+        }
+    }
+
+    // MARK: - 하루 한 장 · 일정
+
+    private func dailyPhotosSection(_ trip: Trip) -> some View {
+        let days = Array(1...max(1, viewModel.totalDays))
+        let filled = days.filter { viewModel.photo(forDay: $0) != nil }.count
+        return VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("하루 한 장")
+                    .dnaFont(.sectionTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Spacer()
+                Text("\(days.count)일 중 \(filled)일")
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
-
-                if missingPhotoDayCount > 0 {
-                    Text("아직 사진이 없는 날이 \(missingPhotoDayCount)일 있어요. 위 사진을 눌러 보완할 수 있어요.")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                ForEach(days, id: \.self) { day in
+                    dayCell(day, trip: trip)
                 }
-
-                Button {
-                    showingEvaluation = true
-                } label: {
-                    Text("30초 평가하기")
-                }
-                .buttonStyle(.dnaPrimary)
-                .padding(.top, DNASpacing.xs)
+            }
+            if viewModel.photos.contains(where: { $0.selection == .autoFallback }) {
+                Text("'자동'은 비어 있던 날을 앱이 골라둔 사진이에요. 눌러서 직접 바꿀 수 있어요.")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
         }
     }
 
-    private var missingPhotoDayCount: Int {
-        guard viewModel.totalDays > 0 else { return 0 }
-        return (1...viewModel.totalDays).filter { viewModel.photo(forDay: $0) == nil }.count
+    private func dayCell(_ day: Int, trip: Trip) -> some View {
+        let photo = viewModel.photo(forDay: day)
+        let editable = canEditPhoto(day: day, trip: trip)
+        return VStack(spacing: 6) {
+            Button {
+                if editable { photoDayEdit = PhotoDayEdit(dayIndex: day) }
+            } label: {
+                Color.clear
+                    .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                    .overlay {
+                        if let photo {
+                            TripPhotoImage(storagePath: photo.storagePath)
+                        } else {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
+                                    .strokeBorder(Color.dnaTextTertiary, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                                if editable {
+                                    Image(systemName: "plus").foregroundStyle(Color.dnaTextSecondary)
+                                }
+                            }
+                        }
+                    }
+                    .overlay(alignment: .topLeading) {
+                        if photo?.selection == .autoFallback {
+                            Text("자동")
+                                .dnaFont(.tabLabel)
+                                .foregroundStyle(Color.dnaTextPrimary)
+                                .padding(.horizontal, 8)
+                                .frame(height: 22)
+                                .background(Color.dnaRaised.opacity(0.9), in: Capsule())
+                                .padding(6)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(!editable)
+            .accessibilityLabel(photo == nil ? "\(day)일째 사진 고르기" : "\(day)일째 사진 바꾸기")
+            Text(trip.status == .active && day == viewModel.currentDayIndex ? "오늘" : "\(day)일째")
+                .dnaFont(.tabLabel)
+                .foregroundStyle(Color.dnaTextPrimary)
+        }
     }
 
     /// 여행 중에는 오늘까지, 종료·평가 후에는 모든 일차를 편집할 수 있다.
@@ -384,202 +517,40 @@ struct TripDetailView: View {
         }
     }
 
-    /// UI-6H(평가 완료·생략): 결과 요약 + 랭킹 + 대표 사진 + 공유.
-    private func evaluatedHero(_ trip: Trip) -> some View {
-        heroCard {
-            VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                HStack {
-                    StatusPill(status: trip.status)
-                    Spacer()
-                    Text(trip.dateRangeKo)
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-
-                if let concepts = trip.concepts {
-                    Text(([concepts.primary] + concepts.secondary).map(\.labelKo).joined(separator: " · "))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.dnaData)
-                }
-
-                if let evaluation = trip.evaluation, !evaluation.skipped {
-                    HStack(spacing: DNASpacing.sm) {
-                        if let satisfaction = evaluation.satisfaction {
-                            Text(satisfactionEmojis[max(0, min(4, satisfaction - 1))])
-                                .font(.system(size: 34))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("만족도 \(satisfaction)/5")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.white)
-                                if let wouldRepeat = evaluation.wouldRepeat {
-                                    Text(wouldRepeat ? "또 가고 싶은 여행" : "한 번이면 충분한 여행")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.dnaTextSecondary)
-                                }
-                            }
-                        }
-                        Spacer()
-                        if let rank = trip.rankPosition {
-                            VStack(spacing: 2) {
-                                Text("\(rank)위")
-                                    .font(.title3.bold())
-                                    .foregroundStyle(Color.dnaData)
-                                Text("내 랭킹")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.dnaTextSecondary)
-                            }
-                        }
-                    }
-
-                    if !evaluation.positiveTagIDs.isEmpty || !evaluation.negativeTagIDs.isEmpty {
-                        DNAFlowLayout(spacing: 6) {
-                            ForEach(evaluation.positiveTagIDs, id: \.self) { tagID in
-                                summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaData)
-                            }
-                            ForEach(evaluation.negativeTagIDs, id: \.self) { tagID in
-                                summaryTagPill(TagCatalog.labelKo(for: tagID), accent: .dnaWarning)
-                            }
-                        }
-                    }
-
-                    ForEach(Array((evaluation.cityReviews ?? []).enumerated()), id: \.offset) { _, review in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(review.city ?? CountryCatalog.name(for: review.countryCode))\(review.rating.map { " · ★\($0)" } ?? "")")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                            if let liked = review.liked {
-                                Text("좋았던 점: \(liked)")
-                            }
-                            if let disliked = review.disliked {
-                                Text("아쉬웠던 점: \(disliked)")
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                    }
-                } else {
-                    Text("평가를 생략한 여행이에요. 방문 기록만 남아 있어요.")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-
-                NavigationLink {
-                    RankingBoardView()
-                } label: {
-                    Label("랭킹 보드", systemImage: "arrow.up.arrow.down")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.06)))
-                        .overlay(Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                .padding(.top, DNASpacing.xs)
-
-                HStack(spacing: DNASpacing.sm) {
-                    Button {
-                        showingCoverPicker = true
-                    } label: {
-                        Label(trip.coverPhotoStoragePath == nil ? "대표 사진 선택" : "대표 사진 변경", systemImage: "photo")
-                            .font(.caption)
-                            .foregroundStyle(Color.dnaData)
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    Button {
-                        showingShare = true
-                    } label: {
-                        Label("공유하기", systemImage: "square.and.arrow.up")
-                            .font(.caption)
-                            .foregroundStyle(Color.dnaData)
-                    }
-                    .accessibilityIdentifier("trip.sharePreview")
-                }
-            }
-        }
-    }
-
-    private func heroCard<Content: View>(
-        borderColor: Color = .dnaDivider,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        content()
-            .padding(DNASpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                    .fill(Color.dnaSurface1)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                    .strokeBorder(borderColor, lineWidth: 1)
-            )
-            .shadow(color: Color.dnaTextTertiary.opacity(0.12), radius: 20, y: 8)
-    }
-
-    private func summaryTagPill(_ title: String, accent: Color) -> some View {
-        Text(title)
-            .font(.caption)
-            .foregroundStyle(accent)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(accent.opacity(0.14), in: Capsule())
-            .overlay(Capsule().strokeBorder(accent.opacity(0.4), lineWidth: 1))
-    }
-
-    // MARK: - 구간·정보
-
     private func legsSection(_ trip: Trip) -> some View {
-        SectionCard(title: "여행지") {
-            ForEach(Array(trip.legs.enumerated()), id: \.offset) { index, leg in
-                HStack(spacing: DNASpacing.sm) {
-                    if trip.legs.count > 1 {
-                        Text("\(index + 1)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.dnaData)
-                            .frame(width: 22, height: 22)
-                            .background(Color.dnaData.opacity(0.14), in: Circle())
-                    }
+        VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            Text("일정")
+                .dnaFont(.sectionTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            ForEach(Array(trip.legs.enumerated()), id: \.offset) { _, leg in
+                HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(CountryCatalog.name(for: leg.countryCode))
-                            .font(.subheadline)
-                            .foregroundStyle(.white)
-                        if !leg.cities.isEmpty {
-                            Text(leg.cities.joined(separator: " · "))
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.78))
-                        }
+                        Text(leg.cities.isEmpty ? CountryCatalog.name(for: leg.countryCode)
+                             : "\(leg.cities.joined(separator: " · ")) · \(CountryCatalog.name(for: leg.countryCode))")
+                            .dnaFont(.cardTitle)
+                            .foregroundStyle(Color.dnaTextPrimary)
                         Text(legDateRange(leg))
-                            .font(.caption2)
+                            .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                     Spacer()
                     Text("\(leg.days)일")
-                        .font(.caption)
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
+                .padding(DNASpacing.md)
+                .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
         }
     }
 
-    private func infoSection(_ trip: Trip) -> some View {
-        SectionCard {
-            HStack(spacing: DNASpacing.lg) {
-                Label(trip.companion.labelKo, systemImage: "person.2")
-                Label(trip.purpose.labelKo, systemImage: trip.purpose == .obligation ? "briefcase" : "sparkles")
-                Spacer()
-            }
-            .font(.subheadline)
-            .foregroundStyle(Color.dnaTextSecondary)
-            if trip.purpose == .obligation {
-                Text("의무 여행이라 취향 반영이 낮아요.")
-                    .font(.caption2)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            }
-        }
+    private func legDateRange(_ leg: TripLeg) -> String {
+        let calendar = Calendar.current
+        let start = calendar.dateComponents([.month, .day], from: leg.startDate)
+        let end = calendar.dateComponents([.month, .day], from: leg.endDate)
+        let from = "\(start.month ?? 0)월 \(start.day ?? 0)일"
+        if leg.startDate == leg.endDate { return from }
+        return start.month == end.month ? "\(from) – \(end.day ?? 0)일" : "\(from) – \(end.month ?? 0)월 \(end.day ?? 0)일"
     }
 
     @ViewBuilder
@@ -589,74 +560,20 @@ struct TripDetailView: View {
             SectionCard(title: "출발 전 뭐 할까") {
                 VStack(alignment: .leading, spacing: DNASpacing.sm) {
                     Text("여행지에 도시를 추가하면 그 도시의 액티비티를 바로 찾을 수 있어요.")
-                        .font(.subheadline)
+                        .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("도시 추가하기") {
                         showingEdit = true
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.dnaData)
+                    .dnaFont(.button)
+                    .foregroundStyle(Color.dnaActionText)
                     .buttonStyle(.plain)
                 }
             }
         } else {
             AffiliateActivitySection(title: "출발 전 뭐 할까", links: links)
         }
-    }
-
-    private func legDateRange(_ leg: TripLeg) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM.dd"
-        return "\(formatter.string(from: leg.startDate)) - \(formatter.string(from: leg.endDate))"
-    }
-
-    // MARK: - 대표 사진 변경
-
-    private var coverPickerSheet: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                if !viewModel.photos.isEmpty {
-                    Text("하루 한 장에서 고르기")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: DNASpacing.xs) {
-                            ForEach(viewModel.photos.sorted { $0.tripDayIndex < $1.tripDayIndex }) { photo in
-                                Button {
-                                    Task {
-                                        await viewModel.setCoverPhoto(photo.storagePath, dependencies: dependencies)
-                                        showingCoverPicker = false
-                                    }
-                                } label: {
-                                    TripPhotoImage(storagePath: photo.storagePath)
-                                        .frame(width: 64, height: 64)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    Divider().overlay(Color.dnaDivider)
-                }
-                Text("사진첩에서 고르기")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                AnyPhotoLibraryPickerButton(title: "사진 선택") { path in
-                    Task {
-                        await viewModel.setCoverPhoto(path, dependencies: dependencies)
-                        showingCoverPicker = false
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(DNASpacing.lg)
-            .background(AppCanvas())
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar(.hidden, for: .navigationBar)
-        }
-        .presentationDetents([.medium, .large])
-        .preferredColorScheme(.dark)
     }
 }
 

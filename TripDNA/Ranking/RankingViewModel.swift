@@ -38,6 +38,13 @@ final class RankingViewModel {
         baselineAxes = previewVector?.axes
     }
 
+    /// 저장하지 않은 임시 순서를 버리고 저장된 순서로 돌아간다.
+    func revertDraft() {
+        previewTask?.cancel()
+        order = savedOrder
+        saveMessage = nil
+    }
+
     func moveDraft(fromOffsets: IndexSet, toOffset: Int, dependencies: AppDependencies, userID: String) {
         order.move(fromOffsets: fromOffsets, toOffset: toOffset)
         previewTask?.cancel()
@@ -65,13 +72,10 @@ final class RankingViewModel {
         isSaving = true
         defer { isSaving = false }
         if let result = try? await dependencies.rankingService.save(draft, userID: userID) {
-            let delta = baselineAxes.map {
-                AxisNarrative.deltaMessageKo(from: $0, to: result.vector.axes)
-            }
             previewVector = result.vector
             baselineAxes = result.vector.axes
             savedOrder = order
-            saveMessage = delta.map { "저장했어요. \($0)" } ?? "이 순서로 저장했어요."
+            saveMessage = "이 순서로 저장했어요."
         } else {
             saveMessage = "저장하지 못했어요. 다시 시도해주세요."
         }

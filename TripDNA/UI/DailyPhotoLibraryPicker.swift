@@ -110,7 +110,7 @@ struct DailyPhotoLibraryPicker: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Label("사진 접근이 꺼져 있어요", systemImage: "photo.badge.exclamationmark")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             Text("설정에서 허용하면 \(dayLabel) 찍은 사진을 고를 수 있어요. 지금은 건너뛰어도 괜찮아요.")
                 .font(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
@@ -134,7 +134,7 @@ struct DailyPhotoLibraryPicker: View {
     private var libraryContent: some View {
         if isLoading && assets.isEmpty {
             ProgressView()
-                .tint(.white)
+                .tint(Color.dnaTextSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DNASpacing.xl)
         } else if assets.isEmpty {
@@ -156,7 +156,7 @@ struct DailyPhotoLibraryPicker: View {
             .overlay {
                 if isImporting {
                     ProgressView()
-                        .tint(.white)
+                        .tint(Color.dnaTextSecondary)
                         .padding(16)
                         .background(.ultraThinMaterial, in: Capsule())
                 }
@@ -175,17 +175,17 @@ struct DailyPhotoLibraryPicker: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(filtersToSingleDay ? "\(dayLabel) 찍은 사진이 없어요" : "고를 수 있는 사진이 없어요")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             Text("건너뛰거나, 사진첩에서 다른 사진을 고를 수 있어요.")
                 .font(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                 Text("사진첩에서 고르기")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.dnaTextPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
-                    .background(Capsule().fill(Color.white.opacity(0.1)))
+                    .background(Capsule().fill(Color.dnaSurface2))
             }
             .disabled(isImporting)
         }
@@ -331,7 +331,7 @@ private struct DailyPhotoAssetCell: View {
                         .scaledToFill()
                 } else {
                     Color.dnaSurface1
-                    ProgressView().tint(.white)
+                    ProgressView().tint(Color.dnaTextSecondary)
                 }
             }
             .frame(minWidth: 0, maxWidth: .infinity)
@@ -339,7 +339,7 @@ private struct DailyPhotoAssetCell: View {
             .clipShape(RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -383,15 +383,15 @@ struct AnyPhotoLibraryPickerButton: View {
         PhotosPicker(selection: $item, matching: .images, photoLibrary: .shared()) {
             HStack {
                 if isImporting {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(Color.dnaTextSecondary)
                 }
                 Text(isImporting ? "불러오는 중…" : title)
                     .font(.subheadline.weight(.semibold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.dnaTextPrimary)
             .frame(maxWidth: .infinity)
             .frame(height: 48)
-            .background(Capsule().fill(Color.white.opacity(0.1)))
+            .background(Capsule().fill(Color.dnaSurface2))
         }
         .disabled(isImporting)
         .onChange(of: item) { _, newItem in

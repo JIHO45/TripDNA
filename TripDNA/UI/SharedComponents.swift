@@ -948,6 +948,40 @@ extension Trip {
         legs.map { CountryCatalog.name(for: $0.countryCode) }.joined(separator: " · ")
     }
 
+    /// 도시가 있으면 도시 이름, 없으면 나라 이름. 목록·랭킹의 제목.
+    var placeTitleKo: String {
+        let cities = legs.flatMap(\.cities)
+        return cities.isEmpty ? titleKo : cities.joined(separator: " · ")
+    }
+
+    /// "11월 14일 – 17일" 또는 "12월 29일 – 1월 2일". 연도는 묶음 제목이 보여준다.
+    var shortDateRangeKo: String {
+        guard let first = legs.first?.startDate, let last = legs.last?.endDate else { return "" }
+        let calendar = Calendar.current
+        let start = calendar.dateComponents([.month, .day], from: first)
+        let end = calendar.dateComponents([.month, .day], from: last)
+        let from = "\(start.month ?? 0)월 \(start.day ?? 0)일"
+        if start.month == end.month, first != last {
+            return "\(from) – \(end.day ?? 0)일"
+        }
+        return first == last ? from : "\(from) – \(end.month ?? 0)월 \(end.day ?? 0)일"
+    }
+
+    /// "2025년 12월" (시작일 기준).
+    var yearMonthKo: String {
+        guard let first = legs.first?.startDate else { return "" }
+        let parts = Calendar.current.dateComponents([.year, .month], from: first)
+        return "\(parts.year ?? 0)년 \(parts.month ?? 0)월"
+    }
+
+    /// 시작일까지 남은 날. 이미 시작했으면 nil.
+    var daysUntilStart: Int? {
+        guard let first = legs.first?.startDate else { return nil }
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: Date()), to: calendar.startOfDay(for: first)).day ?? 0
+        return days > 0 ? days : nil
+    }
+
     var dateRangeKo: String {
         guard let first = legs.first, let last = legs.last else { return "" }
         let formatter = DateFormatter()

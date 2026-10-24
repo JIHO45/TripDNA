@@ -81,6 +81,9 @@ nonisolated enum Companion: String, Codable, CaseIterable, Sendable {
     case couple
     case family
     case friends
+    case colleagues
+    /// 입력하지 않았거나 모르는 경우. 없는 사실을 `alone` 등으로 채우지 않기 위한 값이다.
+    case unknown
 }
 
 nonisolated enum TripPurpose: String, Codable, Sendable {
@@ -284,7 +287,8 @@ nonisolated struct TripEvaluation: Codable, Equatable, Sendable {
                 throw DomainValidationError.skippedEvaluationContainsAnswers
             }
         } else {
-            guard let satisfaction, (1...5).contains(satisfaction), wouldRepeat != nil else {
+            // 도시별 기록만 남기는 평가는 여행 전체 만족도·재방문 답이 없다(미입력은 미상).
+            if let satisfaction, !(1...5).contains(satisfaction) {
                 throw DomainValidationError.incompleteEvaluation
             }
         }
@@ -442,7 +446,9 @@ nonisolated struct Trip: Identifiable, Codable, Equatable, Sendable {
     private func validate(_ evaluation: TripEvaluation) throws {
         let countries = Set(legs.map(\.countryCode))
         if legs.count > 1 {
-            guard evaluation.skipped || evaluation.bestLegCountryCode.map(countries.contains) == true else {
+            // 여행 전체 답(만족도)이 있는 평가만 베스트 나라를 요구한다. 도시별 기록만 있으면 비워 둘 수 있다.
+            let needsBestLeg = !evaluation.skipped && evaluation.satisfaction != nil
+            guard evaluation.bestLegCountryCode.map(countries.contains) ?? !needsBestLeg else {
                 throw DomainValidationError.invalidBestLeg
             }
         } else if evaluation.bestLegCountryCode != nil {

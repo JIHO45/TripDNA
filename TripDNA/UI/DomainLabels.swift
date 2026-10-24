@@ -102,12 +102,15 @@ extension TripStatus {
 }
 
 extension Companion {
+    /// 입력하지 않은 동행은 UI에 아무것도 보이지 않는다.
     var labelKo: String {
         switch self {
         case .alone: "혼자"
-        case .couple: "커플"
+        case .couple: "연인"
         case .family: "가족"
         case .friends: "친구"
+        case .colleagues: "동료"
+        case .unknown: ""
         }
     }
 }

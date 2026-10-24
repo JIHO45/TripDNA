@@ -66,7 +66,7 @@ struct DailyPhotoView: View {
         }
         .sheet(isPresented: $showConsentSheet) {
             autoFallbackConsentSheet
-                .presentationDetents([.medium])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
         .task(id: resolvedDayIndex) {
@@ -130,6 +130,9 @@ struct DailyPhotoView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                     .padding(.horizontal, DNASpacing.lg)
             }
+            Text("3:4 · 이 비율로 여행 상세와 회고에 보여요")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
             Spacer(minLength: 0)
         }
     }
@@ -141,17 +144,17 @@ struct DailyPhotoView: View {
             Spacer()
             Text(isToday ? "오늘은 어땠나요?" : "그날은 어땠나요?")
                 .font(.title2.bold())
-                .foregroundStyle(.white)
-            Text("기록용이에요. 취향 지문에는 반영되지 않아요.")
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("사진은 저장됐어요. 반응은 기록용이고 취향 지문에는 반영되지 않아요.")
                 .font(.subheadline)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DNASpacing.lg)
 
             HStack(spacing: DNASpacing.sm) {
-                reactionButton(title: "좋았어", value: .good, accent: .dnaData)
-                reactionButton(title: "그럭저럭", value: .neutral, accent: .dnaWarning)
-                reactionButton(title: "별로", value: .bad, accent: .dnaAction)
+                reactionButton(title: "좋았어", value: .good)
+                reactionButton(title: "그럭저럭", value: .neutral)
+                reactionButton(title: "별로", value: .bad)
             }
             .padding(.horizontal, DNASpacing.lg)
 
@@ -159,22 +162,17 @@ struct DailyPhotoView: View {
         }
     }
 
-    private func reactionButton(title: String, value: DayReaction, accent: Color) -> some View {
+    private func reactionButton(title: String, value: DayReaction) -> some View {
         Button {
             Task { await finish(with: value) }
         } label: {
             Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(accent)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .dnaFont(.button)
+                .foregroundStyle(Color.dnaTextPrimary)
+                .frame(maxWidth: .infinity, minHeight: 52)
                 .background(
                     RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .fill(accent.opacity(0.14))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .strokeBorder(accent.opacity(0.45), lineWidth: 1)
+                        .fill(Color.dnaSurface1)
                 )
         }
         .buttonStyle(.plain)
@@ -239,7 +237,7 @@ struct DailyPhotoView: View {
                 .foregroundStyle(Color.dnaData)
             Text(isToday ? "오늘을 한 장으로 남긴다면?" : "\(resolvedDayIndex)일차를 한 장으로 남긴다면?")
                 .font(.title3.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
                 .multilineTextAlignment(.center)
         }
         .padding(.top, DNASpacing.md)
@@ -258,7 +256,7 @@ struct DailyPhotoView: View {
             }
             Text(isToday ? "오늘의 한 장을 남겼어요" : "\(resolvedDayIndex)일차 사진을 남겼어요")
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
         }
         .padding(DNASpacing.xl)
         .background(
@@ -270,35 +268,32 @@ struct DailyPhotoView: View {
 
     /// UI-7C: 첫 확정 직후 1회만 노출하는 자동 후보 동의.
     private var autoFallbackConsentSheet: some View {
-        VStack(spacing: DNASpacing.lg) {
+        VStack(alignment: .leading, spacing: DNASpacing.md) {
+            Text("놓친 날은 그날 사진으로\n골라둘까요?")
+                .dnaFont(.heroTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("여행 중에 앱을 열면, 한 장이 비어 있는 날을 그날 찍은 사진 한 장으로 채워둬요. 나중에 직접 바꿀 수 있어요.")
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
+            DNATrustPanel(text: "원본 사진은 사진첩에 그대로 있어요. 앱은 위치 정보를 지운 줄인 사본만 보관하고, iCloud 백업이 켜져 있으면 이 사본도 내 iCloud에 백업돼요.")
             Spacer(minLength: 0)
-            Text("앱을 열 때 비어 있는 날의 사진을 골라둘까요?")
-                .font(.title3.bold())
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DNASpacing.lg)
-            DNATrustPanel(text: "EXIF 위치는 제거되고 리사이즈본만 저장돼요.")
-                .padding(.horizontal, DNASpacing.lg)
-            Spacer(minLength: 0)
-            DNABottomCTA {
-                Button("자동으로 골라두기") {
-                    UserDefaults.standard.set(true, forKey: AutoPhotoFallbackService.consentKey)
-                    showConsentSheet = false
-                    withAnimation { stage = .reaction }
-                }
-                .buttonStyle(.dnaPrimary)
-
-                Button("직접 고른 사진만") {
-                    UserDefaults.standard.set(false, forKey: AutoPhotoFallbackService.consentKey)
-                    showConsentSheet = false
-                    withAnimation { stage = .reaction }
-                }
-                .buttonStyle(.dnaGhost)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+            Button("골라두기") {
+                UserDefaults.standard.set(true, forKey: AutoPhotoFallbackService.consentKey)
+                showConsentSheet = false
+                withAnimation { stage = .reaction }
             }
+            .buttonStyle(.dnaPrimary)
+
+            Button("직접 고른 사진만") {
+                UserDefaults.standard.set(false, forKey: AutoPhotoFallbackService.consentKey)
+                showConsentSheet = false
+                withAnimation { stage = .reaction }
+            }
+            .buttonStyle(.dnaGhost)
+            .frame(maxWidth: .infinity)
         }
-        .background(AppCanvas())
+        .padding(DNASpacing.gutter)
+        .background(Color.dnaSheet)
         .interactiveDismissDisabled()
         .onDisappear {
             // 시트를 닫으면 반응 단계로 진행한다.

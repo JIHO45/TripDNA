@@ -639,6 +639,8 @@ enum HomeNarrative {
         case .couple: "둘이서 다녀온"
         case .family: "가족과 보낸"
         case .friends: "친구들과 보낸"
+        case .colleagues: "동료들과 보낸"
+        case .unknown: "다녀온"
         }
     }
 

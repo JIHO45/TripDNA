@@ -125,18 +125,19 @@ extension TripPurpose {
 }
 
 extension TripConcept {
-    /// `data/experience-categories.json` v1의 `label_ko`와 같다. `event`만 그 파일에 없다.
+    /// 화면에 보이는 짧은 이름(2026-10-24 디자인 결정). `data/experience-categories.json`의 `label_ko`는
+    /// 자료용 이름이라 다를 수 있다. `event`만 그 파일에 없다.
     var labelKo: String {
         switch self {
-        case .cityExploration: "도시 탐방"
-        case .natureScenery: "자연 풍경"
+        case .cityExploration: "도시"
+        case .natureScenery: "자연"
         case .food: "미식"
-        case .relaxation: "휴식·힐링"
+        case .relaxation: "휴양"
         case .cultureHistory: "문화·역사"
         case .activities: "액티비티"
         case .shopping: "쇼핑"
-        case .nightlife: "밤 문화"
-        case .meetingPeople: "새로운 사람 만나기"
+        case .nightlife: "나이트라이프"
+        case .meetingPeople: "교류"
         case .event: "이벤트"
         }
     }

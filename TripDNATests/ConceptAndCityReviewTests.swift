@@ -160,4 +160,24 @@ struct ConceptAndCityReviewTests {
         #expect(saved.negativeTagIDs == ["crowded"])
         #expect(saved.cityReviews == [CityReview(countryCode: "JP", city: "도쿄", rating: 5, liked: "골목 산책", disliked: nil)])
     }
+
+    @Test func wantedTiersSurviveStoreReopen() async throws {
+        let container = try SwiftDataAppStore.makeContainer(inMemory: true)
+        let store = SwiftDataAppStore(container: container, countries: [], tags: [])
+        #expect(try await store.loadWantedTiers() == nil)
+
+        var tiers = WantedConceptTiers()
+        tiers.place(.food, in: 1)
+        tiers.place(.natureScenery, in: 1)
+        tiers.place(.shopping, in: 3)
+        tiers.place(.shopping, in: 2)
+        tiers.avoidNote = "긴 이동"
+        try await store.saveWantedTiers(tiers)
+
+        let reopened = SwiftDataAppStore(container: container, countries: [], tags: [])
+        let loaded = try await reopened.loadWantedTiers()
+        #expect(loaded == tiers)
+        #expect(loaded?.tier(of: .shopping) == 2)
+        #expect(loaded?.tier(of: .nightlife) == nil)
+    }
 }

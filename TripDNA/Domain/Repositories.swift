@@ -51,6 +51,8 @@ protocol UserProfileRepository {
     func saveProfile(_ profile: UserProfile) async throws
     func loadInterestTagIDs() async throws -> Set<String>
     func saveInterestTagIDs(_ ids: Set<String>) async throws
+    func loadWantedTiers() async throws -> WantedConceptTiers?
+    func saveWantedTiers(_ tiers: WantedConceptTiers) async throws
 }
 
 nonisolated enum AnalyticsEventType: String, Codable, Sendable {

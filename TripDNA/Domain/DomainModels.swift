@@ -168,6 +168,41 @@ nonisolated struct TripConcepts: Codable, Equatable, Sendable {
     }
 }
 
+/// 온보딩 "원하는 여행"에서 사용자가 컨셉을 놓은 칸. 1~3순위에 놓지 않은 컨셉은 "아직 모르겠어요"이며
+/// 추천 점수에 쓰지 않는다. 지난 여행으로 미리 채우지 않는다 (docs/recommendation/memory.md "컨셉과 티어").
+nonisolated struct WantedConceptTiers: Codable, Equatable, Sendable {
+    var tier1: [TripConcept] = []
+    var tier2: [TripConcept] = []
+    var tier3: [TripConcept] = []
+    /// 피하고 싶은 것. 자유 입력이며 비어 있을 수 있다.
+    var avoidNote: String?
+
+    /// 1~3이면 해당 티어, 놓지 않았으면 nil("아직 모르겠어요").
+    func tier(of concept: TripConcept) -> Int? {
+        if tier1.contains(concept) { return 1 }
+        if tier2.contains(concept) { return 2 }
+        if tier3.contains(concept) { return 3 }
+        return nil
+    }
+
+    /// 컨셉을 `tier`(1~3) 칸으로 옮긴다. nil이면 "아직 모르겠어요"로 되돌린다.
+    mutating func place(_ concept: TripConcept, in tier: Int?) {
+        tier1.removeAll { $0 == concept }
+        tier2.removeAll { $0 == concept }
+        tier3.removeAll { $0 == concept }
+        switch tier {
+        case 1: tier1.append(concept)
+        case 2: tier2.append(concept)
+        case 3: tier3.append(concept)
+        default: break
+        }
+    }
+
+    var isEmpty: Bool {
+        tier1.isEmpty && tier2.isEmpty && tier3.isEmpty && (avoidNote ?? "").isEmpty
+    }
+}
+
 /// 취향 지문: 다녀온 여가 여행의 주 컨셉 횟수. 성향 추정값이 아니라 발자취다
 /// (docs/screens/home-and-fingerprint.md "취향 지문"). 의무 여행과 아직 끝나지 않은 여행은 세지 않는다.
 nonisolated struct ConceptFingerprint: Equatable, Sendable {

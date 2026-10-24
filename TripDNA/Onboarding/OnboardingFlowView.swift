@@ -12,8 +12,6 @@ struct OnboardingFlowView: View {
                 switch viewModel.stage {
                 case .hook:
                     OnboardingHookView(viewModel: viewModel)
-                case .hookExpectation:
-                    OnboardingExpectationView(viewModel: viewModel)
                 case .homeCountry:
                     OnboardingHomeCountryView(viewModel: viewModel, dependencies: dependencies)
                 case .entryModeSelection:
@@ -22,313 +20,283 @@ struct OnboardingFlowView: View {
                     OnboardingPhotoPrimingView(viewModel: viewModel)
                 case .photoScanning:
                     OnboardingPhotoScanningView(viewModel: viewModel)
-                case .photoScanReview:
-                    OnboardingScanCardLoopView(viewModel: viewModel, dependencies: dependencies, session: session)
-                case .manualEntry:
-                    OnboardingManualEntryView(viewModel: viewModel, dependencies: dependencies, session: session)
-                case .quiz:
-                    OnboardingQuizView(viewModel: viewModel, dependencies: dependencies, session: session)
-                case .analyzing:
-                    OnboardingAnalyzingView(viewModel: viewModel)
-                case .result:
-                    OnboardingResultView(viewModel: viewModel)
+                case .noCandidates:
+                    OnboardingNoCandidatesView(viewModel: viewModel)
+                case .candidates:
+                    OnboardingCandidatesView(viewModel: viewModel, dependencies: dependencies)
+                case .concepts:
+                    OnboardingConceptsView(viewModel: viewModel, dependencies: dependencies)
+                case .tiers:
+                    OnboardingTiersView(viewModel: viewModel, dependencies: dependencies)
+                case .summary:
+                    OnboardingSummaryView(viewModel: viewModel, dependencies: dependencies, session: session)
                 }
             }
             .transition(.opacity)
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.stage)
+        // "직접 등록"은 여행 탭의 여행 등록 화면을 그대로 쓴다.
+        .sheet(isPresented: $viewModel.showsManualRegistration) {
+            NavigationStack {
+                TripRegistrationView(prefilledCountryCode: nil) {
+                    Task { await viewModel.finishManualRegistration(dependencies: dependencies) }
+                }
+            }
+        }
     }
 }
 
-// MARK: - 1A-1 훅 (가치 선언)
+// MARK: - ① 시작
 
 struct OnboardingHookView: View {
     let viewModel: OnboardingViewModel
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
-            FingerprintMotifView()
-            VStack(spacing: DNASpacing.sm) {
-                Text("지금까지의 여행이,\n다음 여행지를 알고 있어요")
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                Text("다녀온 여행으로 먼저 읽고, 부족한 축만 짧게 물어볼게요")
-                    .font(.subheadline)
-                    .multilineTextAlignment(.center)
+            PhotoCollagePlaceholder()
+                .padding(.horizontal, DNASpacing.gutter)
+                .padding(.top, DNASpacing.xl)
+                .frame(maxHeight: .infinity)
+            VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                Text("TripDNA")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+                Text("다녀온 여행으로\n다음 여행지를 골라요")
+                    .dnaFont(.screenTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Text("지난 여행과 원하는 여행을 알려주면, 그걸 바탕으로 추천해요. 기록이 없어도 취향부터 시작할 수 있어요.")
+                    .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
-            .padding(.horizontal, DNASpacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DNASpacing.gutter)
             .padding(.top, DNASpacing.lg)
-            Spacer()
             DNABottomCTA {
-                Button {
-                    viewModel.advanceFromHook()
-                } label: {
-                    Text("시작하기")
-                }
-                .buttonStyle(.dnaPrimary)
-
-                Text("약 2분이면 끝나요")
-                    .font(.caption)
+                Button("시작하기") { viewModel.stage = .homeCountry }
+                    .buttonStyle(.dnaPrimary)
+                Text("로그인 없이 시작해요")
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
-
             }
         }
     }
 }
 
-/// 여행 경로가 지문처럼 그려지는 훅 비주얼. 링이 순차적으로 그려지는 모션.
-private struct FingerprintMotifView: View {
-    @State private var isDrawn = false
-
+/// 실제 여행 사진 4~5장이 들어올 자리. 사진 출처 기록 전까지는 빈 타일만 둔다.
+private struct PhotoCollagePlaceholder: View {
     var body: some View {
-        ZStack {
-            ForEach(0..<4, id: \.self) { ring in
-                Circle()
-                    .trim(from: 0, to: isDrawn ? 1 : 0.12)
-                    .stroke(
-                        AngularGradient(
-                            colors: [.dnaTextTertiary, .dnaData, .dnaTextTertiary.opacity(0.4), .dnaData, .dnaTextTertiary],
-                            center: .center
-                        ),
-                        style: StrokeStyle(lineWidth: 1.6, lineCap: .round, dash: ring == 2 ? [26, 10] : [])
-                    )
-                    .frame(width: 96 + CGFloat(ring) * 34, height: 96 + CGFloat(ring) * 34)
-                    .rotationEffect(.degrees(Double(ring) * -32))
-                    .opacity(isDrawn ? 1 - Double(ring) * 0.16 : 0.2)
-                    .animation(
-                        .easeInOut(duration: 1.4).delay(Double(ring) * 0.22),
-                        value: isDrawn
-                    )
+        Grid(horizontalSpacing: DNASpacing.xs, verticalSpacing: DNASpacing.xs) {
+            GridRow {
+                tile(symbol: "mountain.2")
+                tile(symbol: "fork.knife")
             }
-            Image(systemName: "touchid")
-                .font(.system(size: 52, weight: .light))
-                .foregroundStyle(
-                    LinearGradient(colors: [.dnaData, .dnaTextTertiary], startPoint: .top, endPoint: .bottom)
-                )
-                .opacity(isDrawn ? 1 : 0.3)
-                .scaleEffect(isDrawn ? 1 : 0.85)
-                .animation(.spring(duration: 1.1).delay(0.4), value: isDrawn)
-        }
-        .frame(width: 220, height: 220)
-        .shadow(color: .dnaData.opacity(0.45), radius: 30)
-        .onAppear { isDrawn = true }
-    }
-}
-
-// MARK: - 1A-2 기대 설정
-
-struct OnboardingExpectationView: View {
-    let viewModel: OnboardingViewModel
-
-    private static let sampleAxes = TasteAxes(
-        natureUrban: -0.55,
-        energyLevel: -0.3,
-        planningStyle: 0.25,
-        socialMode: -0.15,
-        noveltyAppetite: 0.45
-    )
-
-    var body: some View {
-        VStack(spacing: 0) {
-            DNAStepTopBar(
-                progress: viewModel.progress,
-                trailingTitle: "건너뛰기",
-                onBack: { viewModel.goBack() },
-                onTrailing: { viewModel.advanceToHomeCountry() }
-            )
-            Spacer()
-            SectionCard {
-                FingerprintRadarView(axes: Self.sampleAxes, confidence: nil)
-                Text("예시 지문")
-                    .font(.caption2)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .padding(.horizontal, DNASpacing.lg)
-
-            VStack(spacing: DNASpacing.sm) {
-                Text("몇 번의 탭이면\n당신의 지문이 나옵니다")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                Text("과거 여행을 넣으면 취향이 그려지고,\n부족한 부분만 몇 문항 더 물어요")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, DNASpacing.lg)
-            Spacer()
-            DNABottomCTA {
-                Button {
-                    viewModel.advanceToHomeCountry()
-                } label: {
-                    Text("내 지문 만들기")
-                }
-                .buttonStyle(.dnaPrimary)
+            GridRow {
+                tile(symbol: "building.2")
+                tile(symbol: "sun.max")
             }
         }
     }
+
+    private func tile(symbol: String) -> some View {
+        RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
+            .fill(Color.dnaSurface2)
+            .overlay {
+                Image(systemName: symbol)
+                    .font(.title)
+                    .foregroundStyle(Color.dnaTextTertiary)
+            }
+            .frame(maxHeight: .infinity)
+    }
 }
 
-// MARK: - 거주 국가
+// MARK: - ①-2 사는 나라
 
 struct OnboardingHomeCountryView: View {
     let viewModel: OnboardingViewModel
     let dependencies: AppDependencies
     @Environment(SessionStore.self) private var session
     @State private var selectedCode: String
+    @State private var isSearching = false
     @State private var isConfirming = false
+    private let deviceRegion = OnboardingViewModel.deviceRegionCode
 
     init(viewModel: OnboardingViewModel, dependencies: AppDependencies) {
         self.viewModel = viewModel
         self.dependencies = dependencies
-        _selectedCode = State(initialValue: viewModel.homeCountryCode)
+        _selectedCode = State(initialValue: viewModel.homeCountryCode ?? OnboardingViewModel.deviceRegionCode ?? "")
     }
 
     var body: some View {
         VStack(spacing: 0) {
             DNAStepTopBar(
                 progress: viewModel.progress,
-                onBack: { viewModel.goBack() }
+                trailingTitle: "나중에",
+                onBack: { viewModel.goBack() },
+                onTrailing: { confirm(nil) }
             )
-            VStack(alignment: .leading, spacing: 8) {
-                Text("어느 나라에 살고 계세요?")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                Text("맞춤 추천에서 거주 국가는 기본으로 제외돼요. 추천 조건에서 포함할 수 있어요.")
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                Text("어느 나라에\n살고 계세요?")
+                    .dnaFont(.screenTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Text("출발 공항 후보를 채우고, 이 나라 도시는 추천에서 기본으로 빼요. 추천할 때 넣을 수도 있어요.")
+                    .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(DNASpacing.lg)
+            .padding(.horizontal, DNASpacing.gutter)
+            .padding(.top, DNASpacing.lg)
 
-            CountrySelectionList(selectedCode: $selectedCode)
+            VStack(spacing: DNASpacing.sm) {
+                if !selectedCode.isEmpty {
+                    HStack(spacing: DNASpacing.sm) {
+                        Text(OnboardingFormat.flagEmoji(for: selectedCode)).font(.title)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(CountryCatalog.name(for: selectedCode))
+                                .dnaFont(.sectionTitle)
+                                .foregroundStyle(Color.dnaTextPrimary)
+                            if selectedCode == deviceRegion {
+                                Text("기기 지역 설정에서 가져왔어요")
+                                    .dnaFont(.caption)
+                                    .foregroundStyle(Color.dnaTextSecondary)
+                            }
+                        }
+                        Spacer()
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.dnaTextPrimary)
+                    }
+                    .padding(DNASpacing.md)
+                    .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
+                            .strokeBorder(Color.dnaTextPrimary, lineWidth: 1.5)
+                    }
+                }
+                Button {
+                    isSearching = true
+                } label: {
+                    Label("다른 나라 검색", systemImage: "magnifyingglass")
+                }
+                .buttonStyle(.dnaSecondary)
+                Text("설정에서 언제든 바꿀 수 있어요. 정하지 않으면 아무 나라도 빼지 않고, 비행시간으로 정렬하지도 않아요.")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, DNASpacing.gutter)
+            .padding(.top, DNASpacing.lg)
+
+            Spacer(minLength: 0)
 
             DNABottomCTA {
-                Button {
-                    isConfirming = true
-                    Task {
-                        await viewModel.confirmHomeCountry(
-                            selectedCode, dependencies: dependencies, session: session
-                        )
-                        isConfirming = false
-                    }
-                } label: {
-                    Text("계속하기")
-                }
-                .buttonStyle(.dnaPrimary(isDisabled: selectedCode.isEmpty || isConfirming))
-                .disabled(selectedCode.isEmpty || isConfirming)
+                Button("계속하기") { confirm(selectedCode) }
+                    .buttonStyle(.dnaPrimary(isDisabled: selectedCode.isEmpty || isConfirming))
+                    .disabled(selectedCode.isEmpty || isConfirming)
             }
+        }
+        .sheet(isPresented: $isSearching) {
+            NavigationStack {
+                CountrySelectionList(selectedCode: $selectedCode)
+                    .padding(.top, DNASpacing.sm)
+                    .background(AppCanvas())
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("완료") { isSearching = false }
+                        }
+                    }
+            }
+            .onChange(of: selectedCode) { isSearching = false }
+        }
+    }
+
+    private func confirm(_ code: String?) {
+        isConfirming = true
+        Task {
+            await viewModel.confirmHomeCountry(code, dependencies: dependencies, session: session)
+            isConfirming = false
         }
     }
 }
 
-// MARK: - 1B-1 등록 방식 선택
+// MARK: - ② 지난 여행 불러오기
 
 struct OnboardingEntryModeView: View {
     let viewModel: OnboardingViewModel
 
     var body: some View {
         VStack(spacing: 0) {
-            DNAStepTopBar(
-                progress: viewModel.progress,
-                onBack: { viewModel.goBack() }
-            )
-            VStack(spacing: DNASpacing.lg) {
+            DNAStepTopBar(progress: viewModel.progress, onBack: { viewModel.goBack() })
+            VStack(alignment: .leading, spacing: DNASpacing.xs) {
                 Text("지난 여행을\n어떻게 불러올까요?")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, DNASpacing.xl)
-
-                VStack(spacing: DNASpacing.sm) {
-                    EntryModeCard(
-                        systemImage: "photo.on.rectangle.angled",
-                        title: "사진첩에서 자동으로 찾기",
-                        subtitle: "사진 위치를 기기 안에서 분석해 국가와 시기를 채워드려요",
-                        badge: "빠르게 등록"
-                    ) { viewModel.selectEntryMode(.photoScan) }
-
-                    EntryModeCard(
-                        systemImage: "pencil.line",
-                        title: "직접 입력하기",
-                        subtitle: "사진 권한 없이 국가와 시기를 직접 입력해요",
-                        badge: nil
-                    ) { viewModel.selectEntryMode(.manual) }
-                }
-                .padding(.horizontal, DNASpacing.lg)
-
-                Spacer()
-
-                DNABottomCTA {
-                    Button("여행 이력이 없어요 · 사진 퀴즈로 시작") {
-                        viewModel.selectEntryMode(.quiz)
-                    }
-                    .buttonStyle(.dnaGhost)
-                }
+                    .dnaFont(.screenTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Text("지금 다 넣지 않아도 돼요. 나중에 언제든 추가할 수 있어요.")
+                    .dnaFont(.body)
+                    .foregroundStyle(Color.dnaTextSecondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DNASpacing.gutter)
+            .padding(.top, DNASpacing.lg)
+
+            VStack(spacing: DNASpacing.sm) {
+                EntryModeRow(
+                    systemImage: "photo.on.rectangle.angled",
+                    title: "사진첩에서 찾기",
+                    subtitle: "사진의 위치·날짜로 후보를 찾고, 맞는지 직접 확인해요"
+                ) { viewModel.selectEntryMode(.photoScan) }
+                EntryModeRow(
+                    systemImage: "pencil.line",
+                    title: "직접 등록",
+                    subtitle: "도시와 시기를 골라 넣어요 · 여행 등록과 같은 화면"
+                ) { viewModel.selectEntryMode(.manual) }
+                EntryModeRow(
+                    systemImage: "heart",
+                    title: "여행 기록 없이 취향부터",
+                    subtitle: "원하는 여행만 골라서 시작해요"
+                ) { viewModel.selectEntryMode(.preferencesOnly) }
+            }
+            .padding(.horizontal, DNASpacing.gutter)
+            .padding(.top, DNASpacing.lg)
+            Spacer(minLength: 0)
         }
     }
 }
 
-/// 방식 선택 전용 카드. 두 방식을 동등한 크기로 배치하고 틸 배지를 지원한다.
-private struct EntryModeCard: View {
+/// 세 경로를 같은 크기로 보여주는 행. 누르면 바로 다음 단계로 간다.
+private struct EntryModeRow: View {
     let systemImage: String
     let title: String
     let subtitle: String
-    let badge: String?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                HStack(alignment: .top) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.dnaTextTertiary.opacity(0.35), .dnaData.opacity(0.25)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 48, height: 48)
-                        Image(systemName: systemImage)
-                            .font(.title3)
-                            .foregroundStyle(.white)
-                    }
-                    Spacer(minLength: 0)
-                    if let badge {
-                        Text(badge)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(Color.dnaData)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.dnaData.opacity(0.14), in: Capsule())
-                            .overlay(Capsule().strokeBorder(Color.dnaData.opacity(0.4), lineWidth: 1))
-                    }
+            HStack(spacing: DNASpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.title3)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .dnaFont(.cardTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    Text(subtitle)
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.dnaTextTertiary)
             }
             .padding(DNASpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                    .fill(Color.dnaSurface1)
-            )
-            .overlay(
+            .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
+            .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+            .overlay {
                 RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
                     .strokeBorder(Color.dnaDivider, lineWidth: 1)
-            )
+            }
         }
         .buttonStyle(.plain)
     }
@@ -342,28 +310,9 @@ private struct EntryModeCard: View {
 #Preview("OnboardingHookView") {
     OnboardingHookView(viewModel: OnboardingViewModel())
         .background(AppCanvas())
-        .preferredColorScheme(.dark)
-}
-
-#Preview("OnboardingExpectationView") {
-    OnboardingExpectationView(viewModel: OnboardingViewModel())
-        .background(AppCanvas())
-        .preferredColorScheme(.dark)
-}
-
-#Preview("OnboardingHomeCountryView") {
-    let dependencies = AppDependencies()
-    return OnboardingHomeCountryView(
-        viewModel: OnboardingViewModel(),
-        dependencies: dependencies
-    )
-    .environment(dependencies)
-    .background(AppCanvas())
-    .preferredColorScheme(.dark)
 }
 
 #Preview("OnboardingEntryModeView") {
     OnboardingEntryModeView(viewModel: OnboardingViewModel())
         .background(AppCanvas())
-        .preferredColorScheme(.dark)
 }

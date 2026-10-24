@@ -13,6 +13,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     private var storedQuizAnswers: [QuizAnswer] = []
     private var storedProfile: UserProfile?
     private var storedInterestTagIDs: Set<String> = []
+    private var storedWantedTiers: WantedConceptTiers?
     private(set) var storedEvents: [AnalyticsEvent]
 
     init(
@@ -170,6 +171,10 @@ nonisolated final class InMemoryAppStore: AppStore {
 
     func saveInterestTagIDs(_ ids: Set<String>) async throws { storedInterestTagIDs = ids }
 
+    func loadWantedTiers() async throws -> WantedConceptTiers? { storedWantedTiers }
+
+    func saveWantedTiers(_ tiers: WantedConceptTiers) async throws { storedWantedTiers = tiers }
+
     func append(_ event: AnalyticsEvent) async throws {
         guard !storedEvents.contains(where: { $0.id == event.id }) else {
             throw RepositoryError.duplicateID
@@ -193,6 +198,7 @@ nonisolated final class InMemoryAppStore: AppStore {
         storedQuizAnswers = []
         storedProfile = nil
         storedInterestTagIDs.removeAll()
+        storedWantedTiers = nil
         storedEvents.removeAll()
     }
 }

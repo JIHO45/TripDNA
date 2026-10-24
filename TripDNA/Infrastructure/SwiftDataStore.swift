@@ -198,6 +198,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
         static let userProfile = "userProfile"
         static let interestTags = "interestTags"
         static let tastePrior = "tastePrior"
+        static let wantedTiers = "wantedTiers"
     }
 
     private let container: ModelContainer
@@ -441,6 +442,14 @@ actor SwiftDataAppStore: nonisolated AppStore {
 
     func saveInterestTagIDs(_ ids: Set<String>) async throws {
         try saveSingleton(ids, key: SingletonKey.interestTags)
+    }
+
+    func loadWantedTiers() async throws -> WantedConceptTiers? {
+        try singleton(WantedConceptTiers.self, key: SingletonKey.wantedTiers)
+    }
+
+    func saveWantedTiers(_ tiers: WantedConceptTiers) async throws {
+        try saveSingleton(tiers, key: SingletonKey.wantedTiers)
     }
 
     // MARK: 이벤트

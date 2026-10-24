@@ -30,6 +30,17 @@ struct RecommendationFilterSheet: View {
                         }
                     }
 
+                    if dependencies.canIncludeHomeCountry {
+                        filterSection(
+                            title: "사는 나라",
+                            caption: "사는 나라는 기본으로 추천에서 빼요. 켜면 이번 추천에 넣어요."
+                        ) {
+                            Toggle("사는 나라도 포함", isOn: $viewModel.filter.includeHomeCountry)
+                                .foregroundStyle(Color.dnaTextPrimary)
+                                .accessibilityIdentifier("recommendationFilter.includeHomeCountry")
+                        }
+                    }
+
                     departureSection
                 }
                 .padding(DNASpacing.lg)

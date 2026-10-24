@@ -200,7 +200,7 @@ struct OnboardingHomeCountryView: View {
                 Text("어느 나라에 살고 계세요?")
                     .font(.title2.bold())
                     .foregroundStyle(.white)
-                Text("맞춤 추천에서 거주 국가는 자동으로 제외돼요.")
+                Text("맞춤 추천에서 거주 국가는 기본으로 제외돼요. 추천 조건에서 포함할 수 있어요.")
                     .font(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }

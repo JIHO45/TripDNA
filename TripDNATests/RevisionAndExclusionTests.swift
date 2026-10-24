@@ -121,3 +121,14 @@ struct RevisionAndExclusionTests {
         )
     }
 }
+
+struct HomeCountryExclusionTests {
+    @Test @MainActor func homeCountryIsExcludedByDefaultAndIncludedOnRequest() async {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        #expect(dependencies.excludedCountryCodes(visited: ["JP"]) == ["JP"])
+
+        await dependencies.setHomeCountryCode("KR")
+        #expect(dependencies.excludedCountryCodes(visited: ["JP"]) == ["JP", "KR"])
+        #expect(dependencies.excludedCountryCodes(visited: ["JP"], includingHomeCountry: true) == ["JP"])
+    }
+}

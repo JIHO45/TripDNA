@@ -30,7 +30,7 @@ struct ProfileSheet: View {
                     }
                     .foregroundStyle(.white)
                 } footer: {
-                    Text("거주 국가는 여행지 추천에서 자동으로 제외돼요.")
+                    Text("거주 국가는 여행지 추천에서 기본으로 제외돼요. 추천 조건에서 포함할 수 있어요.")
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 .listRowBackground(Color.dnaSurface1)

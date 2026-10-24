@@ -445,6 +445,5 @@ struct EvaluationView: View {
     EvaluationView(tripID: "preview-trip")
         .previewWithAppEnvironment { session in
             session.onboardingPhase = .completed
-            session.isAuthenticated = true
         }
 }

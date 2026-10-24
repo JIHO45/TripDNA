@@ -689,7 +689,6 @@ enum HomeNarrative {
     }
     .previewWithAppEnvironment { session in
         session.onboardingPhase = .completed
-        session.isAuthenticated = true
     }
 }
 

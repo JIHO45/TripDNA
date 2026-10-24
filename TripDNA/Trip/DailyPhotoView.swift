@@ -68,7 +68,6 @@ struct DailyPhotoView: View {
             autoFallbackConsentSheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.hidden)
-                .preferredColorScheme(.dark)
         }
         .task(id: resolvedDayIndex) {
             let existing = (try? await dependencies.store.photos(tripID: trip.id))?

@@ -121,7 +121,6 @@ struct ShareCardSheet<Card: View>: View {
             }
         }
         .sensoryFeedback(.success, trigger: exportCount)
-        .preferredColorScheme(.dark)
     }
 
     private func render() {

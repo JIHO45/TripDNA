@@ -16,30 +16,47 @@ extension Color {
         self = Color(red: red, green: green, blue: blue, opacity: opacity)
     }
 
-    // 표면. 딥네이비 대신 약간 따뜻한 잉크 계열을 써서 여행 사진과 충돌하지 않게 한다.
-    static let dnaCanvas = Color(hex: 0x11110F)
-    static let dnaSurface1 = Color(hex: 0x181816)
-    static let dnaSurface2 = Color(hex: 0x20201D)
-    static let dnaElevated = Color(hex: 0x282824)
+    /// 라이트/다크에 따라 바뀌는 색. 시스템 외형을 그대로 따른다.
+    init(light: UInt32, dark: UInt32) {
+        self = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(Color(hex: dark)) : UIColor(Color(hex: light)) })
+    }
+
+    // 표면 (F · Stay + Glass 토큰 시트)
+    static let dnaCanvas = Color(light: 0xFFFFFF, dark: 0x141414)
+    static let dnaSurface1 = Color(light: 0xF7F7F7, dark: 0x1F1F1F)
+    static let dnaSurface2 = Color(light: 0xEEEEEE, dark: 0x2A2A2A)
+    static let dnaInk = Color(light: 0x222222, dark: 0x262626)
+    static let dnaRaised = Color(light: 0xFFFFFF, dark: 0x262626)
+    static let dnaElevated = dnaRaised
+    static let dnaSheet = Color(light: 0xEDEDED, dark: 0x0E0E0E)
+    static let dnaControlDark = Color(light: 0x222222, dark: 0x3A3A3A)
 
     // 텍스트
-    static let dnaTextPrimary = Color(hex: 0xF2F0E9)
-    static let dnaTextSecondary = Color(hex: 0xAAA79E)
-    static let dnaTextTertiary = Color(hex: 0x747169)
+    static let dnaTextPrimary = Color(light: 0x222222, dark: 0xF5F5F5)
+    static let dnaTextSecondary = Color(light: 0x6A6A6A, dark: 0xA3A3A3)
+    static let dnaTextTertiary = Color(light: 0x929292, dark: 0x6E6E6E)
 
-    static let dnaDivider = Color.white.opacity(0.08)
+    static let dnaDivider = Color(light: 0xEBEBEB, dark: 0x2E2E2E)
 
-    // 행동
-    static let dnaAction = Color(hex: 0xF06A4F)
-    static let dnaActionPressed = Color(hex: 0xD9563E)
+    // 행동: 버튼 채움은 양쪽 동일(흰 글자), 글자·아이콘 강조는 dnaActionText
+    static let dnaAction = Color(hex: 0xD93A50)
+    static let dnaActionPressed = Color(hex: 0xB92F44)
+    static let dnaActionText = Color(light: 0xD93A50, dark: 0xFF7A8A)
 
     // 데이터
-    static let dnaData = Color(hex: 0x62B8AA)
-    static let dnaDataMuted = Color(hex: 0x355F59)
+    static let dnaData = Color(light: 0x0F7B73, dark: 0x4FB3A9)
+    static let dnaDataMuted = Color(light: 0x7DBDB6, dark: 0x2F7C75)
+    static let dnaDataFaint = Color(light: 0xBFDDD9, dark: 0x1F4D49)
 
-    // 상태
+    // 상태 (다크는 기존 값 유지, 아직 화면에 거의 안 씀)
     static let dnaWarning = Color(hex: 0xD9A441)
     static let dnaError = Color(hex: 0xE36D66)
+    static let dnaUnverifiedBackground = Color(light: 0xFFF6E8, dark: 0x2A2418)
+    static let dnaUnverifiedText = Color(light: 0x6B4A12, dark: 0xF4E3C1)
+
+    // 선택한 칩·세그먼트 (다크는 반전)
+    static let dnaSelectedBackground = Color(light: 0x222222, dark: 0xF5F5F5)
+    static let dnaSelectedForeground = Color(light: 0xFFFFFF, dark: 0x141414)
 
     // MARK: 이전 이름
     //
@@ -56,17 +73,22 @@ extension Color {
 }
 
 enum DNASpacing {
-    static let xs: CGFloat = 6
+    static let xxs: CGFloat = 4
+    static let xs: CGFloat = 8
     static let sm: CGFloat = 12
     static let md: CGFloat = 16
+    static let gutter: CGFloat = 20
     static let lg: CGFloat = 24
     static let xl: CGFloat = 32
 }
 
 enum DNARadius {
-    static let card: CGFloat = 24
-    static let control: CGFloat = 16
-    static let chip: CGFloat = 999
+    static let cell: CGFloat = 6
+    static let chip: CGFloat = 14
+    static let control: CGFloat = 14
+    static let card: CGFloat = 18
+    static let hero: CGFloat = 26
+    static let capsule: CGFloat = 999
 }
 
 /// 모든 화면의 기본 표면. 균일한 웜 잉크 캔버스 한 장이다.
@@ -113,15 +135,17 @@ private struct DNAScaledFont: ViewModifier {
     @ScaledMetric private var size: CGFloat
     private let weight: Font.Weight
     private let design: Font.Design
+    private let tracking: CGFloat
 
-    init(size: CGFloat, weight: Font.Weight, design: Font.Design) {
-        _size = ScaledMetric(wrappedValue: size, relativeTo: Self.textStyle(for: size))
+    init(size: CGFloat, weight: Font.Weight, design: Font.Design, style: Font.TextStyle? = nil, tracking: CGFloat = 0) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: style ?? Self.textStyle(for: size))
         self.weight = weight
         self.design = design
+        self.tracking = tracking
     }
 
     func body(content: Content) -> some View {
-        content.font(.system(size: size, weight: weight, design: design))
+        content.font(.system(size: size, weight: weight, design: design)).tracking(tracking)
     }
 
     private static func textStyle(for size: CGFloat) -> Font.TextStyle {
@@ -137,9 +161,43 @@ private struct DNAScaledFont: ViewModifier {
     }
 }
 
+/// 토큰 시트의 타이포 역할. 시스템 폰트(SF Pro + Apple SD Gothic Neo)만 쓴다.
+enum DNAFontRole {
+    case screenTitle, heroTitle, sectionTitle, cardTitle, body, button, caption, tabLabel
+
+    fileprivate var spec: (size: CGFloat, weight: Font.Weight, style: Font.TextStyle, tracking: CGFloat) {
+        switch self {
+        case .screenTitle: (26, .heavy, .title2, -0.52)
+        case .heroTitle: (21, .heavy, .title3, -0.21)
+        case .sectionTitle: (17, .heavy, .headline, 0)
+        case .cardTitle: (15, .heavy, .subheadline, 0)
+        case .body: (15, .medium, .subheadline, 0)
+        case .button: (15, .heavy, .subheadline, 0)
+        case .caption: (12, .semibold, .caption, 0)
+        case .tabLabel: (10, .bold, .caption2, 0)
+        }
+    }
+}
+
 extension View {
     func dnaFont(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
         modifier(DNAScaledFont(size: size, weight: weight, design: design))
+    }
+
+    /// 역할 이름으로 폰트를 부른다. 예: `.dnaFont(.screenTitle)`
+    func dnaFont(_ role: DNAFontRole) -> some View {
+        let spec = role.spec
+        return modifier(DNAScaledFont(size: spec.size, weight: spec.weight, design: .default, style: spec.style, tracking: spec.tracking))
+    }
+
+    /// 떠 있는 컨트롤(탭바·사진 위 버튼) 전용 유리. iOS 26은 시스템 글래스, 이전 버전은 ultraThinMaterial.
+    @ViewBuilder
+    func dnaGlass<S: Shape>(in shape: S) -> some View {
+        if #available(iOS 26.0, *) {
+            glassEffect(.regular, in: shape)
+        } else {
+            background(.ultraThinMaterial, in: shape)
+        }
     }
 }
 
@@ -152,7 +210,7 @@ struct DNAPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .dnaFont(size: 16, weight: .semibold)
-            .foregroundStyle(isDisabled ? Color.dnaTextTertiary : Color.dnaCanvas)
+            .foregroundStyle(isDisabled ? Color.dnaTextTertiary : .white)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 54)
             .background(
@@ -163,7 +221,7 @@ struct DNAPrimaryButtonStyle: ButtonStyle {
     }
 
     private func fillColor(isPressed: Bool) -> Color {
-        if isDisabled { return Color.white.opacity(0.08) }
+        if isDisabled { return Color.dnaTextPrimary.opacity(0.08) }
         return isPressed ? .dnaActionPressed : .dnaAction
     }
 }
@@ -172,11 +230,11 @@ struct DNASecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.dnaTextPrimary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(
-                Capsule(style: .continuous).fill(Color.white.opacity(0.06))
+                Capsule(style: .continuous).fill(Color.dnaTextPrimary.opacity(0.06))
             )
             .overlay(
                 Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1)
@@ -225,8 +283,8 @@ struct DNAScreenHeader<Trailing: View>: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
+                    .dnaFont(.screenTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)
@@ -258,11 +316,11 @@ struct DNACircleIcon: View {
     var body: some View {
         Image(systemName: systemImage)
             .font(.body.weight(.semibold))
-            .foregroundStyle(isEmphasized ? .white : Color.dnaTextSecondary)
+            .foregroundStyle(isEmphasized ? Color.dnaTextPrimary : Color.dnaTextSecondary)
             .frame(width: size, height: size)
             .background(
                 Circle()
-                    .fill(isEmphasized ? Color.dnaSurface2 : Color.white.opacity(0.04))
+                    .fill(isEmphasized ? Color.dnaSurface2 : Color.dnaTextPrimary.opacity(0.04))
             )
             .overlay(
                 Circle()
@@ -309,7 +367,7 @@ struct DNASegmentedProgressBar: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.08))
+                Capsule().fill(Color.dnaTextPrimary.opacity(0.08))
                 Capsule()
                     .fill(Color.dnaTextSecondary)
                     .frame(width: proxy.size.width * max(0, min(1, progress)))
@@ -359,7 +417,7 @@ struct DNAStepTopBar: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.06), in: Circle())
+                            .background(Color.dnaTextPrimary.opacity(0.06), in: Circle())
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
@@ -536,7 +594,7 @@ struct DNATrustPanel: View {
                 .foregroundStyle(Color.dnaData)
             Text(text)
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(Color.dnaTextPrimary.opacity(0.9))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(DNASpacing.md)
@@ -675,7 +733,7 @@ struct SectionCard<Content: View>: View {
             if let title {
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.dnaTextPrimary)
             }
             content()
         }
@@ -710,7 +768,7 @@ struct FingerprintRadarView: View {
             ZStack {
                 ForEach(1...3, id: \.self) { ring in
                     polygon(radius: radius * CGFloat(ring) / 3, center: center)
-                        .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                        .stroke(Color.dnaTextPrimary.opacity(0.07), lineWidth: 1)
                 }
 
                 ForEach(Array(axisOrder.enumerated()), id: \.offset) { index, _ in
@@ -719,7 +777,7 @@ struct FingerprintRadarView: View {
                         path.move(to: center)
                         path.addLine(to: point)
                     }
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                    .stroke(Color.dnaTextPrimary.opacity(0.06), lineWidth: 1)
                 }
 
                 valuePolygon(center: center, radius: radius)
@@ -780,8 +838,8 @@ struct FingerprintRadarView: View {
     }
 
     private func labelColor(for axis: TasteAxis) -> Color {
-        guard let confidence else { return .white }
-        return confidence[axis] < 0.4 ? Color.dnaTextSecondary.opacity(0.6) : .white
+        guard let confidence else { return Color.dnaTextPrimary }
+        return confidence[axis] < 0.4 ? Color.dnaTextSecondary.opacity(0.6) : Color.dnaTextPrimary
     }
 }
 
@@ -810,7 +868,7 @@ struct FitBadgesRow: View {
                         .foregroundStyle(Color.dnaTextSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.06), in: Capsule())
+                        .background(Color.dnaTextPrimary.opacity(0.06), in: Capsule())
                 }
             }
         }
@@ -860,7 +918,7 @@ struct EmptyStateView: View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.dnaTextPrimary.opacity(0.06))
                     .frame(width: 64, height: 64)
                 Image(systemName: systemImage)
                     .font(.title2)
@@ -868,7 +926,7 @@ struct EmptyStateView: View {
             }
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.dnaTextPrimary)
             Text(message)
                 .font(.subheadline)
                 .foregroundStyle(Color.dnaTextSecondary)
@@ -984,7 +1042,7 @@ struct CountrySelectionList: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
 
                         Divider()
                             .overlay(Color.dnaDivider)

@@ -85,7 +85,6 @@ struct RecommendationFilterSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: 출발지 (프로필 거주국, 읽기 전용)

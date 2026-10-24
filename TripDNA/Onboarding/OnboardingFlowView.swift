@@ -32,8 +32,6 @@ struct OnboardingFlowView: View {
                     OnboardingAnalyzingView(viewModel: viewModel)
                 case .result:
                     OnboardingResultView(viewModel: viewModel)
-                case .appleSignIn:
-                    AppleSignInView(viewModel: viewModel)
                 }
             }
             .transition(.opacity)

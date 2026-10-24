@@ -199,6 +199,5 @@ private struct MiniFingerprintPreview: View {
     }
     .previewWithAppEnvironment { session in
         session.onboardingPhase = .completed
-        session.isAuthenticated = true
     }
 }

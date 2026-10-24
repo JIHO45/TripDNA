@@ -15,7 +15,6 @@ struct RootView: View {
         }
         .environment(dependencies)
         .environment(session)
-        .preferredColorScheme(.dark)
         // 전역 tint는 뉴트럴로 둔다. 틸은 지문 데이터 표시에만 쓴다.
         .tint(Color.dnaTextPrimary)
         .task {
@@ -72,7 +71,6 @@ enum UIDemoSeed {
         await dependencies.setHomeCountryCode("KR")
 
         session.onboardingPhase = .completed
-        session.isAuthenticated = true
     }
 
     /// 18일 전에 돌아온 평가 완료 여행. 대표 사진은 고정 경로를 쓰므로

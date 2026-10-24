@@ -56,7 +56,6 @@ final class OnboardingViewModel {
         case quiz               // 1C
         case analyzing          // 1D-1 지문 합성 연출
         case result             // 1D-2·1D-3
-        case appleSignIn        // 2A (온보딩 페이오프 후 계정 연결)
     }
 
     enum EntryMode {
@@ -131,7 +130,7 @@ final class OnboardingViewModel {
             let total = Double(quizQuestions.count + 1)
             return total > 0 ? Double(min(quizQuestionIndex, quizQuestions.count)) / total : 0
         case .analyzing: return 0.95
-        case .result, .appleSignIn: return 1
+        case .result: return 1
         }
     }
 
@@ -169,8 +168,6 @@ final class OnboardingViewModel {
             break
         case .result:
             break
-        case .appleSignIn:
-            stage = .result
         }
     }
 
@@ -531,10 +528,6 @@ final class OnboardingViewModel {
         }
     }
 
-    func proceedToSignIn() {
-        stage = .appleSignIn
-    }
-
     private func prepareExposure(_ dependencies: AppDependencies, visited: Set<String>) {
         guard let resultVector else { exposure = nil; return }
         exposure = RecommendationExposure(
@@ -543,11 +536,6 @@ final class OnboardingViewModel {
             excludedCountries: dependencies.excludedCountryCodes(visited: visited),
             homeCountry: dependencies.homeCountryCode
         )
-    }
-
-    func completeSignIn(session: SessionStore, appleUserID: String) {
-        session.applyAppleSignIn(userID: appleUserID)
-        session.onboardingPhase = .completed
     }
 
     // MARK: 분석 연출 (1D-1)

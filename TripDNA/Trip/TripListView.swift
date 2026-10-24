@@ -11,7 +11,7 @@ struct TripListView: View {
             if viewModel.isLoading && viewModel.trips.isEmpty {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                        DNAScreenHeader(title: "내 여행", subtitle: "등록한 여행을 한눈에 보세요")
+                        DNAScreenHeader(title: "내 여행", subtitle: "등록한 여행을 한눈에 보세요") { registerButton }
                         DNAHeaderDivider()
                     }
                     LoadingView()
@@ -21,7 +21,7 @@ struct TripListView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: DNASpacing.lg) {
                         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                            DNAScreenHeader(title: "내 여행", subtitle: "등록한 여행을 한눈에 보세요")
+                            DNAScreenHeader(title: "내 여행", subtitle: "등록한 여행을 한눈에 보세요") { registerButton }
                             DNAHeaderDivider()
                         }
                         focusSection
@@ -35,16 +35,6 @@ struct TripListView: View {
         }
         .background(AppCanvas())
         .toolbar(.hidden, for: .navigationBar)
-        .safeAreaInset(edge: .bottom) {
-            DNABottomCTA {
-                Button {
-                    showingRegistration = true
-                } label: {
-                    Label("여행 등록", systemImage: "plus")
-                }
-                .buttonStyle(.dnaPrimary)
-            }
-        }
         .sheet(isPresented: $showingRegistration) {
             NavigationStack {
                 TripRegistrationView(prefilledCountryCode: nil)
@@ -56,6 +46,20 @@ struct TripListView: View {
                 Task { await viewModel.load(dependencies) }
             }
         }
+    }
+
+    private var registerButton: some View {
+        Button {
+            showingRegistration = true
+        } label: {
+            Label("등록", systemImage: "plus")
+                .dnaFont(.button)
+                .foregroundStyle(.white)
+                .padding(.horizontal, DNASpacing.md)
+                .frame(minHeight: 44)
+                .background(Color.dnaAction, in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - 현재 · 예정

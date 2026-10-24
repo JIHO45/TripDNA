@@ -615,7 +615,6 @@ private struct CountryPickerSheet: View {
                     }
                 }
         }
-        .preferredColorScheme(.dark)
         .onChange(of: selectedCode) {
             dismiss()
         }

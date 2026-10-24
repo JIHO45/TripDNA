@@ -2,481 +2,283 @@ import SwiftUI
 
 @Observable
 final class FingerprintDetailViewModel {
-    struct TagCount: Identifiable {
-        let id: String
-        let labelKo: String
-        let count: Int
-    }
-
-    var vector: UserTasteVector?
-    /// 새 지문(여행별 주 컨셉 횟수). 5축 벡터와 무관하게 여행 기록에서만 센다.
-    var conceptFingerprint: ConceptFingerprint?
-    var evidenceTrips: [Trip] = []
-    var frequentTags: [TagCount] = []
-    var isLoading = false
-
-    /// 축 바텀시트 근거용 — 만족도가 높은 evaluated 여행 상위 3개.
-    var topSatisfactionTrips: [Trip] {
-        Array(
-            evidenceTrips
-                .sorted { ($0.evaluation?.satisfaction ?? 0) > ($1.evaluation?.satisfaction ?? 0) }
-                .prefix(3)
-        )
-    }
+    var trips: [Trip] = []
+    var fingerprint: ConceptFingerprint?
+    var obligationCount = 0
+    var tiers: WantedConceptTiers?
+    var isLoading = true
 
     func load(_ dependencies: AppDependencies) async {
-        isLoading = true
         defer { isLoading = false }
-        vector = try? await dependencies.store.currentUTV()
-        let trips = await dependencies.allTrips()
-        conceptFingerprint = ConceptFingerprint(trips: trips)
-        evidenceTrips = trips
-            .filter { $0.status == .evaluated }
-            .sorted { ($0.evaluatedAt ?? .distantPast) > ($1.evaluatedAt ?? .distantPast) }
+        trips = await dependencies.allTrips()
+        fingerprint = ConceptFingerprint(trips: trips)
+        obligationCount = ConceptFingerprint.obligationCount(in: trips)
+        tiers = try? await dependencies.store.loadWantedTiers()
+    }
 
-        let definitions = (try? await dependencies.store.definitions()) ?? []
-        let labels = Dictionary(uniqueKeysWithValues: definitions.map { ($0.id, $0.labelKo) })
-        var counts: [String: Int] = [:]
-        for trip in evidenceTrips {
-            for tagID in trip.evaluation?.positiveTagIDs ?? [] {
-                counts[tagID, default: 0] += 1
-            }
-        }
-        frequentTags = counts
-            .sorted { $0.value > $1.value }
-            .prefix(10)
-            .map { TagCount(id: $0.key, labelKo: labels[$0.key] ?? $0.key, count: $0.value) }
+    func trip(id: String) -> Trip? { trips.first { $0.id == id } }
+
+    /// "다녀온 여행 6번 · 출장 1번은 빼고 셌어요"
+    var scopeLineKo: String {
+        guard let fingerprint else { return "" }
+        var line = "다녀온 여행 \(fingerprint.total)번"
+        if obligationCount > 0 { line += " · 출장 \(obligationCount)번은 빼고 셌어요" }
+        return line
     }
 }
 
-/// `.sheet(item:)`용 래퍼. TasteAxis에 직접 Identifiable을 붙이지 않기 위한 것.
-private struct AxisSelection: Identifiable {
-    let axis: TasteAxis
-    var id: String { axis.rawValue }
-}
-
+/// 내 여행 지문. 다녀온 여행의 주 컨셉을 센 기록이며 성향을 추정하지 않는다.
+/// 사용자가 "원한다고 한 것"은 따로 둔다.
 struct FingerprintDetailView: View {
     @Environment(AppRouter.self) private var router
     @Environment(AppDependencies.self) private var dependencies
     @State private var viewModel = FingerprintDetailViewModel()
-    @State private var selectedAxis: AxisSelection?
     @State private var showingShare = false
+    @State private var showingMismatch = false
+    @State private var showingRegistration = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                if let fingerprint = viewModel.conceptFingerprint {
-                    conceptCard(fingerprint)
+                if let fingerprint = viewModel.fingerprint {
+                    fingerprintCard(fingerprint)
                 } else if viewModel.isLoading {
-                    LoadingView().frame(height: 280)
+                    LoadingView().frame(height: 240)
                 } else {
-                    EmptyStateView(
-                        systemImage: "touchid",
-                        title: "아직 지문이 없어요",
-                        message: "다녀온 여행을 등록하고 무엇을 하러 갔는지 고르면 지문이 쌓여요.",
-                        actionTitle: "여행 등록하러 가기",
-                        action: { router.selectedTab = .trips }
-                    )
-                    .frame(height: 280)
+                    emptyCard
                 }
-                // ponytail: 이전 5축 화면을 아래에 그대로 둔다. 철회된 설계라 제거 여부는 사용자 결정 대기.
-                if let vector = viewModel.vector {
-                    hero(vector)
-                    axisRowsCard(vector)
-                    evidenceTripsCard
-                    frequentTagsCard
-                    blurryAxesCard(vector)
+                wantedCard
+                Button {
+                    showingMismatch = true
+                } label: {
+                    HStack {
+                        Text("내 취향과 달라요")
+                        Image(systemName: "chevron.right").dnaFont(size: 12, weight: .semibold)
+                    }
+                    .dnaFont(.button)
+                    .foregroundStyle(Color.dnaTextSecondary)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                .accessibilityIdentifier("fingerprint.mismatch")
             }
-            .padding(DNASpacing.lg)
+            .padding(.horizontal, DNASpacing.gutter)
+            .padding(.vertical, DNASpacing.md)
         }
         .dnaBackground()
-        .safeAreaInset(edge: .bottom) {
-            if viewModel.vector != nil {
-                DNABottomCTA {
-                    NavigationLink {
-                        RankingBoardView()
-                    } label: {
-                        Text("내 여행 랭킹 확인")
-                    }
-                    .buttonStyle(.dnaPrimary)
-                }
-            }
-        }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationTitle("내 여행 지문")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            if viewModel.vector != nil {
+            if viewModel.fingerprint != nil {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("지문 공유") { showingShare = true }
+                    Button { showingShare = true } label: { Image(systemName: "square.and.arrow.up") }
+                        .accessibilityLabel("지문 공유")
                         .accessibilityIdentifier("fingerprint.sharePreview")
                 }
             }
         }
         .sheet(isPresented: $showingShare) {
-            if let vector = viewModel.vector {
-                ShareCardSheet(kind: .fingerprint, title: "지문 공유", disclosure: "5축 취향 지문과 취향 설명이 포함돼요. 개별 여행 이력은 표시하지 않아요.") { _ in
-                    FingerprintShareCard(axes: vector.axes, confidence: vector.confidence)
+            if let fingerprint = viewModel.fingerprint {
+                ShareCardSheet(
+                    kind: .fingerprint,
+                    title: "공유 미리보기",
+                    disclosure: "포함: 여행 수, 컨셉별 횟수 · 빠짐: 날짜, 도시, 동행, 사진"
+                ) { _ in
+                    FingerprintShareCard(fingerprint: fingerprint)
                 }
             }
         }
-        .sheet(item: $selectedAxis) { selection in
-            if let vector = viewModel.vector {
-                AxisDetailSheet(
-                    axis: selection.axis,
-                    value: vector.axes[selection.axis],
-                    confidence: vector.confidence[selection.axis],
-                    evidenceTrips: viewModel.topSatisfactionTrips
-                )
-            }
+        .sheet(isPresented: $showingMismatch) {
+            MismatchSheet { showingMismatch = false; router.selectedTab = .trips }
+        }
+        .sheet(isPresented: $showingRegistration, onDismiss: { Task { await viewModel.load(dependencies) } }) {
+            NavigationStack { TripRegistrationView(prefilledCountryCode: nil) }
         }
         .task { await viewModel.load(dependencies) }
     }
 
-    // MARK: - 컨셉 지문
+    // MARK: 지문
 
-    private func conceptCard(_ fingerprint: ConceptFingerprint) -> some View {
-        SectionCard(title: "내가 다녀온 여행") {
-            Text(fingerprint.top.map { "\($0.labelKo) 여행" }.joined(separator: " · "))
-                .font(.title3.bold())
-                .foregroundStyle(Color.dnaTextPrimary)
-            Text("가장 많이 다녀온 여행이에요. 출장·가족 방문은 세지 않아요.")
-                .font(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
-            ForEach(fingerprint.entries, id: \.concept) { entry in
-                HStack {
-                    Text(entry.concept.labelKo)
-                        .foregroundStyle(Color.dnaTextPrimary)
-                    Spacer()
-                    // 여행 한 건마다 점 하나씩 쌓는다.
-                    Text(String(repeating: "●", count: min(entry.count, 12)))
-                        .foregroundStyle(Color.dnaData)
-                        .accessibilityHidden(true)
-                    Text("\(entry.count)번")
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-                .font(.subheadline)
-                .accessibilityElement(children: .combine)
-            }
-        }
-    }
-
-    // MARK: - 히어로 (3B)
-
-    private func hero(_ vector: UserTasteVector) -> some View {
-        VStack(spacing: DNASpacing.sm) {
-            FingerprintRadarView(axes: vector.axes, confidence: vector.confidence)
-            if let breadth = AxisNarrative.breadthSentenceKo(vector) {
-                Text(breadth)
-                    .font(.caption)
+    private func fingerprintCard(_ fingerprint: ConceptFingerprint) -> some View {
+        VStack(alignment: .leading, spacing: DNASpacing.md) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(viewModel.scopeLineKo)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
-            }
-            Text(AxisNarrative.representativeSentenceKo(axes: vector.axes, confidence: vector.confidence))
-                .font(.title3.bold())
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - 5축 행 (3B, 탭 → 3C 바텀시트)
-
-    private func axisRowsCard(_ vector: UserTasteVector) -> some View {
-        SectionCard(title: "5축 취향") {
-            VStack(spacing: DNASpacing.md) {
-                ForEach(TasteAxis.allCases, id: \.self) { axis in
-                    AxisRow(
-                        axis: axis,
-                        value: vector.axes[axis],
-                        confidence: vector.confidence[axis]
-                    ) {
-                        selectedAxis = AxisSelection(axis: axis)
-                    }
-                }
-                Text("ⓘ 표시된 축은 현재 추천 점수에는 반영하지 않아요")
-                    .font(.caption2)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            }
-        }
-    }
-
-    // MARK: - 내 취향을 만든 여행 (3B)
-
-    private var evidenceTripsCard: some View {
-        SectionCard(title: "내 취향을 만든 여행") {
-            if viewModel.evidenceTrips.isEmpty {
-                Text("아직 평가된 여행이 없어요. 여행을 평가하면 여기에 쌓여요.")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            } else {
-                VStack(spacing: DNASpacing.sm) {
-                    ForEach(viewModel.evidenceTrips.prefix(5)) { trip in
-                        HStack(alignment: .firstTextBaseline) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(trip.titleKo)
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.white)
-                                Text(trip.dateRangeKo)
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.dnaTextSecondary)
-                            }
-                            Spacer()
-                            if let satisfaction = trip.evaluation?.satisfaction {
-                                Text("만족도 \(satisfaction)/5")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.dnaData)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - 자주 고른 태그 (3B)
-
-    private var frequentTagsCard: some View {
-        SectionCard(title: "자주 고른 태그") {
-            if viewModel.frequentTags.isEmpty {
-                Text("여행을 평가할 때 고른 좋았던 태그가 여기에 모여요.")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            } else {
-                DNAFlowLayout(spacing: 8) {
-                    ForEach(viewModel.frequentTags) { tag in
-                        frequencyChip(tag)
-                    }
-                }
-            }
-        }
-    }
-
-    private func frequencyChip(_ tag: FingerprintDetailViewModel.TagCount) -> some View {
-        HStack(spacing: 4) {
-            Text(tag.labelKo)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.9))
-            if tag.count > 1 {
-                Text("×\(tag.count)")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.dnaData)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.05)))
-        .overlay(Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1))
-    }
-
-    // MARK: - 아직 흐린 축 (3B)
-
-    private func blurryAxesCard(_ vector: UserTasteVector) -> some View {
-        let blurryAxes = TasteAxis.allCases.filter { vector.confidence[$0] < 0.4 }
-        return SectionCard(title: "아직 흐린 축") {
-            if blurryAxes.isEmpty {
-                Text("모든 축이 충분히 선명해요.")
-                    .font(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            } else {
-                VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                    ForEach(blurryAxes, id: \.self) { axis in
-                        HStack(spacing: 6) {
-                            Image(systemName: "circle.dotted")
-                                .font(.caption)
-                                .foregroundStyle(Color.dnaWarning)
-                            Text(axis.labelKo)
-                                .font(.subheadline)
-                                .foregroundStyle(.white)
-                            Spacer()
-                            Text("데이터 적음")
-                                .font(.caption2)
-                                .foregroundStyle(Color.dnaTextSecondary)
-                        }
-                    }
-                    Text("여행 평가가 쌓이면 선명해져요.")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                        .padding(.top, 2)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 축 행
-
-private struct AxisRow: View {
-    let axis: TasteAxis
-    let value: Double
-    let confidence: Double
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                HStack(spacing: 5) {
-                    Text(axis.labelKo)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white)
-                    if axis != .natureUrban {
-                        // 조건부축: 현재 추천 점수 미반영 안내 (카드 하단 각주 참조).
-                        Image(systemName: "info.circle")
-                            .font(.caption2)
-                            .foregroundStyle(Color.dnaTextSecondary)
-                    }
-                    Spacer()
-                    if confidence < 0.4 {
-                        Text("데이터 적음")
-                            .font(.caption2)
-                            .foregroundStyle(Color.dnaWarning)
-                    } else {
-                        Text("신뢰도 \(Int((confidence * 100).rounded()))%")
-                            .font(.caption2)
-                            .foregroundStyle(Color.dnaTextSecondary)
-                            .monospacedDigit()
-                    }
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-                BipolarAxisBar(value: value, confidence: confidence)
-                HStack {
-                    Text(AxisNarrative.negativePoleKo(axis))
-                        .font(.caption2)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                    Spacer()
-                    Text(AxisNarrative.positivePoleKo(axis))
-                        .font(.caption2)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-/// 중앙 눈금 + 위치 마커로 -1…+1 값을 보여주는 양극 바.
-private struct BipolarAxisBar: View {
-    let value: Double
-    let confidence: Double
-
-    var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            let position = CGFloat((value + 1) / 2)
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(height: 6)
-                Rectangle()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(width: 1.5, height: 12)
-                    .offset(x: width / 2 - 0.75)
-                Circle()
-                    .fill(Color.dnaData)
-                    .frame(width: 14, height: 14)
-                    .shadow(color: Color.dnaData.opacity(0.7), radius: 6)
-                    .opacity(max(0.35, confidence))
-                    .offset(x: (width - 14) * position)
-            }
-        }
-        .frame(height: 14)
-    }
-}
-
-// MARK: - 축 상세 바텀시트 (3C)
-
-private struct AxisDetailSheet: View {
-    let axis: TasteAxis
-    let value: Double
-    let confidence: Double
-    let evidenceTrips: [Trip]
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DNASpacing.md) {
-                Text(axis.labelKo)
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-
-                Text(AxisNarrative.poleMeaningKo(axis))
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.85))
+                Text(fingerprint.detailHeadlineKo)
+                    .dnaFont(.screenTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
-
-                VStack(spacing: 6) {
-                    HStack {
-                        Text("현재 위치")
-                            .font(.caption)
-                            .foregroundStyle(Color.dnaTextSecondary)
-                        Spacer()
-                        Text("\(AxisNarrative.leaningPhraseKo(axis: axis, value: value)) 쪽")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.dnaData)
-                    }
-                    BipolarAxisBar(value: value, confidence: confidence)
-                    HStack {
-                        Text(AxisNarrative.negativePoleKo(axis))
-                            .font(.caption2)
-                            .foregroundStyle(Color.dnaTextSecondary)
-                        Spacer()
-                        Text(AxisNarrative.positivePoleKo(axis))
-                            .font(.caption2)
-                            .foregroundStyle(Color.dnaTextSecondary)
-                    }
+            }
+            VStack(alignment: .leading, spacing: DNASpacing.sm) {
+                Text("여행마다 고른 주 컨셉")
+                    .dnaFont(.sectionTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                ForEach(Array(fingerprint.entries.enumerated()), id: \.element.concept) { rank, entry in
+                    conceptRow(entry, rank: rank, ids: fingerprint.tripIDs[entry.concept] ?? [])
                 }
-                .padding(DNASpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .fill(Color.dnaSurface1)
-                )
+                Text("칸을 누르면 그 여행으로 가요")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            }
+        }
+        .padding(DNASpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+    }
 
-                if confidence < 0.4 {
-                    Label("여행 평가가 쌓이면 선명해져요", systemImage: "sparkles")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.dnaWarning)
-                } else {
-                    Label("신뢰도 \(Int((confidence * 100).rounded()))% · 평가한 여행이 반영됐어요", systemImage: "checkmark.seal")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.dnaData)
-                }
-
-                if axis != .natureUrban {
-                    Label("현재 추천 점수에는 반영하지 않아요", systemImage: "info.circle")
-                        .font(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
-
-                if !evidenceTrips.isEmpty {
-                    Text("근거가 된 여행")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .padding(.top, DNASpacing.xs)
-                    VStack(spacing: DNASpacing.sm) {
-                        ForEach(evidenceTrips) { trip in
-                            HStack {
-                                Text(trip.titleKo)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                if let satisfaction = trip.evaluation?.satisfaction {
-                                    Text("만족도 \(satisfaction)/5")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.dnaTextSecondary)
-                                }
-                            }
+    /// 칸 하나가 여행 하나이고, 칸은 그 여행의 대표 사진이다.
+    private func conceptRow(_ entry: ConceptFingerprint.Entry, rank: Int, ids: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(entry.concept.labelKo)
+                    .dnaFont(.cardTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Spacer()
+                Text("\(entry.count)번")
+                    .dnaFont(.cardTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                    .monospacedDigit()
+            }
+            DNAFlowLayout(spacing: 6) {
+                ForEach(ids, id: \.self) { id in
+                    if let trip = viewModel.trip(id: id) {
+                        NavigationLink {
+                            TripDetailView(tripID: id)
+                        } label: {
+                            block(for: trip, rank: rank)
                         }
+                        .accessibilityLabel("\(trip.placeTitleKo) 여행 보기")
                     }
                 }
             }
-            .padding(DNASpacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.dnaCanvas)
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-        .presentationBackground(Color.dnaCanvas)
+    }
+
+    private func block(for trip: Trip, rank: Int) -> some View {
+        ZStack {
+            ConceptBlockRows.color(rank: rank)
+            if let path = trip.coverPhotoStoragePath, LocalPhotoStore.image(at: path) != nil {
+                TripPhotoImage(storagePath: path)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private var emptyCard: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            Text("아직 지문이 비어 있어요")
+                .dnaFont(.screenTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("다녀온 여행을 등록하면 여행마다 한 칸씩 쌓여요.")
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
+            Button("여행 등록하기") { showingRegistration = true }
+                .buttonStyle(.dnaPrimary)
+                .padding(.top, DNASpacing.xs)
+                .accessibilityIdentifier("fingerprint.register")
+        }
+        .padding(DNASpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+    }
+
+    // MARK: 원한다고 한 것
+
+    private var wantedCard: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            HStack {
+                Text("원한다고 한 것")
+                    .dnaFont(.sectionTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Spacer()
+                NavigationLink("수정") { WantedTripsSettingsView() }
+                    .dnaFont(.button)
+                    .foregroundStyle(Color.dnaActionText)
+                    .accessibilityIdentifier("fingerprint.editWanted")
+            }
+            let rows = [1, 2, 3].filter { !(viewModel.tiers?.concepts(in: $0).isEmpty ?? true) }
+            if rows.isEmpty {
+                Text("아직 고르지 않았어요")
+                    .dnaFont(.body)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            } else {
+                ForEach(rows, id: \.self) { tier in
+                    HStack(alignment: .firstTextBaseline, spacing: DNASpacing.sm) {
+                        Text(WantedConceptTiers.screenName(of: tier))
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                            .frame(width: 92, alignment: .leading)
+                        Text((viewModel.tiers?.concepts(in: tier) ?? []).map(\.labelKo).joined(separator: ", "))
+                            .dnaFont(.cardTitle)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                    }
+                }
+            }
+        }
+        .padding(DNASpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+    }
+}
+
+// MARK: - 내 취향과 달라요
+
+/// 지문 자체를 손으로 바꾸지 않고, 고칠 수 있는 곳으로 안내한다.
+private struct MismatchSheet: View {
+    let onOpenTrips: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DNASpacing.md) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("어떤 게 다른가요?")
+                        .dnaFont(.screenTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    Text("지문은 여행마다 고른 컨셉을 센 거예요. 고치고 싶은 곳으로 안내할게요.")
+                        .dnaFont(.body)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                Button(action: onOpenTrips) {
+                    route("여행의 컨셉이 틀렸어요", "여행 목록에서 컨셉 고치기")
+                }
+                .buttonStyle(.plain)
+                NavigationLink { WantedTripsSettingsView() } label: {
+                    route("원하는 여행이 바뀌었어요", "원하는 여행 수정")
+                }
+                .buttonStyle(.plain)
+                NavigationLink { MemorySettingsView() } label: {
+                    route("추천이 기억하는 내용이 달라요", "기억하는 취향 보기")
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+            .padding(DNASpacing.gutter)
+            .background(Color.dnaCanvas.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private func route(_ title: String, _ subtitle: String) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
+                Text(subtitle).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .dnaFont(size: 13, weight: .semibold)
+                .foregroundStyle(Color.dnaTextTertiary)
+        }
+        .padding(DNASpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 }
 

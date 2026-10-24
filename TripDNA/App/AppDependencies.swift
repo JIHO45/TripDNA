@@ -172,6 +172,7 @@ final class AppDependencies {
         UserDefaults.standard.removeObject(forKey: AutoPhotoFallbackService.consentKey)
         UserDefaults.standard.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")
         UserDefaults.standard.removeObject(forKey: Self.firstRecommendationKey)
+        RankingReorderFlag.clear()
         homeCountryCode = nil
         interestTagIDs.removeAll()
         localUserID = UUID().uuidString

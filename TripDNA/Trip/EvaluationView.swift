@@ -47,7 +47,7 @@ struct EvaluationView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let trip = viewModel.trip {
-                ShareCardSheet(kind: .trip, title: "여행 공유", disclosure: "기록한 별점과 내 여행 랭킹이 포함돼요.", allowsDestinationNames: true) { showsDestinationNames in
+                ShareCardSheet(kind: .trip, title: "공유 미리보기", disclosure: "포함: 여행 컨셉, 기간, 내 랭킹 · 빠짐: 날짜, 도시, 동행, 사진", allowsDestinationNames: true) { showsDestinationNames in
                     TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: showsDestinationNames)
                 }
             }

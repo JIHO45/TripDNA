@@ -218,6 +218,8 @@ nonisolated struct ConceptFingerprint: Equatable, Sendable {
 
     /// 횟수 내림차순. 같은 횟수는 `TripConcept.allCases` 순서.
     let entries: [Entry]
+    /// 컨셉마다 센 여행의 id. 지문의 칸 하나가 여행 하나이므로 화면이 칸을 그릴 때 쓴다.
+    let tripIDs: [TripConcept: [String]]
 
     /// 1위 컨셉들. 동점이면 함께 담는다.
     var top: [TripConcept] {
@@ -225,16 +227,33 @@ nonisolated struct ConceptFingerprint: Equatable, Sendable {
         return entries.filter { $0.count == best }.map(\.concept)
     }
 
+    /// 센 여행의 수. 컨셉을 고르지 않은 여행은 들어 있지 않다.
+    var total: Int { entries.reduce(0) { $0 + $1.count } }
+
+    /// 1위 컨셉의 횟수.
+    var topCount: Int { entries.first?.count ?? 0 }
+
+    /// 지문에서 빠지는 끝난 의무 여행의 수. "출장 N번은 빼고 셌어요"에 쓴다.
+    static func obligationCount(in trips: [Trip], now: Date = Date()) -> Int {
+        trips.filter { $0.purpose == .obligation && isFinished($0, now: now) }.count
+    }
+
+    private static func isFinished(_ trip: Trip, now: Date) -> Bool {
+        let today = Calendar.current.startOfDay(for: now)
+        return trip.endedAt != nil || (trip.legs.map(\.endDate).max() ?? .distantFuture) < today
+    }
+
     /// 셀 여행이 없으면 nil.
     init?(trips: [Trip], now: Date = Date()) {
-        let today = Calendar.current.startOfDay(for: now)
         var counts: [TripConcept: Int] = [:]
+        var ids: [TripConcept: [String]] = [:]
         for trip in trips where trip.purpose == .leisure {
-            let finished = trip.endedAt != nil || (trip.legs.map(\.endDate).max() ?? .distantFuture) < today
-            guard finished, let primary = trip.concepts?.primary else { continue }
+            guard Self.isFinished(trip, now: now), let primary = trip.concepts?.primary else { continue }
             counts[primary, default: 0] += 1
+            ids[primary, default: []].append(trip.id)
         }
         guard !counts.isEmpty else { return nil }
+        tripIDs = ids
         // sorted는 안정 정렬이 아니므로 동점 순서를 allCases 위치로 고정한다.
         entries = TripConcept.allCases.enumerated()
             .compactMap { index, concept in counts[concept].map { (index, Entry(concept: concept, count: $0)) } }

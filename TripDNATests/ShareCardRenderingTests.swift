@@ -7,24 +7,15 @@ import XCTest
 final class ShareCardRenderingTests: XCTestCase {
     @MainActor
     func testCardsRenderWithBrandAndRespectDestinationPrivacy() throws {
-        let axes = TasteAxes(natureUrban: -0.5, energyLevel: 0.4, planningStyle: -0.3, socialMode: 0.6, noveltyAppetite: 0.2)
-        let confidence = TasteAxes(natureUrban: 0.8, energyLevel: 0.8, planningStyle: 0.8, socialMode: 0.8, noveltyAppetite: 0.8)
-        let date = Date(timeIntervalSince1970: 1_780_000_000)
-        let trip = try Trip(legs: [TripLeg(countryCode: "JP", cities: ["SECRET_CITY"], startDate: date, endDate: date)], companion: .alone, purpose: .leisure)
+        let trip = try sampleTrip(city: "SECRET_CITY")
         let summary = TripShareSummary(trip: trip)
-        let wrapped = WrappedDisplayModel(
-            year: 2026, tripCount: 3, destinationCount: 4, cards: [],
-            topTripTitle: "PRIVATE_DESTINATION", topTripDateRange: "PRIVATE_DATE",
-            strongestAxis: .natureUrban, isStrongestAxisConditional: false,
-            topTagLabels: ["미식 탐험", "자연 풍경", "문화 체험"], axes: axes, confidence: confidence,
-            isLowConfidence: false, annualPhotos: []
-        )
+        let wrapped = try sampleWrapped()
         let cards: [(String, AnyView)] = [
-            ("fingerprint", AnyView(FingerprintShareCard(axes: axes, confidence: confidence))),
+            ("fingerprint", AnyView(FingerprintShareCard(fingerprint: try sampleFingerprint()))),
             ("trip-private", AnyView(TripShareCard(summary: summary, showsDestinationNames: false))),
             ("trip-public", AnyView(TripShareCard(summary: summary, showsDestinationNames: true))),
-            ("wrapped-private", AnyView(WrappedShareCardView(display: wrapped, showsDestinationNames: false))),
-            ("wrapped-public", AnyView(WrappedShareCardView(display: wrapped, showsDestinationNames: true)))
+            ("wrapped-private", AnyView(WrappedShareCardView(wrapped: wrapped, showsDestinationNames: false))),
+            ("wrapped-public", AnyView(WrappedShareCardView(wrapped: wrapped, showsDestinationNames: true)))
         ]
         for (name, card) in cards {
             let image = try XCTUnwrap(ShareCardRenderer.render(card), name)
@@ -43,8 +34,8 @@ final class ShareCardRenderingTests: XCTestCase {
             XCTAssertTrue(text.replacingOccurrences(of: " ", with: "").contains("TripDNA"), "\(name): \(text)")
             XCTAssertFalse(text.contains("PRIVATE_DATE"))
             XCTAssertFalse(text.contains("SECRET_CITY"))
-            if name == "wrapped-private" { XCTAssertFalse(text.contains("PRIVATE_DESTINATION")) }
-            if name == "wrapped-public" { XCTAssertTrue(text.contains("PRIVATE_DESTINATION")) }
+            if name == "wrapped-private" { XCTAssertFalse(text.contains("일본")) }
+            if name == "wrapped-public" { XCTAssertTrue(text.contains("일본")) }
             if name == "trip-private" { XCTAssertFalse(text.contains("일본")) }
             if name == "trip-public" { XCTAssertTrue(text.contains("일본")) }
         }
@@ -53,20 +44,12 @@ final class ShareCardRenderingTests: XCTestCase {
     @MainActor
     func testInstallQRCodeEncodesShareURLOnEveryCard() throws {
         let url = try XCTUnwrap(URL(string: "https://tripdna.app/get"))
-        let axes = TasteAxes(natureUrban: -0.5, energyLevel: 0.4, planningStyle: -0.3, socialMode: 0.6, noveltyAppetite: 0.2)
-        let date = Date(timeIntervalSince1970: 1_780_000_000)
-        let trip = try Trip(legs: [TripLeg(countryCode: "JP", cities: [], startDate: date, endDate: date)], companion: .alone, purpose: .leisure)
-        let wrapped = WrappedDisplayModel(
-            year: 2026, tripCount: 1, destinationCount: 1, cards: [],
-            topTripTitle: "일본", topTripDateRange: "",
-            strongestAxis: .natureUrban, isStrongestAxisConditional: false,
-            topTagLabels: [], axes: axes, confidence: axes,
-            isLowConfidence: false, annualPhotos: []
-        )
+        let trip = try sampleTrip(city: nil)
+        let wrapped = try sampleWrapped()
         let cards: [(String, AnyView)] = [
-            ("fingerprint", AnyView(FingerprintShareCard(axes: axes, confidence: axes, installURL: url))),
+            ("fingerprint", AnyView(FingerprintShareCard(fingerprint: try sampleFingerprint(), installURL: url))),
             ("trip", AnyView(TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: false, installURL: url))),
-            ("wrapped", AnyView(WrappedShareCardView(display: wrapped, showsDestinationNames: false, installURL: url)))
+            ("wrapped", AnyView(WrappedShareCardView(wrapped: wrapped, showsDestinationNames: false, installURL: url)))
         ]
         for (name, card) in cards {
             let cgImage = try XCTUnwrap(ShareCardRenderer.render(card)?.cgImage, name)
@@ -76,11 +59,37 @@ final class ShareCardRenderingTests: XCTestCase {
 
     @MainActor
     func testCardsOmitInstallBadgeWithoutShareURL() throws {
-        let axes = TasteAxes(natureUrban: 0.1, energyLevel: 0.1, planningStyle: 0.1, socialMode: 0.1, noveltyAppetite: 0.1)
         let cgImage = try XCTUnwrap(ShareCardRenderer.render(
-            FingerprintShareCard(axes: axes, confidence: axes, installURL: nil)
+            FingerprintShareCard(fingerprint: try sampleFingerprint(), installURL: nil)
         )?.cgImage)
         XCTAssertEqual(try qrPayloads(in: cgImage), [])
+    }
+
+    // 도시·정확한 날짜가 카드에 새지 않는지 보려고 2026-05-10 ~ 14 일본 여행을 쓴다.
+    private func sampleTrip(city: String?) throws -> Trip {
+        let calendar = Calendar(identifier: .gregorian)
+        let start = calendar.date(from: DateComponents(year: 2026, month: 5, day: 10, hour: 12))!
+        let end = calendar.date(from: DateComponents(year: 2026, month: 5, day: 14, hour: 12))!
+        var trip = try Trip(
+            legs: [TripLeg(countryCode: "JP", cities: city.map { [$0] } ?? [], startDate: start, endDate: end)],
+            companion: .alone, purpose: .leisure, concepts: TripConcepts(primary: .food)
+        )
+        try trip.start(at: start)
+        try trip.end(at: end)
+        return trip
+    }
+
+    private func sampleFingerprint() throws -> ConceptFingerprint {
+        try XCTUnwrap(ConceptFingerprint(trips: [sampleTrip(city: nil)]))
+    }
+
+    private func sampleWrapped() throws -> WrappedYear {
+        let calendar = Calendar(identifier: .gregorian)
+        return WrappedYear.make(
+            year: 2026, now: calendar.date(from: DateComponents(year: 2026, month: 12, day: 20))!,
+            trips: [try sampleTrip(city: "SECRET_CITY")], ranking: nil, rankingReordered: false,
+            photos: [], calendar: calendar
+        )
     }
 
     /// Vision 바코드 인식은 시뮬레이터에서 추론 컨텍스트를 만들지 못하므로 CoreImage 감지기를 쓴다.

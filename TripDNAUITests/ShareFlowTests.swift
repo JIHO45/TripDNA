@@ -14,11 +14,8 @@ final class ShareFlowTests: XCTestCase {
 
     @MainActor func testFingerprintSharing() throws {
         let app = launch()
-        let detail = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "취향 자세히 보기")).firstMatch
-        reveal(detail, in: app)
-        detail.tap()
-        let share = app.buttons["fingerprint.sharePreview"]
-        XCTAssertTrue(share.waitForExistence(timeout: 10))
+        let share = app.buttons["home.fingerprintShare"]
+        reveal(share, in: app)
         share.tap()
         try verifyExport(app, destinations: false)
     }
@@ -40,8 +37,6 @@ final class ShareFlowTests: XCTestCase {
         let wrapped = app.buttons["home.wrapped"]
         reveal(wrapped, in: app)
         wrapped.tap()
-        XCTAssertTrue(app.buttons["내 Wrapped 보기"].waitForExistence(timeout: 10))
-        app.buttons["내 Wrapped 보기"].tap()
         let share = app.buttons["wrapped.sharePreview"]
         for _ in 0..<6 where !share.exists { app.swipeLeft() }
         XCTAssertTrue(share.waitForExistence(timeout: 10))

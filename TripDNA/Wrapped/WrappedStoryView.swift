@@ -1,134 +1,323 @@
 import SwiftUI
 
-/// UI-5B. 풀스크린 스토리 스타일 6장 카드 시퀀스.
-/// 상단 6칸 세그먼트 진행바 + 오른쪽 탭=다음 / 왼쪽 탭=이전 + 스와이프를 지원한다.
+/// 풀스크린 스토리. 오른쪽 탭/왼쪽으로 스와이프=다음, 왼쪽 탭/오른쪽으로 스와이프=이전.
+/// 카드 목록은 `WrappedYear.cards`가 정한다(②는 랭킹을 직접 바꿨을 때만 등).
 struct WrappedStoryView: View {
-    let display: WrappedDisplayModel
+    let wrapped: WrappedYear
+    let onClose: () -> Void
 
     @State private var index = 0
+    @State private var showingShare = false
 
-    private var cards: [WrappedCard] { display.cards }
-    private var currentCard: WrappedCard { cards[index] }
-    private var isShareCard: Bool { currentCard.kind == .share }
+    private var cards: [WrappedYear.Card] { wrapped.cards }
+    private var card: WrappedYear.Card { cards[min(index, cards.count - 1)] }
+    private var isLight: Bool { card == .concepts }
+    private var foreground: Color { isLight ? Color.dnaTextPrimary : Color.white }
 
     var body: some View {
         ZStack {
-            background(for: currentCard.kind)
-                .animation(.easeInOut(duration: 0.4), value: index)
-
-            cardContent
+            background
+            content
                 .id(index)
-                .transition(
-                    .asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.94)),
-                        removal: .opacity
-                    )
-                )
-                // 공유 카드(W6)만 버튼·토글이 있어 히트 테스트를 살려둔다.
-                .allowsHitTesting(isShareCard)
-
+                .transition(.opacity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.horizontal, DNASpacing.lg)
+                .padding(.top, 96)
+                .padding(.bottom, 56)
+                .allowsHitTesting(card == .finish)
             tapZones
-
-            VStack {
-                segmentedProgressBar
+            VStack(spacing: DNASpacing.sm) {
+                progressBar
+                topRow
                 Spacer()
             }
+            .padding(.horizontal, DNASpacing.lg)
+            .padding(.top, DNASpacing.xs)
         }
-        .gesture(swipeGesture)
-    }
-
-    // MARK: - Card routing
-
-    @ViewBuilder
-    private var cardContent: some View {
-        switch currentCard.kind {
-        case .movement:
-            MovementCardView(display: display)
-        case .topTrip:
-            TopTripCardView(display: display)
-        case .strongestTaste:
-            StrongestTasteCardView(display: display)
-        case .tags:
-            TagsCardView(display: display)
-        case .photo:
-            PhotoMosaicCardView(display: display)
-        case .share:
-            WrappedShareStageView(display: display) {
-                withAnimation(.easeOut(duration: 0.35)) { index = 0 }
+        .foregroundStyle(foreground)
+        .gesture(DragGesture(minimumDistance: 30).onEnded { value in
+            if value.translation.width < -40 { advance() } else if value.translation.width > 40 { goBack() }
+        })
+        .sheet(isPresented: $showingShare) {
+            ShareCardSheet(
+                kind: .wrapped,
+                title: "공유 미리보기",
+                disclosure: "포함: 여행 수, 가장 많이 떠난 컨셉 · 빠짐: 날짜, 도시, 동행, 사진",
+                allowsDestinationNames: true
+            ) { showsDestinationNames in
+                WrappedShareCardView(wrapped: wrapped, showsDestinationNames: showsDestinationNames)
             }
         }
     }
 
-    // MARK: - Background
+    // MARK: 배경
 
-    private func background(for kind: WrappedCardKind) -> some View {
-        ZStack {
-            Color.dnaCanvas
-            LinearGradient(
-                colors: gradientColors(for: kind),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .opacity(0.4)
-        }
-        .ignoresSafeArea()
-    }
-
-    private func gradientColors(for kind: WrappedCardKind) -> [Color] {
-        switch kind {
-        case .movement: [.dnaTextTertiary, .dnaData]
-        case .topTrip: [.dnaAction, .dnaWarning]
-        case .strongestTaste: [.dnaData, .dnaTextTertiary]
-        case .tags: [.dnaWarning, .dnaTextTertiary]
-        case .photo: [.dnaAction, .dnaTextTertiary]
-        case .share: [.dnaTextTertiary, .dnaCanvas]
+    @ViewBuilder
+    private var background: some View {
+        switch card {
+        case .movement: Color.dnaInk
+        case .topConcept: Color(hex: 0x0F7B73)
+        case .concepts: Color.dnaSurface1
+        case .photos: Color(hex: 0x141414)
+        case .finish: Color.dnaAction
+        case .topTrip:
+            ZStack {
+                Color(hex: 0x0F7B73)
+                if let path = wrapped.topTrip?.coverPath, LocalPhotoStore.image(at: path) != nil {
+                    TripPhotoImage(storagePath: path)
+                }
+                LinearGradient(colors: [.black.opacity(0.15), .black.opacity(0.55)], startPoint: .top, endPoint: .bottom)
+            }
         }
     }
 
-    // MARK: - Progress & navigation
+    // MARK: 상단
 
-    private var segmentedProgressBar: some View {
+    private var progressBar: some View {
         HStack(spacing: 5) {
             ForEach(cards.indices, id: \.self) { segment in
                 Capsule()
-                    .fill(segment <= index ? Color.white : Color.white.opacity(0.22))
+                    .fill(foreground.opacity(segment <= index ? 1 : 0.25))
                     .frame(height: 3)
             }
         }
-        .animation(.easeOut(duration: 0.25), value: index)
-        .padding(.horizontal, DNASpacing.lg)
-        .padding(.top, DNASpacing.sm)
+        .accessibilityHidden(true)
     }
 
-    /// 스토리 표준 제스처: 왼쪽 영역 탭=이전, 오른쪽 영역 탭=다음.
-    /// 공유 카드에서는 버튼을 가리지 않도록 왼쪽 가장자리 스트립만 남긴다.
-    private var tapZones: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 0) {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture(perform: goBack)
-                    .frame(width: proxy.size.width * (isShareCard ? 0.12 : 0.35))
-                if !isShareCard {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture(perform: advance)
-                } else {
-                    Spacer(minLength: 0)
-                }
+    private var topRow: some View {
+        HStack {
+            Text(yearLabel)
+                .dnaFont(.caption)
+                .opacity(0.8)
+            Spacer()
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .dnaFont(size: 15, weight: .bold)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
+            .accessibilityLabel("닫기")
         }
     }
 
-    private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 30)
-            .onEnded { value in
-                if value.translation.width < -40 {
-                    advance()
-                } else if value.translation.width > 40 {
-                    goBack()
+    private var yearLabel: String {
+        guard wrapped.isInProgress else { return "\(wrapped.year)년" }
+        let parts = Calendar.current.dateComponents([.month, .day], from: Date())
+        return "\(wrapped.year)년 · \(parts.month ?? 12)월 \(parts.day ?? 1)일까지"
+    }
+
+    // MARK: 카드
+
+    @ViewBuilder
+    private var content: some View {
+        switch card {
+        case .movement: movement
+        case .topTrip: topTrip
+        case .topConcept: topConcept
+        case .concepts: concepts
+        case .photos: photos
+        case .finish: finish
+        }
+    }
+
+    private func kicker(_ text: String) -> some View {
+        Text(text).dnaFont(size: 15, weight: .heavy).opacity(0.85)
+    }
+
+    private func bigText(_ text: String, size: CGFloat = 56) -> some View {
+        Text(text)
+            .dnaFont(size: size, weight: .heavy)
+            .lineSpacing(2)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func footnote(_ text: String) -> some View {
+        Text(text).dnaFont(.caption).opacity(0.75).fixedSize(horizontal: false, vertical: true)
+    }
+
+    // ① 올해의 이동
+    private var movement: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            Spacer().frame(height: 80)
+            kicker(wrapped.periodKo)
+            bigText("\(wrapped.tripCount)번\n떠났어요")
+            Text("나라 \(wrapped.countryCount)곳 · 도시 \(wrapped.cityCount)곳")
+                .dnaFont(size: 17, weight: .bold)
+                .opacity(0.9)
+                .padding(.top, 8)
+            Spacer()
+            HStack(spacing: 6) {
+                ForEach(Array(wrapped.rows.prefix(6))) { row in
+                    VStack(alignment: .leading, spacing: 6) {
+                        TripPhotoImage(storagePath: row.coverPath ?? "")
+                            .frame(height: 64)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        Text("\(row.month)월").dnaFont(size: 11).opacity(0.7)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
+            footnote("확인된 방문지만 셌어요 · 출장은 여행 수에 넣지 않았어요")
+        }
+    }
+
+    // ② 올해의 1위 여행
+    private var topTrip: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            Spacer()
+            kicker("올해의 1위 여행")
+            bigText(wrapped.topTrip?.place ?? "", size: 44)
+            Text(wrapped.topTrip?.detail ?? "").dnaFont(size: 15, weight: .bold).opacity(0.9)
+            footnote("여행 탭 랭킹에서 올해 여행 중 가장 위에 둔 여행이에요").padding(.top, DNASpacing.sm)
+        }
+    }
+
+    // ③ 올해 가장 많이 떠난 여행
+    private var topConcept: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            Spacer().frame(height: 80)
+            kicker(wrapped.topConceptEyebrowKo)
+            bigText(wrapped.topConceptBigKo)
+            Text(wrapped.topConceptCaptionKo).dnaFont(size: 17, weight: .bold).opacity(0.9)
+            Spacer()
+            if !wrapped.isSingleTrip, let fingerprint = wrapped.fingerprint {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(fingerprint.entries.prefix(4), id: \.concept) { entry in
+                        HStack(spacing: 10) {
+                            Text(entry.concept.labelKo)
+                                .dnaFont(size: 13, weight: .bold)
+                                .frame(width: 64, alignment: .leading)
+                            ForEach(0..<min(entry.count, 6), id: \.self) { _ in
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.white.opacity(fingerprint.top.contains(entry.concept) ? 1 : 0.45))
+                                    .frame(width: 40, height: 40)
+                            }
+                        }
+                    }
+                }
+                .accessibilityHidden(true)
+            }
+            footnote("여행마다 고른 주 컨셉을 센 거예요 · 성격 진단이 아니에요")
+        }
+    }
+
+    // ④ 여행마다 고른 컨셉
+    private var concepts: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            Spacer().frame(height: 8)
+            Text("올해의 여행들").dnaFont(size: 30, weight: .heavy)
+            // ponytail: 여덟 번째 이후 여행은 줄이지 않고 자른다. 스크롤을 넣으려면 탭 이동과 제스처를 나눠야 한다.
+            VStack(spacing: 10) {
+                    ForEach(wrapped.rows.prefix(8)) { row in
+                        HStack(spacing: 12) {
+                            TripPhotoImage(storagePath: row.coverPath ?? "")
+                                .frame(width: 48, height: 64)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(row.month)월").dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+                                Text(row.place).dnaFont(.sectionTitle)
+                            }
+                            Spacer(minLength: 0)
+                            Text(row.concept?.labelKo ?? "고르지 않음")
+                                .dnaFont(.caption)
+                                .padding(.horizontal, 10)
+                                .frame(minHeight: 28)
+                                .foregroundStyle(row.concept == nil ? Color.dnaTextSecondary : Color.dnaSelectedForeground)
+                                .background(row.concept == nil ? Color.dnaSurface2 : Color.dnaSelectedBackground, in: Capsule())
+                        }
+                        .padding(10)
+                        .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+                    }
+            }
+            Text("컨셉을 안 고른 여행은 \"고르지 않음\"으로 보여요")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+        }
+    }
+
+    // ⑤ 올해의 한 장
+    private var photos: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.md) {
+            Spacer().frame(height: 8)
+            Text(wrapped.photos.isEmpty ? "올해 남긴 한 장이\n아직 없어요" : "하루 한 장으로\n남긴 \(wrapped.photos.count)개의 순간")
+                .dnaFont(size: 30, weight: .heavy)
+            if !wrapped.photos.isEmpty {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
+                    ForEach(wrapped.photos.prefix(12)) { photo in
+                        TripPhotoImage(storagePath: photo.storagePath)
+                            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+                }
+            }
+            Spacer()
+            footnote("이 사진들은 이 화면에서만 보여요. 공유 카드에는 들어가지 않아요.")
+        }
+    }
+
+    // ⑥ 마무리
+    private var finish: some View {
+        VStack(alignment: .leading, spacing: DNASpacing.md) {
+            Spacer().frame(height: 40)
+            Text("\(wrapped.periodKo)의\n여행 기록")
+                .dnaFont(size: 30, weight: .heavy)
+            VStack(alignment: .leading, spacing: 10) {
+                summaryLine("여행", "\(wrapped.tripCount)번")
+                summaryLine("나라", "\(wrapped.countryCount)곳")
+                if let fingerprint = wrapped.fingerprint, !wrapped.isSingleTrip {
+                    summaryLine(fingerprint.isTie ? "같이 많이" : "가장 많이 떠난 여행", fingerprint.top.map(\.labelKo).joined(separator: " · "))
+                }
+                if let topTrip = wrapped.topTrip {
+                    summaryLine("1위 여행", topTrip.place)
+                }
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            Spacer()
+            Button {
+                showingShare = true
+            } label: {
+                Text("공유 카드 만들기")
+                    .dnaFont(.button)
+                    .foregroundStyle(Color.dnaAction)
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+            }
+            .accessibilityIdentifier("wrapped.sharePreview")
+            Button("처음부터 보기") {
+                withAnimation(.easeOut(duration: 0.3)) { index = 0 }
+            }
+            .dnaFont(.button)
+            .frame(maxWidth: .infinity, minHeight: 44)
+        }
+    }
+
+    private func summaryLine(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title).dnaFont(size: 14, weight: .medium).opacity(0.85)
+            Spacer(minLength: DNASpacing.sm)
+            Text(value).dnaFont(size: 15, weight: .heavy).multilineTextAlignment(.trailing)
+        }
+    }
+
+    // MARK: 이동
+
+    /// 마지막 카드에서는 버튼을 가리지 않도록 왼쪽 가장자리만 이전 탭으로 쓴다.
+    private var tapZones: some View {
+        GeometryReader { proxy in
+            HStack(spacing: 0) {
+                Color.clear.contentShape(Rectangle()).onTapGesture(perform: goBack)
+                    .frame(width: proxy.size.width * (card == .finish ? 0.12 : 0.35))
+                if card == .finish {
+                    Spacer(minLength: 0)
+                } else {
+                    Color.clear.contentShape(Rectangle()).onTapGesture(perform: advance)
+                }
+            }
+            .padding(.top, 110)
+        }
     }
 
     private func advance() {
@@ -140,278 +329,4 @@ struct WrappedStoryView: View {
         guard index > 0 else { return }
         withAnimation(.easeOut(duration: 0.3)) { index -= 1 }
     }
-}
-
-// MARK: - 공통 조각
-
-/// 카드 상단의 작은 소제목 텍스트.
-private func storyEyebrow(_ text: String) -> some View {
-    Text(text)
-        .font(.footnote.weight(.semibold))
-        .tracking(2)
-        .foregroundStyle(Color.dnaTextSecondary)
-}
-
-// MARK: - W1. 올해의 이동
-
-private struct MovementCardView: View {
-    let display: WrappedDisplayModel
-
-    var body: some View {
-        ZStack {
-            PinDotPattern()
-
-            VStack(spacing: DNASpacing.md) {
-                storyEyebrow("\(display.year)년의 이동")
-
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(verbatim: "\(display.destinationCount)")
-                        .font(.system(size: 104, weight: .heavy, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.dnaData, .dnaTextTertiary],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .monospacedDigit()
-                    Text("개 나라")
-                        .font(.title2.bold())
-                        .foregroundStyle(.white)
-                }
-
-                Text(display.isSingleTrip
-                     ? "한 번의 여행으로 만났어요"
-                     : "\(display.tripCount)번의 여행으로 만났어요")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-            }
-            .padding(.horizontal, DNASpacing.lg)
-        }
-    }
-}
-
-/// 세계 지도 대신 쓰는 장식용 핀·점 패턴. 위치는 고정 시드로 결정적이다.
-private struct PinDotPattern: View {
-    private static let seeds: [(x: CGFloat, y: CGFloat, size: CGFloat, isPin: Bool)] = [
-        (0.14, 0.16, 20, true), (0.82, 0.13, 6, false), (0.68, 0.24, 24, true),
-        (0.20, 0.38, 6, false), (0.90, 0.42, 18, true), (0.08, 0.66, 10, false),
-        (0.78, 0.72, 22, true), (0.46, 0.09, 5, false), (0.30, 0.84, 7, false),
-        (0.88, 0.88, 5, false), (0.58, 0.90, 16, true), (0.12, 0.90, 5, false)
-    ]
-
-    var body: some View {
-        GeometryReader { proxy in
-            ForEach(Self.seeds.indices, id: \.self) { seedIndex in
-                let seed = Self.seeds[seedIndex]
-                Group {
-                    if seed.isPin {
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.system(size: seed.size))
-                    } else {
-                        Circle()
-                            .frame(width: seed.size, height: seed.size)
-                    }
-                }
-                .foregroundStyle(
-                    (seedIndex.isMultiple(of: 2) ? Color.dnaData : Color.dnaTextTertiary)
-                        .opacity(0.35)
-                )
-                .position(
-                    x: proxy.size.width * seed.x,
-                    y: proxy.size.height * seed.y
-                )
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
-// MARK: - W2. 올해의 1위 여행
-
-private struct TopTripCardView: View {
-    let display: WrappedDisplayModel
-
-    var body: some View {
-        VStack(spacing: DNASpacing.md) {
-            storyEyebrow(display.isSingleTrip ? "올해의 여행" : "올해 가장 좋았던 여행")
-
-            Image(systemName: display.isSingleTrip ? "airplane" : "trophy.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(Color.dnaWarning)
-                .shadow(color: Color.dnaWarning.opacity(0.5), radius: 16)
-
-            Text(display.topTripTitle)
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .minimumScaleFactor(0.6)
-
-            if !display.topTripDateRange.isEmpty {
-                Text(display.topTripDateRange)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                    .monospacedDigit()
-            }
-
-            if !display.isSingleTrip {
-                Text("랭킹 1위")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.dnaWarning)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.dnaWarning.opacity(0.16), in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color.dnaWarning.opacity(0.4), lineWidth: 1))
-            }
-        }
-        .padding(.horizontal, DNASpacing.lg)
-    }
-}
-
-// MARK: - W3. 가장 강한 취향 축
-
-private struct StrongestTasteCardView: View {
-    let display: WrappedDisplayModel
-
-    var body: some View {
-        VStack(spacing: DNASpacing.md) {
-            storyEyebrow(display.isLowConfidence ? "올해의 첫인상" : "가장 선명한 취향")
-
-            Text(display.strongestAxis.labelKo)
-                .font(.system(size: 36, weight: .heavy, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .minimumScaleFactor(0.7)
-
-            FingerprintRadarView(axes: display.axes, confidence: display.confidence)
-                .frame(width: 250)
-                .scaleEffect(0.92)
-
-            // 조건부(저신뢰) 축은 변화만 보여주고 "추천 근거"라고 말하지 않는다.
-            Text(display.isStrongestAxisConditional
-                 ? "아직 추천에는 쓰지 않는 축이지만,\n올해 기록에서 가장 뚜렷하게 드러났어요"
-                 : "올해 기록에서 가장 선명하게 드러난 축이에요")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.8))
-        }
-        .padding(.horizontal, DNASpacing.lg)
-    }
-}
-
-// MARK: - W4. 올해의 태그
-
-private struct TagsCardView: View {
-    let display: WrappedDisplayModel
-
-    private static let accents: [Color] = [.dnaData, .dnaTextTertiary, .dnaWarning]
-
-    var body: some View {
-        VStack(spacing: DNASpacing.lg) {
-            storyEyebrow("올해의 태그")
-
-            if display.topTagLabels.isEmpty {
-                Text("아직 태그 기록이 없어요")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.85))
-            } else {
-                VStack(spacing: DNASpacing.sm) {
-                    ForEach(Array(display.topTagLabels.enumerated()), id: \.offset) { position, label in
-                        let accent = Self.accents[position % Self.accents.count]
-                        Text("#\(label)")
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(accent)
-                            .padding(.horizontal, DNASpacing.lg)
-                            .padding(.vertical, DNASpacing.sm)
-                            .background(accent.opacity(0.14), in: Capsule())
-                            .overlay(
-                                Capsule().strokeBorder(accent.opacity(0.5), lineWidth: 1)
-                            )
-                    }
-                }
-
-                Text("올해 평가에서 가장 자주 고른 순간들이에요")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.8))
-            }
-        }
-        .padding(.horizontal, DNASpacing.lg)
-    }
-}
-
-// MARK: - W5. 여행 사진 모자이크
-
-private struct PhotoMosaicCardView: View {
-    let display: WrappedDisplayModel
-
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
-
-    var body: some View {
-        VStack(spacing: DNASpacing.lg) {
-            storyEyebrow("올해의 한 장")
-
-            if display.annualPhotos.isEmpty {
-                // 사진이 없으면 지문 그래픽으로 대체(UI-5 스펙 예외 처리).
-                FingerprintRadarView(axes: display.axes, confidence: display.confidence)
-                    .frame(width: 250)
-                Text("사진 대신 올해의 지문을 담았어요")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.8))
-            } else {
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(display.annualPhotos.prefix(9)) { photo in
-                        photoTile(photo)
-                    }
-                }
-                .frame(maxWidth: 320)
-
-                Text("하루 한 장으로 남긴 \(display.annualPhotos.count)개의 순간")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.8))
-            }
-        }
-        .padding(.horizontal, DNASpacing.lg)
-    }
-
-    private func photoTile(_ photo: DailyPhoto) -> some View {
-        TripPhotoImage(storagePath: photo.storagePath)
-            .aspectRatio(1, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous))
-            .overlay(alignment: .bottomTrailing) {
-                Text("D+\(photo.tripDayIndex)")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(.black.opacity(0.45), in: Capsule())
-                    .padding(6)
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: DNARadius.control - 4, style: .continuous)
-                    .strokeBorder(Color.dnaDivider, lineWidth: 1)
-            )
-    }
-}
-
-#Preview("WrappedStoryView") {
-    WrappedStoryView(
-        display: WrappedDisplayModel(
-            year: 2026,
-            tripCount: 4,
-            destinationCount: 6,
-            cards: WrappedCardKind.allCases.map {
-                WrappedCard(kind: $0, title: $0.rawValue, detail: "")
-            },
-            topTripTitle: "일본 · 대만",
-            topTripDateRange: "2026.04.02 - 2026.04.10",
-            strongestAxis: .natureUrban,
-            isStrongestAxisConditional: false,
-            topTagLabels: ["미식 탐험", "자연 풍경", "밤 산책"],
-            axes: PreviewSample.axes,
-            confidence: PreviewSample.confidence,
-            isLowConfidence: false,
-            annualPhotos: []
-        )
-    )
-    .preferredColorScheme(.dark)
 }

@@ -1,141 +1,62 @@
 import SwiftUI
 
-/// UI-5 연간 Wrapped 루트.
-/// 5A 인트로 → 5B 6장 카드 시퀀스 순서로 전환하며, 시즌 게이트·연도 판정은
-/// 기존 `WrappedService`(12/15 ~ 1/15) 로직을 그대로 사용한다.
+/// 연간 Wrapped 루트. 그해 여행이 없으면 추정으로 채우지 않고 빈 화면을 보여준다.
 struct WrappedView: View {
-    let forcePreview: Bool
+    let year: Int
     @Environment(AppDependencies.self) private var dependencies
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = WrappedViewModel()
-    @State private var isStoryPresented = false
+    @State private var showingRegistration = false
 
     var body: some View {
         Group {
-            if let display = viewModel.display {
-                if isStoryPresented {
-                    WrappedStoryView(display: display)
-                        .transition(.opacity.combined(with: .scale(scale: 1.04)))
-                } else {
-                    WrappedIntroView(
-                        display: display,
-                        onStart: {
-                            withAnimation(.easeOut(duration: 0.35)) { isStoryPresented = true }
-                        },
-                        onLater: { dismiss() }
-                    )
-                    .transition(.opacity)
-                }
+            if let wrapped = viewModel.wrapped, !wrapped.isEmpty {
+                WrappedStoryView(wrapped: wrapped, onClose: { dismiss() })
             } else if viewModel.isLoading {
                 LoadingView()
-                    .background(AppCanvas())
             } else {
-                EmptyStateView(
-                    systemImage: "sparkles.rectangle.stack",
-                    title: "Wrapped를 볼 수 없어요",
-                    message: viewModel.notAvailableReason ?? "",
-                    actionTitle: "돌아가기",
-                    action: { dismiss() }
-                )
-                .background(AppCanvas())
+                emptyState
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .background(Color.dnaCanvas.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .task { await viewModel.load(dependencies, forcePreview: forcePreview) }
-    }
-}
-
-// MARK: - UI-5A 시작 화면
-
-private struct WrappedIntroView: View {
-    let display: WrappedDisplayModel
-    let onStart: () -> Void
-    let onLater: () -> Void
-
-    var body: some View {
-        ZStack {
-            AppCanvas()
-
-            VStack(spacing: DNASpacing.md) {
-                Spacer()
-
-                Text("한 해의 기록이 모였어요")
-                    .font(.footnote.weight(.semibold))
-                    .tracking(2)
-                    .foregroundStyle(Color.dnaTextSecondary)
-
-                Text(verbatim: "\(display.year)")
-                    .font(.system(size: 84, weight: .heavy, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.dnaData, .dnaTextTertiary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                Text(display.heroTitle)
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
-
-                introStats
-                    .padding(.top, DNASpacing.lg)
-
-                Spacer()
-                Spacer()
-            }
-            .padding(.horizontal, DNASpacing.lg)
-
-            VStack {
-                Spacer()
-                DNABottomCTA {
-                    Button("내 Wrapped 보기", action: onStart)
-                        .buttonStyle(.dnaPrimary)
-                    Button("나중에", action: onLater)
-                        .buttonStyle(.dnaGhost)
-                }
-            }
+        .task { await viewModel.load(year: year, dependencies: dependencies) }
+        .sheet(isPresented: $showingRegistration, onDismiss: {
+            Task { await viewModel.load(year: year, dependencies: dependencies) }
+        }) {
+            NavigationStack { TripRegistrationView(prefilledCountryCode: nil) }
         }
     }
 
-    private var introStats: some View {
-        HStack(spacing: 0) {
-            statColumn(value: display.destinationCount, label: "여행 국가")
-            Rectangle()
-                .fill(Color.dnaDivider)
-                .frame(width: 1, height: 44)
-            statColumn(value: display.tripCount, label: "여행 수")
-        }
-        .padding(.vertical, DNASpacing.md)
-        .frame(maxWidth: 300)
-        .background(
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .fill(Color.white.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaDivider, lineWidth: 1)
-        )
-    }
-
-    private func statColumn(value: Int, label: String) -> some View {
-        VStack(spacing: 4) {
-            Text(verbatim: "\(value)")
-                .font(.title.bold())
-                .foregroundStyle(.white)
-                .monospacedDigit()
-            Text(label)
-                .font(.caption)
+    private var emptyState: some View {
+        VStack(spacing: DNASpacing.sm) {
+            Spacer()
+            Text("\(String(year))년에 등록한")
+                .dnaFont(.screenTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("여행이 없어요")
+                .dnaFont(.screenTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("올해 다녀온 여행을 등록하면 Wrapped가 만들어져요.")
+                .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
+                .multilineTextAlignment(.center)
+            Spacer()
+            DNABottomCTA {
+                Button("여행 등록하기") { showingRegistration = true }
+                    .buttonStyle(.dnaPrimary)
+                Button("닫기") { dismiss() }
+                    .buttonStyle(.dnaGhost)
+            }
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, DNASpacing.lg)
     }
 }
 
 #Preview("WrappedView") {
     NavigationStack {
-        WrappedView(forcePreview: true)
+        WrappedView(year: Calendar.current.component(.year, from: Date()))
     }
     .previewWithAppEnvironment()
 }

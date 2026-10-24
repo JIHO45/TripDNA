@@ -14,10 +14,9 @@ struct DailyPhotoView: View {
     @State private var selectedPath: String?
     @State private var previewImage: UIImage?
     @State private var makeCroppedImage: (() -> UIImage?)?
-    @State private var reaction: DayReaction?
-    @State private var existingReaction: DayReaction?
     @State private var isReplacing = false
     @State private var isSaving = false
+    @State private var saveFailed = false
     @State private var showConsentSheet = false
     @State private var showDoneCheck = false
 
@@ -75,7 +74,10 @@ struct DailyPhotoView: View {
             let existing = (try? await dependencies.store.photos(tripID: trip.id))?
                 .first { $0.tripDayIndex == resolvedDayIndex }
             isReplacing = existing != nil
-            existingReaction = existing?.dayReaction
+        }
+        .onDisappear {
+            // 확정하지 않고 떠나면 고르기만 한 원본 파일을 정리한다.
+            if stage == .pick || stage == .preview { discardSelectedFile() }
         }
     }
 
@@ -188,19 +190,27 @@ struct DailyPhotoView: View {
             EmptyView()
         case .preview:
             DNABottomCTA {
+                if saveFailed {
+                    Text("사진을 남기지 못했어요. 다시 시도해 주세요.")
+                        .font(.footnote)
+                        .foregroundStyle(Color.dnaAction)
+                        .frame(maxWidth: .infinity)
+                }
                 Button {
                     Task { await confirmPhoto() }
                 } label: {
                     if isSaving {
                         ProgressView().tint(.white)
                     } else {
-                        Text("이 사진으로 남기기")
+                        Text(saveFailed ? "다시 시도" : "이 사진으로 남기기")
                     }
                 }
                 .buttonStyle(.dnaPrimary(isDisabled: isSaving))
                 .disabled(isSaving)
 
                 Button("다른 사진 고르기") {
+                    discardSelectedFile()
+                    saveFailed = false
                     makeCroppedImage = nil
                     previewImage = nil
                     withAnimation { stage = .pick }
@@ -299,21 +309,38 @@ struct DailyPhotoView: View {
         }
     }
 
+    /// 확정 즉시 기록을 저장한다. 이후 반응 단계는 저장된 기록에 반응만 더한다.
     private func confirmPhoto() async {
-        guard selectedPath != nil else { return }
+        guard let selectedPath else { return }
         isSaving = true
         defer { isSaving = false }
+        saveFailed = false
 
         // Move and Scale로 맞춘 영역을 크롭해 저장한다.
-        if let cropped = makeCroppedImage?(),
-           let croppedPath = try? LocalPhotoStore.saveImage(cropped) {
-            selectedPath = croppedPath
-            previewImage = cropped
+        let croppedPath = makeCroppedImage?().flatMap { try? LocalPhotoStore.saveImage($0) }
+        let previousPath = try? await dependencies.store.photos(tripID: trip.id)
+            .first { $0.tripDayIndex == resolvedDayIndex }?.storagePath
+        do {
+            // 교체일 때 반응 nil이면 기존 반응이 유지된다.
+            _ = try await dependencies.dailyPhotoService.saveSelection(
+                tripID: trip.id,
+                tripDayIndex: resolvedDayIndex,
+                storagePath: croppedPath ?? selectedPath,
+                selection: .manual,
+                reaction: nil
+            )
+        } catch {
+            // 선택한 사진과 편집 상태는 그대로 두고 재시도하게 한다.
+            if let croppedPath { try? LocalPhotoStore.delete(paths: [croppedPath]) }
+            saveFailed = true
+            return
         }
+        // 교체된 이전 사진과 크롭 전 원본은 대표 사진·다른 기록에서 쓰지 않을 때만 지운다.
+        try? await dependencies.deleteUnusedPhotoFiles([previousPath, selectedPath].compactMap { $0 })
 
-        // 이미 남긴 날을 바꾸는 경우: 반응·동의는 건너뛰고 바로 저장한다.
+        // 이미 남긴 날을 바꾸는 경우: 반응·동의는 건너뛰고 바로 끝낸다.
         if isReplacing {
-            await finish(with: existingReaction)
+            await finish(with: nil)
             return
         }
 
@@ -326,20 +353,25 @@ struct DailyPhotoView: View {
         }
     }
 
+    private func discardSelectedFile() {
+        guard let path = selectedPath else { return }
+        selectedPath = nil
+        Task { try? await dependencies.deleteUnusedPhotoFiles([path]) }
+    }
+
     private func finish(with reaction: DayReaction?) async {
-        guard let selectedPath else { return }
-        isSaving = true
-        defer { isSaving = false }
-        _ = try? await dependencies.dailyPhotoService.saveSelection(
-            tripID: trip.id,
-            tripDayIndex: resolvedDayIndex,
-            storagePath: selectedPath,
-            selection: .manual,
-            reaction: reaction
-        )
+        guard stage != .done else { return }
         withAnimation(.spring(duration: 0.35)) {
             showDoneCheck = true
             stage = .done
+        }
+        // 사진은 이미 저장됐다. 반응 저장이 실패해도 기록은 남으므로 그대로 마친다.
+        if let reaction {
+            try? await dependencies.dailyPhotoService.updateReaction(
+                tripID: trip.id,
+                tripDayIndex: resolvedDayIndex,
+                reaction: reaction
+            )
         }
         try? await Task.sleep(for: .seconds(1.1))
         dismiss()

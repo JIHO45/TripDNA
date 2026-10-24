@@ -23,7 +23,7 @@ extension WantedConceptTiers {
 }
 
 /// 컨셉·티어 화면이 함께 쓰는 선택형 칩.
-private struct OnboardingChip: View {
+struct OnboardingChip: View {
     let title: String
     var isSelected = false
     var showsChevron = false
@@ -198,6 +198,52 @@ struct OnboardingConceptsView: View {
 
 // MARK: - ⑥ 원하는 여행
 
+/// 온보딩과 설정의 "원하는 여행"이 함께 쓰는 칸. 칩을 누르면 네 칸 이름 메뉴가 열린다.
+struct ConceptTierBox: View {
+    let tier: Int?
+    let tiers: WantedConceptTiers
+    let onPlace: (TripConcept, Int?) -> Void
+
+    var body: some View {
+        let concepts = tiers.concepts(in: tier)
+        VStack(alignment: .leading, spacing: DNASpacing.xs) {
+            Text(WantedConceptTiers.screenName(of: tier))
+                .dnaFont(.sectionTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            if tier == nil {
+                Text("아직 안 고른 것도 여기 있어요 · 추천 점수에 넣지 않아요")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            }
+            if concepts.isEmpty {
+                Text(" ").dnaFont(.body).frame(minHeight: 40)
+            } else {
+                DNAFlowLayout(spacing: DNASpacing.xs) {
+                    ForEach(concepts, id: \.self) { concept in
+                        Menu {
+                            ForEach([1, 2, 3, nil] as [Int?], id: \.self) { target in
+                                Button(WantedConceptTiers.screenName(of: target)
+                                       + (tiers.tier(of: concept) == target ? " ✓" : "")) {
+                                    onPlace(concept, target)
+                                }
+                            }
+                        } label: {
+                            OnboardingChip(title: concept.labelKo, showsChevron: true)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(DNASpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tier == nil ? Color.dnaSurface1 : Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
+                .strokeBorder(Color.dnaDivider, lineWidth: 1)
+        }
+    }
+}
+
 struct OnboardingTiersView: View {
     let viewModel: OnboardingViewModel
     let dependencies: AppDependencies
@@ -262,41 +308,8 @@ struct OnboardingTiersView: View {
     }
 
     private func box(tier: Int?) -> some View {
-        let concepts = viewModel.tiers.concepts(in: tier)
-        return VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text(WantedConceptTiers.screenName(of: tier))
-                .dnaFont(.sectionTitle)
-                .foregroundStyle(Color.dnaTextPrimary)
-            if tier == nil {
-                Text("아직 안 고른 것도 여기 있어요 · 추천 점수에 넣지 않아요")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            }
-            if concepts.isEmpty {
-                Text(" ").dnaFont(.body).frame(minHeight: 40)
-            } else {
-                DNAFlowLayout(spacing: DNASpacing.xs) {
-                    ForEach(concepts, id: \.self) { concept in
-                        Menu {
-                            ForEach([1, 2, 3, nil] as [Int?], id: \.self) { target in
-                                Button(WantedConceptTiers.screenName(of: target)
-                                       + (viewModel.tiers.tier(of: concept) == target ? " ✓" : "")) {
-                                    viewModel.placeConcept(concept, in: target)
-                                }
-                            }
-                        } label: {
-                            OnboardingChip(title: concept.labelKo, showsChevron: true)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(DNASpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(tier == nil ? Color.dnaSurface1 : Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaDivider, lineWidth: 1)
+        ConceptTierBox(tier: tier, tiers: viewModel.tiers) { concept, target in
+            viewModel.placeConcept(concept, in: target)
         }
     }
 

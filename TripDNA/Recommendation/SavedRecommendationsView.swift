@@ -82,8 +82,16 @@ struct SavedRecommendationsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(CountryCatalog.name(for: feedback.countryCode))
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.dnaTextPrimary)
                     SlotChip(slot: feedback.slot)
+                    if isExcluded(feedback) {
+                        Text("추천에서 제외 중")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaUnverifiedText)
+                            .padding(.horizontal, DNASpacing.xs)
+                            .padding(.vertical, 2)
+                            .background(Color.dnaUnverifiedBackground, in: Capsule())
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -95,7 +103,7 @@ struct SavedRecommendationsView: View {
 
             Text(viewModel.savedReasonText(for: feedback))
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(Color.dnaTextPrimary.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: DNASpacing.sm) {
@@ -112,6 +120,20 @@ struct SavedRecommendationsView: View {
                 }
                 .buttonStyle(.plain)
 
+                if isExcluded(feedback) {
+                    Button {
+                        Task { await viewModel.revokeDislike(feedback, dependencies: dependencies) }
+                    } label: {
+                        Label("제외 풀기", systemImage: "arrow.uturn.backward")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.dnaActionText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(Color.dnaSurface2, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Button {
                     Task { await viewModel.unsave(feedback, dependencies: dependencies) }
                 } label: {
@@ -120,7 +142,7 @@ struct SavedRecommendationsView: View {
                         .foregroundStyle(Color.dnaTextSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
-                        .background(Color.white.opacity(0.05), in: Capsule())
+                        .background(Color.dnaSurface2, in: Capsule())
                         .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -135,6 +157,11 @@ struct SavedRecommendationsView: View {
             RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
                 .strokeBorder(Color.dnaDivider, lineWidth: 1)
         )
+    }
+
+    /// 저장을 풀어도 제외는 그대로이므로, 제외 여부는 저장과 따로 본다.
+    private func isExcluded(_ feedback: CardFeedback) -> Bool {
+        viewModel.dislikedFeedback.contains { $0.countryCode == feedback.countryCode }
     }
 
     private func savedDateText(_ date: Date) -> String {

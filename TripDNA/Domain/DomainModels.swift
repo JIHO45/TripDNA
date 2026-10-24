@@ -73,6 +73,8 @@ nonisolated struct UserProfile: Identifiable, Codable, Equatable, Sendable {
     var onboardingStatus: OnboardingStatus
     var homeCountryCode: String?
     var departureAirportCode: String?
+    /// 출발 공항 기본값의 "직항만" 선호. nil이면 정하지 않은 것(경유도 괜찮음). 이전 버전 저장분에는 없다.
+    var prefersDirectFlights: Bool?
     let createdAt: Date
 }
 

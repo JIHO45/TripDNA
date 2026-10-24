@@ -90,6 +90,22 @@ final class AppDependencies {
         return profile.id
     }
 
+    /// 설정의 "정하지 않기". 사는 나라를 비우면 기본 제외도 하지 않는다.
+    func clearHomeCountryCode() async {
+        homeCountryCode = nil
+        guard var profile = try? await store.loadProfile() else { return }
+        profile.homeCountryCode = nil
+        try? await store.saveProfile(profile)
+    }
+
+    /// 출발 공항 기본값. 추천·LLM에는 아직 연결하지 않고 프로필에만 남긴다.
+    func setDepartureDefaults(airportCode: String?, prefersDirectFlights: Bool?) async throws {
+        var profile = await loadOrCreateProfile()
+        profile.departureAirportCode = airportCode
+        profile.prefersDirectFlights = prefersDirectFlights
+        try await store.saveProfile(profile)
+    }
+
     func setInterestTagIDs(_ ids: Set<String>) async throws {
         try await store.saveInterestTagIDs(ids)
         interestTagIDs = ids

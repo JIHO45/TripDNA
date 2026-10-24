@@ -4,6 +4,14 @@ import UserNotifications
 enum EvaluationNotificationService {
     private static let enabledKey = "tripdna.evaluationNotificationsEnabled"
 
+    static var isEnabled: Bool { UserDefaults.standard.bool(forKey: enabledKey) }
+
+    /// 설정에서 끈다. 예약돼 있던 평가 알림도 함께 거둔다.
+    static func disable() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        UserDefaults.standard.set(false, forKey: enabledKey)
+    }
+
     static func enable(for trips: [Trip]) async throws -> Bool {
         let granted = try await UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .badge, .sound])

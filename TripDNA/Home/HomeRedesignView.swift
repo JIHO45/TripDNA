@@ -35,7 +35,7 @@ struct HomeRedesignView: View {
         .background(Color.dnaCanvas.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) { bottomAction }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showingProfile) { ProfileSheet() }
+        .sheet(isPresented: $showingProfile) { SettingsRootView() }
         .task { await viewModel.load(dependencies) }
         .refreshable { await viewModel.load(dependencies) }
         .dynamicTypeSize(...DynamicTypeSize.accessibility3)

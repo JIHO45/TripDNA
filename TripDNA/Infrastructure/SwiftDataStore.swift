@@ -85,16 +85,104 @@ nonisolated enum TripDNASchemaV1: VersionedSchema {
     }
 }
 
-nonisolated enum TripDNAMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [TripDNASchemaV1.self] }
-    static var stages: [MigrationStage] { [] }
+/// V1에 마지막 수정 시각(`updatedAt`)을 더했다. 나중에 여러 기기나 서버와 기록을 맞출 때
+/// 어느 쪽이 최신인지 가리는 데 쓴다. V1에서 옮겨 온 행은 시각을 모르므로 nil이다.
+/// 추가만 하는 바뀜이라 가벼운 이전(lightweight)으로 충분하다.
+nonisolated enum TripDNASchemaV2: VersionedSchema {
+    static let versionIdentifier = Schema.Version(2, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [StoredTrip.self, StoredCardFeedback.self, StoredDailyPhoto.self,
+         StoredAnalyticsEvent.self, StoredSingleton.self]
+    }
+
+    @Model
+    final class StoredTrip {
+        @Attribute(.unique) var tripID: String
+        var createdAt: Date
+        var updatedAt: Date?
+        var payload: Data
+
+        init(tripID: String, createdAt: Date, updatedAt: Date? = nil, payload: Data) {
+            self.tripID = tripID
+            self.createdAt = createdAt
+            self.updatedAt = updatedAt
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class StoredCardFeedback {
+        @Attribute(.unique) var feedbackID: String
+        var createdAt: Date
+        var updatedAt: Date?
+        var payload: Data
+
+        init(feedbackID: String, createdAt: Date, updatedAt: Date? = nil, payload: Data) {
+            self.feedbackID = feedbackID
+            self.createdAt = createdAt
+            self.updatedAt = updatedAt
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class StoredDailyPhoto {
+        @Attribute(.unique) var photoID: String
+        var tripID: String
+        var tripDayIndex: Int
+        var updatedAt: Date?
+        var payload: Data
+
+        init(photoID: String, tripID: String, tripDayIndex: Int, updatedAt: Date? = nil, payload: Data) {
+            self.photoID = photoID
+            self.tripID = tripID
+            self.tripDayIndex = tripDayIndex
+            self.updatedAt = updatedAt
+            self.payload = payload
+        }
+    }
+
+    /// 추가만 하고 고치지 않는 기록이라 수정 시각을 두지 않는다.
+    @Model
+    final class StoredAnalyticsEvent {
+        @Attribute(.unique) var eventID: String
+        var createdAt: Date
+        var payload: Data
+
+        init(eventID: String, createdAt: Date, payload: Data) {
+            self.eventID = eventID
+            self.createdAt = createdAt
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class StoredSingleton {
+        @Attribute(.unique) var key: String
+        var updatedAt: Date?
+        var payload: Data
+
+        init(key: String, updatedAt: Date? = nil, payload: Data) {
+            self.key = key
+            self.updatedAt = updatedAt
+            self.payload = payload
+        }
+    }
 }
 
-typealias StoredTrip = TripDNASchemaV1.StoredTrip
-typealias StoredCardFeedback = TripDNASchemaV1.StoredCardFeedback
-typealias StoredDailyPhoto = TripDNASchemaV1.StoredDailyPhoto
-typealias StoredAnalyticsEvent = TripDNASchemaV1.StoredAnalyticsEvent
-typealias StoredSingleton = TripDNASchemaV1.StoredSingleton
+nonisolated enum TripDNAMigrationPlan: SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] { [TripDNASchemaV1.self, TripDNASchemaV2.self] }
+    static var stages: [MigrationStage] {
+        [.lightweight(fromVersion: TripDNASchemaV1.self, toVersion: TripDNASchemaV2.self)]
+    }
+}
+
+typealias StoredTrip = TripDNASchemaV2.StoredTrip
+typealias StoredCardFeedback = TripDNASchemaV2.StoredCardFeedback
+typealias StoredDailyPhoto = TripDNASchemaV2.StoredDailyPhoto
+typealias StoredAnalyticsEvent = TripDNASchemaV2.StoredAnalyticsEvent
+typealias StoredSingleton = TripDNASchemaV2.StoredSingleton
 
 // MARK: - 저장소
 
@@ -147,7 +235,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
             ModelConfiguration(isStoredInMemoryOnly: inMemory)
         }
         return try ModelContainer(
-            for: Schema(versionedSchema: TripDNASchemaV1.self),
+            for: Schema(versionedSchema: TripDNASchemaV2.self),
             migrationPlan: TripDNAMigrationPlan.self,
             configurations: configuration
         )
@@ -176,6 +264,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
         modelContext.insert(StoredTrip(
             tripID: trip.id,
             createdAt: trip.createdAt,
+            updatedAt: .now,
             payload: try encoder.encode(trip)
         ))
         try modelContext.save()
@@ -190,6 +279,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
             throw RepositoryError.notFound
         }
         row.payload = try encoder.encode(trip)
+        row.updatedAt = .now
         try modelContext.save()
     }
 
@@ -242,6 +332,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
         modelContext.insert(StoredCardFeedback(
             feedbackID: feedback.id,
             createdAt: feedback.createdAt,
+            updatedAt: .now,
             payload: try encoder.encode(feedback)
         ))
         try modelContext.save()
@@ -252,6 +343,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
             throw RepositoryError.notFound
         }
         row.payload = try encoder.encode(feedback)
+        row.updatedAt = .now
         try modelContext.save()
     }
 
@@ -394,6 +486,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
             photoID: photo.id,
             tripID: photo.tripID,
             tripDayIndex: photo.tripDayIndex,
+            updatedAt: .now,
             payload: (try? encoder.encode(photo)) ?? Data()
         )
     }
@@ -431,8 +524,9 @@ actor SwiftDataAppStore: nonisolated AppStore {
         let payload = try encoder.encode(value)
         if let row = try singletonRow(key: key) {
             row.payload = payload
+            row.updatedAt = .now
         } else {
-            modelContext.insert(StoredSingleton(key: key, payload: payload))
+            modelContext.insert(StoredSingleton(key: key, updatedAt: .now, payload: payload))
         }
         try modelContext.save()
     }

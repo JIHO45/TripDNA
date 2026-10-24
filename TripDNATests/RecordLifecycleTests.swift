@@ -4,6 +4,43 @@ import Testing
 @testable import TripDNA
 
 struct RecordLifecycleTests {
+    @Test func writesStampUpdatedAt() async throws {
+        let container = try SwiftDataAppStore.makeContainer(inMemory: true)
+        let store = SwiftDataAppStore(container: container, countries: [], tags: [])
+        let feedback = CardFeedback(
+            id: "save-1", countryCode: "JP", slot: .bestMatch,
+            action: .save, reason: nil, excludeUntil: nil,
+            revokedAt: nil, createdAt: .distantPast
+        )
+        try await store.create(feedback)
+        try await store.saveInterestTagIDs(["food"])
+
+        let context = ModelContext(container)
+        let created = try #require(try context.fetch(FetchDescriptor<StoredCardFeedback>()).first?.updatedAt)
+        #expect(created > .distantPast)
+        #expect(try context.fetch(FetchDescriptor<StoredSingleton>()).first?.updatedAt != nil)
+
+        try await store.update(feedback)
+        let updated = try #require(try ModelContext(container).fetch(FetchDescriptor<StoredCardFeedback>()).first?.updatedAt)
+        #expect(updated >= created)
+    }
+
+    @Test func v1StoreOpensAsV2() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).store")
+        defer { try? FileManager.default.removeItem(at: url) }
+        do {
+            let v1 = try ModelContainer(
+                for: Schema(versionedSchema: TripDNASchemaV1.self),
+                configurations: ModelConfiguration(url: url)
+            )
+            let context = ModelContext(v1)
+            context.insert(TripDNASchemaV1.StoredSingleton(key: "interestTags", payload: try JSONEncoder().encode(["food"])))
+            try context.save()
+        }
+        let store = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+        #expect(try await store.loadInterestTagIDs() == ["food"])
+    }
+
     @Test func interestTagsAndUnsavePersistInSwiftData() async throws {
         let container = try SwiftDataAppStore.makeContainer(inMemory: true)
         let first = SwiftDataAppStore(container: container, countries: [], tags: [])

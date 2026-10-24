@@ -6,6 +6,10 @@ struct SettingsRootView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(\.dismiss) private var dismiss
     @State private var airportSummary: String?
+    @State private var wantedSummary: String?
+    @State private var memoryCount: String?
+    @State private var excludedCount: String?
+    @State private var savedCount: String?
 
     var body: some View {
         NavigationStack {
@@ -32,10 +36,10 @@ struct SettingsRootView: View {
                 .listRowBackground(Color.dnaSurface1)
 
                 Section("취향과 추천") {
-                    link("원하는 여행") { WantedTripsSettingsView() }
-                    link("기억하는 취향") { MemorySettingsView() }
-                    link("추천에서 제외한 곳") { ExclusionsSettingsView() }
-                    link("저장한 도시") { SavedRecommendationsView(viewModel: RecommendationViewModel()) }
+                    link("원하는 여행", detail: wantedSummary) { WantedTripsSettingsView() }
+                    link("기억하는 취향", detail: memoryCount) { MemorySettingsView() }
+                    link("추천에서 제외한 곳", detail: excludedCount) { ExclusionsSettingsView() }
+                    link("저장한 도시", detail: savedCount) { SavedRecommendationsView(viewModel: RecommendationViewModel()) }
                     link("출발 공항 기본값", detail: airportSummary) { DepartureAirportSettingsView() }
                     link(
                         "사는 나라",
@@ -73,7 +77,10 @@ struct SettingsRootView: View {
                     Button("닫기") { dismiss() }
                 }
             }
-            .task { await loadAirportSummary() }
+            .task {
+                await loadAirportSummary()
+                await loadSummaries()
+            }
         }
     }
 
@@ -90,6 +97,19 @@ struct SettingsRootView: View {
             }
             .foregroundStyle(Color.dnaTextPrimary)
         }
+    }
+
+    private func loadSummaries() async {
+        let tiers = try? await dependencies.store.loadWantedTiers()
+        if let tiers {
+            wantedSummary = tiers.tier1.isEmpty ? nil : "가장 원해요 \(tiers.tier1.count)개"
+            memoryCount = (tiers.avoidNote ?? "").isEmpty ? nil : "1개"
+        }
+        let excluded = (try? await dependencies.recommendationService.activeDislikes())?.count ?? 0
+        excludedCount = excluded > 0 ? "\(excluded)곳" : nil
+        var saved = Set<String>()
+        for item in (try? await dependencies.store.feedback()) ?? [] where item.action == .save { saved.insert(item.countryCode) }
+        savedCount = saved.isEmpty ? nil : "\(saved.count)곳"
     }
 
     private func loadAirportSummary() async {

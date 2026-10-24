@@ -675,10 +675,11 @@ struct DNATagChip: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: DNASpacing.xs) {
-                Image(systemName: "checkmark")
-                    .font(.caption.weight(.semibold))
-                    .opacity(isSelected ? 1 : 0)
-                    .accessibilityHidden(true)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
+                }
                 Text(title)
                     .fixedSize(horizontal: false, vertical: true)
             }

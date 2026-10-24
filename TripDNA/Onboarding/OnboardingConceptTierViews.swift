@@ -254,6 +254,7 @@ struct OnboardingTiersView: View {
             DNAStepTopBar(
                 progress: viewModel.progress,
                 trailingTitle: "건너뛰기",
+                onBack: { viewModel.goBack() },
                 onTrailing: { finish(skipped: true) }
             )
             ScrollView {

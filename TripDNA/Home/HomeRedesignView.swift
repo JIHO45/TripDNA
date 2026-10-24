@@ -241,7 +241,7 @@ struct HomeRedesignView: View {
             Text("다음 여행지를 찾아볼까요?")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("이번 여행에서 하고 싶은 걸 하나만 고르면 맞는 도시를 골라드려요.")
+            Text("여행 컨셉을 고르면 추천을 받아요. 지금은 나라 단위로 보여줘요.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)

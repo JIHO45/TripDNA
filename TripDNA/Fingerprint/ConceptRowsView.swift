@@ -7,13 +7,12 @@ struct ConceptBlockRows: View {
     var maxRows = 3
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        Grid(alignment: .leading, horizontalSpacing: DNASpacing.sm, verticalSpacing: 10) {
             ForEach(Array(fingerprint.entries.prefix(maxRows).enumerated()), id: \.element.concept) { rank, entry in
-                HStack(spacing: DNASpacing.sm) {
+                GridRow {
                     Text(entry.concept.labelKo)
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextPrimary)
-                        .frame(width: 72, alignment: .leading)
                         .lineLimit(1)
                     HStack(spacing: 4) {
                         ForEach(0..<min(entry.count, 10), id: \.self) { _ in
@@ -22,7 +21,6 @@ struct ConceptBlockRows: View {
                                 .frame(width: 22, height: 22)
                         }
                     }
-                    Spacer(minLength: 0)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(entry.concept.labelKo) \(entry.count)번")

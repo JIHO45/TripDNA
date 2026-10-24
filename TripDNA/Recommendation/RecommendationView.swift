@@ -73,7 +73,7 @@ struct RecommendationView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            DNAScreenHeader(title: "다음 여행지", subtitle: "당신의 지문으로 찾은 추천") {
+            DNAScreenHeader(title: "추천") {
                 HStack(spacing: DNASpacing.sm) {
                     if viewModel.hasRequested {
                         Button { showingInput = true } label: {
@@ -165,7 +165,7 @@ struct RecommendationView: View {
                 Text("아직 받은 추천이 없어요")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("여행 컨셉 하나만 고르면 취향과 지난 여행 평가를 바탕으로 도시를 골라드려요.")
+                Text("여행 컨셉을 고르면 추천을 받아요. 지금은 나라 단위로 보여주고, 고른 조건은 아직 일부만 반영돼요.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .multilineTextAlignment(.center)

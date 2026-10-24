@@ -191,7 +191,14 @@ final class OnboardingViewModel {
         case .entryModeSelection: stage = .homeCountry
         case .photoPriming, .noCandidates, .candidates: scanTask?.cancel(); stage = .entryModeSelection
         case .photoScanning: cancelPhotoScan()
-        case .hook, .concepts, .tiers, .summary: break
+        case .tiers:
+            if entryMode != .preferencesOnly, !conceptQueue.isEmpty {
+                conceptIndex = conceptQueue.count - 1
+                stage = .concepts
+            } else {
+                stage = .entryModeSelection
+            }
+        case .hook, .concepts, .summary: break
         }
     }
 

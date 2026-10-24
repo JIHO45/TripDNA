@@ -7,6 +7,7 @@ struct RecommendationView: View {
     @State private var viewModel = RecommendationViewModel()
     @State private var dislikeTarget: Recommendation?
     @State private var showingFilterSheet = false
+    @State private var showingInput = false
 
     var body: some View {
         ScrollView {
@@ -40,6 +41,16 @@ struct RecommendationView: View {
         .sheet(isPresented: $showingFilterSheet) {
             RecommendationFilterSheet(viewModel: viewModel)
         }
+        .fullScreenCover(isPresented: $showingInput) {
+            RecommendationInputSheet { request in
+                Task { await viewModel.submit(request, dependencies) }
+            }
+        }
+        .onChange(of: router.recommendationInputRequested, initial: true) {
+            guard router.recommendationInputRequested else { return }
+            router.recommendationInputRequested = false
+            showingInput = true
+        }
         .sheet(item: $dislikeTarget) { recommendation in
             RecommendationDislikeSheet(
                 countryName: CountryCatalog.name(for: recommendation.countryCode)
@@ -64,6 +75,12 @@ struct RecommendationView: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             DNAScreenHeader(title: "다음 여행지", subtitle: "당신의 지문으로 찾은 추천") {
                 HStack(spacing: DNASpacing.sm) {
+                    if viewModel.hasRequested {
+                        Button { showingInput = true } label: {
+                            DNACircleIcon(systemImage: "plus", isEmphasized: false)
+                        }
+                        .accessibilityLabel("새 여행 추천")
+                    }
                     Button {
                         showingFilterSheet = true
                     } label: {
@@ -114,6 +131,8 @@ struct RecommendationView: View {
                 action: { router.selectedTab = .trips }
             )
             .frame(height: 300)
+        } else if !viewModel.hasRequested {
+            introView
         } else if viewModel.slots.isEmpty {
             emptyResultView
         } else {
@@ -131,6 +150,56 @@ struct RecommendationView: View {
                         )
                     )
             }
+        }
+    }
+
+    /// 입력 시트로 추천을 받은 적이 없을 때의 안내. 입력은 시트에서 받는다.
+    private var introView: some View {
+        VStack(spacing: DNASpacing.md) {
+            VStack(spacing: DNASpacing.sm) {
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .foregroundStyle(Color.dnaActionText)
+                    .frame(width: 56, height: 56)
+                    .background(Color.dnaSurface2, in: Circle())
+                Text("아직 받은 추천이 없어요")
+                    .dnaFont(.sectionTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Text("여행 컨셉 하나만 고르면 취향과 지난 여행 평가를 바탕으로 도시를 골라드려요.")
+                    .dnaFont(.body)
+                    .foregroundStyle(Color.dnaTextSecondary)
+                    .multilineTextAlignment(.center)
+                Button { showingInput = true } label: { Text("새 여행 추천 받기") }
+                    .buttonStyle(.dnaPrimary)
+                    .accessibilityIdentifier("recommendation.new")
+            }
+            .padding(DNASpacing.gutter)
+            .frame(maxWidth: .infinity)
+            .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+
+            VStack(alignment: .leading, spacing: DNASpacing.sm) {
+                Text("이렇게 추천해요")
+                    .dnaFont(.cardTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                ForEach(Array([
+                    "여행 컨셉과, 정해졌다면 시기·기간·예산을 골라요",
+                    "최대 3곳을 맞는 이유, 안 맞을 수 있는 점과 함께 보여줘요",
+                    "마음에 드는 곳은 저장하거나 여행으로 등록해요"
+                ].enumerated()), id: \.offset) { index, text in
+                    HStack(alignment: .top, spacing: DNASpacing.sm) {
+                        Text("\(index + 1)")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                            .frame(width: 24, height: 24)
+                            .background(Color.dnaSurface2, in: Circle())
+                        Text(text)
+                            .dnaFont(.body)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DNASpacing.gutter)
         }
     }
 
@@ -212,7 +281,7 @@ struct RecommendationView: View {
 
             Text(viewModel.reasonText(for: recommendation))
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.88))
+                .foregroundStyle(Color.dnaTextPrimary.opacity(0.88))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -244,7 +313,7 @@ struct RecommendationView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isSaved ? Color.dnaData : Color.dnaTextPrimary)
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Color.white.opacity(isSaved ? 0.06 : 0.12), in: Capsule())
+                    .background(Color.dnaSurface2.opacity(isSaved ? 0.5 : 1), in: Capsule())
             }
             .buttonStyle(.plain)
             .disabled(reaction != nil)
@@ -304,7 +373,7 @@ struct RecommendationView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                     .frame(minHeight: 44)
                     .padding(.horizontal, DNASpacing.md)
-                    .background(Color.white.opacity(0.12), in: Capsule())
+                    .background(Color.dnaSurface2, in: Capsule())
                     .padding(.top, DNASpacing.xs)
                 }
             }

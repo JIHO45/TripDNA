@@ -75,6 +75,10 @@ final class RecommendationViewModel {
     var isLoading = false
     var errorMessage: String?
     var filter = RecommendationFilter()
+    /// 입력 시트에서 받은 이번 여행 조건. 생성에는 아직 쓰지 않는다(사는 나라 포함만 filter로 옮김).
+    private(set) var request = RecommendationRequest()
+    /// 입력 시트로 추천을 받은 적이 있는지. false면 추천 탭은 빈 상태를 보여준다.
+    private(set) var hasRequested = false
     private(set) var exposure: RecommendationExposure?
     private var lastExcludedCountries: Set<String> = []
     /// "저장했어요" 같은 짧은 확인 피드백. nil이 아니면 토스트를 띄운다.
@@ -142,6 +146,14 @@ final class RecommendationViewModel {
     // MARK: 필터 (UI-4B)
 
     func applyFilter(_ dependencies: AppDependencies) async {
+        await refreshSlots(dependencies)
+    }
+
+    func submit(_ request: RecommendationRequest, _ dependencies: AppDependencies) async {
+        guard request.isReady else { return }
+        self.request = request
+        filter.includeHomeCountry = request.includeHomeCountry
+        hasRequested = true
         await refreshSlots(dependencies)
     }
 

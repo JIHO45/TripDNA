@@ -246,6 +246,7 @@ struct HomeRedesignView: View {
                 .foregroundStyle(Color.dnaTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button {
+                router.recommendationInputRequested = true
                 selection = .recommendation
             } label: {
                 Text("추천 받기")

@@ -5,6 +5,8 @@ import UserNotifications
 @Observable
 final class AppRouter {
     var selectedTab: MainTab = .home
+    /// 홈 등에서 추천 입력 시트를 바로 열어 달라는 요청. 추천 탭이 열고 끈다.
+    var recommendationInputRequested = false
     /// 알림에서 연 평가. 메인 화면이 뜨면 전체 화면으로 띄운다.
     var evaluationRequest: EvaluationRequest?
 }

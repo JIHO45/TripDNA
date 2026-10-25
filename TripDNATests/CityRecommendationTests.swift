@@ -691,6 +691,74 @@ struct CityStateTests {
         #expect(restored.cards.count == record.cards.count)
     }
 
+    @Test func skippedIDsRoundTripAndOldDataDecodesEmpty() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).store")
+        defer { try? FileManager.default.removeItem(at: url) }
+        do {
+            let store = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+            try await store.updateCityState { $0.skippedCityIDs = ["a", "b"] }
+        }
+        let reopened = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+        #expect(try await reopened.cityState().skippedCityIDs == ["a", "b"])
+        let old = try JSONDecoder().decode(CityRecommendationState.self, from: Data("{\"saved\":[]}".utf8))
+        #expect(old.skippedCityIDs == [])
+    }
+
+    private static func seed(_ dependencies: AppDependencies, budget: Int? = nil) async throws -> CityRecommendationRecord {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
+        var request = CityRecommendationServiceTests.request()
+        request.budgetMaxKRW = budget
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
+            homeCountryExcluded: false, seed: 7
+        )
+        try await dependencies.store.updateCityState { $0.lastRecord = record }
+        return record
+    }
+
+    @Test @MainActor func skipsSurviveRestartAndRefillsMatch() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let record = try await Self.seed(dependencies)
+        let before = CityRecommendationViewModel()
+        await before.restore(dependencies: dependencies)
+        // 원래 카드와, 넘기기로 들어온 보충 카드까지 넘긴다.
+        await before.skip(record.cards[0].cityID, dependencies: dependencies)
+        let refilled = try #require(before.refills.first)
+        await before.skip(refilled.cityID, dependencies: dependencies)
+        await before.skip(record.cards[1].cityID, dependencies: dependencies)
+        #expect(before.actionError == nil)
+        #expect(!before.visibleCards(record).contains { $0.cityID == record.cards[0].cityID })
+
+        let after = CityRecommendationViewModel()
+        await after.restore(dependencies: dependencies)
+        #expect(after.skippedCityIDs == before.skippedCityIDs)
+        #expect(after.visibleCards(record).map(\.cityID) == before.visibleCards(record).map(\.cityID))
+        #expect(after.visibleCards(record).count == record.cards.count)
+        // 영구 제외로 번지지 않는다.
+        #expect(try await dependencies.store.cityState().excluded.isEmpty)
+    }
+
+    @Test @MainActor func newResultClearsSkipsButBudgetRecutKeepsThem() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let record = try await Self.seed(dependencies, budget: 5_000_000)
+        let model = CityRecommendationViewModel()
+        await model.restore(dependencies: dependencies)
+        let skipped = record.cards[0].cityID
+        await model.skip(skipped, dependencies: dependencies)
+
+        await model.applyBudget(4_000_000, dependencies: dependencies)
+        #expect(model.skippedCityIDs == [skipped])
+        #expect(try await dependencies.store.cityState().skippedCityIDs == [skipped])
+        let recut = try #require(model.lastRecord)
+        #expect(!model.visibleCards(recut).contains { $0.cityID == skipped })
+
+        // 새 결과를 받으면 같은 저장에서 비운다.
+        try await dependencies.store.updateCityState { $0.lastRecord = record; $0.skippedCityIDs = [] }
+        #expect(try await dependencies.store.cityState().skippedCityIDs.isEmpty)
+    }
+
     @Test func savedAndExcludedCitiesSurviveReopeningTheStore() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).store")
         defer { try? FileManager.default.removeItem(at: url) }

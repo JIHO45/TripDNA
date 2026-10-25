@@ -362,7 +362,9 @@ private struct CityCardMenu: View {
 
     var body: some View {
         Menu {
-            Button("이번 결과에서 넘기기", systemImage: "arrow.right") { model.skip(card.cityID) }
+            Button("이번 결과에서 넘기기", systemImage: "arrow.right") {
+                Task { await model.skip(card.cityID, dependencies: dependencies) }
+            }
             Button("다시 추천하지 않기", systemImage: "hand.raised", role: .destructive) {
                 Task { await model.exclude(card, dependencies: dependencies) }
             }
@@ -471,7 +473,7 @@ struct CityDetailView: View {
                         Text("\(won(cost.low))~\(won(cost.high))")
                             .dnaFont(.heroTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
-                        Text("추정이에요. 항공·숙박 가격은 출발 전에 직접 확인해 주세요. 예산 안인지는 판정하지 않아요.")
+                        Text("추정이에요. 실제 가격이나 예산 충족을 보장하지 않으니 항공·숙박 가격은 출발 전에 직접 확인해 주세요.")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }

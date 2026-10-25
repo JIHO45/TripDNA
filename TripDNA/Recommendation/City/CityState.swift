@@ -44,6 +44,8 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     var excluded: [ExcludedCity] = []
     /// 마지막 추천 결과. 앱을 다시 켜면 추천 탭에 복원한다.
     var lastRecord: CityRecommendationRecord?
+    /// `lastRecord`에서 "이번 결과에서 넘기기"한 도시. 새 결과를 받으면 비운다. 영구 제외와 다르다.
+    var skippedCityIDs: [String] = []
 
     init() {}
 
@@ -53,6 +55,7 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
         saved = try c.decodeIfPresent([SavedCity].self, forKey: .saved) ?? []
         excluded = try c.decodeIfPresent([ExcludedCity].self, forKey: .excluded) ?? []
         lastRecord = try? c.decodeIfPresent(CityRecommendationRecord.self, forKey: .lastRecord)
+        skippedCityIDs = try c.decodeIfPresent([String].self, forKey: .skippedCityIDs) ?? []
     }
 
     var excludedCityIDs: Set<String> { Set(excluded.map(\.cityID)) }

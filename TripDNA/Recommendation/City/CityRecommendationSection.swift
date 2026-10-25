@@ -16,8 +16,9 @@ final class CityRecommendationViewModel {
     private(set) var excluded: [ExcludedCity] = []
     /// 받은 뒤에 "관심 없어요"로 뺀 나라. 결과를 보여줄 때 거른다.
     private(set) var hiddenCountries: Set<String> = []
-    /// 이번 결과에서만 넘긴 도시. 저장하지 않는다.
+    /// 이번 결과에서만 넘긴 도시. 결과와 함께 저장해 복원한다.
     private(set) var skippedCityIDs: Set<String> = []
+    private var skipOrder: [String] = []
     /// 방금 "다시 추천하지 않기"한 도시. 되돌리기 안내에 쓴다.
     private(set) var exclusionNotice: ExcludedCity?
     /// 저장·제외를 저장하지 못했을 때 화면에 띄울 짧은 안내.
@@ -55,6 +56,8 @@ final class CityRecommendationViewModel {
         if state == .idle, lastRecord == nil, let record = stored.lastRecord {
             lastRecord = record
             lastRequest = record.input
+            skipOrder = stored.skippedCityIDs
+            skippedCityIDs = Set(skipOrder)
             state = .done(record)
         }
         fillVacancies()
@@ -68,9 +71,9 @@ final class CityRecommendationViewModel {
         let service = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
         if let derived = service.recut(lastRecord, budgetMaxKRW: budgetMaxKRW) {
             self.lastRecord = derived
-            skippedCityIDs = []
             refills = []
             state = .done(derived)
+            fillVacancies(catalog: catalog)
         }
     }
 
@@ -145,9 +148,10 @@ final class CityRecommendationViewModel {
             guard !Task.isCancelled else { return }
             lastRecord = record
             skippedCityIDs = []
+            skipOrder = []
             refills = []
             state = .done(record)
-            try? await dependencies.store.updateCityState { $0.lastRecord = record }
+            try? await dependencies.store.updateCityState { $0.lastRecord = record; $0.skippedCityIDs = [] }
         } catch {
             guard !Task.isCancelled else { return }
             switch error {
@@ -164,9 +168,18 @@ final class CityRecommendationViewModel {
     // MARK: 카드 행동
 
     /// 이번 결과에서만 넘긴다. 영구 제외가 아니다. 빈 자리는 같은 풀의 다음 도시로 채운다.
-    func skip(_ cityID: String) {
-        skippedCityIDs.insert(cityID)
-        fillVacancies()
+    func skip(_ cityID: String, dependencies: AppDependencies) async {
+        guard !skippedCityIDs.contains(cityID) else { return }
+        let order = skipOrder + [cityID]
+        do {
+            try await dependencies.store.updateCityState { $0.skippedCityIDs = order }
+            skipOrder = order
+            skippedCityIDs.insert(cityID)
+            actionError = nil
+            fillVacancies()
+        } catch {
+            actionError = Self.saveFailure
+        }
     }
 
     static let saveFailure = "저장하지 못했어요. 다시 시도해 주세요."

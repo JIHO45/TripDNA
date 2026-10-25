@@ -120,26 +120,45 @@ struct CityRecommendationSection: View {
 }
 
 #if DEBUG
-/// 개발용 API 키를 Keychain에만 저장한다. 소스·번들·로그에는 남지 않는다.
-private struct DevKeySheet: View {
+/// 개발용 API 키를 Keychain에만 저장한다. 소스·번들·로그에는 남지 않는다. 설정 화면의 "개발용" 항목과 추천 화면에서 연다.
+struct DevKeyForm: View {
     @Environment(\.dismiss) private var dismiss
     @State private var key = ""
+    @State private var saved = DevAPIKeyStore.read().map { !$0.isEmpty } ?? false
 
     var body: some View {
-        NavigationStack {
-            Form {
+        Form {
+            Section {
                 SecureField("Anthropic API 키", text: $key)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                Text("이 기기의 Keychain에만 저장돼요. 디버그 빌드에서만 쓰여요.")
-                    .font(.caption)
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("저장") { DevAPIKeyStore.save(key); dismiss() }
+                Button("저장") {
+                    DevAPIKeyStore.save(key)
+                    key = ""
+                    saved = DevAPIKeyStore.read() != nil
+                    dismiss()
                 }
+                .disabled(key.isEmpty)
+                if saved {
+                    Button("저장된 키 지우기", role: .destructive) {
+                        DevAPIKeyStore.save("")
+                        saved = false
+                    }
+                }
+            } header: {
+                Text(saved ? "저장된 키가 있어요" : "저장된 키가 없어요")
+            } footer: {
+                Text("이 기기의 Keychain에만 저장돼요. 디버그 빌드에서만 쓰여요.")
             }
         }
+        .navigationTitle("개발용 API 키")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct DevKeySheet: View {
+    var body: some View {
+        NavigationStack { DevKeyForm() }
     }
 }
 #endif

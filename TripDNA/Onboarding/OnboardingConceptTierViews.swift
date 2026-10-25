@@ -1,13 +1,13 @@
 import SwiftUI
 
 extension WantedConceptTiers {
-    /// 화면에 보이는 칸 이름. 내부 값은 1~3과 nil("아직 모르겠어요").
+    /// 화면에 보이는 칸 이름. 내부 값은 1~3과 nil("모르겠거나 원하지 않아요").
     static func screenName(of tier: Int?) -> String {
         switch tier {
         case 1: "가장 원해요"
         case 2: "좋아요"
         case 3: "있으면 좋아요"
-        default: "아직 모르겠어요"
+        default: "모르겠거나 원하지 않아요"
         }
     }
 
@@ -211,7 +211,7 @@ struct ConceptTierBox: View {
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             if tier == nil {
-                Text("아직 안 고른 것도 여기 있어요 · 추천 점수에 넣지 않아요")
+                Text("안 고른 것도 여기 있어요 · 이 칸 때문에 추천에서 빠지지는 않아요. 꼭 피하고 싶은 건 아래에 적어 주세요")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }

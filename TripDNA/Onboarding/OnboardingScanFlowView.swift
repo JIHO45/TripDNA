@@ -226,7 +226,7 @@ struct OnboardingCandidatesView: View {
                 }
             }
             HStack(spacing: DNASpacing.xs) {
-                Text(OnboardingFormat.flagEmoji(for: candidate.countryCode))
+                Text(candidate.legs.map { OnboardingFormat.flagEmoji(for: $0.countryCode) }.joined())
                 Text(candidate.isCityUnknown ? "\(candidate.title) · 도시 모름" : candidate.title)
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
@@ -241,7 +241,7 @@ struct OnboardingCandidatesView: View {
                     cityTarget = candidate.id
                 }
             } else if let other = viewModel.mergeSuggestion(for: candidate.id) {
-                suggestionRow(text: "\(other.title)와 날짜가 이어져요. 한 여행이었나요?", action: "\(other.title)와 합치기") {
+                suggestionRow(text: "\(other.title)와 날짜가 가까워요. 한 여행이었나요?", action: "\(other.title)와 합치기") {
                     viewModel.merge(candidate.id, with: other.id)
                 }
             }

@@ -949,11 +949,22 @@ extension Trip {
         legs.map { CountryCatalog.name(for: $0.countryCode) }.joined(separator: " · ")
     }
 
-    /// 도시가 있으면 도시 이름, 없으면 나라 이름. 목록·랭킹의 제목.
+    /// 도시가 있으면 도시 이름, 없으면 나라 이름. 목록·랭킹의 제목. 다섯 곳부터 줄인다.
     var placeTitleKo: String {
         let cities = legs.flatMap(\.cities)
-        return cities.isEmpty ? titleKo : cities.joined(separator: " · ")
+        return cities.isEmpty ? titleKo : PlaceTitle.compact(cities, separator: " · ")
     }
+}
+
+/// 여행 제목의 장소 목록. 네 곳까지는 모두, 다섯 곳부터는 "앞의 3곳 외 n곳"으로 보여준다.
+nonisolated enum PlaceTitle {
+    static func compact(_ names: [String], separator: String) -> String {
+        guard names.count > 4 else { return names.joined(separator: separator) }
+        return names.prefix(3).joined(separator: separator) + " 외 \(names.count - 3)곳"
+    }
+}
+
+extension Trip {
 
     /// "11월 14일 – 17일" 또는 "12월 29일 – 1월 2일". 연도는 묶음 제목이 보여준다.
     var shortDateRangeKo: String {

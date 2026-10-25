@@ -7,6 +7,8 @@ import UIKit
 struct DailyPhotoLibraryPicker: View {
     /// 후보를 이 날짜(로컬 자정 기준)로 한정한다. `nil`이면 최근 사진 전체.
     var day: Date? = Calendar.current.startOfDay(for: Date())
+    /// 있으면 `day`부터 이 날까지(여행 기간) 위치 정보가 있는 사진만 촬영순으로 보여준다. 스크린샷 등을 거르기 위해서다.
+    var lastDay: Date? = nil
     /// 저장 완료된 `local://photos/...` 경로를 넘긴다.
     let onSelect: (String) -> Void
 
@@ -25,6 +27,7 @@ struct DailyPhotoLibraryPicker: View {
 
     private var dayLabel: String {
         guard let day else { return "사진" }
+        if lastDay != nil { return "여행 기간에" }
         if Calendar.current.isDateInToday(day) { return "오늘" }
         if Calendar.current.isDateInYesterday(day) { return "어제" }
         let formatter = DateFormatter()
@@ -46,7 +49,7 @@ struct DailyPhotoLibraryPicker: View {
                 deniedLayout
             }
         }
-        .task(id: day?.timeIntervalSince1970) {
+        .task(id: [day, lastDay].map { $0?.timeIntervalSince1970 }) {
             if authorization == .authorized || authorization == .limited {
                 await reloadAssets()
             }
@@ -213,18 +216,20 @@ struct DailyPhotoLibraryPicker: View {
         isLoading = true
         defer { isLoading = false }
         let day = self.day
+        let lastDay = self.lastDay
         assets = await Task.detached(priority: .userInitiated) {
-            Self.fetchAssets(day: day)
+            Self.fetchAssets(day: day, lastDay: lastDay)
         }.value
     }
 
-    nonisolated private static func fetchAssets(day: Date?) -> [PHAsset] {
+    nonisolated private static func fetchAssets(day: Date?, lastDay: Date?) -> [PHAsset] {
         let options = PHFetchOptions()
-        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        options.fetchLimit = day == nil ? 60 : 120
+        // ponytail: 여행 기간은 앞에서 300장까지만 본다. 나머지는 "사진첩에서 더 보기"로 고른다.
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: lastDay != nil)]
+        options.fetchLimit = day == nil ? 60 : (lastDay == nil ? 120 : 300)
         if let day {
             let start = Calendar.current.startOfDay(for: day)
-            guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else {
+            guard let end = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: lastDay ?? day)) else {
                 return []
             }
             options.predicate = NSPredicate(
@@ -243,7 +248,7 @@ struct DailyPhotoLibraryPicker: View {
         var collected: [PHAsset] = []
         collected.reserveCapacity(result.count)
         result.enumerateObjects { asset, _, _ in
-            collected.append(asset)
+            if lastDay == nil || asset.location != nil { collected.append(asset) }
         }
         return collected
     }

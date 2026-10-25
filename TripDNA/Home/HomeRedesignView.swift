@@ -273,7 +273,7 @@ struct HomeRedesignView: View {
                 Text("원하는 여행부터 골라주세요")
                     .dnaFont(.heroTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("가장 원해요 · 좋아요 · 있으면 좋아요로 골라요. 안 고른 건 \"아직 모르겠어요\"로 둬요.")
+                Text("가장 원해요 · 좋아요 · 있으면 좋아요로 골라요. 안 고른 건 \"모르겠거나 원하지 않아요\"로 둬요.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)

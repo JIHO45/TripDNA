@@ -21,7 +21,7 @@ B1·D1·D2의 이전 완료 기록은 같은 파일에 있다. 해당 검증을 
 ## 다음 작업
 
 - [x] **초기 취향·지문 합의 문서 복원:** 2026-10-07, [제품 원칙](../README.md#취향과-추천의-핵심-원칙), [기억](recommendation/memory.md), [추천 구조](recommendation/README.md), [지문 화면](screens/home-and-fingerprint.md#취향-지문)에 반영하고 관련 화면·목차의 표현을 맞췄다. 이후 목록·실험 우선·구독 결정은 유지했다. 앱 구현 완료를 뜻하지 않는다.
-- [ ] **컨셉 지문 표시 구현:** [지문 화면](screens/home-and-fingerprint.md#취향-지문)에 따라 여행별 컨셉 기록과 집계, 표시를 구현한다. 2026-10-07의 5축 요약 계획은 2026-10-08에 철회했다. 2026-10-17 부분 구현: 등록·수정 화면의 컨셉 선택(큰 컨셉 10개, ID는 `data/experience-categories.json` v1 9개 + `event`), 도시별 별점·좋았던 점·아쉬웠던 점 메모(태그 선택 UI 제거, 기존 태그 기록 보존), 지문 화면 상단의 주 컨셉 횟수 집계와 빈 상태. 산출물: `TripDNA/Domain/DomainModels.swift`(`TripConcept`, `TripConcepts`, `CityReview`, `ConceptFingerprint`), `TripDNATests/ConceptAndCityReviewTests.swift`. 저장은 기존 JSON payload에 선택 필드로 더해 SwiftData 스키마를 바꾸지 않았다(이관 단계 없음, 이전 payload 해독 테스트). 검사: 시뮬레이터 빌드, `TripDNATests` 53개 통과(iPhone 17), `graphify update .`. 실제 앱 화면 조작은 확인하지 않았다. 남은 것: 홈의 지문 진입이 5축 벡터가 있을 때만 보이고, 지문 화면 아래·공유 카드에 5축 표시가 남아 있다(제거 여부 결정 필요). 평가의 여행 전체 만족도·재방문 단계는 도시 별점을 여행 랭킹으로 환산하는 규칙이 없어 유지했다. 평가 화면의 컨셉 수정, 온보딩 과거 여행의 컨셉 입력은 없다.
+- [x] **컨셉 지문 표시 구현:** [지문 화면](screens/home-and-fingerprint.md#취향-지문)에 따라 여행별 컨셉 기록과 집계, 표시를 구현한다. 2026-10-07의 5축 요약 계획은 2026-10-08에 철회했다. 2026-10-17 부분 구현: 등록·수정 화면의 컨셉 선택(큰 컨셉 10개, ID는 `data/experience-categories.json` v1 9개 + `event`), 도시별 별점·좋았던 점·아쉬웠던 점 메모(태그 선택 UI 제거, 기존 태그 기록 보존), 지문 화면 상단의 주 컨셉 횟수 집계와 빈 상태. 산출물: `TripDNA/Domain/DomainModels.swift`(`TripConcept`, `TripConcepts`, `CityReview`, `ConceptFingerprint`), `TripDNATests/ConceptAndCityReviewTests.swift`. 저장은 기존 JSON payload에 선택 필드로 더해 SwiftData 스키마를 바꾸지 않았다(이관 단계 없음, 이전 payload 해독 테스트). 검사: 시뮬레이터 빌드, `TripDNATests` 53개 통과(iPhone 17), `graphify update .`. 실제 앱 화면 조작은 확인하지 않았다. 2026-10-24 `design-f-app` 브랜치에서 마무리했다. 홈·지문 상세·공유 카드에서 5축 표시를 지우고 컨셉 지문(여행 하나가 칸 하나, 동점·첫 기록 문구)으로 바꿨고, 온보딩 과거 여행의 컨셉 입력과 평가 화면의 컨셉 수정을 넣었다(a8adab8, 2294f0b, faeb735). 여행 전체 만족도·재방문 단계를 도시 별점으로 바꾸는 규칙은 여전히 없다.
 - [x] **컨셉 기반 추천 설계 문서화:** 2026-10-08, [추천 구조](recommendation/README.md#2026-10-08-결정-컨셉-기반-추천), [컨셉과 티어](recommendation/memory.md#컨셉과-티어), 화면 문서 7개. 근거 기록은 `data/exploration/coverage-check/`와 `data/exploration/chips-vs-llm/`. 검사: 로컬 링크·앵커, `git diff --check`. 앱 코드는 바꾸지 않아 빌드·테스트는 실행하지 않았다.
 - [x] **추천 흐름 재정리 문서화:** 2026-10-08, 매 추천 LLM 호출, 주 컨셉 필수, 도시별 평가와 메모 입력, 카드 행동, 목록 밖 도시, 자동 일정 생성기의 제외 범위 해제. [추천 구조](recommendation/README.md#흐름), [기억](recommendation/memory.md), [추천 화면](screens/recommendations.md), [여행 평가](screens/trip-evaluation.md), [루트 README](../README.md#범위). 검사: 로컬 링크·앵커, `git diff --check`.
 - [x] **추천 흐름의 문서 간 정합성 보완:** 2026-10-08, 저장·전송, 화면, 평가·계측·출시, 목차의 이전 규칙을 최신 흐름에 맞췄다. 0개 결과의 예산 초과 대안과 새 LLM 재호출의 무료 처리는 미정으로 유지했다. 검사: 30개 문서의 로컬 링크·앵커 300개, `git diff --check`, `check_destination_candidates.py` 통과. 시뮬레이터 대상 빌드는 샌드박스의 DerivedData·서비스 접근 제한으로 첫 시도 실패 후 권한을 확보해 성공했다. 앱 코드 변경이 없어 단위·UI 테스트는 실행하지 않았다. `graphify update .`로 코드·Markdown 구조를 갱신하고 새 절이 질의에 나타나는 것을 확인했다. Swift 두 파일의 부분 추출 경고는 남아 있으며, LLM 의미 추출·커뮤니티 이름 재생성은 하지 않았다. 커밋하지 않았다.
@@ -39,6 +39,43 @@ B1·D1·D2의 이전 완료 기록은 같은 파일에 있다. 해당 검증을 
 - [ ] **출시 검증:** [출시 기준](README.md#release)에 실제 빌드·기기·운영 증거를 남긴다.
 
 제휴·공유·제출 준비는 [출시 문서](README.md#release)에 따라 병행한다. 각 완료 항목에는 날짜·산출물 경로·실제 검사 결과를 남기고 실행하지 않은 검사는 체크하지 않는다.
+
+### 출시 전 남은 작업 (2026-10-18 정리)
+
+위 목록에 따로 항목이 없던 출시 전 작업이다. 구현 상태는 2026-10-18에 코드를 검색해 확인했다. 요건의 원문은 [출시 차단 요건](release.md#출시-차단-요건)과 각 담당 문서다.
+
+결정:
+- [x] **5축 지문 표시 정리:** 2026-10-24 제거로 결정·구현했다. 공유 카드는 컨셉 블록 상위 5개로 그린다([지문](screens/home-and-fingerprint.md#취향-지문), a8adab8).
+- [ ] **개인정보 결정 선택지 A~D:** [저장·전송](data/storage-and-privacy.md)의 초안에서 고른다.
+
+앱 구현:
+- [x] **티어 입력 화면:** 2026-10-24 온보딩과 설정 "원하는 여행"에 네 칸 배치(가장 원해요 / 좋아요 / 있으면 좋아요 / 모르겠거나 원하지 않아요. 넷째 칸 이름은 2026-10-25에 바꿈)와 피하고 싶은 것 글 입력을 구현하고 기기에 저장한다(2294f0b, 8b740c4, `wantedTiersSurviveStoreReopen`). 추천 생성에는 아직 쓰지 않는다.
+- [ ] **도시 자료 번들 연결:** 현재 앱은 국가 자료(`TripDNA/Resources/countries.json`)를 쓴다. 103곳 자료는 앱에 연결하지 않았다.
+- [ ] **구독:** 구매·복원·만료와 무료·구독 한도 계수([구독 결정](recommendation/README.md#2026-10-07-추가-결정-구독-자료-배포-저장)). StoreKit 코드가 없다. 한도를 세는 단위는 미정이다.
+- [ ] **영어·한국어 현지화:** 화면 문자열이 Swift 코드에 한국어로 들어 있다. 영어·한국어가 있는 것은 `InfoPlist.xcstrings`뿐이다.
+- [ ] **데이터 삭제 확인:** 전체 삭제는 구현돼 있다(`SwiftDataStore.deleteAllUserData`, `AccountDeletionTests`). 컨셉·도시 메모는 여행 기록에, 원하는 여행·온보딩 진행 상태는 같은 저장소의 단일 값 표에 있어 전체 삭제에 포함된다(온보딩 진행 상태는 테스트로 확인). 서버 쪽 삭제와 iCloud 사본 삭제는 아직 없다.
+- [ ] **공유 공개 범위:** 새 지문 공유 카드의 공개 범위를 확인한다.
+
+LLM 관련 (위 목록에 없던 것):
+- [ ] **홀드아웃 사례의 기대 판정:** `claude/festive-blackburn-d4cb8b` 브랜치의 `data/exploration/contract-check/holdout/`. 이 브랜치는 병합하지 않았고, 마지막 비교 전까지 프롬프트 작업과 분리해 둔다.
+
+출시 준비:
+- [ ] **개인정보 처리방침과 App Store 프라이버시 선언:** [초안](privacy-draft.md)을 확정하고 처리방침 URL을 준비한다.
+- [ ] **App Store Connect:** 구독 상품 등록, 원화 가격 단계 확인, Small Business Program 가입(사용자가 직접 한다).
+- [ ] **제출 자료:** 앱 아이콘, 영어·한국어 스크린샷과 설명.
+- [ ] **제휴 승인과 링크 귀속 검증:** [제휴 정책](affiliates.md), 출시 문서 R4.
+- [ ] **출시 후 관측 경로:** [계측](evaluation/metrics.md), 출시 문서 R5.
+
+## 디자인 F 앱 반영 — 2026-10-24~25
+
+`design-f-app` 브랜치(b900a72~ced8ddf). 시안은 [Claude Design 캔버스](https://claude.ai/artifact/69c73GvvKVRtUMpjgWQZW3). 커밋하지 않은 도시 등급 작업과는 별개다.
+
+- [x] **화면 반영:** 색·글꼴 토큰과 라이트·다크 자동 전환, Apple 로그인 제거, 온보딩 재구성과 진행 상태 저장, 여행 탭·등록·평가·하루 한 장, 설정, 홈·지문·Wrapped·공유 카드, 추천 빈 화면과 단계형 입력 시트. 검사: 시뮬레이터 빌드, `TripDNATests` 79개 통과(iPhone 17), `graphify update .`, 시뮬레이터 라이트·다크 화면 확인. UI 테스트(`TripDNAUITests`)는 실행하지 않았고, 온보딩 "원하는 여행" 단계의 뒤로 가기는 화면에서 눌러 보지 않았다.
+- [ ] **추천 입력 연결:** 입력 시트의 값 가운데 "사는 나라도 포함"만 생성에 쓴다. 컨셉·세부·인원·시기·기간·예산·자유문장·다녀온 곳 포함은 저장만 한다. 결과는 기존 엔진의 나라 3곳이다. 예산(원)은 기존 상대 비용 점수로 바꿀 근거가 없어 연결하지 않았다. 도시 자료 번들과 LLM 호출이 붙을 때 연결한다([추천 화면](screens/recommendations.md)).
+- [ ] **홈 추천 카드:** 추천 탭 결과 대신 저장한 나라를 "저장한 추천"으로 보여준다. 도시 추천이 들어오면 추천 탭 결과를 재사용한다([홈](screens/home-and-fingerprint.md#홈)).
+- [ ] **iCloud 백업:** 문서에는 범위로 정했지만(2026-10-23) 코드는 없다. 설정 맨 위는 "지금은 이 기기에만 저장돼요"로 표시한다.
+- [ ] **자료 모델 확장 결정:** 출장과 가족 방문 구분, 여행 날짜 미정 허용, 여행의 인원·컨셉 세부, 도시 단위 제외, 구독 화면(지금은 "준비 중"), 홈의 사진첩 찾기(지금은 비활성). 사용자 결정이 필요하다.
+- [ ] **기타 확인:** Wrapped ④는 여행 8개까지만 보여준다. 사진 위 글자 등 일부 화면에 고정 흰색이 남아 있다(대부분 사진 위라 의도된 것으로 보이나 전수 확인은 안 했다).
 
 ## 이번 문서 개편 검증
 

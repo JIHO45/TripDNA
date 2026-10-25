@@ -182,6 +182,63 @@ struct ConceptAndCityReviewTests {
         #expect(loaded?.tier(of: .nightlife) == nil)
     }
 
+    @Test @MainActor func photoCandidatesAreSavedAsEndedTrips() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let viewModel = OnboardingViewModel()
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let end = start.addingTimeInterval(6 * 24 * 60 * 60)
+        var candidate = TripCandidate(
+            legs: [
+                .init(countryCode: "CA", cities: ["Vancouver"], startDate: start, endDate: start),
+                .init(countryCode: "US", cities: ["Seattle"], startDate: start, endDate: end)
+            ],
+            photoAssetIDs: []
+        )
+        candidate.state = .recorded
+        viewModel.candidates = [candidate]
+        await viewModel.commitCandidates(dependencies)
+        let trips = await dependencies.allTrips()
+        #expect(trips.map(\.status) == [.ended])
+        #expect(trips.first?.endedAt == end)
+        #expect(trips.first?.legs.map(\.countryCode) == ["CA", "US"])
+    }
+
+    @Test @MainActor func photoGroupingFollowsDatesAcrossCountriesAndCities() {
+        let day: TimeInterval = 24 * 60 * 60
+        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        func photo(_ code: String?, _ city: String?, _ offset: Double) -> TripCandidate.Photo {
+            .init(countryCode: code, city: city, date: base.addingTimeInterval(offset * day), assetID: "\(offset)")
+        }
+        let candidates = TripCandidate.group([
+            photo("CA", "Vancouver", 0), photo("CA", "Banff", 3), photo("CA", "Calgary", 5.9),
+            photo("US", "Los Angeles", 6.5), photo("US", "Las Vegas", 8), photo("US", "Page", 9),
+            photo("US", "Springdale", 10), photo("US", "Los Angeles", 11),
+            photo(nil, "Seoul", 12),
+            photo("JP", "Tokyo", 13), photo("JP", "Tokyo", 14),
+            photo("JP", "Osaka", 20), photo("JP", "Osaka", 21)
+        ])
+        // 집 사진과 3일 넘는 공백에서 끊긴다. 최신순.
+        // 이틀 이상 사진이 있는 도시만 남는다. 캐나다는 모두 하루라 사진이 가장 많은(동률이면 먼저 간) 도시 하나만 남는다.
+        #expect(candidates.map(\.title) == ["Osaka", "Tokyo", "Vancouver·Los Angeles"])
+        let road = candidates[2]
+        #expect(road.legs.map(\.countryCode) == ["CA", "US"])
+        #expect(road.photoAssetIDs.count == 8)
+
+        let viewModel = OnboardingViewModel()
+        viewModel.candidates = candidates
+        let suggestion = viewModel.mergeSuggestion(for: candidates[0].id)
+        #expect(suggestion?.id == candidates[1].id)
+        viewModel.merge(candidates[0].id, with: candidates[1].id)
+        #expect(viewModel.candidates.first?.legs.count == 1)
+        #expect(viewModel.candidates.first?.title == "Tokyo·Osaka")
+        #expect(viewModel.candidates.first?.photoAssetIDs.first == "13.0")
+    }
+
+    @Test func placeTitlesShowFourAndShortenFromFive() {
+        #expect(PlaceTitle.compact(["A", "B", "C", "D"], separator: " · ") == "A · B · C · D")
+        #expect(PlaceTitle.compact(["A", "B", "C", "D", "E", "F"], separator: "·") == "A·B·C 외 3곳")
+    }
+
     @Test @MainActor func onboardingDraftRestoresStepAndInputsWithoutDuplicatingTrips() async throws {
         let dependencies = AppDependencies(persistence: .inMemory)
         let trip = try await dependencies.tripService.createTrip(

@@ -173,7 +173,7 @@ nonisolated struct TripConcepts: Codable, Equatable, Sendable {
     }
 }
 
-/// 온보딩 "원하는 여행"에서 사용자가 컨셉을 놓은 칸. 1~3순위에 놓지 않은 컨셉은 "아직 모르겠어요"이며
+/// 온보딩 "원하는 여행"에서 사용자가 컨셉을 놓은 칸. 1~3순위에 놓지 않은 컨셉은 "모르겠거나 원하지 않아요"이며
 /// 추천 점수에 쓰지 않는다. 지난 여행으로 미리 채우지 않는다 (docs/recommendation/memory.md "컨셉과 티어").
 nonisolated struct WantedConceptTiers: Codable, Equatable, Sendable {
     var tier1: [TripConcept] = []
@@ -182,7 +182,7 @@ nonisolated struct WantedConceptTiers: Codable, Equatable, Sendable {
     /// 피하고 싶은 것. 자유 입력이며 비어 있을 수 있다.
     var avoidNote: String?
 
-    /// 1~3이면 해당 티어, 놓지 않았으면 nil("아직 모르겠어요").
+    /// 1~3이면 해당 티어, 놓지 않았으면 nil("모르겠거나 원하지 않아요").
     func tier(of concept: TripConcept) -> Int? {
         if tier1.contains(concept) { return 1 }
         if tier2.contains(concept) { return 2 }
@@ -190,7 +190,7 @@ nonisolated struct WantedConceptTiers: Codable, Equatable, Sendable {
         return nil
     }
 
-    /// 컨셉을 `tier`(1~3) 칸으로 옮긴다. nil이면 "아직 모르겠어요"로 되돌린다.
+    /// 컨셉을 `tier`(1~3) 칸으로 옮긴다. nil이면 "모르겠거나 원하지 않아요"로 되돌린다.
     mutating func place(_ concept: TripConcept, in tier: Int?) {
         tier1.removeAll { $0 == concept }
         tier2.removeAll { $0 == concept }

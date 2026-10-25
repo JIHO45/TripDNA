@@ -75,7 +75,7 @@ struct TripDetailView: View {
             Task { await viewModel.load(tripID: tripID, dependencies: dependencies) }
         }
         .sheet(isPresented: $showingCoverPicker) {
-            CoverPhotoPickerSheet(photos: viewModel.photos) { path in
+            CoverPhotoPickerSheet(trip: viewModel.trip, photos: viewModel.photos) { path in
                 Task { await viewModel.setCoverPhoto(path, dependencies: dependencies) }
             }
         }

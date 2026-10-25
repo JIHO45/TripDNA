@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// 대표 사진 고르기. 하루 한 장에서 고르거나 사진첩에서 한 장을 가져온다. 고르면 `onPick`을 부르고 닫는다.
+/// 대표 사진 고르기. 하루 한 장, 여행 기간에 찍은 위치 있는 사진, 사진첩 전체(더 보기) 순으로 고른다.
+/// 고르면 `onPick`을 부르고 닫는다.
 struct CoverPhotoPickerSheet: View {
+    let trip: Trip?
     let photos: [DailyPhoto]
     let onPick: (String) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -30,14 +32,22 @@ struct CoverPhotoPickerSheet: View {
                     }
                     Divider().overlay(Color.dnaDivider)
                 }
-                Text("사진첩에서 고르기")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                AnyPhotoLibraryPickerButton(title: "사진 선택") { path in
-                    onPick(path)
-                    dismiss()
+                if let trip, let first = trip.legs.map(\.startDate).min(), let last = trip.legs.map(\.endDate).max() {
+                    DailyPhotoLibraryPicker(day: first, lastDay: last) { path in
+                        onPick(path)
+                        dismiss()
+                    }
+                    .padding(.horizontal, -DNASpacing.lg)
+                } else {
+                    Text("사진첩에서 고르기")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                    AnyPhotoLibraryPickerButton(title: "사진 선택") { path in
+                        onPick(path)
+                        dismiss()
+                    }
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
             }
             .padding(DNASpacing.lg)
             .background(Color.dnaSheet)

@@ -8,18 +8,105 @@ import SwiftUI
 struct TripCandidate: Identifiable {
     enum State { case pending, recorded, removed }
 
+    /// 한 나라에 머문 구간.
+    struct Leg: Equatable {
+        var countryCode: String
+        /// 들른 순서대로. 도시를 모르면 비어 있다. 추측해서 채우지 않는다.
+        var cities: [String]
+        var startDate: Date
+        var endDate: Date
+    }
+
+    /// 스캔에 쓰는 사진 한 장. `countryCode`가 nil이면 집(출발 나라)에서 찍은 사진이다.
+    struct Photo {
+        let countryCode: String?
+        let city: String?
+        let date: Date
+        let assetID: String
+        /// 촬영 장소의 시간대. 머문 날짜를 현지 날짜로 센다.
+        var timeZone: TimeZone = .current
+    }
+
     let id = UUID()
-    var countryCode: String
-    /// 도시를 모르면 비어 있다. 추측해서 채우지 않는다.
-    var cities: [String]
-    var startDate: Date
-    var endDate: Date
+    /// 날짜순이며 비어 있지 않다. 이웃한 구간은 나라가 다르다.
+    var legs: [Leg]
     /// `PHAsset.localIdentifier` (촬영순). 카드 표시 전용이며 저장·업로드하지 않는다.
     var photoAssetIDs: [String]
     var state: State = .pending
 
-    var isCityUnknown: Bool { cities.isEmpty }
-    var title: String { cities.isEmpty ? CountryCatalog.name(for: countryCode) : cities.joined(separator: "·") }
+    var startDate: Date { legs[0].startDate }
+    var endDate: Date { legs.map(\.endDate).max() ?? legs[0].endDate }
+    var isCityUnknown: Bool { legs.contains { $0.cities.isEmpty } }
+    var title: String {
+        PlaceTitle.compact(legs.flatMap { $0.cities.isEmpty ? [CountryCatalog.name(for: $0.countryCode)] : $0.cities }, separator: "·")
+    }
+
+    /// 사진 사이가 이 간격보다 벌어지면 다른 여행으로 본다.
+    static let maxGap: TimeInterval = 3 * 24 * 60 * 60
+
+    /// 해외 사진을 날짜가 이어지는 묶음으로 나눠 여행 후보를 만든다(최신순, 최대 12개).
+    /// 집에서 찍은 사진이 끼거나 간격이 `maxGap`을 넘으면 끊는다. 묶음 안에서는 나라가 바뀔 때마다 구간을 나누고 도시는 경유지로 쌓는다.
+    /// 경유지는 사진이 현지 날짜로 이틀 이상 있는 도시만 남긴다. 그런 도시가 없는 구간은 사진이 가장 많은 도시 하나를 남긴다.
+    /// ponytail: 사진 날짜 수는 숙박 증거가 아니다. 당일치기 도시는 빠지고, 출국·귀국 때 찍은 공항 도시는 남을 수 있다.
+    static func group(_ photos: [Photo]) -> [TripCandidate] {
+        var runs: [[Photo]] = [[]]
+        for photo in photos.sorted(by: { $0.date < $1.date }) {
+            guard photo.countryCode != nil else {
+                runs.append([])
+                continue
+            }
+            if let last = runs[runs.count - 1].last, photo.date.timeIntervalSince(last.date) > maxGap {
+                runs.append([])
+            }
+            runs[runs.count - 1].append(photo)
+        }
+        let calendar = Calendar.current
+        return runs.filter { $0.count >= 2 }.reversed().prefix(12).map { run in
+            var legs: [Leg] = []
+            var stats: [[String: (count: Int, days: Set<DateComponents>)]] = []
+            for photo in run {
+                let code = photo.countryCode ?? ""
+                let day = calendar.startOfDay(for: photo.date)
+                if legs.last?.countryCode == code {
+                    legs[legs.count - 1].endDate = day
+                } else {
+                    legs.append(Leg(countryCode: code, cities: [], startDate: day, endDate: day))
+                    stats.append([:])
+                }
+                if let city = photo.city {
+                    if !legs[legs.count - 1].cities.contains(city) { legs[legs.count - 1].cities.append(city) }
+                    var local = calendar
+                    local.timeZone = photo.timeZone
+                    var stat = stats[stats.count - 1][city] ?? (0, [])
+                    stat.count += 1
+                    stat.days.insert(local.dateComponents([.year, .month, .day], from: photo.date))
+                    stats[stats.count - 1][city] = stat
+                }
+            }
+            for index in legs.indices where !legs[index].cities.isEmpty {
+                let stat = stats[index]
+                let stayed = legs[index].cities.filter { (stat[$0]?.days.count ?? 0) >= 2 }
+                legs[index].cities = stayed.isEmpty
+                    ? [legs[index].cities.max { (stat[$0]?.count ?? 0) < (stat[$1]?.count ?? 0) }!]
+                    : stayed
+            }
+            return TripCandidate(legs: legs, photoAssetIDs: run.map(\.assetID))
+        }
+    }
+
+    /// 날짜순으로 정렬하고 이웃한 같은 나라 구간을 하나로 합친다.
+    static func joined(_ legs: [Leg]) -> [Leg] {
+        var result: [Leg] = []
+        for leg in legs.sorted(by: { $0.startDate < $1.startDate }) {
+            if let last = result.last, last.countryCode == leg.countryCode {
+                result[result.count - 1].cities += leg.cities.filter { !last.cities.contains($0) }
+                result[result.count - 1].endDate = max(last.endDate, leg.endDate)
+            } else {
+                result.append(leg)
+            }
+        }
+        return result
+    }
 }
 
 /// 기록을 마친 여행의 요약. 컨셉 단계와 확인 화면이 쓴다.
@@ -289,20 +376,21 @@ final class OnboardingViewModel {
 
     func setCity(_ city: String, for id: UUID) {
         let trimmed = city.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let index = candidates.firstIndex(where: { $0.id == id }) else { return }
-        candidates[index].cities = [trimmed]
+        guard !trimmed.isEmpty, let index = candidates.firstIndex(where: { $0.id == id }),
+              let legIndex = candidates[index].legs.firstIndex(where: { $0.cities.isEmpty }) else { return }
+        candidates[index].legs[legIndex].cities = [trimmed]
     }
 
-    /// 같은 나라이고 날짜가 3일 안으로 이어지는, 아직 정하지 않은 다른 후보.
+    /// 날짜가 7일 안으로 가까운, 아직 정하지 않은 다른 후보. 나라는 달라도 된다.
     func mergeSuggestion(for id: UUID) -> TripCandidate? {
         guard let candidate = candidates.first(where: { $0.id == id && $0.state == .pending }) else { return nil }
         return candidates.first { other in
-            guard other.id != id, other.state == .pending, other.countryCode == candidate.countryCode else { return false }
+            guard other.id != id, other.state == .pending else { return false }
             let gap = max(
                 other.startDate.timeIntervalSince(candidate.endDate),
                 candidate.startDate.timeIntervalSince(other.endDate)
             )
-            return gap <= 3 * 24 * 60 * 60
+            return gap <= 7 * 24 * 60 * 60
         }
     }
 
@@ -310,10 +398,11 @@ final class OnboardingViewModel {
         guard let index = candidates.firstIndex(where: { $0.id == id }),
               let otherIndex = candidates.firstIndex(where: { $0.id == otherID }) else { return }
         let other = candidates[otherIndex]
-        candidates[index].cities += other.cities.filter { !candidates[index].cities.contains($0) }
-        candidates[index].startDate = min(candidates[index].startDate, other.startDate)
-        candidates[index].endDate = max(candidates[index].endDate, other.endDate)
-        candidates[index].photoAssetIDs += other.photoAssetIDs
+        let otherFirst = other.startDate < candidates[index].startDate
+        candidates[index].legs = TripCandidate.joined(candidates[index].legs + other.legs)
+        candidates[index].photoAssetIDs = otherFirst
+            ? other.photoAssetIDs + candidates[index].photoAssetIDs
+            : candidates[index].photoAssetIDs + other.photoAssetIDs
         candidates.remove(at: otherIndex)
     }
 
@@ -325,15 +414,14 @@ final class OnboardingViewModel {
         defer { isWorking = false }
         do {
             for candidate in candidates where candidate.state == .recorded {
-                let leg = try TripLeg(
-                    countryCode: candidate.countryCode,
-                    cities: candidate.cities,
-                    startDate: candidate.startDate,
-                    endDate: candidate.endDate
+                let legs = try candidate.legs.map {
+                    try TripLeg(countryCode: $0.countryCode, cities: $0.cities, startDate: $0.startDate, endDate: $0.endDate)
+                }
+                let created = try await dependencies.tripService.createTrip(
+                    legs: legs, companion: .unknown, purpose: .leisure, now: candidate.startDate
                 )
-                let trip = try await dependencies.tripService.createTrip(
-                    legs: [leg], companion: .unknown, purpose: .leisure, now: candidate.startDate
-                )
+                // 사진첩에서 찾은 여행은 다녀온 여행이다. 평가를 기다리는 여행으로 둔다.
+                let trip = try await dependencies.tripService.endTrip(id: created.id, at: candidate.endDate)
                 recordedTrips.append(Self.summary(of: trip))
             }
             candidates = candidates.filter { $0.state == .pending }
@@ -420,7 +508,7 @@ final class OnboardingViewModel {
         let cities = trip.legs.flatMap(\.cities)
         let title = cities.isEmpty
             ? trip.legs.map { CountryCatalog.name(for: $0.countryCode) }.joined(separator: "·")
-            : cities.joined(separator: "·")
+            : PlaceTitle.compact(cities, separator: "·")
         let start = trip.legs.map(\.startDate).min() ?? trip.createdAt
         let end = trip.legs.map(\.endDate).max() ?? start
         return OnboardingTripSummary(
@@ -489,19 +577,19 @@ private enum PhotoTripScanner {
     private struct DatedAsset {
         let date: Date
         let assetID: String
+        let location: CLLocation
     }
 
-    private struct LocatedPhoto {
-        let countryCode: String
-        /// 역지오코딩이 알려준 도시(locality). 모르면 nil.
-        let city: String?
-        let date: Date
-        let assetID: String
-    }
-
-    private struct GroupKey: Hashable {
-        let countryCode: String
-        let city: String?
+    /// 칸의 위도·경도 중앙값에 가장 가까운 실제 사진 위치. 공항 사진 한 장이 칸 이름을 정하지 않게 한다.
+    /// 사진이 공항·외곽에 몰렸다면 여전히 그쪽 이름이 나온다.
+    private static func representativeLocation(of photos: [DatedAsset]) -> CLLocation {
+        func median(_ values: [Double]) -> Double { values.sorted()[values.count / 2] }
+        let lat = median(photos.map(\.location.coordinate.latitude))
+        let lon = median(photos.map(\.location.coordinate.longitude))
+        return photos.min {
+            pow($0.location.coordinate.latitude - lat, 2) + pow($0.location.coordinate.longitude - lon, 2)
+                < pow($1.location.coordinate.latitude - lat, 2) + pow($1.location.coordinate.longitude - lon, 2)
+        }!.location
     }
 
     static func scan(excluding homeCountryCode: String, onGrouping: () -> Void) async throws -> [TripCandidate] {
@@ -517,52 +605,31 @@ private enum PhotoTripScanner {
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         options.fetchLimit = 1000
         let assets = PHAsset.fetchAssets(with: .image, options: options)
-        var buckets: [String: (location: CLLocation, photos: [DatedAsset])] = [:]
+        var buckets: [String: [DatedAsset]] = [:]
         assets.enumerateObjects { asset, _, _ in
             guard let location = asset.location, let date = asset.creationDate else { return }
             let key = "\(Int(location.coordinate.latitude.rounded())):\(Int(location.coordinate.longitude.rounded()))"
-            if buckets[key] == nil { buckets[key] = (location, []) }
-            buckets[key]?.photos.append(DatedAsset(date: date, assetID: asset.localIdentifier))
+            buckets[key, default: []].append(DatedAsset(date: date, assetID: asset.localIdentifier, location: location))
         }
         onGrouping()
 
-        var located: [LocatedPhoto] = []
+        var located: [TripCandidate.Photo] = []
         let geocoder = CLGeocoder()
-        for bucket in buckets.values.sorted(by: { $0.photos.count > $1.photos.count }).prefix(24) {
+        for photos in buckets.values.sorted(by: { $0.count > $1.count }).prefix(24) {
             try Task.checkCancellation()
-            guard let place = try? await geocoder.reverseGeocodeLocation(bucket.location).first,
-                  let code = place.isoCountryCode?.uppercased(),
-                  code != homeCountryCode.uppercased(),
-                  CountryCatalog.profiles[code] != nil else { continue }
-            let city = place.locality
-            located += bucket.photos.map { LocatedPhoto(countryCode: code, city: city, date: $0.date, assetID: $0.assetID) }
-        }
-
-        let calendar = Calendar.current
-        var groups: [(key: GroupKey, photos: [LocatedPhoto])] = []
-        let keys = Set(located.map { GroupKey(countryCode: $0.countryCode, city: $0.city) })
-        for key in keys.sorted(by: { ($0.countryCode, $0.city ?? "") < ($1.countryCode, $1.city ?? "") }) {
-            let photos = located.filter { $0.countryCode == key.countryCode && $0.city == key.city }.sorted { $0.date < $1.date }
-            for photo in photos {
-                if let last = groups.indices.last,
-                   groups[last].key == key,
-                   let previous = groups[last].photos.last,
-                   photo.date.timeIntervalSince(previous.date) <= 14 * 24 * 60 * 60 {
-                    groups[last].photos.append(photo)
-                } else {
-                    groups.append((key, [photo]))
-                }
+            guard let place = try? await geocoder.reverseGeocodeLocation(representativeLocation(of: photos)).first,
+                  let code = place.isoCountryCode?.uppercased() else { continue }
+            // 집에서 찍은 사진은 여행을 끊는 데만 쓴다.
+            let isHome = code == homeCountryCode.uppercased()
+            guard isHome || CountryCatalog.profiles[code] != nil else { continue }
+            located += photos.map {
+                TripCandidate.Photo(
+                    countryCode: isHome ? nil : code, city: place.locality, date: $0.date, assetID: $0.assetID,
+                    timeZone: place.timeZone ?? .current
+                )
             }
         }
-        return groups.filter { $0.photos.count >= 2 }.sorted { $0.photos[0].date > $1.photos[0].date }.prefix(12).map { group in
-            TripCandidate(
-                countryCode: group.key.countryCode,
-                cities: group.key.city.map { [$0] } ?? [],
-                startDate: calendar.startOfDay(for: group.photos.first!.date),
-                endDate: calendar.startOfDay(for: group.photos.last!.date),
-                photoAssetIDs: group.photos.map(\.assetID)
-            )
-        }
+        return TripCandidate.group(located)
     }
 }
 

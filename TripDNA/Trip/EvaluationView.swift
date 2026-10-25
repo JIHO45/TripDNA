@@ -37,7 +37,7 @@ struct EvaluationView: View {
             )
         }
         .sheet(isPresented: $showingCoverPicker) {
-            CoverPhotoPickerSheet(photos: viewModel.photos) { path in
+            CoverPhotoPickerSheet(trip: viewModel.trip, photos: viewModel.photos) { path in
                 Task {
                     if let updated = try? await dependencies.tripService.setCoverPhoto(tripID: tripID, storagePath: path) {
                         viewModel.trip = updated

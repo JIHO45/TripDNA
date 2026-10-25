@@ -448,7 +448,7 @@
         "nightview": "if_there",
         "street": "if_there",
         "dining": "choose",
-        "cafe": "if_there",
+        "cafe": "make_time",
         "drinks": "make_time",
         "heritage": "make_time",
         "museums": "if_there",
@@ -475,7 +475,8 @@
         "heritage": "레콜레타 묘지와 마요 광장 주변의 역사 공간을 둘러본다.",
         "drinks": "와인 바에서 아르헨티나 와인을 맛본다.",
         "bars": "팔레르모와 산텔모의 바를 방문한다.",
-        "sports": "보카 주니어스·리버 플레이트 등 부에노스아이레스 구단의 축구 홈경기를 관람한다."
+        "sports": "보카 주니어스·리버 플레이트 등 부에노스아이레스 구단의 축구 홈경기를 관람한다.",
+        "cafe": "카페 토르토니 같은 오래된 카페(카페 노타블레)에서 커피와 메디알루나를 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -502,7 +503,17 @@
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음",
         "core sports 정리 전 문장(운영·접근 메모 포함): 부에노스아이레스 구단의 축구 홈경기를 관람한다. 표와 입장 조건을 확인한다."
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "cafe",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 역사적 카페 노타블레를 찾아다니는 일정이 흔하다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "at-vienna": {
       "name": {
@@ -524,7 +535,7 @@
         "street": "if_there",
         "dining": "make_time",
         "cafe": "choose",
-        "drinks": "if_there",
+        "drinks": "make_time",
         "heritage": "make_time",
         "museums": "choose",
         "traditional": "if_there",
@@ -549,7 +560,8 @@
         "heritage": "합스부르크 왕가의 궁전과 역사 공간을 둘러본다.",
         "cafe": "전통 커피하우스에서 커피와 케이크를 즐긴다.",
         "dining": "슈니첼과 타펠슈피츠 등 빈 요리를 먹는다.",
-        "streets": "구시가지와 슈피텔베르크의 골목을 걷는다."
+        "streets": "구시가지와 슈피텔베르크의 골목을 걷는다.",
+        "drinks": "시 경계 안 포도밭의 호이리게(와인 선술집)에서 햇와인을 마신다."
       },
       "nearby": {},
       "season": {},
@@ -575,7 +587,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "drinks",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 시내 포도밭의 호이리게가 일부러 저녁을 잡는 고유 술 문화다(기준표 drinks make_time: 런던·프라하).",
+          "review_status": "pending"
+        }
+      ]
     },
     "au-cairns": {
       "name": {
@@ -724,7 +746,7 @@
         "streets": "make_time",
         "architecture": "if_there",
         "nightview": "if_there",
-        "street": "if_there",
+        "street": "make_time",
         "dining": "make_time",
         "cafe": "choose",
         "drinks": "none",
@@ -753,7 +775,8 @@
         "dining": "이민자 동네의 식당과 현대 호주 요리를 즐긴다.",
         "markets": "퀸 빅토리아 마켓에서 식재료와 기념품을 구경한다.",
         "bars": "도심 골목의 바를 방문한다.",
-        "livebar": "피츠로이와 콜링우드의 라이브 음악 공연을 듣는다."
+        "livebar": "피츠로이와 콜링우드의 라이브 음악 공연을 듣는다.",
+        "street": "퀸 빅토리아 마켓의 음식 노점과 야시장에서 여러 나라 음식을 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -787,6 +810,14 @@
           "before": "none",
           "after": "if_there",
           "reason": "플린더스 스트리트역 등 랜드마크가 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 퀸 빅토리아 마켓 음식이 버러 마켓처럼 일부러 찾는 한 끼 일정이다.",
           "review_status": "pending"
         }
       ]
@@ -1016,7 +1047,7 @@
         "resort": "if_there",
         "streets": "if_there",
         "architecture": "make_time",
-        "nightview": "none",
+        "nightview": "make_time",
         "street": "if_there",
         "dining": "make_time",
         "cafe": "if_there",
@@ -1047,7 +1078,8 @@
         "festival": "리우 카니발의 삼바 퍼레이드와 거리 행사를 해당 기간에 본다.",
         "livebar": "라파에서 삼바와 브라질 음악의 라이브 공연을 듣는다.",
         "bars": "라파와 보타포구의 바를 방문한다.",
-        "sports": "마라카낭의 축구 경기를 일정에 맞춰 관람한다."
+        "sports": "마라카낭의 축구 경기를 일정에 맞춰 관람한다.",
+        "nightview": "슈가로프 케이블카 정상에서 해 질 녘과 밤의 만 풍경을 본다."
       },
       "nearby": {},
       "season": {},
@@ -1075,7 +1107,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "nightview",
+          "before": "none",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 슈가로프에서 보는 해 질 녘·밤 풍경이 따로 저녁 일정을 만든다. none에서 두 단계 상향이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "br-sao-paulo": {
       "name": {
@@ -1308,8 +1350,8 @@
       "country": "CA",
       "scope": "밴쿠버 시, 리치먼드, 노스쇼어(노스밴쿠버·웨스트밴쿠버)의 산과 숲. 도심에서 출발하는 고래 관찰 투어 포함; UBC 캠퍼스 포함",
       "grades": {
-        "scenery": "choose",
-        "hiking": "choose",
+        "scenery": "make_time",
+        "hiking": "make_time",
         "wildlife": "make_time",
         "beach": "if_there",
         "spa": "none",
@@ -1450,6 +1492,22 @@
             "after": "make_time",
             "reason": "박물관 수보다 해당 전시를 위해 시간을 낼 경험으로 판정한다.",
             "review_status": "pending"
+          },
+          {
+            "city_id": "ca-vancouver",
+            "sub": "scenery",
+            "before": "choose",
+            "after": "make_time",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 케이프타운은 테이블 마운틴 정상과 케이프 반도 해안도로에서 산·바다·절벽이 한 화면에 이어지는 경관을 하루 이상 쫓아다닐 수 있다. 밴쿠버의 스탠리 파크 해안길과 노스쇼어 조망도 아름답지만, 경관 선호자에게는 시드니·홍콩 같은 다른 산·바다 도시 경관으로 대체되는 정도가 더 크다.",
+            "review_status": "pending"
+          },
+          {
+            "city_id": "ca-vancouver",
+            "sub": "hiking",
+            "before": "choose",
+            "after": "make_time",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 케이프타운은 도심에서 바로 바위 협곡을 올라 테이블 마운틴 정상(약 1,000m)에 닿고, 라이언스 헤드에서 해안을 내려다보는 대표 트레일이 있다. 밴쿠버의 그라우스 그라인드는 숲속 계단식 오르막이 중심이라 산행 선호자가 그 길을 위해 목적지를 고를 이유는 약하다.",
+            "review_status": "pending"
           }
         ],
         "unchanged_note": "core가 있는 나머지 상위 등급은 새 시간 투자·여행지 선택 기준으로 잠정 유지했다. 하위 등급은 근거 부족 또는 부수 경험으로 유지하며 사람 검수와 다르다."
@@ -1464,7 +1522,7 @@
       "scope": "취리히 시내와 위틀리베르크. 루체른·융프라우 제외",
       "grades": {
         "scenery": "make_time",
-        "hiking": "make_time",
+        "hiking": "if_there",
         "wildlife": "if_there",
         "beach": "if_there",
         "spa": "if_there",
@@ -1495,7 +1553,6 @@
       },
       "core": {
         "scenery": "취리히 호수와 위틀리베르크에서 호수·도시 풍경을 본다.",
-        "hiking": "위틀리베르크의 산책로와 등산로를 걷는다.",
         "streets": "니더도르프와 림마트강변의 구시가지를 걷는다.",
         "museums": "쿤스트하우스와 스위스 국립박물관을 관람한다.",
         "cafe": "초콜릿 가게와 제과점에서 디저트를 즐긴다.",
@@ -1525,7 +1582,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "hiking",
+          "before": "make_time",
+          "after": "if_there",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 서울 북한산은 화강암 능선을 따라 정상까지 오르는 본격 산행이다. 취리히의 위틀리베르크–펠제네크 능선길은 열차·케이블카로 오르내리는 두어 시간의 숲길 산책이라 산행 선호자가 하루를 비울 이유는 약하다(펠제네크 구간의 범위 포함 여부는 별도 확인).",
+          "review_status": "pending"
+        }
+      ]
     },
     "cl-santiago": {
       "name": {
@@ -1616,7 +1683,7 @@
         "streets": "make_time",
         "architecture": "choose",
         "nightview": "if_there",
-        "street": "none",
+        "street": "make_time",
         "dining": "make_time",
         "cafe": "if_there",
         "drinks": "if_there",
@@ -1627,7 +1694,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "make_time",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "none",
         "livebar": "none",
@@ -1644,7 +1711,9 @@
         "museums": "국가박물관과 수도박물관의 역사 전시를 본다.",
         "dining": "베이징 카오야와 베이징식 요리를 먹는다.",
         "traditional": "경극 공연을 관람한다.",
-        "themepark": "유니버설 베이징 리조트의 테마 구역을 즐긴다."
+        "themepark": "유니버설 베이징 리조트의 테마 구역을 즐긴다.",
+        "street": "후퉁의 젠빙·양꼬치 노점과 간식 거리에서 베이징 길거리 음식을 먹는다.",
+        "markets": "판자위안 골동품 시장과 실크 시장에서 골동품과 기념품을 고른다."
       },
       "nearby": {},
       "season": {},
@@ -1671,7 +1740,25 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "none",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 후퉁 노점과 간식 거리가 한 끼 일정이 된다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 판자위안 골동품 시장은 일부러 찾는 시장이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "cn-guangzhou": {
       "name": {
@@ -1777,7 +1864,7 @@
         "themepark": "choose",
         "markets": "if_there",
         "brands": "make_time",
-        "bars": "none",
+        "bars": "make_time",
         "livebar": "none",
         "travelers": "if_there",
         "locals": "none",
@@ -1793,7 +1880,8 @@
         "dining": "상하이식 요리와 중국 여러 지역의 요리를 먹는다.",
         "museums": "상하이 박물관과 현대미술 전시 공간을 관람한다.",
         "brands": "난징루와 화이하이루의 백화점·매장을 둘러본다.",
-        "themepark": "상하이 디즈니랜드의 테마 구역을 즐긴다."
+        "themepark": "상하이 디즈니랜드의 테마 구역을 즐긴다.",
+        "bars": "와이탄의 루프톱 바와 도심 칵테일 바·클럽을 다닌다."
       },
       "nearby": {},
       "season": {},
@@ -1819,7 +1907,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "bars",
+          "before": "none",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 와이탄 루프톱 바와 클럽이 따로 밤 일정을 만든다(기준표 bars make_time: 런던·마드리드).",
+          "review_status": "pending"
+        }
+      ]
     },
     "cn-shenzhen": {
       "name": {
@@ -2052,13 +2150,13 @@
         "resort": "none",
         "streets": "choose",
         "architecture": "choose",
-        "nightview": "if_there",
+        "nightview": "make_time",
         "street": "if_there",
         "dining": "make_time",
         "cafe": "if_there",
         "drinks": "make_time",
         "heritage": "make_time",
-        "museums": "none",
+        "museums": "if_there",
         "traditional": "if_there",
         "water": "none",
         "winter": "none",
@@ -2081,7 +2179,8 @@
         "drinks": "체코 맥주를 전통 맥주집에서 즐긴다.",
         "dining": "스비치코바와 로스트 포크 등 체코 요리를 먹는다.",
         "concert": "클래식 공연장과 오페라극장의 공연을 본다.",
-        "bars": "구시가지와 비노흐라디의 바를 방문한다."
+        "bars": "구시가지와 비노흐라디의 바를 방문한다.",
+        "nightview": "조명이 켜진 프라하성과 카를교를 블타바 강변에서 본다."
       },
       "nearby": {},
       "season": {},
@@ -2106,7 +2205,25 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "museums",
+          "before": "none",
+          "after": "if_there",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 상설 고전 회화·보헤미아 중세 컬렉션은 확인했다. 이 비교에서 알테 피나코테크만큼 우선 관람할 이유를 입증하지 못해 if_there를 제안한다. 컬렉션의 부재를 뜻하지 않는다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "nightview",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 강변에서 보는 성·다리 야경이 부다페스트처럼 대표 저녁 일정이다(기준표 nightview make_time: 서울·쿠알라룸푸르·부다페스트).",
+          "review_status": "pending"
+        }
+      ]
     },
     "de-berlin": {
       "name": {
@@ -2125,7 +2242,7 @@
         "streets": "make_time",
         "architecture": "make_time",
         "nightview": "if_there",
-        "street": "if_there",
+        "street": "make_time",
         "dining": "make_time",
         "cafe": "if_there",
         "drinks": "none",
@@ -2154,7 +2271,8 @@
         "markets": "주말 벼룩시장과 동네 시장을 구경한다.",
         "dining": "독일 요리와 다양한 이민자 동네의 음식을 먹는다.",
         "bars": "전자음악 클럽과 동네 바를 방문한다.",
-        "concert": "베를린 필하모니와 오페라 극장의 공연을 본다."
+        "concert": "베를린 필하모니와 오페라 극장의 공연을 본다.",
+        "street": "되너 케밥과 커리부어스트 노점, 마르크트할레 노인의 스트리트 푸드 행사에서 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -2182,7 +2300,17 @@
         "core museums 정리 전 문장(운영·접근 메모 포함): 박물관섬과 베를린의 미술관에서 전시를 본다. 개별 시설의 개방 여부를 확인한다.",
         "core bars 정리 전 문장(운영·접근 메모 포함): 전자음악 클럽과 동네 바를 방문한다. 입장과 프로그램은 별도 확인한다."
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 되너·커리부어스트 노점 문화가 그 도시 대표 음식 경험이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "de-frankfurt": {
       "name": {
@@ -2198,7 +2326,7 @@
         "beach": "none",
         "spa": "none",
         "resort": "none",
-        "streets": "make_time",
+        "streets": "if_there",
         "architecture": "make_time",
         "nightview": "if_there",
         "street": "if_there",
@@ -2225,7 +2353,6 @@
       "core": {
         "museums": "슈테델 미술관과 박물관 강변의 전시를 본다.",
         "architecture": "뢰머 광장과 재건한 구시가지, 금융가의 고층 건물을 본다.",
-        "streets": "작센하우젠과 마인강변을 걷는다.",
         "drinks": "작센하우젠의 선술집에서 아펠바인을 맛본다.",
         "dining": "그뤼네 조세 등 프랑크푸르트 지역 음식을 먹는다.",
         "festival": "크리스마스 시장의 매대와 광장 행사를 즐긴다."
@@ -2254,7 +2381,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "streets",
+          "before": "make_time",
+          "after": "if_there",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 마드리드는 라 라티나·말라사냐·라바피에스처럼 성격이 다른 동네를 각각 반나절씩 걸을 수 있다. 프랑크푸르트는 재건된 구시가(뢰머베르크)가 몇 블록 규모이고, 작센하우젠 사과주 골목을 더해도 걷기 자체로 시간을 낼 동선은 짧다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "de-hamburg": {
       "name": {
@@ -2437,7 +2574,7 @@
         "streets": "make_time",
         "architecture": "make_time",
         "nightview": "if_there",
-        "street": "if_there",
+        "street": "make_time",
         "dining": "choose",
         "cafe": "make_time",
         "drinks": "if_there",
@@ -2465,7 +2602,8 @@
         "architecture": "아말리엔보르 궁전과 현대 디자인 건축을 본다.",
         "museums": "국립미술관과 디자인뮤지엄의 전시를 본다.",
         "themepark": "티볼리 공원의 놀이기구와 정원을 즐긴다.",
-        "brands": "도심의 덴마크 디자인 매장과 쇼핑 거리를 둘러본다."
+        "brands": "도심의 덴마크 디자인 매장과 쇼핑 거리를 둘러본다.",
+        "street": "레펜·토르베할레르네 같은 푸드 마켓과 핫도그 노점에서 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -2491,7 +2629,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 레펜 등 스트리트 푸드 마켓이 일부러 찾는 한 끼 일정이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "do-punta-cana": {
       "name": {
@@ -2580,7 +2728,7 @@
         "streets": "make_time",
         "architecture": "make_time",
         "nightview": "if_there",
-        "street": "if_there",
+        "street": "make_time",
         "dining": "make_time",
         "cafe": "if_there",
         "drinks": "if_there",
@@ -2607,7 +2755,8 @@
         "architecture": "성채와 역사 모스크의 건축을 본다.",
         "streets": "이슬람 카이로의 골목과 칸엘칼릴리 일대를 걷는다.",
         "dining": "코샤리와 이집트 전통 음식을 먹는다.",
-        "markets": "칸엘칼릴리에서 공예품과 기념품을 구경한다."
+        "markets": "칸엘칼릴리에서 공예품과 기념품을 구경한다.",
+        "street": "코샤리·풀 메담스·타메야를 노점과 서민 식당에서 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -2631,7 +2780,17 @@
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음",
         "core museums 정리 전 문장(운영·접근 메모 포함): 이집트 고대 유물 컬렉션을 카이로·기자의 박물관에서 관람한다. 시설별 전시·개방 상태를 확인한다."
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 코샤리·풀 등 노점 음식이 한 끼 일정이 되는 도시다(기준표 street make_time: 런던·바르셀로나).",
+          "review_status": "pending"
+        }
+      ]
     },
     "es-barcelona": {
       "name": {
@@ -2661,7 +2820,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "make_time",
         "livebar": "none",
@@ -2681,7 +2840,8 @@
         "street": "보케리아 시장의 식당과 음식 매대를 둘러본다.",
         "bars": "엘 보른과 에이샴플라의 바를 다닌다.",
         "sports": "FC 바르셀로나의 홈경기를 관람한다.",
-        "nightview": "벙커 델 카르멜과 몬주익 언덕에서 시내 야경을 보고 몬주익 분수 쇼를 본다."
+        "nightview": "벙커 델 카르멜과 몬주익 언덕에서 시내 야경을 보고 몬주익 분수 쇼를 본다.",
+        "markets": "라 보케리아와 산타 카테리나 시장을 구경하고 기념품을 산다."
       },
       "nearby": {},
       "season": {},
@@ -2735,6 +2895,14 @@
           "after": "if_there",
           "reason": "라 메르세 축제가 있다. 상위 등급 근거는 미확인.",
           "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 라 보케리아는 일부러 찾는 시장이다(기준표 markets make_time: 도쿄·런던·피렌체).",
+          "review_status": "pending"
         }
       ]
     },
@@ -2761,12 +2929,12 @@
         "drinks": "none",
         "heritage": "make_time",
         "museums": "choose",
-        "traditional": "if_there",
+        "traditional": "make_time",
         "water": "none",
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "make_time",
         "livebar": "none",
@@ -2784,7 +2952,9 @@
         "cafe": "초콜라테리아에서 추로스와 초콜릿을 즐긴다.",
         "bars": "추에카와 말라사냐의 바를 방문한다.",
         "sports": "레알 마드리드와 아틀레티코 마드리드의 홈경기를 일정에 맞춰 관람한다.",
-        "architecture": "마드리드 왕궁과 그란 비아, 마요르 광장의 건축을 본다."
+        "architecture": "마드리드 왕궁과 그란 비아, 마요르 광장의 건축을 본다.",
+        "markets": "일요일 엘 라스트로 벼룩시장과 산 미겔 시장을 구경한다.",
+        "traditional": "타블라오에서 플라멩코 공연을 본다."
       },
       "nearby": {},
       "season": {},
@@ -2818,6 +2988,22 @@
           "before": "none",
           "after": "make_time",
           "reason": "왕궁·그란 비아는 대표 일정이다. none은 근거 누락.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 엘 라스트로 벼룩시장은 일부러 시간을 맞춰 찾는 시장이다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "traditional",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 타블라오 플라멩코 공연을 일부러 예약하는 일정이 흔하다(기준표 traditional make_time: 서울·도쿄·방콕).",
           "review_status": "pending"
         }
       ]
@@ -3328,7 +3514,7 @@
         "beach": "none",
         "spa": "if_there",
         "resort": "none",
-        "streets": "make_time",
+        "streets": "choose",
         "architecture": "make_time",
         "nightview": "none",
         "street": "if_there",
@@ -3402,6 +3588,14 @@
           "before": "none",
           "after": "if_there",
           "reason": "구시가지의 바가 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "streets",
+          "before": "make_time",
+          "after": "choose",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 로열 마일과 빅토리아 스트리트 등 구시가·신시가 산책 자체가 목적지 이유가 된다.",
           "review_status": "pending"
         }
       ]
@@ -3650,7 +3844,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "if_there",
         "livebar": "none",
@@ -3665,7 +3859,8 @@
         "museums": "아크로폴리스 박물관과 국립고고학박물관의 유물을 본다.",
         "streets": "플라카·아나피오티카·모나스티라키의 골목을 걷는다.",
         "dining": "타베르나에서 그리스 요리와 메제를 먹는다.",
-        "architecture": "고대 신전과 신고전주의 건축을 함께 본다."
+        "architecture": "고대 신전과 신고전주의 건축을 함께 본다.",
+        "markets": "모나스티라키 벼룩시장과 상점가에서 기념품과 골동품을 구경한다."
       },
       "nearby": {},
       "season": {},
@@ -3698,6 +3893,14 @@
           "before": "none",
           "after": "if_there",
           "reason": "헤로데스 아티쿠스 음악당의 여름 공연이 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 모나스티라키 벼룩시장이 일부러 찾는 시장 일정이다.",
           "review_status": "pending"
         }
       ]
@@ -3935,7 +4138,7 @@
         "extreme": "none",
         "themepark": "make_time",
         "markets": "make_time",
-        "brands": "make_time",
+        "brands": "choose",
         "bars": "make_time",
         "livebar": "none",
         "travelers": "if_there",
@@ -4003,6 +4206,14 @@
           "after": "if_there",
           "reason": "고층 빌딩 스카이라인이 있다. 야경과 겹치므로 상위는 주지 않는다.",
           "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "brands",
+          "before": "make_time",
+          "after": "choose",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 면세와 대형 몰 밀집이라는 지속적 조건 때문에 쇼핑 목적 방문이 흔하다.",
+          "review_status": "pending"
         }
       ]
     },
@@ -4025,7 +4236,7 @@
         "nightview": "make_time",
         "street": "if_there",
         "dining": "make_time",
-        "cafe": "if_there",
+        "cafe": "make_time",
         "drinks": "make_time",
         "heritage": "make_time",
         "museums": "none",
@@ -4034,7 +4245,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "make_time",
         "livebar": "none",
@@ -4053,7 +4264,9 @@
         "dining": "굴라시와 헝가리 요리를 먹는다.",
         "drinks": "헝가리 와인을 와인 바에서 맛본다.",
         "bars": "유대인 지구의 루인 바를 방문한다.",
-        "festival": "도나우강 섬에서 열리는 시게트 페스티벌을 행사 기간에 본다."
+        "festival": "도나우강 섬에서 열리는 시게트 페스티벌을 행사 기간에 본다.",
+        "cafe": "뉴욕 카페·게르보 같은 역사적 대형 카페에서 커피와 케이크를 먹는다.",
+        "markets": "중앙시장에서 파프리카·식재료와 기념품을 구경한다."
       },
       "nearby": {},
       "season": {},
@@ -4088,6 +4301,22 @@
           "before": "none",
           "after": "make_time",
           "reason": "시게트는 그 시기에 일부러 방문할 축제다. 달은 미확인.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "cafe",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 역사적 카페하우스가 빈처럼 일부러 찾는 체험이다(기준표 cafe make_time: 서울·로마·런던).",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 중앙시장은 일부러 찾는 시장이다.",
           "review_status": "pending"
         }
       ]
@@ -4526,7 +4755,7 @@
         "beach": "none",
         "spa": "none",
         "resort": "none",
-        "streets": "make_time",
+        "streets": "choose",
         "architecture": "choose",
         "nightview": "make_time",
         "street": "if_there",
@@ -4540,7 +4769,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "if_there",
         "livebar": "none",
@@ -4556,7 +4785,8 @@
         "heritage": "메디치 예배당과 팔라초 베키오 등 역사 공간을 본다.",
         "streets": "올트라르노와 산토 스피리토의 골목을 걷는다.",
         "dining": "토스카나 요리와 비스테카 알라 피오렌티나를 먹는다.",
-        "nightview": "미켈란젤로 광장에서 도시의 저녁 풍경을 본다."
+        "nightview": "미켈란젤로 광장에서 도시의 저녁 풍경을 본다.",
+        "markets": "산 로렌초의 가죽 노점과 중앙시장에서 가죽 제품과 식재료를 산다."
       },
       "nearby": {},
       "season": {},
@@ -4589,6 +4819,22 @@
           "before": "none",
           "after": "if_there",
           "reason": "부활절 스코피오 델 카로 등 행사가 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 산 로렌초 가죽 시장과 중앙시장은 일부러 찾는 지속적 쇼핑 일정이다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "streets",
+          "before": "make_time",
+          "after": "choose",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 르네상스 구시가가 걸어서 이어져 도시 산책 자체가 목적지 이유가 된다.",
           "review_status": "pending"
         }
       ]
@@ -4681,7 +4927,7 @@
         "beach": "none",
         "spa": "none",
         "resort": "none",
-        "streets": "make_time",
+        "streets": "choose",
         "architecture": "choose",
         "nightview": "make_time",
         "street": "if_there",
@@ -4703,7 +4949,7 @@
         "locals": "none",
         "festival": "none",
         "sports": "make_time",
-        "concert": "if_there"
+        "concert": "make_time"
       },
       "core": {
         "heritage": "콜로세움과 포로 로마노, 판테온에서 고대 로마의 유적을 본다.",
@@ -4713,7 +4959,8 @@
         "dining": "카르보나라와 카초 에 페페 등 로마식 파스타를 먹는다.",
         "cafe": "에스프레소와 젤라토 가게를 찾아다닌다.",
         "nightview": "조명이 켜진 콜로세움과 트레비 분수를 밤에 걷고, 자니콜로 언덕에서 시내 야경을 본다.",
-        "sports": "스타디오 올림피코에서 AS 로마·라치오의 세리에 A 경기를 일정에 맞춰 본다."
+        "sports": "스타디오 올림피코에서 AS 로마·라치오의 세리에 A 경기를 일정에 맞춰 본다.",
+        "concert": "로마 오페라 극장의 여름 야외 시즌(기본 무대는 카라칼라 욕장, 해에 따라 치르코 마시모)에서 오페라를 본다."
       },
       "nearby": {},
       "season": {},
@@ -4771,6 +5018,22 @@
           "before": "none",
           "after": "if_there",
           "reason": "재즈 클럽이 있으나 부수 경험이다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "concert",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 로마 오페라 극장의 여름 야외 오페라 시즌은 1937년부터 공백을 거치며 이어져 온 반복 행사다. 기본 무대는 카라칼라 욕장이고, 카라칼라를 쓸 수 없는 해(2020–21년, 2026년 복원 공사)에는 치르코 마시모에서 열린다. 장소는 해마다 확인하되, 로마 유적에서 보는 야외 공연이라는 방문 이유는 지속된다. 시드니와 같은 이유로 make_time. 시즌 한정은 이용 가능성으로 따로 관리한다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "streets",
+          "before": "make_time",
+          "after": "choose",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 트라스테베레·몬티·구시가를 걷는 것 자체가 여행의 중심이며 포르투만큼 걷기 위해 목적지를 고를 이유가 된다(기준표 streets choose: 파리·베네치아·포르투).",
           "review_status": "pending"
         }
       ]
@@ -5190,7 +5453,7 @@
         "drinks": "none",
         "heritage": "if_there",
         "museums": "if_there",
-        "traditional": "if_there",
+        "traditional": "make_time",
         "water": "if_there",
         "winter": "none",
         "extreme": "none",
@@ -5214,7 +5477,8 @@
         "brands": "우메다·신사이바시의 백화점과 매장을 둘러본다.",
         "bars": "난바와 아메리카무라의 바를 다닌다.",
         "sports": "오사카 시내의 야구 경기나 스이타의 축구 홈경기를 관람한다.",
-        "festival": "덴진 마쓰리의 선상 행렬과 불꽃놀이를 행사 기간에 본다."
+        "festival": "덴진 마쓰리의 선상 행렬과 불꽃놀이를 행사 기간에 본다.",
+        "traditional": "국립 분라쿠 극장에서 인형극 분라쿠를 본다."
       },
       "nearby": {},
       "season": {},
@@ -5259,6 +5523,14 @@
           "before": "none",
           "after": "if_there",
           "reason": "우메다 스카이 빌딩 등 랜드마크가 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "traditional",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 분라쿠의 본거지에서 전통 공연을 일부러 예약한다.",
           "review_status": "pending"
         }
       ]
@@ -5529,7 +5801,7 @@
         "livebar": "none",
         "travelers": "if_there",
         "locals": "none",
-        "festival": "if_there",
+        "festival": "make_time",
         "sports": "none",
         "concert": "none"
       },
@@ -5542,7 +5814,8 @@
         "spa": "동래 온천과 도심 스파 시설에서 쉰다.",
         "streets": "감천문화마을과 영도의 골목을 걷는다.",
         "heritage": "범어사와 해동용궁사를 둘러본다.",
-        "water": "송정에서 서핑 강습을 받는다."
+        "water": "송정에서 서핑 강습을 받는다.",
+        "festival": "가을 광안리 해변 불꽃축제와 부산국제영화제를 행사 기간에 즐긴다."
       },
       "nearby": {},
       "season": {},
@@ -5579,6 +5852,14 @@
           "after": "if_there",
           "reason": "부산국제영화제·불꽃축제가 있다. 상위 등급은 사람 판정 필요.",
           "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "festival",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 매년 가을 광안리 해변 불꽃축제와 부산국제영화제가 있어 축제 선호자가 날짜를 맞춰 올 이유가 있다. 일반 여행자 기준으로 낮췄던 이전 판단은 판정 대상 규칙과 맞지 않아 철회했다.",
+          "review_status": "pending"
         }
       ]
     },
@@ -5594,7 +5875,7 @@
         "hiking": "make_time",
         "wildlife": "if_there",
         "beach": "none",
-        "spa": "if_there",
+        "spa": "make_time",
         "resort": "if_there",
         "streets": "choose",
         "architecture": "if_there",
@@ -5635,7 +5916,8 @@
         "sports": "프로야구와 프로축구 홈경기를 일정에 맞춰 관람한다.",
         "traditional": "한복을 입고 경복궁을 둘러보거나 도심 사찰의 체험 프로그램에 참여한다.",
         "markets": "남대문·동대문 시장과 인사동에서 기념품과 잡화를 산다.",
-        "themepark": "롯데월드 어드벤처에서 하루를 보낸다."
+        "themepark": "롯데월드 어드벤처에서 하루를 보낸다.",
+        "spa": "찜질방에서 사우나·한증막과 목욕을 즐긴다."
       },
       "nearby": {},
       "season": {},
@@ -5705,6 +5987,14 @@
           "before": "none",
           "after": "if_there",
           "reason": "포장마차·막걸리 술집이 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "spa",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 찜질방 문화가 일부러 시간을 내는 고유 목욕 체험이다(기준표 spa make_time: 이스탄불·방콕).",
           "review_status": "pending"
         }
       ]
@@ -5921,7 +6211,7 @@
         "resort": "if_there",
         "streets": "make_time",
         "architecture": "make_time",
-        "nightview": "if_there",
+        "nightview": "make_time",
         "street": "make_time",
         "dining": "make_time",
         "cafe": "none",
@@ -5949,7 +6239,8 @@
         "streets": "타이파 빌리지와 콜로안의 골목을 걷는다.",
         "street": "에그타르트와 육포 등 간식을 먹는다.",
         "dining": "매캐니즈 요리와 광둥 요리를 즐긴다.",
-        "concert": "코타이의 공연장에서 쇼와 콘서트를 일정에 맞춰 본다."
+        "concert": "코타이의 공연장에서 쇼와 콘서트를 일정에 맞춰 본다.",
+        "nightview": "코타이와 반도의 카지노 리조트 조명과 마카오 타워 전망대에서 야경을 본다."
       },
       "nearby": {},
       "season": {},
@@ -5974,7 +6265,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "nightview",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 카지노 리조트 조명과 타워 전망이 따로 저녁 일정을 만든다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "mx-cancun": {
       "name": {
@@ -6212,7 +6513,7 @@
         "extreme": "none",
         "themepark": "make_time",
         "markets": "if_there",
-        "brands": "if_there",
+        "brands": "make_time",
         "bars": "none",
         "livebar": "none",
         "travelers": "if_there",
@@ -6225,7 +6526,8 @@
         "themepark": "이스칸다르푸테리의 레고랜드 말레이시아에서 테마파크를 즐긴다.",
         "street": "구시가지의 음식점과 시장에서 현지 간식을 먹는다.",
         "dining": "조호르 락사와 말레이·중국계 요리를 즐긴다.",
-        "architecture": "술탄 아부 바카르 모스크와 구시가지 건축을 본다."
+        "architecture": "술탄 아부 바카르 모스크와 구시가지 건축을 본다.",
+        "brands": "조호르 프리미엄 아웃렛에서 브랜드 상품을 할인가로 산다."
       },
       "nearby": {},
       "season": {},
@@ -6251,7 +6553,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "brands",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 프리미엄 아웃렛이 싱가포르에서도 일부러 찾는 쇼핑 일정이다(기준표 brands make_time: 런던·서울).",
+          "review_status": "pending"
+        }
+      ]
     },
     "my-kuala-lumpur": {
       "name": {
@@ -6360,7 +6672,7 @@
         "markets": "make_time",
         "brands": "if_there",
         "bars": "make_time",
-        "livebar": "if_there",
+        "livebar": "make_time",
         "travelers": "if_there",
         "locals": "none",
         "festival": "make_time",
@@ -6374,7 +6686,8 @@
         "heritage": "안네 프랑크의 집에서 전시를 관람한다.",
         "markets": "알베르트 카위프 시장과 벼룩시장을 구경한다.",
         "bars": "레이체 광장과 데 파이프의 바를 방문한다.",
-        "festival": "왕의 날에 오렌지색 옷을 입은 인파와 운하의 거리 행사를 본다."
+        "festival": "왕의 날에 오렌지색 옷을 입은 인파와 운하의 거리 행사를 본다.",
+        "livebar": "비임하위스의 재즈 공연과 파라디소·멜크베흐의 라이브 공연을 본다."
       },
       "nearby": {},
       "season": {},
@@ -6425,6 +6738,14 @@
           "before": "none",
           "after": "if_there",
           "reason": "파라디소·멜크베흐 등 공연장이 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "livebar",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 비임하위스의 상설 재즈 프로그램과 파라디소·멜크베흐가 있어 라이브 음악 선호자가 저녁을 따로 잡을 이유가 있다. 큰 공연장의 순회 공연은 근거에서 뺐다.",
           "review_status": "pending"
         }
       ]
@@ -6525,7 +6846,7 @@
         "cafe": "if_there",
         "drinks": "make_time",
         "heritage": "if_there",
-        "museums": "none",
+        "museums": "if_there",
         "traditional": "none",
         "water": "make_time",
         "winter": "choose",
@@ -6644,6 +6965,14 @@
             "after": "if_there",
             "reason": "액티비티 동행과 호스텔 숙박 자체만으로 교류 상위 등급을 주지 않는다.",
             "review_status": "pending"
+          },
+          {
+            "city_id": "nz-queenstown",
+            "sub": "museums",
+            "before": "none",
+            "after": "if_there",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 지역 생활사를 현장에서 이해한다는 이유는 확인됐지만, 현재 적힌 경험에는 기준 후보의 컬렉션 감상만큼 강한 추가 이유가 없다. 지역 맥락 자체를 make_time의 충분조건으로 보지 않는다. 새로운 강한 전시 근거가 나오면 재검토한다.",
+            "review_status": "pending"
           }
         ],
         "unchanged_note": "core가 있는 나머지 상위 등급은 새 시간 투자·여행지 선택 기준으로 잠정 유지했다. 하위 등급은 근거 부족 또는 부수 경험으로 유지하며 사람 검수와 다르다."
@@ -6748,7 +7077,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "make_time",
         "livebar": "none",
@@ -6764,7 +7093,8 @@
         "streets": "중앙시장광장과 카지미에시의 골목을 걷는다.",
         "architecture": "성 마리아 성당과 직물회관의 건축을 본다.",
         "dining": "피에로기와 폴란드 전통 요리를 먹는다.",
-        "bars": "카지미에시의 바를 방문한다."
+        "bars": "카지미에시의 바를 방문한다.",
+        "markets": "중앙광장 직물회관(수키엔니체)의 기념품 노점에서 호박·공예품을 산다."
       },
       "nearby": {},
       "season": {},
@@ -6789,7 +7119,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 직물회관 기념품 시장이 구시가 대표 일정이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "pl-warsaw": {
       "name": {
@@ -7109,13 +7449,13 @@
         "cafe": "if_there",
         "drinks": "if_there",
         "heritage": "make_time",
-        "museums": "choose",
+        "museums": "make_time",
         "traditional": "none",
         "water": "none",
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "none",
         "livebar": "none",
@@ -7130,7 +7470,8 @@
         "architecture": "국립박물관과 웨스트베이의 현대 건축을 본다.",
         "heritage": "수크 와키프와 므셰이렙의 역사 공간을 둘러본다.",
         "nightview": "코니시에서 웨스트베이의 야경을 본다.",
-        "dining": "수크와 도심 식당에서 카타르·중동 요리를 먹는다."
+        "dining": "수크와 도심 식당에서 카타르·중동 요리를 먹는다.",
+        "markets": "수크 와키프의 향신료·직물·공예품 상점과 매 시장을 구경한다."
       },
       "nearby": {},
       "season": {},
@@ -7153,7 +7494,25 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "museums",
+          "before": "choose",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 박물관을 좋아하는 여행자에게 이슬람 미술관의 원물 컬렉션(Blue Qur’an 낱장, 금속·유리 공예)과 카타르 국립박물관은 일정을 따로 잡을 이유다. 한 문화권에 집중돼 파리·런던처럼 박물관 때문에 여행지를 고를 폭은 아니다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 수크 와키프는 도하의 대표 시장 일정이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "sa-mecca": {
       "name": {
@@ -7470,7 +7829,7 @@
         "traditional": "if_there",
         "water": "if_there",
         "winter": "none",
-        "extreme": "if_there",
+        "extreme": "make_time",
         "themepark": "make_time",
         "markets": "if_there",
         "brands": "make_time",
@@ -7496,7 +7855,8 @@
         "bars": "클락 키와 루프톱 바에서 밤을 보낸다.",
         "sports": "가을에 열리는 F1 싱가포르 그랑프리의 야간 시가지 경주를 본다.",
         "museums": "싱가포르 국립미술관, 싱가포르 국립박물관, 아트사이언스 뮤지엄을 본다.",
-        "streets": "차이나타운·리틀인디아·캄퐁글람에서 서로 다른 상점가와 골목을 걷는다."
+        "streets": "차이나타운·리틀인디아·캄퐁글람에서 서로 다른 상점가와 골목을 걷는다.",
+        "extreme": "센토사에서 번지점프와 자이언트 스윙을 한다."
       },
       "season_unverified": [
         "hiking",
@@ -7580,6 +7940,14 @@
             "before": "if_there",
             "after": "make_time",
             "reason": "차이나타운·리틀인디아·캄퐁글람 탐방은 일부러 시간을 낼 경험이다.",
+            "review_status": "pending"
+          },
+          {
+            "city_id": "sg-singapore",
+            "sub": "extreme",
+            "before": "if_there",
+            "after": "make_time",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 센토사에 47m 번지점프와 자이언트 스윙이 상시 운영되어 익스트림 선호자가 일정을 따로 잡을 이유가 있다. 체험 시설 수준이라는 이전 판단은 사실과 달라 철회했다.",
             "review_status": "pending"
           }
         ],
@@ -7844,7 +8212,7 @@
         "brands": "if_there",
         "bars": "make_time",
         "livebar": "if_there",
-        "travelers": "make_time",
+        "travelers": "if_there",
         "locals": "none",
         "festival": "if_there",
         "sports": "if_there",
@@ -7861,7 +8229,6 @@
         "street": "야시장과 올드타운에서 현지 음식과 해산물을 먹는다.",
         "water": "스노클링과 다이빙을 하고, 보트로 피피 섬·라차 섬 등을 도는 섬 투어를 한다.",
         "bars": "파통의 방라 로드에서 바와 클럽을 다닌다.",
-        "travelers": "파통과 올드타운의 호스텔에 묵으며 다른 여행자를 만난다.",
         "dining": "올드타운 식당에서 푸껫식 남부 타이 요리와 페라나칸 계열 음식을 먹는다."
       },
       "season_unverified": [
@@ -7934,6 +8301,14 @@
             "after": "make_time",
             "reason": "야시장 간식 외에 현지 요리를 먹기 위해 식당을 찾아가는 경험을 별도로 판정한다.",
             "review_status": "pending"
+          },
+          {
+            "city_id": "th-phuket-island",
+            "sub": "travelers",
+            "before": "make_time",
+            "after": "if_there",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 방콕 카오산 로드는 호스텔·여행자 바·펍 크롤이 한 거리에 모여 여행자끼리 어울리는 구조가 있다. 푸껫 빠통의 방라 로드는 교류보다 클럽·바 밤놀이가 중심이고, 여행자끼리 어울리는 구조가 카오산만큼 있다는 근거는 확인하지 못했다.",
+            "review_status": "pending"
           }
         ],
         "unchanged_note": "core가 있는 나머지 상위 등급은 새 시간 투자·여행지 선택 기준으로 잠정 유지했다. 하위 등급은 근거 부족 또는 부수 경험으로 유지하며 사람 검수와 다르다."
@@ -7963,7 +8338,7 @@
         "heritage": "make_time",
         "museums": "make_time",
         "traditional": "if_there",
-        "water": "make_time",
+        "water": "if_there",
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
@@ -7982,8 +8357,7 @@
         "resort": "해변 리조트에서 수영장과 숙소 시설을 중심으로 쉰다.",
         "streets": "칼레이치 구시가지와 옛 항구를 걷는다.",
         "heritage": "하드리아누스 문과 구시가지의 역사 건축을 본다.",
-        "museums": "안탈리아의 고고학 전시를 관람한다.",
-        "water": "해변의 수상 체험을 즐긴다."
+        "museums": "안탈리아의 고고학 전시를 관람한다."
       },
       "nearby": {},
       "season": {},
@@ -8009,7 +8383,17 @@
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음",
         "core museums 정리 전 문장(운영·접근 메모 포함): 안탈리아의 고고학 전시를 관람한다. 박물관 운영 상태를 확인한다."
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "water",
+          "before": "make_time",
+          "after": "if_there",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 칸쿤은 범위 안 이슬라 무헤레스 당일 체험을 포함해 산호초 스노클링과 수중 조각 박물관(MUSA) 관람이 가능하다. 안탈리아 콘얄트 해변에도 SUP·카약 대여가 있으나 어느 해변에서나 할 수 있는 대여 활동이라 일부러 시간을 낼 이유는 약하다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "tr-istanbul": {
       "name": {
@@ -8496,7 +8880,7 @@
         "wildlife": "none",
         "beach": "none",
         "spa": "if_there",
-        "resort": "choose",
+        "resort": "make_time",
         "streets": "if_there",
         "architecture": "if_there",
         "nightview": "choose",
@@ -8555,7 +8939,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "resort",
+          "before": "choose",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 푼타카나는 해변 올인클루시브 리조트 안에서 식사·수영장·해변을 모두 해결하며 쉬는 것이 여행의 목적이다. 라스베이거스 리조트는 수영장이 크지만 사막 도심의 카지노·쇼 동선에 맞춘 시설이라, 리조트 휴식 선호자에게는 해변 리조트로 대체되는 정도가 크다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "us-los-angeles": {
       "name": {
@@ -8572,9 +8966,9 @@
         "spa": "if_there",
         "resort": "if_there",
         "streets": "make_time",
-        "architecture": "if_there",
+        "architecture": "make_time",
         "nightview": "make_time",
-        "street": "if_there",
+        "street": "make_time",
         "dining": "make_time",
         "cafe": "if_there",
         "drinks": "if_there",
@@ -8604,7 +8998,9 @@
         "themepark": "유니버설 스튜디오 할리우드의 테마 구역과 스튜디오 투어를 즐긴다.",
         "brands": "로데오 드라이브와 도심 쇼핑 구역의 매장을 둘러본다.",
         "concert": "할리우드 볼과 월트 디즈니 콘서트홀 공연을 일정에 맞춰 본다.",
-        "sports": "다저스의 야구와 레이커스의 농구 홈경기를 일정에 맞춰 본다."
+        "sports": "다저스의 야구와 레이커스의 농구 홈경기를 일정에 맞춰 본다.",
+        "architecture": "게티 센터의 리처드 마이어 설계 건축과 정원, 월트 디즈니 콘서트홀, 그리피스 천문대를 본다.",
+        "street": "타코 트럭과 그랜드 센트럴 마켓에서 멕시코 길거리 음식과 여러 나라 음식을 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -8657,6 +9053,22 @@
           "before": "none",
           "after": "if_there",
           "reason": "선셋 스트립의 라이브 클럽이 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "architecture",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. Getty Center의 재료·설계·주변 환경 관계를 현장에서 경험하는 관람 내용은 건축 자체에 남는다. 투어가 있다는 사실만이 아니라 밀라노처럼 건물 자체를 감상한다는 강도로 비교한 잠정 제안이다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 타코 트럭 문화와 그랜드 센트럴 마켓이 한 끼 일정이 된다.",
           "review_status": "pending"
         }
       ]
@@ -8785,8 +9197,8 @@
         "street": "make_time",
         "dining": "choose",
         "cafe": "make_time",
-        "drinks": "choose",
-        "heritage": "if_there",
+        "drinks": "make_time",
+        "heritage": "make_time",
         "museums": "choose",
         "traditional": "none",
         "water": "if_there",
@@ -8822,7 +9234,8 @@
         "bars": "로어이스트사이드, 이스트빌리지, 브루클린의 바와 클럽에서 밤늦게까지 논다.",
         "livebar": "그리니치빌리지와 할렘의 재즈 클럽에서 공연을 본다.",
         "sports": "야구(양키스·메츠), 농구(닉스·네츠), 아이스하키(레인저스)를 일정에 맞춰 본다. 늦여름에는 US 오픈 테니스가 열린다.",
-        "concert": "브로드웨이 뮤지컬을 보고, 링컨 센터와 매디슨 스퀘어 가든의 공연을 일정에 맞춰 본다."
+        "concert": "브로드웨이 뮤지컬을 보고, 링컨 센터와 매디슨 스퀘어 가든의 공연을 일정에 맞춰 본다.",
+        "heritage": "배를 타고 자유의 여신상과 엘리스섬 이민 박물관을 함께 둘러본다."
       },
       "season_unverified": [
         "wildlife",
@@ -8893,6 +9306,22 @@
             "before": "make_time",
             "after": "if_there",
             "reason": "일반 호스텔과 도보 투어만으로 도시 고유의 교류 경험을 위한 별도 시간 투자를 지지하기 어렵다.",
+            "review_status": "pending"
+          },
+          {
+            "city_id": "us-new-york",
+            "sub": "drinks",
+            "before": "choose",
+            "after": "make_time",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 칵테일 바 문화는 저녁을 따로 잡을 이유지만, 술 자체가 목적지를 고르게 하는 지역 술 문화라는 근거는 없다.",
+            "review_status": "pending"
+          },
+          {
+            "city_id": "us-new-york",
+            "sub": "heritage",
+            "before": "if_there",
+            "after": "make_time",
+            "reason": "2026-10-25 등급 기준표 승인(Joe)에 따른 반영. 자유의 여신상과 엘리스섬은 배를 타고 반나절을 쓰는 지속적 관람 일정이다.",
             "review_status": "pending"
           }
         ],
@@ -9148,7 +9577,7 @@
         "winter": "none",
         "extreme": "none",
         "themepark": "none",
-        "markets": "if_there",
+        "markets": "make_time",
         "brands": "if_there",
         "bars": "none",
         "livebar": "none",
@@ -9164,7 +9593,8 @@
         "streets": "구시가지 골목과 호안끼엠 호수 주변을 걷는다.",
         "heritage": "문묘와 탕롱 황성을 둘러본다.",
         "traditional": "수상 인형극을 관람한다.",
-        "cafe": "에그커피와 베트남 커피를 카페에서 즐긴다."
+        "cafe": "에그커피와 베트남 커피를 카페에서 즐긴다.",
+        "markets": "구시가 36거리와 동쑤언 시장, 주말 야시장에서 기념품과 잡화를 산다."
       },
       "nearby": {},
       "season": {},
@@ -9187,7 +9617,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "markets",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 구시가 거리 시장과 야시장 구경이 별도 일정이다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "vn-ho-chi-minh-city": {
       "name": {
@@ -9208,7 +9648,7 @@
         "nightview": "if_there",
         "street": "choose",
         "dining": "make_time",
-        "cafe": "if_there",
+        "cafe": "make_time",
         "drinks": "if_there",
         "heritage": "make_time",
         "museums": "make_time",
@@ -9219,7 +9659,7 @@
         "themepark": "none",
         "markets": "make_time",
         "brands": "if_there",
-        "bars": "if_there",
+        "bars": "make_time",
         "livebar": "none",
         "travelers": "if_there",
         "locals": "none",
@@ -9234,7 +9674,9 @@
         "heritage": "통일궁과 쩌런의 사원을 둘러본다.",
         "museums": "전쟁박물관과 역사 전시를 관람한다.",
         "architecture": "중앙우체국과 식민지 시대 건축을 본다.",
-        "markets": "벤탄 시장과 빈떠이 시장에서 물품과 기념품을 구경한다."
+        "markets": "벤탄 시장과 빈떠이 시장에서 물품과 기념품을 구경한다.",
+        "bars": "부이비엔 거리와 루프톱 바에서 밤늦게까지 논다.",
+        "cafe": "베트남식 연유 커피와 골목 카페, 오래된 아파트 카페를 찾아다닌다."
       },
       "nearby": {},
       "season": {},
@@ -9257,7 +9699,25 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "bars",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 부이비엔 거리의 밤 문화가 따로 밤 일정을 만든다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-10-25",
+          "sub": "cafe",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 베트남 커피 문화가 하노이처럼 카페 탐방 일정을 만든다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "vn-nha-trang": {
       "name": {
@@ -9276,7 +9736,7 @@
         "streets": "if_there",
         "architecture": "none",
         "nightview": "none",
-        "street": "if_there",
+        "street": "make_time",
         "dining": "make_time",
         "cafe": "if_there",
         "drinks": "if_there",
@@ -9303,7 +9763,8 @@
         "water": "냐짱만에서 스노클링과 보트 체험을 한다.",
         "heritage": "뽀나가르 참탑과 롱선사를 둘러본다.",
         "dining": "해산물과 냐짱 지역 음식을 먹는다.",
-        "themepark": "혼째섬의 테마파크와 물놀이 시설을 즐긴다."
+        "themepark": "혼째섬의 테마파크와 물놀이 시설을 즐긴다.",
+        "street": "야시장과 노점에서 반미·해산물·쌀국수 같은 베트남 길거리 음식을 먹는다."
       },
       "nearby": {},
       "season": {},
@@ -9330,7 +9791,17 @@
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
-      "season_basis": {}
+      "season_basis": {},
+      "revisions": [
+        {
+          "date": "2026-10-25",
+          "sub": "street",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "신규 83곳 세부별 1회 재판정(기준표 기준): 베트남 노점 음식이 하노이·호치민처럼 한 끼 일정이 된다.",
+          "review_status": "pending"
+        }
+      ]
     },
     "za-cape-town": {
       "name": {

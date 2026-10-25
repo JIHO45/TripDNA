@@ -5,6 +5,10 @@
 상태: 새 구성의 검증 계획은 미확정이며 실행 전이다. 이전: [비교 실험](offline-evaluation.md), [목록 대 프로필](profile-exploration.md), [지침 비교](guideline-comparison.md).
 과거 계획·결과를 소급 변경하지 않는다. 새 비교는 기존 실행 번호와 섞지 않고 별도 계획 고정본·결과 파일로 남긴다.
 
+## MVP 사용 기록
+
+2026-10-25: MVP에서는 비교 실험 대신 직접 사용하며 [사용 기록](mvp-tester-log.md)에 도시 문제와 설명 문제를 나눠 적는다.
+
 ## 다음 비교
 
 현재 검증 대상은 [컨셉 기반 추천](../recommendation/README.md#흐름) 전체다. 이전 모델·검색 비교의 고정 계획과 결과는 [실행 5](run5-plan.md), [실행 6](run6-plan.md), [실험 목차](../../data/exploration/README.md)에 보존한다. 실행 6에는 잠정 결과가 있지만 새 구성의 채택 근거로 대신하지 않는다.

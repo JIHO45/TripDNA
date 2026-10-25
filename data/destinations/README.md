@@ -4,11 +4,13 @@
 
 [현재 파일 계약과 우선 검수 목록](../../docs/data/destination-format.md)을 따른다. 기준 정책은 [도시 등급](../../docs/recommendation/README.md#도시-등급)이다. 이전 실험 입력은 `data/exploration/`에 그대로 보존한다.
 
-- 초안: 103곳, 세부 2,987칸, 핵심 경험 789항목.
-- 기존 20곳: 580칸을 새 정의로 편집 재판정, 24칸 변경. 도시별 `reassessment.changed`에 전후 값과 이유를 기록했다.
+- 초안: 103곳, 세부 2,987칸, 핵심 경험 820항목.
+- 기존 20곳: 580칸을 새 정의로 편집 재판정, 24칸 변경(2026-10-25 기준표 반영 후 원본 대비 31칸). 도시별 `reassessment.changed`에 전후 값과 이유를 기록했다.
 - 시즌 미확인: 255칸. 확인된 월 대신 예전 월 값을 추정 적용하지 않는다.
 - 신규 83곳 보정: 1차 초안이 기존 20곳보다 체계적으로 낮게 매겨져(평균 choose 1.5 대 3.5, none 13.3 대 6.8) 런던·로마부터 19곳 43칸을 고쳤다. 대부분 none·if_there → make_time의 과소평가 보정이고 무을라 박물관 1칸은 하향이다. 도시별 `revisions`에 전후 값과 이유를 기록했다. none ↔ if_there 경계 전반은 손대지 않았다.
 - core 정리: 운영·접근 메모가 섞인 15문장을 경험 문장으로 고치고 원문을 `review_flags`로 옮겼다.
+- 기준표 반영(2026-10-25): 승인된 [등급 기준표](../../docs/data/grade-anchors.md)의 판정 중 catalog와 달랐던 19칸을 반영했다(기존 20곳은 `reassessment.changed`, 신규는 `revisions`). 기준표가 다루지 않은 나머지 칸은 아직 같은 기준으로 재판정하지 않았다.
+- 신규 83곳 1회 재판정(2026-10-25): 기준표 경계에 비춰 명백히 낮게 매긴 31칸을 올렸다(`revisions`). 분포 비교는 `python3 scripts/report_grade_distribution.py`.
 - 출시 검수 완료: 0곳. 일부 웹 대조는 `sources`와 `evidence`에만 표시한다. 나머지 사실·등급은 모델 초안이며 사람 검수 전이다.
 
 검사: `python3 scripts/check_destination_draft.py`. `--release`는 이 초안의 출시 사용을 거부한다. 형식 검사 통과는 출시 승인이나 앱 연결 완료가 아니다.

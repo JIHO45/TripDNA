@@ -5,6 +5,8 @@ struct RecommendationView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(AppRouter.self) private var router
     @State private var viewModel = RecommendationViewModel()
+    @State private var cityModel = CityRecommendationViewModel()
+    @State private var lastRequest: RecommendationRequest?
     @State private var dislikeTarget: Recommendation?
     @State private var showingFilterSheet = false
     @State private var showingInput = false
@@ -15,6 +17,12 @@ struct RecommendationView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.sm) {
                     header
                     DNAHeaderDivider()
+                }
+                if viewModel.hasRequested, cityModel.state != .idle {
+                    CityRecommendationSection(model: cityModel) {
+                        guard let lastRequest else { return }
+                        Task { await cityModel.run(request: lastRequest, dependencies: dependencies) }
+                    }
                 }
                 content
             }
@@ -43,7 +51,9 @@ struct RecommendationView: View {
         }
         .fullScreenCover(isPresented: $showingInput) {
             RecommendationInputSheet { request in
+                lastRequest = request
                 Task { await viewModel.submit(request, dependencies) }
+                Task { await cityModel.run(request: request, dependencies: dependencies) }
             }
         }
         .onChange(of: router.recommendationInputRequested, initial: true) {

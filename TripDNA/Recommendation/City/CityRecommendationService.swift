@@ -1,0 +1,147 @@
+import Foundation
+
+/// 추천 한 번의 입력·버전·결과. docs/evaluation/mvp-tester-log.md의 "입력"과 "받은 도시"에 대응한다.
+/// 요청 문장과 티어가 들어 있어 기기 밖으로 내보내지 않는다.
+nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Identifiable {
+    struct Card: Codable, Equatable, Sendable {
+        let cityID: String
+        let cityName: String
+        let country: String
+        let isExploration: Bool
+        let seasonCheckNeeded: Bool
+        let reason: String
+        let caveat: String
+    }
+
+    let id: String
+    let createdAt: Date
+    let version: CityInputVersion
+    let seed: UInt64
+    let input: RecommendationRequest
+    let tiers: WantedConceptTiers
+    let excludedCountries: [String]
+    /// 코드가 계산한 순위 상위 id. 같은 입력과 시드로 다시 계산해 대조할 수 있다.
+    let rankedCityIDs: [String]
+    /// LLM에 보낸 그대로. 프롬프트·표를 다시 만들지 않고도 재현·검토할 수 있다.
+    let system: String
+    let user: String
+    let rawResponse: String?
+    let understanding: String?
+    let cards: [Card]
+    let error: String?
+    let latencySeconds: Double
+}
+
+/// 기기의 Application Support에 레코드를 한 파일씩 남긴다.
+nonisolated struct CityRecommendationLog: Sendable {
+    let directory: URL
+
+    static var standard: CityRecommendationLog {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return CityRecommendationLog(directory: base.appendingPathComponent("CityRecommendationLogs", isDirectory: true))
+    }
+
+    func save(_ record: CityRecommendationRecord) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(record).write(
+            to: directory.appendingPathComponent("\(record.id).json"), options: .completeFileProtection
+        )
+    }
+
+    func load() -> [CityRecommendationRecord] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
+        return files.filter { $0.pathExtension == "json" }
+            .compactMap { (try? Data(contentsOf: $0)).flatMap { try? decoder.decode(CityRecommendationRecord.self, from: $0) } }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+}
+
+nonisolated enum CityRecommendationError: Error, Equatable {
+    case notReady
+    case notConfigured
+    case noCandidates
+    case invalidResponse(String)
+    case network(String)
+}
+
+nonisolated struct CityRecommendationService: Sendable {
+    let catalog: CityCatalog
+    let client: (any CityLLMClient)?
+    let log: CityRecommendationLog
+    var model = CityLLMConfiguration.model
+
+    /// 조건 필터(제외 나라·시즌)와 순위 계산은 코드가, 설명은 LLM이 한다. 성공이든 실패든 레코드를 남긴다.
+    func recommend(
+        request: RecommendationRequest,
+        tiers: WantedConceptTiers,
+        excludedCountries: Set<String>,
+        homeCountryExcluded: Bool,
+        seed: UInt64 = UInt64.random(in: .min ... .max),
+        now: Date = Date()
+    ) async throws -> CityRecommendationRecord {
+        guard let primary = request.primary else { throw CityRecommendationError.notReady }
+        let month = request.month ?? request.startDate.map { Calendar.current.component(.month, from: $0) }
+        var input = CityRankingInput(primary: primary, secondary: request.secondary, tiers: tiers, month: month)
+        input.seed = seed
+        input.excludedCountries = excludedCountries
+        let ranked = CityRanker.rank(catalog: catalog, input: input)
+        let picks = CityRanker.pickCards(from: ranked, seed: seed)
+        guard !picks.isEmpty else { throw CityRecommendationError.noCandidates }
+
+        input.excludedCountries = []
+        let excludedRanked = CityRanker.rank(catalog: catalog, input: input)
+            .filter { excludedCountries.contains($0.city.country) }
+        let llmRequest = CityLLMRequestBuilder.build(
+            context: .init(
+                request: request, tiers: tiers, catalog: catalog, model: model,
+                excludedCountries: excludedCountries, homeCountryExcluded: homeCountryExcluded
+            ),
+            ranked: ranked, excludedRanked: excludedRanked, picks: picks
+        )
+
+        var raw: String?
+        var parsed: CityLLMResponse?
+        var failure: CityRecommendationError?
+        let start = Date()
+        if let client {
+            do {
+                raw = try await client.complete(system: llmRequest.system, user: llmRequest.user)
+                let response = try CityResponseValidator.parse(raw ?? "")
+                try CityResponseValidator.validate(response, cardIDs: llmRequest.cardIDs)
+                parsed = response
+            } catch let error as CityResponseError {
+                failure = .invalidResponse(String(describing: error))
+            } catch {
+                failure = .network(String(describing: error))
+            }
+        } else {
+            failure = .notConfigured
+        }
+
+        let cards: [CityRecommendationRecord.Card] = parsed.map { response in
+            zip(picks, response.cards).map { pick, card in
+                .init(
+                    cityID: pick.ranked.city.id, cityName: pick.ranked.city.ko, country: pick.ranked.city.country,
+                    isExploration: pick.isExploration, seasonCheckNeeded: pick.ranked.status == .needsSeasonCheck,
+                    reason: card.reason, caveat: card.caveat
+                )
+            }
+        } ?? []
+        let record = CityRecommendationRecord(
+            id: UUID().uuidString, createdAt: now, version: llmRequest.version, seed: seed,
+            input: request, tiers: tiers, excludedCountries: excludedCountries.sorted(),
+            rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
+            system: llmRequest.system, user: llmRequest.user,
+            rawResponse: raw, understanding: parsed?.understanding, cards: cards,
+            error: failure.map { String(describing: $0) }, latencySeconds: Date().timeIntervalSince(start)
+        )
+        try? log.save(record)
+        if let failure { throw failure }
+        return record
+    }
+}

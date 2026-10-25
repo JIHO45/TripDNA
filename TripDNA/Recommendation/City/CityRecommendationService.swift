@@ -16,6 +16,8 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
     }
 
     let id: String
+    /// 예산만 바꿔 다시 계산한 경우 원래 추천의 id. LLM을 다시 부르지 않았다.
+    var derivedFrom: String?
     let createdAt: Date
     let version: CityInputVersion
     let seed: UInt64
@@ -71,7 +73,6 @@ nonisolated enum CityRecommendationError: Error, Equatable {
     case notReady
     case notConfigured
     case noCandidates
-    case noneWithinBudget
     case invalidResponse(String)
     case network(String)
 }
@@ -132,39 +133,75 @@ nonisolated struct CityRecommendationService: Sendable {
             failure = .notConfigured
         }
 
-        // 예산 컷: 예상 비용 범위의 아래쪽이 예산을 넘으면 후보에서 뺀다. 컷 뒤 남은 도시에서 카드를 고른다.
-        var cutIDs: [String] = []
-        var cards: [CityRecommendationRecord.Card] = []
+        var selection = Selection(cards: [], cutIDs: [])
         if let parsed {
-            let byID = Dictionary(uniqueKeysWithValues: parsed.cards.map { ($0.id, $0) })
-            let budget = request.budgetMaxKRW
-            let survivors = pool.filter { item in
-                guard let budget, let low = byID[item.city.id]?.cost?.low else { return true }
-                if low > budget { cutIDs.append(item.city.id); return false }
-                return true
-            }
-            cards = CityRanker.pickCards(from: survivors, seed: seed).compactMap { pick in
-                byID[pick.ranked.city.id].map { card in
-                    .init(
-                        cityID: pick.ranked.city.id, cityName: pick.ranked.city.ko, country: pick.ranked.city.country,
-                        isExploration: pick.isExploration, seasonCheckNeeded: pick.ranked.status == .needsSeasonCheck,
-                        reason: card.reason, caveat: card.caveat, cost: card.cost
-                    )
-                }
-            }
-            if cards.isEmpty { failure = .noneWithinBudget }
+            selection = Self.select(pool: pool, response: parsed, budget: request.budgetMaxKRW, seed: seed)
         }
         let record = CityRecommendationRecord(
-            id: UUID().uuidString, createdAt: now, version: llmRequest.version, seed: seed,
+            id: UUID().uuidString, derivedFrom: nil, createdAt: now, version: llmRequest.version, seed: seed,
             input: request, tiers: tiers, excludedCountries: excludedCountries.sorted(),
             rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
-            poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: cutIDs,
+            poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: selection.cutIDs,
             system: llmRequest.system, user: llmRequest.user,
-            rawResponse: raw, understanding: parsed?.understanding, cards: cards,
-            error: failure.map { String(describing: $0) }, latencySeconds: Date().timeIntervalSince(start)
+            rawResponse: raw, understanding: parsed?.understanding, cards: selection.cards,
+            error: failure.map { String(describing: $0) } ?? (parsed != nil && selection.cards.isEmpty ? "noneWithinBudget" : nil), latencySeconds: Date().timeIntervalSince(start)
         )
         try? log.save(record)
         if let failure { throw failure }
         return record
+    }
+
+    struct Selection {
+        var cards: [CityRecommendationRecord.Card]
+        var cutIDs: [String]
+    }
+
+    /// 예산 컷: 예상 비용 범위의 아래쪽이 예산을 넘으면 후보에서 뺀다. 컷 뒤 남은 도시에서 카드를 고른다.
+    static func select(pool: [RankedCity], response: CityLLMResponse, budget: Int?, seed: UInt64) -> Selection {
+        let byID = Dictionary(uniqueKeysWithValues: response.cards.map { ($0.id, $0) })
+        var cutIDs: [String] = []
+        let survivors = pool.filter { item in
+            guard let budget, let low = byID[item.city.id]?.cost?.low else { return true }
+            if low > budget { cutIDs.append(item.city.id); return false }
+            return true
+        }
+        let cards: [CityRecommendationRecord.Card] = CityRanker.pickCards(from: survivors, seed: seed).compactMap { pick in
+            byID[pick.ranked.city.id].map { card in
+                .init(
+                    cityID: pick.ranked.city.id, cityName: pick.ranked.city.ko, country: pick.ranked.city.country,
+                    isExploration: pick.isExploration, seasonCheckNeeded: pick.ranked.status == .needsSeasonCheck,
+                    reason: card.reason, caveat: card.caveat, cost: card.cost
+                )
+            }
+        }
+        return Selection(cards: cards, cutIDs: cutIDs)
+    }
+
+    /// 예산만 바꿔 컷을 다시 계산한다. 이미 받은 응답을 쓰므로 LLM을 부르지 않고 횟수도 쓰지 않는다.
+    /// 원래 추천에 예산이 없어 비용 범위가 없으면 nil.
+    func recut(_ record: CityRecommendationRecord, budgetMaxKRW: Int?, now: Date = Date()) -> CityRecommendationRecord? {
+        guard let raw = record.rawResponse, let response = try? CityResponseValidator.parse(raw),
+              response.cards.allSatisfy({ $0.cost != nil }),
+              let primary = record.input.primary else { return nil }
+        let month = record.input.month ?? record.input.startDate.map { Calendar.current.component(.month, from: $0) }
+        let input = CityRankingInput(
+            primary: primary, secondary: record.input.secondary, tiers: record.tiers, month: month,
+            excludedCountries: Set(record.excludedCountries), seed: record.seed
+        )
+        let pool = Array(CityRanker.rank(catalog: catalog, input: input).prefix(CityLLMRequestBuilder.poolSize))
+        guard pool.map(\.city.id) == record.poolCityIDs else { return nil }
+        var request = record.input
+        request.budgetMaxKRW = budgetMaxKRW
+        let selection = Self.select(pool: pool, response: response, budget: budgetMaxKRW, seed: record.seed)
+        let derived = CityRecommendationRecord(
+            id: UUID().uuidString, derivedFrom: record.id, createdAt: now, version: record.version, seed: record.seed,
+            input: request, tiers: record.tiers, excludedCountries: record.excludedCountries,
+            rankedCityIDs: record.rankedCityIDs, poolCityIDs: record.poolCityIDs, budgetCutCityIDs: selection.cutIDs,
+            system: record.system, user: record.user, rawResponse: record.rawResponse,
+            understanding: record.understanding, cards: selection.cards,
+            error: selection.cards.isEmpty ? "noneWithinBudget" : nil, latencySeconds: 0
+        )
+        try? log.save(derived)
+        return derived
     }
 }

@@ -342,19 +342,53 @@ struct CityRecommendationServiceTests {
         #expect(record.cards.allSatisfy { ($0.cost?.low ?? .max) <= 2_000_000 })
     }
 
-    @Test func allCutMeansNoneWithinBudgetAndStillLogged() async throws {
+    @Test func allCutLeavesNoCardsAndIsLogged() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = Self.request()
         request.budgetMaxKRW = 500_000
         let service = try Self.service(client: Self.fake(lows: Array(repeating: 9_000_000, count: 8)), dir: dir)
-        await #expect(throws: CityRecommendationError.noneWithinBudget) {
-            _ = try await service.recommend(
-                request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
-            )
-        }
-        let logged = try #require(CityRecommendationLog(directory: dir).load().first)
-        #expect(logged.budgetCutCityIDs.count == 8)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
+        )
+        #expect(record.cards.isEmpty)
+        #expect(record.error == "noneWithinBudget")
+        #expect(CityRecommendationLog(directory: dir).load().first?.budgetCutCityIDs.count == 8)
+    }
+
+    @Test func recutChangesBudgetWithoutCallingLLM() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = Self.request()
+        request.budgetMaxKRW = 2_000_000
+        // 순위 1·2번째 하한 3,000,000·2,500,000, 나머지 1,000,000.
+        let service = try Self.service(client: Self.fake(lows: [3_000_000, 2_500_000]), dir: dir)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 5
+        )
+        #expect(record.budgetCutCityIDs.count == 2)
+        // 클라이언트가 없는 서비스로도 다시 계산된다 = LLM을 부르지 않는다.
+        let offline = try Self.service(client: nil, dir: dir)
+        let loosened = try #require(offline.recut(record, budgetMaxKRW: 4_000_000))
+        #expect(loosened.budgetCutCityIDs.isEmpty)
+        #expect(loosened.derivedFrom == record.id)
+        #expect(loosened.input.budgetMaxKRW == 4_000_000)
+        #expect(loosened.cards.map(\.cityID).prefix(2) == record.poolCityIDs.prefix(2))
+        let tightened = try #require(offline.recut(loosened, budgetMaxKRW: 100_000))
+        #expect(tightened.cards.isEmpty)
+        #expect(tightened.error == "noneWithinBudget")
+        #expect(tightened.budgetCutCityIDs.count == 8)
+        #expect(CityRecommendationLog(directory: dir).load().count == 3)
+    }
+
+    @Test func recutIsUnavailableWithoutBudgetEstimates() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let service = try Self.service(client: Self.fake(), dir: dir)
+        let record = try await service.recommend(
+            request: Self.request(), tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 5
+        )
+        #expect(service.recut(record, budgetMaxKRW: 1_000_000) == nil)
     }
 
     @Test func failedResponseIsStillLoggedWithError() async throws {

@@ -10,6 +10,21 @@ final class CityRecommendationViewModel {
     }
 
     private(set) var state = State.idle
+    /// 예산 수정으로 다시 계산할 때 쓰는 마지막 LLM 결과.
+    private(set) var lastRecord: CityRecommendationRecord?
+
+    /// 마지막 결과에 비용 범위가 있어 예산만 바꿔 다시 계산할 수 있는지.
+    var canEditBudget: Bool { lastRecord?.input.budgetMaxKRW != nil }
+
+    /// 예산만 바꿔 컷을 다시 계산한다. LLM을 부르지 않는다.
+    func updateBudget(_ budgetMaxKRW: Int, catalog: CityCatalog? = CityCatalog.load()) {
+        guard let lastRecord, let catalog else { return }
+        let service = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
+        if let derived = service.recut(lastRecord, budgetMaxKRW: budgetMaxKRW) {
+            self.lastRecord = derived
+            state = .done(derived)
+        }
+    }
 
     var isConfigured: Bool { CityLLMConfiguration.makeClient() != nil }
 
@@ -35,11 +50,10 @@ final class CityRecommendationViewModel {
             let record = try await service.recommend(
                 request: request, tiers: tiers, excludedCountries: excluded, homeCountryExcluded: homeExcluded
             )
+            lastRecord = record
             state = .done(record)
         } catch CityRecommendationError.notConfigured {
             state = .failed("LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
-        } catch CityRecommendationError.noneWithinBudget {
-            state = .failed("예상 비용이 예산을 넘는 도시뿐이에요. 예산이나 기간을 조정해 보세요.")
         } catch CityRecommendationError.noCandidates {
             state = .failed("조건에 맞는 도시를 찾지 못했어요.")
         } catch {
@@ -53,6 +67,7 @@ struct CityRecommendationSection: View {
     let model: CityRecommendationViewModel
     let retry: () -> Void
     @State private var showingKeyEntry = false
+    @State private var budgetText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
@@ -80,6 +95,16 @@ struct CityRecommendationSection: View {
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
+                if record.cards.isEmpty {
+                    Text("예상 비용이 예산을 넘는 도시뿐이에요. 예산이나 기간을 조정해 보세요.")
+                        .dnaFont(.body)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                } else if !record.budgetCutCityIDs.isEmpty {
+                    Text("예상 비용이 예산을 넘는 \(record.budgetCutCityIDs.count)곳은 뺐어요.")
+                        .font(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                if model.canEditBudget { budgetEditor(current: record.input.budgetMaxKRW) }
                 ForEach(record.cards, id: \.cityID) { card in
                     cityCard(card)
                 }
@@ -89,6 +114,23 @@ struct CityRecommendationSection: View {
         #if DEBUG
         .sheet(isPresented: $showingKeyEntry) { DevKeySheet() }
         #endif
+    }
+
+    /// 안내 문구는 임시다. 문구와 시점은 사용자가 정한다(docs/data/storage-and-privacy.md).
+    static let sendNotice = "추천을 받으면 입력한 여행 조건과 문장이 AI 서버로 전송돼요."
+
+    private func budgetEditor(current: Int?) -> some View {
+        HStack {
+            TextField("예산(만원)", text: $budgetText)
+                .keyboardType(.numberPad)
+                .textFieldStyle(.roundedBorder)
+            Button("예산 바꾸기") {
+                guard let man = Int(budgetText), man > 0 else { return }
+                model.updateBudget(man * 10_000)
+            }
+            .disabled(Int(budgetText) == nil)
+        }
+        .onAppear { if budgetText.isEmpty, let current { budgetText = String(current / 10_000) } }
     }
 
     private static func won(_ amount: Int) -> String {

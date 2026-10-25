@@ -122,6 +122,11 @@ struct CityRecommendationSection: View {
                     #endif
                 }
             case .done(let record):
+                if record.derivedFrom != nil {
+                    Text("설명과 유의점은 처음 입력한 예산 기준으로 쓰였어요. 새 예산으로 다시 쓰려면 추천을 다시 받아 주세요.")
+                        .font(.caption)
+                        .foregroundStyle(Color.dnaWarning)
+                }
                 if let understanding = record.understanding {
                     Text(understanding)
                         .dnaFont(.body)
@@ -158,16 +163,19 @@ struct CityRecommendationSection: View {
     /// 안내 문구는 임시다. 문구와 시점은 사용자가 정한다(docs/data/storage-and-privacy.md).
     static let sendNotice = "추천을 받으면 입력한 여행 조건과 문장이 AI 서버로 전송돼요."
 
+    /// 곱셈 오버플로를 막는 상한(10억 원).
+    private static let maxBudgetMan = 100_000
+
     private func budgetEditor(current: Int?) -> some View {
         HStack {
             TextField("예산(만원)", text: $budgetText)
                 .keyboardType(.numberPad)
                 .textFieldStyle(.roundedBorder)
             Button("예산 바꾸기") {
-                guard let man = Int(budgetText), man > 0 else { return }
+                guard let man = Int(budgetText), (1...Self.maxBudgetMan).contains(man) else { return }
                 model.updateBudget(man * 10_000)
             }
-            .disabled(Int(budgetText) == nil)
+            .disabled(Int(budgetText).map { !(1...Self.maxBudgetMan).contains($0) } ?? true)
         }
         .onAppear { if budgetText.isEmpty, let current { budgetText = String(current / 10_000) } }
     }

@@ -36,6 +36,8 @@ nonisolated enum CityMemoryConsent {
 
     enum State: String { case undecided, granted, declined }
 
+    static func reset() { UserDefaults.standard.removeObject(forKey: key) }
+
     static var state: State {
         get { UserDefaults.standard.string(forKey: key).flatMap(State.init) ?? .undecided }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: key) }

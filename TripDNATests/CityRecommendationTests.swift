@@ -398,10 +398,12 @@ struct CityRecommendationServiceTests {
     @Test func failedResponseIsStillLoggedWithError() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
+        var noWants = Self.request()
+        noWants.wants = ""
         let service = try Self.service(client: Fake { _ in "not json" }, dir: dir)
         await #expect(throws: CityRecommendationError.self) {
             _ = try await service.recommend(
-                request: Self.request(), tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
+                request: noWants, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
             )
         }
         let logged = try #require(CityRecommendationLog(directory: dir).load().first)
@@ -564,5 +566,60 @@ struct CityMemoryAndTwoStageTests {
             excludedCountries: [], homeCountryExcluded: false
         )
         #expect(!record.user.contains("지난 여행 평가 —"))
+    }
+
+    @Test func extractionFailureStopsBeforeSecondCallAndIsLogged() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = CityRecommendationServiceTests.request()
+        request.wants = "일본만 가고 싶어요"
+        let service = try CityRecommendationServiceTests.service(
+            client: CityRecommendationServiceTests.fake(extraction: "not json"), dir: dir
+        )
+        await #expect(throws: CityRecommendationError.self) {
+            _ = try await service.recommend(
+                request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
+            )
+        }
+        let logged = try #require(CityRecommendationLog(directory: dir).load().first)
+        #expect(logged.cards.isEmpty)
+        #expect(logged.rawResponse == nil)
+        #expect(logged.extraction?.error != nil)
+        #expect(logged.error?.contains("extractionFailed") == true)
+    }
+
+    @Test func recutDropsStaleUnderstandingAndMarksDerived() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = CityRecommendationServiceTests.request()
+        request.budgetMaxKRW = 2_000_000
+        let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 2
+        )
+        #expect(record.understanding != nil)
+        let derived = try #require(service.recut(record, budgetMaxKRW: 1_500_000))
+        #expect(derived.understanding == nil)
+        #expect(derived.derivedFrom == record.id)
+    }
+
+    @Test func logDeleteAllRemovesRecords() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
+        _ = try await service.recommend(
+            request: CityRecommendationServiceTests.request(), tiers: WantedConceptTiers(),
+            excludedCountries: [], homeCountryExcluded: false
+        )
+        let log = CityRecommendationLog(directory: dir)
+        #expect(log.load().count == 1)
+        try log.deleteAll()
+        #expect(log.load().isEmpty)
+        try log.deleteAll()
+    }
+
+    @Test func consentResetReturnsToUndecided() {
+        CityMemoryConsent.state = .granted
+        CityMemoryConsent.reset()
+        #expect(CityMemoryConsent.state == .undecided)
     }
 }

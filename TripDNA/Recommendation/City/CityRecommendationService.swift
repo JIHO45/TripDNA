@@ -78,6 +78,12 @@ nonisolated struct CityRecommendationLog: Sendable {
         )
     }
 
+    /// 전체 데이터 삭제용. 폴더가 없으면 할 일이 없다.
+    func deleteAll() throws {
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        try FileManager.default.removeItem(at: directory)
+    }
+
     func load() -> [CityRecommendationRecord] {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -92,6 +98,7 @@ nonisolated enum CityRecommendationError: Error, Equatable {
     case notReady
     case notConfigured
     case noCandidates
+    case extractionFailed(String)
     case invalidResponse(String)
     case network(String)
 }
@@ -122,6 +129,7 @@ nonisolated struct CityRecommendationService: Sendable {
         var conditions: [CityCondition] = []
         var rejected: [String] = []
         var extraction: CityRecommendationRecord.Extraction?
+        var extractionFailure: String?
         let userText = request.wants + "\n" + request.avoids
         if let client, !userText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let prompt = CityConditionExtraction.build(request: request, catalog: catalog)
@@ -133,6 +141,7 @@ nonisolated struct CityRecommendationService: Sendable {
                 (conditions, rejected) = CityConditionJudge.accept(parsedConditions, userText: userText, catalog: catalog)
             } catch {
                 extractionError = String(describing: error)
+                extractionFailure = extractionError
             }
             extraction = .init(system: prompt.system, user: prompt.user, raw: rawExtraction, error: extractionError)
         }
@@ -157,7 +166,10 @@ nonisolated struct CityRecommendationService: Sendable {
         var parsed: CityLLMResponse?
         var failure: CityRecommendationError?
         let start = Date()
-        if let client {
+        if let extractionFailure {
+            // 필수 조건이 사라진 채 정상 추천처럼 보이지 않도록 2단계를 부르지 않고 중단한다.
+            failure = .extractionFailed(extractionFailure)
+        } else if let client {
             do {
                 raw = try await client.complete(system: llmRequest.system, user: llmRequest.user)
                 let response = try CityResponseValidator.parse(raw ?? "")
@@ -245,7 +257,7 @@ nonisolated struct CityRecommendationService: Sendable {
             conditions: record.conditions, rejectedConditionIDs: record.rejectedConditionIDs, extraction: record.extraction,
             memories: record.memories, memoriesUsed: record.memoriesUsed,
             system: record.system, user: record.user, rawResponse: record.rawResponse,
-            understanding: record.understanding, cards: selection.cards,
+            understanding: nil, cards: selection.cards,
             error: selection.cards.isEmpty ? "noneWithinBudget" : nil, latencySeconds: 0
         )
         try? log.save(derived)

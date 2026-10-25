@@ -28,6 +28,31 @@ final class CityRecommendationViewModel {
 
     var isConfigured: Bool { CityLLMConfiguration.makeClient() != nil }
 
+    /// 동의를 아직 묻지 않았고 보낼 평가가 있을 때 채워진다. 화면이 알림으로 묻고 `answerConsent`로 답한다.
+    private(set) var pendingConsentRequest: RecommendationRequest?
+
+    var sendsMemories: Bool {
+        get { CityMemoryConsent.state == .granted }
+        set { CityMemoryConsent.state = newValue ? .granted : .declined }
+    }
+
+    /// 추천받기. 지난 여행 평가를 처음 보내기 전에는 동의를 먼저 묻는다.
+    func start(request: RecommendationRequest, dependencies: AppDependencies) async {
+        if CityMemoryConsent.state == .undecided,
+           !CityMemory.recent(from: await dependencies.allTrips()).isEmpty {
+            pendingConsentRequest = request
+            return
+        }
+        await run(request: request, dependencies: dependencies)
+    }
+
+    func answerConsent(_ granted: Bool, dependencies: AppDependencies) async {
+        CityMemoryConsent.state = granted ? .granted : .declined
+        guard let request = pendingConsentRequest else { return }
+        pendingConsentRequest = nil
+        await run(request: request, dependencies: dependencies)
+    }
+
     func run(request: RecommendationRequest, dependencies: AppDependencies) async {
         guard let catalog = CityCatalog.load() else {
             state = .failed("도시 자료를 읽지 못했어요.")
@@ -43,12 +68,16 @@ final class CityRecommendationViewModel {
         let homeExcluded = dependencies.homeCountryCode != nil && !request.includeHomeCountry
         if homeExcluded, let home = dependencies.homeCountryCode { excluded.insert(home) }
 
+        let memories = CityMemoryConsent.state == .granted
+            ? CityMemory.recent(from: await dependencies.allTrips())
+            : []
         let service = CityRecommendationService(
             catalog: catalog, client: CityLLMConfiguration.makeClient(), log: .standard
         )
         do {
             let record = try await service.recommend(
-                request: request, tiers: tiers, excludedCountries: excluded, homeCountryExcluded: homeExcluded
+                request: request, tiers: tiers, excludedCountries: excluded, homeCountryExcluded: homeExcluded,
+                memories: memories
             )
             lastRecord = record
             state = .done(record)
@@ -74,6 +103,9 @@ struct CityRecommendationSection: View {
             Text("도시 추천")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
+            @Bindable var model = model
+            Toggle("지난 여행 평가·메모를 추천에 보내기", isOn: $model.sendsMemories)
+                .font(.caption)
             switch model.state {
             case .idle:
                 EmptyView()
@@ -104,6 +136,13 @@ struct CityRecommendationSection: View {
                         .font(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
+                if !record.memoriesUsed.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("지난 여행에서 참고한 내용").font(.caption.weight(.semibold))
+                        ForEach(record.memoriesUsed, id: \.id) { use in Text("· \(use.how)").font(.caption) }
+                    }
+                    .foregroundStyle(Color.dnaTextSecondary)
+                }
                 if model.canEditBudget { budgetEditor(current: record.input.budgetMaxKRW) }
                 ForEach(record.cards, id: \.cityID) { card in
                     cityCard(card)
@@ -133,6 +172,14 @@ struct CityRecommendationSection: View {
         .onAppear { if budgetText.isEmpty, let current { budgetText = String(current / 10_000) } }
     }
 
+    private static func statusText(_ status: ConditionStatus) -> String {
+        switch status {
+        case .met: "충족"
+        case .notMet: "불충족"
+        case .unconfirmed: "확인 필요"
+        }
+    }
+
     private static func won(_ amount: Int) -> String {
         "\(amount / 10_000)만원"
     }
@@ -159,6 +206,16 @@ struct CityRecommendationSection: View {
                 Text("예상 비용 \(Self.won(cost.low))~\(Self.won(cost.high)) (추정, 가격 확인 필요)")
                     .font(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
+            }
+            ForEach(card.conditions, id: \.condition.id) { result in
+                Text("\(result.condition.text): \(Self.statusText(result.status))")
+                    .font(.caption)
+                    .foregroundStyle(result.status == .met ? Color.dnaData : Color.dnaTextSecondary)
+            }
+            if card.conditionCheckNeeded {
+                Text("필수 조건 확인이 필요해요")
+                    .font(.caption)
+                    .foregroundStyle(Color.dnaWarning)
             }
             if card.seasonCheckNeeded {
                 Text("선택한 시기에 가능한지 확인이 필요해요")

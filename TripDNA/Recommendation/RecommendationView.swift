@@ -53,13 +53,25 @@ struct RecommendationView: View {
             RecommendationInputSheet { request in
                 lastRequest = request
                 Task { await viewModel.submit(request, dependencies) }
-                Task { await cityModel.run(request: request, dependencies: dependencies) }
+                Task { await cityModel.start(request: request, dependencies: dependencies) }
             }
         }
         .onChange(of: router.recommendationInputRequested, initial: true) {
             guard router.recommendationInputRequested else { return }
             router.recommendationInputRequested = false
             showingInput = true
+        }
+        .alert(
+            "지난 여행 평가를 추천에 쓸까요?",
+            isPresented: Binding(
+                get: { cityModel.pendingConsentRequest != nil },
+                set: { _ in }
+            )
+        ) {
+            Button("동의하고 보내기") { Task { await cityModel.answerConsent(true, dependencies: dependencies) } }
+            Button("보내지 않기", role: .cancel) { Task { await cityModel.answerConsent(false, dependencies: dependencies) } }
+        } message: {
+            Text("도시별 별점과 좋았던 점·아쉬웠던 점 메모 원문, 다녀온 도시가 추천을 위해 외부 AI 모델로 전달돼요. 동의하지 않으면 보내지 않고, 기록은 이 기기에만 남아요. 설정은 도시 추천 위쪽 스위치에서 바꿀 수 있어요.")
         }
         .sheet(item: $dislikeTarget) { recommendation in
             RecommendationDislikeSheet(

@@ -272,17 +272,21 @@ struct CityRecommendationServiceTests {
     }
 
     /// 요청의 "후보 도시" 구역에서 id를 읽어 응답한다. `lows`의 앞에서부터 비용 하한을 준다(없으면 100만원).
-    static func fake(lows: [Int] = []) -> Fake {
+    static func fake(
+        lows: [Int] = [], withCost: Bool = true, extraction: String = "{\"conditions\":[]}", memoriesUsed: String = "[]"
+    ) -> Fake {
         Fake { user in
+            if user.contains("[고른 컨셉]") { return extraction }
             let ids = user.components(separatedBy: "[후보 도시")[1]
                 .components(separatedBy: "\n\n")[0]
                 .components(separatedBy: "\n").dropFirst()
                 .map { String($0.split(separator: "|")[0]).trimmingCharacters(in: .whitespaces) }
             let cards = ids.enumerated().map { index, id in
                 let low = index < lows.count ? lows[index] : 1_000_000
-                return "{\"id\":\"\(id)\",\"reason\":\"이유\",\"caveat\":\"\",\"cost\":{\"low\":\(low),\"high\":\(low * 2)}}"
+                let cost = withCost ? "{\"low\":\(low),\"high\":\(low * 2)}" : "null"
+                return "{\"id\":\"\(id)\",\"reason\":\"이유\",\"caveat\":\"\",\"cost\":\(cost)}"
             }.joined(separator: ",")
-            return "{\"understanding\":\"요약\",\"cards\":[\(cards)]}"
+            return "{\"understanding\":\"요약\",\"cards\":[\(cards)],\"memories_used\":\(memoriesUsed)}"
         }
     }
 
@@ -384,7 +388,7 @@ struct CityRecommendationServiceTests {
     @Test func recutIsUnavailableWithoutBudgetEstimates() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
-        let service = try Self.service(client: Self.fake(), dir: dir)
+        let service = try Self.service(client: Self.fake(withCost: false), dir: dir)
         let record = try await service.recommend(
             request: Self.request(), tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 5
         )
@@ -420,4 +424,145 @@ struct CityRecommendationServiceTests {
 
 extension CityGrade {
     static var allNames: [String] { [CityGrade.ifThere, .makeTime, .choose].map(\.nameKo) }
+}
+
+struct CityConditionTests {
+    static let concepts = ["food": ["dining"], "nature": ["hiking", "scenery"], "event": ["festival"]]
+
+    static func city(
+        _ id: String, country: String = "XX", grades: [String: CityGrade] = [:],
+        season: [String: [Int]] = [:], unverified: [String] = []
+    ) -> City {
+        City(id: id, ko: id, en: id, country: country, grades: grades, season: season, seasonUnverified: unverified)
+    }
+
+    static func catalog(_ cities: [City]) -> CityCatalog {
+        CityCatalog(version: "t", concepts: concepts, cities: cities)
+    }
+
+    @Test func acceptsOnlyConditionsGroundedInUserText() {
+        let cat = Self.catalog([])
+        let good = CityCondition(id: "a", text: "하이킹", quote: "하이킹 위주", level: .core, kind: .subconcept, target: "hiking")
+        let noQuote = CityCondition(id: "b", text: "x", quote: "없는 말", level: .required, kind: .other)
+        let badTarget = CityCondition(id: "c", text: "x", quote: "하이킹 위주", level: .core, kind: .subconcept, target: "nope")
+        let dup = CityCondition(id: "a", text: "중복", quote: "하이킹 위주", level: .core, kind: .other)
+        let result = CityConditionJudge.accept([good, noQuote, badTarget, dup], userText: "하이킹 위주로 가고 싶어요", catalog: cat)
+        #expect(result.accepted.map(\.id) == ["a"])
+        #expect(result.rejected == ["b", "c", "a"])
+    }
+
+    @Test func judgesSubconceptCountrySeasonAndOther() {
+        let cat = Self.catalog([])
+        let kr = Self.city("kr", country: "KR", grades: ["hiking": .choose, "festival": .choose],
+                           season: ["festival": [10]], unverified: [])
+        let hike = CityCondition(id: "h", text: "", quote: "q", level: .core, kind: .subconcept, target: "hiking", minGrade: .choose)
+        #expect(CityConditionJudge.status(of: hike, city: kr, catalog: cat, month: nil) == .met)
+        let fest = CityCondition(id: "f", text: "", quote: "q", level: .core, kind: .subconcept, target: "festival")
+        #expect(CityConditionJudge.status(of: fest, city: kr, catalog: cat, month: 10) == .met)
+        #expect(CityConditionJudge.status(of: fest, city: kr, catalog: cat, month: 3) == .notMet)
+        let unverified = Self.city("u", grades: ["festival": .choose], unverified: ["festival"])
+        #expect(CityConditionJudge.status(of: fest, city: unverified, catalog: cat, month: 3) == .unconfirmed)
+        let only = CityCondition(id: "c", text: "", quote: "q", level: .required, kind: .country, target: "kr")
+        #expect(CityConditionJudge.status(of: only, city: kr, catalog: cat, month: nil) == .met)
+        let avoid = CityCondition(id: "d", text: "", quote: "q", level: .required, kind: .country, target: "KR", polarity: .avoid)
+        #expect(CityConditionJudge.status(of: avoid, city: kr, catalog: cat, month: nil) == .notMet)
+        let other = CityCondition(id: "o", text: "", quote: "q", level: .required, kind: .other)
+        #expect(CityConditionJudge.status(of: other, city: kr, catalog: cat, month: nil) == .unconfirmed)
+    }
+
+    @Test func requiredNotMetDropsRequiredUnconfirmedGoesLastCoreOrders() {
+        let cat = Self.catalog([
+            Self.city("jp", country: "JP", grades: ["dining": .choose, "hiking": .choose]),
+            Self.city("kr", country: "KR", grades: ["dining": .choose, "hiking": .ifThere]),
+            Self.city("kr2", country: "KR", grades: ["dining": .makeTime, "hiking": .choose])
+        ])
+        var input = CityRankingInput(primary: .food)
+        // 필수 나라 KR → jp 제외.
+        input.conditions = [CityCondition(id: "c", text: "", quote: "q", level: .required, kind: .country, target: "KR")]
+        #expect(Set(CityRanker.rank(catalog: cat, input: input).map(\.city.id)) == ["kr", "kr2"])
+        // 핵심 선호 하이킹(choose) → 주 컨셉 등급이 낮아도 충족한 도시가 앞선다.
+        input.conditions = [CityCondition(id: "h", text: "", quote: "q", level: .core, kind: .subconcept, target: "hiking", minGrade: .choose)]
+        #expect(CityRanker.rank(catalog: cat, input: input).first?.city.id == "jp")
+        let ranked = CityRanker.rank(catalog: cat, input: input).map(\.city.id)
+        #expect(ranked.firstIndex(of: "jp")! < ranked.firstIndex(of: "kr")!)
+        // 확인 못 한 필수 조건은 모든 도시를 같은 "확인 필요" 묶음으로 보낸다. 충족 도시가 따로 없으면 순서는 그대로.
+        input.conditions = [CityCondition(id: "o", text: "", quote: "q", level: .required, kind: .other)]
+        let checked = CityRanker.rank(catalog: cat, input: input)
+        #expect(checked.allSatisfy { $0.needsConditionCheck })
+    }
+}
+
+struct CityMemoryAndTwoStageTests {
+    static func trip(city: String, rating: Int, liked: String, evaluatedAt: Date) throws -> Trip {
+        var trip = try Trip(
+            legs: [TripLeg(countryCode: "JP", cities: [city], startDate: evaluatedAt, endDate: evaluatedAt)],
+            companion: .alone, purpose: .leisure
+        )
+        try trip.end(at: evaluatedAt)
+        try trip.submit(
+            TripEvaluation(
+                satisfaction: 4, wouldRepeat: true,
+                cityReviews: [CityReview(countryCode: "JP", city: city, rating: rating, liked: liked, disliked: nil)],
+                source: .postTrip
+            ),
+            at: evaluatedAt
+        )
+        return trip
+    }
+
+    @Test func memoriesAreRecentFirstAndCapped() throws {
+        let old = try Self.trip(city: "교토", rating: 4, liked: "조용했다", evaluatedAt: Date(timeIntervalSince1970: 1_000))
+        let new = try Self.trip(city: "오사카", rating: 5, liked: "먹을 게 많았다", evaluatedAt: Date(timeIntervalSince1970: 2_000))
+        let memories = CityMemory.recent(from: [old, new], limit: 1)
+        #expect(memories.count == 1)
+        #expect(memories[0].id == "m1")
+        #expect(memories[0].city == "오사카")
+        #expect(memories[0].liked == "먹을 게 많았다")
+    }
+
+    @Test func twoStageFlowUsesConditionsAndMemories() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = CityRecommendationServiceTests.request()
+        request.wants = "맛집 위주로 가고 싶어요"
+        let extraction = "{\"conditions\":[{\"id\":\"f1\",\"text\":\"미식 중심\",\"quote\":\"맛집 위주\",\"level\":\"core\",\"kind\":\"subconcept\",\"target\":\"dining\",\"min_grade\":\"choose\"},{\"id\":\"x\",\"text\":\"지어낸\",\"quote\":\"본 적 없는 문장\",\"level\":\"required\",\"kind\":\"other\"}]}"
+        let client = CityRecommendationServiceTests.fake(extraction: extraction, memoriesUsed: "[{\"id\":\"m1\",\"how\":\"오사카에서 먹거리를 좋아했어요\"}]")
+        let service = try CityRecommendationServiceTests.service(client: client, dir: dir)
+        let memory = CityMemory(id: "m1", tripID: "t", countryCode: "JP", city: "오사카", rating: 5, liked: "먹을 게 많았다", disliked: nil)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false,
+            memories: [memory], seed: 1
+        )
+        #expect(record.conditions.map(\.id) == ["f1"])
+        #expect(record.rejectedConditionIDs == ["x"])
+        #expect(record.extraction?.raw == extraction)
+        #expect(record.memoriesUsed.map(\.id) == ["m1"])
+        #expect(record.user.contains("<<<먹을 게 많았다>>>"))
+        #expect(record.user.contains("[이번 요청에서 뽑은 조건"))
+        #expect(record.cards.allSatisfy { $0.conditions.map(\.condition.id) == ["f1"] })
+    }
+
+    @Test func memoryIDNotInInputIsRejected() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let client = CityRecommendationServiceTests.fake(memoriesUsed: "[{\"id\":\"m9\",\"how\":\"x\"}]")
+        let service = try CityRecommendationServiceTests.service(client: client, dir: dir)
+        await #expect(throws: CityRecommendationError.self) {
+            _ = try await service.recommend(
+                request: CityRecommendationServiceTests.request(), tiers: WantedConceptTiers(),
+                excludedCountries: [], homeCountryExcluded: false
+            )
+        }
+    }
+
+    @Test func noMemoriesMeansNoMemorySectionInRequest() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
+        let record = try await service.recommend(
+            request: CityRecommendationServiceTests.request(), tiers: WantedConceptTiers(),
+            excludedCountries: [], homeCountryExcluded: false
+        )
+        #expect(!record.user.contains("지난 여행 평가 —"))
+    }
 }

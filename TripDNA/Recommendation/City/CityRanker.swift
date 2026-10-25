@@ -12,6 +12,8 @@ nonisolated struct CityRankingInput: Equatable, Sendable {
     var excludedCountries: Set<String> = []
     /// 탐색 후보를 고르는 시드. 같은 입력과 시드는 같은 결과를 낸다.
     var seed: UInt64 = 0
+    /// 자유문장에서 뽑아 코드가 받아들인 조건. 필수 불충족은 후보에서 빼고, 확인 못 한 필수는 뒤쪽 묶음, 핵심 선호는 묶음 순서에 쓴다.
+    var conditions: [CityCondition] = []
 }
 
 nonisolated struct RankedCity: Equatable, Sendable {
@@ -30,6 +32,16 @@ nonisolated struct RankedCity: Equatable, Sendable {
     /// 주 컨셉 등급에 쓰인 세부 중 시즌을 확인하지 못한 것.
     let unverifiedSubconcepts: [String]
     let tierScore: Int
+    let conditionResults: [ConditionResult]
+
+    var needsConditionCheck: Bool {
+        conditionResults.contains { $0.condition.level == .required && $0.status == .unconfirmed }
+    }
+    /// 기본 추천과 섞지 않는 "추가 확인 필요" 묶음에 속하는지(시즌 또는 필수 조건을 확인하지 못함).
+    var needsCheck: Bool { status == .needsSeasonCheck || needsConditionCheck }
+    func met(_ level: CityCondition.Level) -> Int {
+        conditionResults.filter { $0.condition.level == level && $0.status == .met }.count
+    }
 }
 
 nonisolated struct CityPick: Equatable, Sendable {
@@ -51,11 +63,13 @@ nonisolated enum CityRanker {
             .filter { !input.excludedCountries.contains($0.country) }
             .compactMap { rankedCity($0, catalog: catalog, input: input) }
             .sorted { lhs, rhs in
-                if lhs.status != rhs.status { return lhs.status == .confirmed }
+                if lhs.needsCheck != rhs.needsCheck { return !lhs.needsCheck }
+                if lhs.met(.core) != rhs.met(.core) { return lhs.met(.core) > rhs.met(.core) }
                 if lhs.primaryGrade != rhs.primaryGrade { return lhs.primaryGrade > rhs.primaryGrade }
                 let ls = lhs.secondaryGrades.reduce(0) { $0 + $1.rankValue }
                 let rs = rhs.secondaryGrades.reduce(0) { $0 + $1.rankValue }
                 if ls != rs { return ls > rs }
+                if lhs.met(.supporting) != rhs.met(.supporting) { return lhs.met(.supporting) > rhs.met(.supporting) }
                 if lhs.tierScore != rhs.tierScore { return lhs.tierScore > rhs.tierScore }
                 return tiebreak(lhs.city.id, input.seed) < tiebreak(rhs.city.id, input.seed)
             }
@@ -67,7 +81,9 @@ nonisolated enum CityRanker {
         let rest = Array(ranked.dropFirst(2))
         guard let first = ranked.first else { return [] }
         let explore = rest
-            .filter { $0.status == first.status && $0.primaryGrade == first.primaryGrade }
+            .filter {
+                $0.needsCheck == first.needsCheck && $0.met(.core) == first.met(.core) && $0.primaryGrade == first.primaryGrade
+            }
             .min { tiebreak($0.city.id, seed &+ 1) < tiebreak($1.city.id, seed &+ 1) }
         if let explore {
             picks.append(CityPick(ranked: explore, isExploration: true))
@@ -90,13 +106,19 @@ nonisolated enum CityRanker {
                 guard let tier = input.tiers.tier(of: concept), let weight = tierWeights[tier] else { return sum }
                 return sum + weight * grade(city, concept, catalog: catalog, month: input.month).confirmed.rankValue
             }
+        let results = input.conditions.map {
+            ConditionResult(condition: $0, status: CityConditionJudge.status(of: $0, city: city, catalog: catalog, month: input.month))
+        }
+        // 필수 조건의 불충족이 확인된 도시는 후보에서 뺀다. 확인하지 못한 것은 빼지 않는다.
+        if results.contains(where: { $0.condition.level == .required && $0.status == .notMet }) { return nil }
         return RankedCity(
             city: city,
             status: confirmed ? .confirmed : .needsSeasonCheck,
             primaryGrade: confirmed ? primary.confirmed : primary.possible,
             secondaryGrades: secondaryGrades,
             unverifiedSubconcepts: confirmed ? [] : primary.unverified,
-            tierScore: tierScore
+            tierScore: tierScore,
+            conditionResults: results
         )
     }
 

@@ -14,8 +14,30 @@ nonisolated struct CityLLMResponse: Codable, Equatable, Sendable {
         let cost: CostRange?
     }
 
+    struct MemoryUse: Codable, Equatable, Sendable {
+        let id: String
+        let how: String
+    }
+
     let understanding: String
     let cards: [Card]
+    var memoriesUsed: [MemoryUse] = []
+
+    enum CodingKeys: String, CodingKey {
+        case understanding, cards
+        case memoriesUsed = "memories_used"
+    }
+
+    init(understanding: String, cards: [Card], memoriesUsed: [MemoryUse] = []) {
+        self.understanding = understanding; self.cards = cards; self.memoriesUsed = memoriesUsed
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        understanding = try c.decode(String.self, forKey: .understanding)
+        cards = try c.decode([Card].self, forKey: .cards)
+        memoriesUsed = (try? c.decodeIfPresent([MemoryUse].self, forKey: .memoriesUsed)) ?? []
+    }
 }
 
 nonisolated enum CityResponseError: Error, Equatable {
@@ -23,6 +45,7 @@ nonisolated enum CityResponseError: Error, Equatable {
     case wrongCards
     case emptyReason(String)
     case invalidCost(String)
+    case unknownMemory(String)
     case internalTermLeaked(String)
 }
 
@@ -41,7 +64,12 @@ nonisolated enum CityResponseValidator {
         return response
     }
 
-    static func validate(_ response: CityLLMResponse, cardIDs: [String], requiresCost: Bool) throws {
+    static func validate(
+        _ response: CityLLMResponse, cardIDs: [String], requiresCost: Bool, memoryIDs: Set<String> = []
+    ) throws {
+        if let unknown = response.memoriesUsed.first(where: { !memoryIDs.contains($0.id) }) {
+            throw CityResponseError.unknownMemory(unknown.id)
+        }
         guard response.cards.map(\.id) == cardIDs else { throw CityResponseError.wrongCards }
         for card in response.cards {
             guard !card.reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -56,5 +84,20 @@ nonisolated enum CityResponseValidator {
                 throw CityResponseError.internalTermLeaked(term)
             }
         }
+    }
+}
+
+nonisolated struct CityConditionResponse: Codable, Equatable, Sendable {
+    let conditions: [CityCondition]
+}
+
+nonisolated extension CityResponseValidator {
+    static func parseConditions(_ text: String) throws -> [CityCondition] {
+        guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start < end,
+              let data = String(text[start...end]).data(using: .utf8),
+              let response = try? JSONDecoder().decode(CityConditionResponse.self, from: data) else {
+            throw CityResponseError.notJSON
+        }
+        return response.conditions
     }
 }

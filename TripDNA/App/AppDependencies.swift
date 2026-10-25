@@ -168,6 +168,9 @@ final class AppDependencies {
     func deleteAccount(session: SessionStore) async throws {
         try await store.deleteAllUserData()
         try LocalPhotoStore.deleteAll()
+        // 추천 기록에는 메모 원문과 요청 문장이 있다. 전체 삭제에 포함하고, 실패는 호출자가 사용자에게 알린다.
+        try CityRecommendationLog.standard.deleteAll()
+        CityMemoryConsent.reset()
         EvaluationNotificationService.clearAll()
         UserDefaults.standard.removeObject(forKey: AutoPhotoFallbackService.consentKey)
         UserDefaults.standard.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")

@@ -61,6 +61,12 @@ struct RecommendationInputSheet: View {
                 }
             }
 
+            Text(CityRecommendationSection.sendNotice)
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DNASpacing.gutter)
+
             Button(action: submit) {
                 Text("추천 받기")
                     .dnaFont(size: 16, weight: .semibold)

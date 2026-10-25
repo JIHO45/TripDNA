@@ -58,6 +58,13 @@ struct SettingsRootView: View {
                 }
                 .listRowBackground(Color.dnaSurface1)
 
+                #if DEBUG
+                Section("개발용") {
+                    link("LLM API 키") { DevKeyForm() }
+                }
+                .listRowBackground(Color.dnaSurface1)
+                #endif
+
                 Section {
                     // 문서 주소가 정해지기 전까지 이동하지 않는 자리표시자다.
                     Text("개인정보 처리방침").foregroundStyle(Color.dnaTextPrimary)

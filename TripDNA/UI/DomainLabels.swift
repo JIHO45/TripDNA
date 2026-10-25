@@ -127,7 +127,7 @@ extension TripPurpose {
 extension TripConcept {
     /// 화면에 보이는 짧은 이름(2026-10-24 디자인 결정). `data/experience-categories.json`의 `label_ko`는
     /// 자료용 이름이라 다를 수 있다. `event`만 그 파일에 없다.
-    var labelKo: String {
+    nonisolated var labelKo: String {
         switch self {
         case .cityExploration: "도시"
         case .natureScenery: "자연"

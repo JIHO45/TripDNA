@@ -41,7 +41,7 @@ final class HomeViewModel {
         trips = await dependencies.allTrips()
         photos = (try? await dependencies.store.photos(tripID: nil)) ?? []
         tiers = try? await dependencies.store.loadWantedTiers()
-        savedCities = await dependencies.store.cityState().saved.sorted { $0.savedAt > $1.savedAt }
+        savedCities = ((try? await dependencies.store.cityState().saved) ?? []).sorted { $0.savedAt > $1.savedAt }
         banner = WrappedBanner.make(now: Date(), trips: trips, service: dependencies.wrappedService)
     }
 

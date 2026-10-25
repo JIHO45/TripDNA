@@ -678,9 +678,9 @@ struct CityStateTests {
         defer { try? FileManager.default.removeItem(at: dir) }
         let record = try await Self.record(dir: dir)
         let store = InMemoryAppStore(countries: [], tags: [])
-        await store.updateCityState { $0.lastRecord = record }
+        try await store.updateCityState { $0.lastRecord = record }
 
-        let restored = try #require(await store.cityState().lastRecord)
+        let restored = try #require(try await store.cityState().lastRecord)
         #expect(restored.cards == record.cards)
         let firstCity = restored.cards[0].cityID
         let secondCountry = restored.cards[1].country
@@ -696,13 +696,13 @@ struct CityStateTests {
         defer { try? FileManager.default.removeItem(at: url) }
         do {
             let store = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
-            await store.updateCityState {
+            try await store.updateCityState {
                 $0.save(Self.card("kyoto"), conditionSummary: "미식 · 11월 · 3박")
                 $0.exclude(Self.card("osaka"))
             }
         }
         let reopened = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
-        let state = await reopened.cityState()
+        let state = try await reopened.cityState()
         #expect(state.saved.map(\.id) == ["kyoto"])
         #expect(state.saved.first?.conditionSummary == "미식 · 11월 · 3박")
         #expect(state.saved.first?.card == Self.card("kyoto"))
@@ -744,14 +744,14 @@ struct CityStateTests {
             InMemoryAppStore(countries: [], tags: [])
         ]
         for store in stores {
-            await store.updateCityState {
+            try await store.updateCityState {
                 $0.save(Self.card("kyoto"), conditionSummary: "x")
                 $0.exclude(Self.card("osaka"))
                 $0.lastRecord = record
             }
-            #expect(await store.cityState().saved.count == 1)
+            #expect(try await store.cityState().saved.count == 1)
             try await store.deleteAllUserData()
-            #expect(await store.cityState() == CityRecommendationState())
+            #expect(try await store.cityState() == CityRecommendationState())
         }
     }
 
@@ -789,5 +789,113 @@ struct CityStateTests {
         request.nights = 3
         request.budgetMaxKRW = 1_000_000
         #expect(request.summaryText == "미식 · 11월 · 3박 · 1인 100만원 이하")
+    }
+
+    // MARK: 저장 실패 처리
+
+    /// 읽기·저장을 골라 실패시키는 저장소. 저장 호출 횟수를 센다.
+    final class FlakyRepository: UserProfileRepository, @unchecked Sendable {
+        struct Failure: Error {}
+        var state = CityRecommendationState()
+        var failLoad = false
+        var failSave = false
+        var saveCalls = 0
+        func loadCityState() async throws -> CityRecommendationState {
+            if failLoad { throw Failure() }
+            return state
+        }
+        func saveCityState(_ state: CityRecommendationState) async throws {
+            saveCalls += 1
+            if failSave { throw Failure() }
+            self.state = state
+        }
+        func loadProfile() async throws -> UserProfile? { nil }
+        func saveProfile(_ profile: UserProfile) async throws {}
+        func loadInterestTagIDs() async throws -> Set<String> { [] }
+        func saveInterestTagIDs(_ ids: Set<String>) async throws {}
+        func loadWantedTiers() async throws -> WantedConceptTiers? { nil }
+        func saveWantedTiers(_ tiers: WantedConceptTiers) async throws {}
+        func loadOnboardingDraft() async throws -> OnboardingDraft? { nil }
+        func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws {}
+    }
+
+    @Test func failedLoadDoesNotWriteAndPropagates() async throws {
+        let repo = FlakyRepository()
+        repo.state.save(Self.card("kyoto"), conditionSummary: "")
+        repo.failLoad = true
+        await #expect(throws: FlakyRepository.Failure.self) {
+            try await repo.updateCityState { $0.save(Self.card("osaka"), conditionSummary: "") }
+        }
+        #expect(repo.saveCalls == 0)
+        // 읽기가 돌아오면 기존 저장이 그대로 있다.
+        repo.failLoad = false
+        #expect(repo.state.saved.map(\.id) == ["kyoto"])
+    }
+
+    @Test func failedSavePropagatesAndLeavesStoredStateUnchanged() async throws {
+        let repo = FlakyRepository()
+        repo.state.save(Self.card("kyoto"), conditionSummary: "")
+        repo.failSave = true
+        var shown = repo.state
+        await #expect(throws: FlakyRepository.Failure.self) {
+            // 호출자는 성공했을 때만 화면 상태를 바꾼다.
+            shown = try await repo.updateCityState { $0.exclude(Self.card("osaka")) }
+        }
+        #expect(shown.excluded.isEmpty)
+        #expect(repo.state.excluded.isEmpty)
+        #expect(repo.state.saved.map(\.id) == ["kyoto"])
+    }
+
+    // MARK: 저장한 도시의 원래 요청
+
+    @Test func savedCityKeepsItsRequestAndOldRecordsStillDecode() throws {
+        var request = CityRecommendationServiceTests.request()
+        request.month = 11
+        var state = CityRecommendationState()
+        state.save(Self.card("kyoto"), conditionSummary: request.summaryText, request: request)
+        let decoded = try JSONDecoder().decode(CityRecommendationState.self, from: JSONEncoder().encode(state))
+        #expect(decoded.saved.first?.request == request)
+        #expect(decoded.saved.first?.summary == request.summaryText)
+
+        var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(state)) as? [String: Any])
+        var saved = try #require(object["saved"] as? [[String: Any]])
+        saved[0].removeValue(forKey: "request")
+        saved[0]["conditionSummary"] = "예전 요약"
+        object["saved"] = saved
+        let old = try JSONDecoder().decode(CityRecommendationState.self, from: JSONSerialization.data(withJSONObject: object))
+        #expect(old.saved.first?.request == nil)
+        #expect(old.saved.first?.summary == "예전 요약")
+    }
+
+    // MARK: 넘기기·제외 뒤 채우기
+
+    @Test func refillTakesNextPoolCityAndNeverReshowsOrExcluded() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
+        let record = try await Self.record(dir: dir)
+        #expect(record.cards.count == 3)
+        let shown = Set(record.cards.map(\.cityID))
+        let skipped = record.cards[0].cityID
+
+        // 하나를 넘기면 이미 보여준 도시를 뺀 풀의 코드 순서 다음 도시 하나가 온다.
+        let next = try #require(record.poolCityIDs.first { !shown.contains($0) })
+        let filled = service.refill(record, count: 1, shown: shown, removedCities: [skipped], removedCountries: [])
+        #expect(filled.map(\.cityID) == [next])
+
+        // 다음 후보까지 제외하면 그 도시는 건너뛴다.
+        let after = try #require(record.poolCityIDs.first { !shown.contains($0) && $0 != next })
+        let skipNext = service.refill(record, count: 1, shown: shown, removedCities: [skipped, next], removedCountries: [])
+        #expect(skipNext.map(\.cityID) == [after])
+
+        // 풀이 소진되면 채우지 않는다.
+        let exhausted = service.refill(
+            record, count: 1, shown: Set(record.poolCityIDs), removedCities: [skipped], removedCountries: []
+        )
+        #expect(exhausted.isEmpty)
+        // 남은 후보가 요청한 수보다 적으면 있는 만큼만 채운다.
+        let all = service.refill(record, count: 100, shown: shown, removedCities: [], removedCountries: [])
+        #expect(all.count <= record.poolCityIDs.count - shown.count)
+        #expect(all.allSatisfy { !shown.contains($0.cityID) })
     }
 }

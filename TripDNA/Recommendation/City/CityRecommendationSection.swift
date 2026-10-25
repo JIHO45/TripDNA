@@ -20,6 +20,10 @@ final class CityRecommendationViewModel {
     private(set) var skippedCityIDs: Set<String> = []
     /// 방금 "다시 추천하지 않기"한 도시. 되돌리기 안내에 쓴다.
     private(set) var exclusionNotice: ExcludedCity?
+    /// 저장·제외를 저장하지 못했을 때 화면에 띄울 짧은 안내.
+    private(set) var actionError: String?
+    /// 넘기기·제외로 빈 자리를 채운 카드. 이번 결과에서만 쓴다.
+    private(set) var refills: [CityRecommendationRecord.Card] = []
     /// 마지막으로 요청한 조건. 실패했을 때 다시 시도에 쓴다.
     private(set) var lastRequest: RecommendationRequest?
     private var task: Task<Void, Never>?
@@ -35,7 +39,7 @@ final class CityRecommendationViewModel {
     func isSaved(_ cityID: String) -> Bool { saved.contains { $0.id == cityID } }
 
     func visibleCards(_ record: CityRecommendationRecord) -> [CityRecommendationRecord.Card] {
-        record.visibleCards(excludedCities: Set(excluded.map(\.cityID)), excludedCountries: hiddenCountries)
+        (record.cards + refills).visible(excludedCities: Set(excluded.map(\.cityID)), excludedCountries: hiddenCountries)
             .filter { !skippedCityIDs.contains($0.cityID) }
     }
 
@@ -43,15 +47,17 @@ final class CityRecommendationViewModel {
 
     /// 저장한 도시·제외와 마지막 결과를 읽는다. 화면에 올 때마다 불러 설정에서 바뀐 제외를 반영한다.
     func restore(dependencies: AppDependencies) async {
-        let stored = await dependencies.store.cityState()
-        saved = stored.saved
-        excluded = stored.excluded
+        // 읽지 못하면 기존 목록을 그대로 둔다. 빈 상태로 바꾸지 않는다.
+        let loaded = try? await dependencies.store.cityState()
+        let stored = loaded ?? CityRecommendationState()
+        if loaded != nil { saved = stored.saved; excluded = stored.excluded }
         hiddenCountries = Set((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
         if state == .idle, lastRecord == nil, let record = stored.lastRecord {
             lastRecord = record
             lastRequest = record.input
             state = .done(record)
         }
+        fillVacancies()
     }
 
     // MARK: 추천받기
@@ -63,13 +69,14 @@ final class CityRecommendationViewModel {
         if let derived = service.recut(lastRecord, budgetMaxKRW: budgetMaxKRW) {
             self.lastRecord = derived
             skippedCityIDs = []
+            refills = []
             state = .done(derived)
         }
     }
 
     func applyBudget(_ budgetMaxKRW: Int, dependencies: AppDependencies) async {
         updateBudget(budgetMaxKRW)
-        if let lastRecord { await dependencies.store.updateCityState { $0.lastRecord = lastRecord } }
+        if let lastRecord { try? await dependencies.store.updateCityState { $0.lastRecord = lastRecord } }
     }
 
     /// 추천받기. 취소할 수 있게 작업을 들고 있는다.
@@ -118,7 +125,11 @@ final class CityRecommendationViewModel {
         excludedCountries.formUnion((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
         let homeExcluded = dependencies.homeCountryCode != nil && !request.includeHomeCountry
         if homeExcluded, let home = dependencies.homeCountryCode { excludedCountries.insert(home) }
-        let excludedCities = await dependencies.store.cityState().excludedCityIDs
+        // 제외 목록을 읽지 못하면 제외한 도시가 다시 나올 수 있으므로 추천을 받지 않는다.
+        guard let excludedCities = try? await dependencies.store.cityState().excludedCityIDs else {
+            state = .failed("제외한 도시를 읽지 못했어요. 다시 시도해 주세요.")
+            return
+        }
 
         let memories = CityMemoryConsent.state == .granted
             ? CityMemory.recent(from: await dependencies.allTrips())
@@ -134,8 +145,9 @@ final class CityRecommendationViewModel {
             guard !Task.isCancelled else { return }
             lastRecord = record
             skippedCityIDs = []
+            refills = []
             state = .done(record)
-            await dependencies.store.updateCityState { $0.lastRecord = record }
+            try? await dependencies.store.updateCityState { $0.lastRecord = record }
         } catch {
             guard !Task.isCancelled else { return }
             switch error {
@@ -151,33 +163,68 @@ final class CityRecommendationViewModel {
 
     // MARK: 카드 행동
 
-    /// 이번 결과에서만 넘긴다. 영구 제외가 아니다.
-    func skip(_ cityID: String) { skippedCityIDs.insert(cityID) }
-
-    func toggleSave(_ card: CityRecommendationRecord.Card, dependencies: AppDependencies) async {
-        let summary = lastRecord?.input.summaryText ?? ""
-        let wasSaved = isSaved(card.cityID)
-        let updated = await dependencies.store.updateCityState {
-            if wasSaved { $0.unsave(cityID: card.cityID) } else { $0.save(card, conditionSummary: summary) }
-        }
-        saved = updated.saved
+    /// 이번 결과에서만 넘긴다. 영구 제외가 아니다. 빈 자리는 같은 풀의 다음 도시로 채운다.
+    func skip(_ cityID: String) {
+        skippedCityIDs.insert(cityID)
+        fillVacancies()
     }
 
-    /// 도시를 계속 뺀다. 다음 추천의 순위 계산에서 빠지고, 지금 결과에서도 숨긴다.
+    static let saveFailure = "저장하지 못했어요. 다시 시도해 주세요."
+
+    func toggleSave(_ card: CityRecommendationRecord.Card, dependencies: AppDependencies) async {
+        let request = lastRecord?.input
+        let wasSaved = isSaved(card.cityID)
+        do {
+            let updated = try await dependencies.store.updateCityState {
+                if wasSaved { $0.unsave(cityID: card.cityID) } else { $0.save(card, conditionSummary: request?.summaryText ?? "", request: request) }
+            }
+            saved = updated.saved
+            actionError = nil
+        } catch {
+            actionError = Self.saveFailure
+        }
+    }
+
+    /// 도시를 계속 뺀다. 다음 추천의 순위 계산에서 빠지고, 지금 결과에서도 숨긴다. 저장에 실패하면 그대로 둔다.
     func exclude(_ card: CityRecommendationRecord.Card, dependencies: AppDependencies) async {
-        let updated = await dependencies.store.updateCityState { $0.exclude(card) }
-        excluded = updated.excluded
-        exclusionNotice = updated.excluded.first { $0.cityID == card.cityID }
+        do {
+            let updated = try await dependencies.store.updateCityState { $0.exclude(card) }
+            excluded = updated.excluded
+            exclusionNotice = updated.excluded.first { $0.cityID == card.cityID }
+            actionError = nil
+            fillVacancies()
+        } catch {
+            actionError = Self.saveFailure
+        }
     }
 
     func undoExclusion(dependencies: AppDependencies) async {
         guard let notice = exclusionNotice else { return }
-        exclusionNotice = nil
-        let updated = await dependencies.store.updateCityState { $0.release(cityID: notice.cityID) }
-        excluded = updated.excluded
+        do {
+            let updated = try await dependencies.store.updateCityState { $0.release(cityID: notice.cityID) }
+            excluded = updated.excluded
+            exclusionNotice = nil
+            actionError = nil
+        } catch {
+            actionError = Self.saveFailure
+        }
     }
 
     func dismissExclusionNotice() { exclusionNotice = nil }
+
+    func dismissActionError() { actionError = nil }
+
+    /// 넘기거나 제외해 빈 자리가 생기면 저장된 응답에서 다음 도시로 채운다. LLM을 부르지 않는다.
+    private func fillVacancies(catalog: CityCatalog? = CityCatalog.load()) {
+        guard let record = lastRecord else { return }
+        let vacancies = record.cards.count - visibleCards(record).count
+        guard vacancies > 0, let catalog else { return }
+        let service = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
+        refills += service.refill(
+            record, count: vacancies, shown: Set((record.cards + refills).map(\.cityID)),
+            removedCities: skippedCityIDs.union(excluded.map(\.cityID)), removedCountries: hiddenCountries
+        )
+    }
 }
 
 #if DEBUG

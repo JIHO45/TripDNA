@@ -7,6 +7,26 @@ nonisolated struct SavedCity: Codable, Equatable, Sendable, Identifiable {
     let savedAt: Date
     /// 저장할 때의 요청 조건 한 줄 요약(`RecommendationRequest.summaryText`).
     let conditionSummary: String
+    /// 저장할 때의 요청 조건 전체. 예전 기록에는 없다.
+    let request: RecommendationRequest?
+
+    init(card: CityRecommendationRecord.Card, savedAt: Date, conditionSummary: String, request: RecommendationRequest? = nil) {
+        self.card = card
+        self.savedAt = savedAt
+        self.conditionSummary = conditionSummary
+        self.request = request
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        card = try c.decode(CityRecommendationRecord.Card.self, forKey: .card)
+        savedAt = try c.decode(Date.self, forKey: .savedAt)
+        conditionSummary = try c.decode(String.self, forKey: .conditionSummary)
+        request = try c.decodeIfPresent(RecommendationRequest.self, forKey: .request)
+    }
+
+    /// 보여줄 조건 요약. 요청이 있으면 거기서 만들고, 예전 기록은 저장해 둔 문장을 쓴다.
+    var summary: String { request?.summaryText ?? conditionSummary }
 }
 
 /// "다시 추천하지 않기"로 뺀 도시. 순위 계산에서 빠지고 설정에서 풀 수 있다.
@@ -37,9 +57,11 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
 
     var excludedCityIDs: Set<String> { Set(excluded.map(\.cityID)) }
 
-    mutating func save(_ card: CityRecommendationRecord.Card, conditionSummary: String, now: Date = Date()) {
+    mutating func save(
+        _ card: CityRecommendationRecord.Card, conditionSummary: String, request: RecommendationRequest? = nil, now: Date = Date()
+    ) {
         saved.removeAll { $0.id == card.cityID }
-        saved.insert(SavedCity(card: card, savedAt: now, conditionSummary: conditionSummary), at: 0)
+        saved.insert(SavedCity(card: card, savedAt: now, conditionSummary: conditionSummary, request: request), at: 0)
     }
 
     mutating func unsave(cityID: String) { saved.removeAll { $0.id == cityID } }
@@ -55,16 +77,14 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
 }
 
 extension UserProfileRepository {
-    func cityState() async -> CityRecommendationState {
-        (try? await loadCityState()) ?? CityRecommendationState()
-    }
+    func cityState() async throws -> CityRecommendationState { try await loadCityState() }
 
-    /// 읽고, 고치고, 저장한다. 저장에 실패해도 고친 상태를 돌려줘 화면은 이어진다.
+    /// 읽고, 고치고, 저장한다. 읽기나 저장에 실패하면 던지고, 읽지 못했을 때는 저장하지 않아 기존 상태를 덮어쓰지 않는다.
     @discardableResult
-    func updateCityState(_ change: (inout CityRecommendationState) -> Void) async -> CityRecommendationState {
-        var state = await cityState()
+    func updateCityState(_ change: (inout CityRecommendationState) -> Void) async throws -> CityRecommendationState {
+        var state = try await loadCityState()
         change(&state)
-        try? await saveCityState(state)
+        try await saveCityState(state)
         return state
     }
 }
@@ -73,7 +93,13 @@ extension CityRecommendationRecord {
     /// 화면에 보일 카드. 받은 뒤에 "다시 추천하지 않기"한 도시·나라와, 필수 조건 위반이 확인된 카드는 보이지 않는다.
     /// 결과 저장은 그대로 두고 보여줄 때 거른다.
     func visibleCards(excludedCities: Set<String>, excludedCountries: Set<String>) -> [Card] {
-        cards.filter {
+        cards.visible(excludedCities: excludedCities, excludedCountries: excludedCountries)
+    }
+}
+
+extension Array where Element == CityRecommendationRecord.Card {
+    func visible(excludedCities: Set<String>, excludedCountries: Set<String>) -> [Element] {
+        filter {
             !excludedCities.contains($0.cityID) && !excludedCountries.contains($0.country) && !$0.violatesRequiredCondition
         }
     }

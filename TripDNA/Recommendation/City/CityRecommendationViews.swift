@@ -28,6 +28,11 @@ struct CityRecommendationSection: View {
                 resultBody(record, isPrevious: false)
             }
             if let notice = model.exclusionNotice { exclusionBanner(notice) }
+            if let message = model.actionError {
+                Text(message)
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaError)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .sheet(isPresented: $showingEdit) { CityConditionEditSheet(model: model, onNewRequest: onNewRequest) }
@@ -108,14 +113,14 @@ struct CityRecommendationSection: View {
                 Text("추천 도시 \(main.count)곳")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                CityCardCarousel(cards: main, model: model, summary: record.input.summaryText)
+                CityCardCarousel(cards: main, model: model, request: record.input)
             }
             if !record.budgetCutCityIDs.isEmpty {
                 Text("예상 비용이 예산을 넘는 \(record.budgetCutCityIDs.count)곳은 뺐어요.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
-            if !check.isEmpty { checkGroup(check, summary: record.input.summaryText) }
+            if !check.isEmpty { checkGroup(check, request: record.input) }
         }
     }
 
@@ -161,7 +166,7 @@ struct CityRecommendationSection: View {
     }
 
     /// "추가 확인 필요" 묶음. 기본 추천과 섞지 않고 확인할 조건 이름을 적는다.
-    private func checkGroup(_ cards: [CityRecommendationRecord.Card], summary: String) -> some View {
+    private func checkGroup(_ cards: [CityRecommendationRecord.Card], request: RecommendationRequest) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
             Text("추가 확인 필요 \(cards.count)곳")
                 .dnaFont(.sectionTitle)
@@ -170,8 +175,9 @@ struct CityRecommendationSection: View {
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             ForEach(cards, id: \.cityID) { card in
+                HStack(spacing: 0) {
                 NavigationLink {
-                    CityDetailView(card: card, conditionSummary: summary, savedAt: nil)
+                    CityDetailView(card: card, conditionSummary: request.summaryText, request: request, savedAt: nil)
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -189,9 +195,11 @@ struct CityRecommendationSection: View {
                             .foregroundStyle(Color.dnaTextTertiary)
                     }
                     .padding(DNASpacing.md)
-                    .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                CityCardMenu(card: card, model: model)
+                }
+                .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             }
         }
     }
@@ -222,7 +230,7 @@ struct CityRecommendationSection: View {
 private struct CityCardCarousel: View {
     let cards: [CityRecommendationRecord.Card]
     let model: CityRecommendationViewModel
-    let summary: String
+    let request: RecommendationRequest
     @State private var page: String?
 
     private var index: Int { cards.firstIndex { $0.cityID == page } ?? 0 }
@@ -232,7 +240,7 @@ private struct CityCardCarousel: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DNASpacing.sm) {
                     ForEach(cards, id: \.cityID) { card in
-                        CityCardView(card: card, model: model, summary: summary)
+                        CityCardView(card: card, model: model, request: request)
                             .containerRelativeFrame(.horizontal) { width, _ in width * (cards.count > 1 ? 0.9 : 1) }
                             .id(card.cityID)
                     }
@@ -279,13 +287,13 @@ private struct CityCardCarousel: View {
 private struct CityCardView: View {
     let card: CityRecommendationRecord.Card
     let model: CityRecommendationViewModel
-    let summary: String
+    let request: RecommendationRequest
     @Environment(AppDependencies.self) private var dependencies
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             NavigationLink {
-                CityDetailView(card: card, conditionSummary: summary, savedAt: nil)
+                CityDetailView(card: card, conditionSummary: request.summaryText, request: request, savedAt: nil)
             } label: {
                 content
             }
@@ -340,19 +348,38 @@ private struct CityCardView: View {
                     .dnaGlass(in: Circle())
             }
             .accessibilityLabel(isSaved ? "저장 해제" : "저장")
-            Menu {
-                Button("이번 결과에서 넘기기", systemImage: "arrow.right") { model.skip(card.cityID) }
-                Button("다시 추천하지 않기", systemImage: "hand.raised", role: .destructive) {
-                    Task { await model.exclude(card, dependencies: dependencies) }
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .foregroundStyle(Color.dnaTextPrimary)
-                    .frame(width: 44, height: 44)
-                    .dnaGlass(in: Circle())
-            }
-            .accessibilityLabel("더 보기")
+            CityCardMenu(card: card, model: model, glass: true)
         }
+    }
+}
+
+/// 카드 더 보기 메뉴. 결과 카드와 "추가 확인 필요" 행이 같이 쓴다.
+private struct CityCardMenu: View {
+    let card: CityRecommendationRecord.Card
+    let model: CityRecommendationViewModel
+    var glass = false
+    @Environment(AppDependencies.self) private var dependencies
+
+    var body: some View {
+        Menu {
+            Button("이번 결과에서 넘기기", systemImage: "arrow.right") { model.skip(card.cityID) }
+            Button("다시 추천하지 않기", systemImage: "hand.raised", role: .destructive) {
+                Task { await model.exclude(card, dependencies: dependencies) }
+            }
+        } label: {
+            if glass {
+                icon.dnaGlass(in: Circle())
+            } else {
+                icon
+            }
+        }
+        .accessibilityLabel("더 보기")
+    }
+
+    private var icon: some View {
+        Image(systemName: "ellipsis")
+            .foregroundStyle(Color.dnaTextPrimary)
+            .frame(width: 44, height: 44)
     }
 }
 
@@ -413,14 +440,22 @@ private struct CityBadgeView: View {
 struct CityDetailView: View {
     let card: CityRecommendationRecord.Card
     let conditionSummary: String
+    /// 저장하거나 받을 때의 요청. 있으면 조건 요약을 여기서 만든다.
+    var request: RecommendationRequest?
     /// 저장한 도시에서 열었을 때만 값이 있다.
     let savedAt: Date?
     @Environment(AppDependencies.self) private var dependencies
     @State private var isSaved = false
+    @State private var cityExcluded = false
+    @State private var countryExcluded = false
+    @State private var errorMessage: String?
+
+    private var summary: String { request?.summaryText ?? conditionSummary }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
+                if cityExcluded || countryExcluded { exclusionRow }
                 CityNameArea(card: card, height: 160)
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                 basis
@@ -465,19 +500,65 @@ struct CityDetailView: View {
                 Text("날짜·동행은 자동으로 정하지 않아요")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
+                if let errorMessage {
+                    Text(errorMessage)
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaError)
+                }
             }
         }
-        .task { isSaved = await dependencies.store.cityState().saved.contains { $0.id == card.cityID } }
+        .task {
+            let state = try? await dependencies.store.cityState()
+            isSaved = state?.saved.contains { $0.id == card.cityID } ?? false
+            // 도시 제외는 따로 저장되고, 나라 제외는 평가 서비스에 있다.
+            countryExcluded = ((try? await dependencies.recommendationService.activeDislikes()) ?? [])
+                .contains { $0.countryCode == card.country }
+            cityExcluded = state?.excludedCityIDs.contains(card.cityID) ?? false
+        }
+    }
+
+    private var exclusionRow: some View {
+        HStack(spacing: DNASpacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(cityExcluded ? "추천에서 제외한 도시예요" : "추천에서 제외한 나라예요")
+                    .dnaFont(.body)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                if countryExcluded {
+                    Text("나라 제외는 설정 > 추천에서 제외한 곳에서 풀 수 있어요")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+            }
+            Spacer(minLength: 0)
+            if cityExcluded {
+                Button("제외 풀기") { Task { await releaseExclusion() } }
+                    .dnaFont(.button)
+                    .foregroundStyle(Color.dnaActionText)
+                    .frame(minHeight: 44)
+            }
+        }
+        .padding(DNASpacing.md)
+        .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+    }
+
+    private func releaseExclusion() async {
+        do {
+            try await dependencies.store.updateCityState { $0.release(cityID: card.cityID) }
+            errorMessage = nil
+            cityExcluded = false
+        } catch {
+            errorMessage = CityRecommendationViewModel.saveFailure
+        }
     }
 
     @ViewBuilder
     private var basis: some View {
         if let savedAt {
-            Text("\(savedAt.formatted(.dateTime.year().month().day())) 저장 당시 조건(\(conditionSummary)) 기준이에요. 지금 조건과 다를 수 있어요.")
+            Text("\(savedAt.formatted(.dateTime.year().month().day())) 저장 당시 조건(\(summary)) 기준이에요. 지금 조건과 다를 수 있어요.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaWarning)
-        } else if !conditionSummary.isEmpty {
-            Text("조건: \(conditionSummary)")
+        } else if !summary.isEmpty {
+            Text("조건: \(summary)")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
@@ -506,10 +587,15 @@ struct CityDetailView: View {
 
     private func toggleSave() async {
         let wasSaved = isSaved
-        let updated = await dependencies.store.updateCityState {
-            if wasSaved { $0.unsave(cityID: card.cityID) } else { $0.save(card, conditionSummary: conditionSummary) }
+        do {
+            let updated = try await dependencies.store.updateCityState {
+                if wasSaved { $0.unsave(cityID: card.cityID) } else { $0.save(card, conditionSummary: summary, request: request) }
+            }
+            isSaved = updated.saved.contains { $0.id == card.cityID }
+            errorMessage = nil
+        } catch {
+            errorMessage = CityRecommendationViewModel.saveFailure
         }
-        isSaved = updated.saved.contains { $0.id == card.cityID }
     }
 }
 

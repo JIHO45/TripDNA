@@ -112,7 +112,7 @@ struct SettingsRootView: View {
             wantedSummary = tiers.tier1.isEmpty ? nil : "가장 원해요 \(tiers.tier1.count)개"
             memoryCount = (tiers.avoidNote ?? "").isEmpty ? nil : "1개"
         }
-        let cityState = await dependencies.store.cityState()
+        let cityState = (try? await dependencies.store.cityState()) ?? CityRecommendationState()
         let excluded = ((try? await dependencies.recommendationService.activeDislikes())?.count ?? 0) + cityState.excluded.count
         excludedCount = excluded > 0 ? "\(excluded)곳" : nil
         savedCount = cityState.saved.isEmpty ? nil : "\(cityState.saved.count)곳"

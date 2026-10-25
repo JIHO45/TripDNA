@@ -192,10 +192,15 @@ struct ExclusionsSettingsView: View {
     }
 
     private func releaseCity(_ city: ExcludedCity) async {
-        cities = await dependencies.store.updateCityState { $0.release(cityID: city.cityID) }.excluded
+        do {
+            cities = try await dependencies.store.updateCityState { $0.release(cityID: city.cityID) }.excluded
+        } catch {
+            toast = SettingsToast(message: "저장하지 못했어요. 다시 시도해 주세요.")
+            return
+        }
         let store = dependencies.store
         toast = SettingsToast(message: "\(city.cityName) 제외를 풀었어요", undo: {
-            _ = await store.updateCityState { state in
+            _ = try? await store.updateCityState { state in
                 state.excluded.removeAll { $0.cityID == city.cityID }
                 state.excluded.insert(city, at: 0)
             }
@@ -233,7 +238,7 @@ struct ExclusionsSettingsView: View {
 
     private func reload() async {
         items = (try? await dependencies.recommendationService.activeDislikes()) ?? []
-        cities = await dependencies.store.cityState().excluded
+        cities = (try? await dependencies.store.cityState().excluded) ?? []
     }
 
     private func release(_ item: CardFeedback) async {

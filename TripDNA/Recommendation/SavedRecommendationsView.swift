@@ -7,6 +7,7 @@ struct SavedRecommendationsView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(\.dismiss) private var dismiss
     @State private var cities: [SavedCity] = []
+    @State private var errorMessage: String?
 
     var body: some View {
         Group {
@@ -21,6 +22,12 @@ struct SavedRecommendationsView: View {
             } else {
                 ScrollView {
                     VStack(spacing: DNASpacing.md) {
+                        if let errorMessage {
+                            Text(errorMessage)
+                                .dnaFont(.caption)
+                                .foregroundStyle(Color.dnaError)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                         ForEach(cities) { city in
                             cityCard(city)
                         }
@@ -48,7 +55,7 @@ struct SavedRecommendationsView: View {
         .navigationTitle("저장한 도시")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            cities = await dependencies.store.cityState().saved
+            cities = (try? await dependencies.store.cityState().saved) ?? []
             await viewModel.refreshSavedList(dependencies)
             await viewModel.refreshDislikedList(dependencies)
         }
@@ -60,7 +67,7 @@ struct SavedRecommendationsView: View {
     private func cityCard(_ item: SavedCity) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             NavigationLink {
-                CityDetailView(card: item.card, conditionSummary: item.conditionSummary, savedAt: item.savedAt)
+                CityDetailView(card: item.card, conditionSummary: item.conditionSummary, request: item.request, savedAt: item.savedAt)
             } label: {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     HStack(alignment: .firstTextBaseline) {
@@ -80,8 +87,8 @@ struct SavedRecommendationsView: View {
                         .foregroundStyle(Color.dnaTextPrimary.opacity(0.85))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                    if !item.conditionSummary.isEmpty {
-                        Text("저장 당시 조건: \(item.conditionSummary)")
+                    if !item.summary.isEmpty {
+                        Text("저장 당시 조건: \(item.summary)")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
@@ -92,7 +99,12 @@ struct SavedRecommendationsView: View {
             .buttonStyle(.plain)
             Button {
                 Task {
-                    cities = await dependencies.store.updateCityState { $0.unsave(cityID: item.id) }.saved
+                    do {
+                        cities = try await dependencies.store.updateCityState { $0.unsave(cityID: item.id) }.saved
+                        errorMessage = nil
+                    } catch {
+                        errorMessage = CityRecommendationViewModel.saveFailure
+                    }
                 }
             } label: {
                 Label("저장 해제", systemImage: "bookmark.slash")

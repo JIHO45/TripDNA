@@ -239,11 +239,9 @@ nonisolated struct CityRecommendationService: Sendable {
         return Selection(cards: cards, cutIDs: cutIDs)
     }
 
-    /// 예산만 바꿔 컷을 다시 계산한다. 이미 받은 응답을 쓰므로 LLM을 부르지 않고 횟수도 쓰지 않는다.
-    /// 원래 추천에 예산이 없어 비용 범위가 없으면 nil.
-    func recut(_ record: CityRecommendationRecord, budgetMaxKRW: Int?, now: Date = Date()) -> CityRecommendationRecord? {
+    /// 저장된 응답과 같은 입력으로 후보 풀을 다시 계산한다. 풀이 기록과 다르면(카탈로그가 바뀜) nil.
+    private func replay(_ record: CityRecommendationRecord) -> (pool: [RankedCity], response: CityLLMResponse)? {
         guard let raw = record.rawResponse, let response = try? CityResponseValidator.parse(raw),
-              response.cards.allSatisfy({ $0.cost != nil }),
               let primary = record.input.primary else { return nil }
         let month = record.input.month ?? record.input.startDate.map { Calendar.current.component(.month, from: $0) }
         let input = CityRankingInput(
@@ -252,7 +250,27 @@ nonisolated struct CityRecommendationService: Sendable {
             seed: record.seed, conditions: record.conditions
         )
         let pool = Array(CityRanker.rank(catalog: catalog, input: input).prefix(CityLLMRequestBuilder.poolSize))
-        guard pool.map(\.city.id) == record.poolCityIDs else { return nil }
+        return pool.map(\.city.id) == record.poolCityIDs ? (pool, response) : nil
+    }
+
+    /// 넘기기·제외로 빈 자리를 채울 카드. 저장된 응답에서 같은 풀의 다음 도시를 코드 순서대로 고르며 LLM을 부르지 않는다.
+    /// `shown`(이번 결과에서 이미 보여준 도시)과 `removedCities`·`removedCountries`는 다시 나오지 않는다. 남은 도시가 없으면 적게 돌려준다.
+    func refill(
+        _ record: CityRecommendationRecord, count: Int, shown: Set<String>,
+        removedCities: Set<String>, removedCountries: Set<String>
+    ) -> [CityRecommendationRecord.Card] {
+        guard count > 0, let (pool, response) = replay(record) else { return [] }
+        let candidates = pool.filter {
+            !shown.contains($0.city.id) && !removedCities.contains($0.city.id) && !removedCountries.contains($0.city.country)
+        }
+        let selection = Self.select(pool: candidates, response: response, budget: record.input.budgetMaxKRW, seed: record.seed)
+        return Array(selection.cards.prefix(count))
+    }
+
+    /// 예산만 바꿔 컷을 다시 계산한다. 이미 받은 응답을 쓰므로 LLM을 부르지 않고 횟수도 쓰지 않는다.
+    /// 원래 추천에 예산이 없어 비용 범위가 없으면 nil.
+    func recut(_ record: CityRecommendationRecord, budgetMaxKRW: Int?, now: Date = Date()) -> CityRecommendationRecord? {
+        guard let (pool, response) = replay(record), response.cards.allSatisfy({ $0.cost != nil }) else { return nil }
         var request = record.input
         request.budgetMaxKRW = budgetMaxKRW
         let selection = Self.select(pool: pool, response: response, budget: budgetMaxKRW, seed: record.seed)

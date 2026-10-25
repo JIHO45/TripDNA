@@ -20,6 +20,11 @@ nonisolated struct CityLLMConfiguration: Sendable {
 
     /// 프록시 주소가 있으면 프록시, 없으면 DEBUG 빌드의 Keychain 키, 둘 다 없으면 nil.
     static func makeClient(bundle: Bundle = .main) -> (any CityLLMClient)? {
+        makeSearchClient(bundle: bundle)
+    }
+
+    /// 두 클라이언트 모두 웹 검색 호출도 지원한다. 질문 기능이 쓴다.
+    static func makeSearchClient(bundle: Bundle = .main) -> (any CityLLMClient & CitySearchClient)? {
         if let raw = bundle.object(forInfoDictionaryKey: "CityLLMProxyURL") as? String,
            !raw.isEmpty, let url = URL(string: raw) {
             return CityLLMProxyClient(url: url, model: model)
@@ -34,9 +39,27 @@ nonisolated struct CityLLMConfiguration: Sendable {
 }
 
 /// 프록시 계약: POST {system, user, model, maxTokens} → 200 {"text": "..."}.
-nonisolated struct CityLLMProxyClient: CityLLMClient {
+///
+/// 검색 계약(프록시 서버는 이 저장소에 없고 아직 구현·검증되지 않았다): 같은 주소로
+/// POST {system, user, model, maxTokens, webSearchMaxUses: 3}를 보내면, 서버는 `web_search_20250305` 도구
+/// (max_uses = webSearchMaxUses)를 붙여 Messages API를 호출하고 응답의 `content` 배열과 `stop_reason`을
+/// 가공 없이 → 200 {"content": [...], "stop_reason": "..."}로 돌려줘야 한다.
+nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
     let url: URL
     let model: String
+
+    func completeWithSearch(system: String, user: String, maxUses: Int) async throws -> CitySearchReply {
+        var request = URLRequest(url: url, timeoutInterval: 90)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "system": system, "user": user, "model": model,
+            "maxTokens": String(CityLLMConfiguration.maxTokens), "webSearchMaxUses": maxUses
+        ] as [String: Any])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try Self.check(response)
+        return try JSONDecoder().decode(CitySearchReply.self, from: data)
+    }
 
     func complete(system: String, user: String) async throws -> String {
         var request = URLRequest(url: url, timeoutInterval: 60)
@@ -59,9 +82,36 @@ nonisolated struct CityLLMProxyClient: CityLLMClient {
 }
 
 /// 개발용. 키는 Keychain에서만 읽고 어디에도 기록하지 않는다. 출시 빌드에는 들어가지 않는다.
-nonisolated struct AnthropicDirectClient: CityLLMClient {
+nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
     let apiKey: String
     let model: String
+
+    /// 웹 검색 서버 도구 요청 본문. temperature·top_p·top_k는 보내지 않는다.
+    static func searchBody(model: String, system: String, user: String, maxUses: Int) -> [String: Any] {
+        [
+            "model": model,
+            "max_tokens": CityLLMConfiguration.maxTokens,
+            "system": system,
+            "messages": [["role": "user", "content": user]],
+            "tools": [["type": "web_search_20250305", "name": "web_search", "max_uses": maxUses]]
+        ]
+    }
+
+    func completeWithSearch(system: String, user: String, maxUses: Int) async throws -> CitySearchReply {
+        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!, timeoutInterval: 90)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        request.httpBody = try JSONSerialization.data(
+            withJSONObject: Self.searchBody(model: model, system: system, user: user, maxUses: maxUses)
+        )
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw CityLLMError.http(http.statusCode)
+        }
+        return try JSONDecoder().decode(CitySearchReply.self, from: data)
+    }
 
     func complete(system: String, user: String) async throws -> String {
         var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!, timeoutInterval: 60)

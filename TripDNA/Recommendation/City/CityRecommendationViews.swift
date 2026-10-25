@@ -451,6 +451,10 @@ struct CityDetailView: View {
     @State private var cityExcluded = false
     @State private var countryExcluded = false
     @State private var errorMessage: String?
+    @State private var question = ""
+    @State private var questionState: QuestionState = .idle
+
+    private enum QuestionState { case idle, loading, answered(CityAnswer), failed(String) }
 
     private var summary: String { request?.summaryText ?? conditionSummary }
 
@@ -478,6 +482,7 @@ struct CityDetailView: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
+                questionSection
             }
             .padding(DNASpacing.lg)
         }
@@ -541,6 +546,88 @@ struct CityDetailView: View {
         }
         .padding(DNASpacing.md)
         .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+    }
+
+    // 답은 화면이 열려 있는 동안만 메모리에 둔다. 질문 횟수는 세지 않는다.
+    // 초안: 답의 세 부분 이름(자료 근거 / 조언 / 확인하지 못한 것)은 시안 ⓖ의 임시 문구다.
+    private var questionSection: some View {
+        SectionCard(title: "궁금한 점") {
+            Text(savedAt != nil ? "저장할 때의 조건 기준으로 답해요" : "이 추천의 조건 기준으로 답해요")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+            HStack(spacing: DNASpacing.sm) {
+                TextField("이 도시에 대해 물어보세요", text: $question, axis: .vertical)
+                    .lineLimit(1...3)
+                    .textFieldStyle(.roundedBorder)
+                Button { Task { await ask() } } label: {
+                    Image(systemName: "arrow.up.circle.fill").font(.title2)
+                }
+                .foregroundStyle(Color.dnaActionText)
+                .frame(minWidth: 44, minHeight: 44)
+                .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAsking)
+                .accessibilityLabel("질문 보내기")
+            }
+            switch questionState {
+            case .idle: EmptyView()
+            case .loading: ProgressView("확인하고 있어요")
+            case .failed(let message):
+                Text(message).dnaFont(.body).foregroundStyle(Color.dnaError)
+                Button("다시 시도") { Task { await ask() } }.buttonStyle(.dnaSecondary)
+            case .answered(let answer): answerView(answer)
+            }
+        }
+    }
+
+    private var isAsking: Bool { if case .loading = questionState { true } else { false } }
+
+    @ViewBuilder
+    private func answerView(_ answer: CityAnswer) -> some View {
+        answerPart("자료 근거", answer.evidence)
+        answerPart("조언", answer.advice)
+        answerPart("확인하지 못한 것", answer.unconfirmed)
+        if !answer.sources.isEmpty {
+            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                // 출처는 답 전체에 대한 것이다. 문장별로 어느 출처인지 연결하지 않으므로 본문에 번호를 달지 않는다.
+                Text("검색에서 확인한 출처")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+                ForEach(Array(answer.sources.enumerated()), id: \.offset) { index, source in
+                    let published = source.published.map { "게시일 \($0)" } ?? "게시일 미확인"
+                    Link(destination: source.url) {
+                        Text("[\(index + 1)] \(source.title) · \(published) · \(source.retrievedAt.formatted(.dateTime.month().day())) 조회")
+                            .dnaFont(.caption)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .foregroundStyle(Color.dnaActionText)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func answerPart(_ title: String, _ text: String) -> some View {
+        if !text.isEmpty {
+            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
+                Text(text).dnaFont(.body).foregroundStyle(Color.dnaTextPrimary)
+            }
+        }
+    }
+
+    private func ask() async {
+        let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, let catalog = CityCatalog.load() else { return }
+        questionState = .loading
+        let service = CityQuestionService(catalog: catalog, client: CityLLMConfiguration.makeSearchClient())
+        do {
+            let answer = try await service.ask(text, card: card, request: request, conditionSummary: summary)
+            questionState = .answered(answer)
+        } catch CityQuestionError.notConfigured {
+            questionState = .failed("LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
+        } catch {
+            guard !Task.isCancelled else { return }
+            questionState = .failed("답을 확인하지 못했어요. 다시 시도해 주세요.")
+        }
     }
 
     private func releaseExclusion() async {

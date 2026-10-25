@@ -11,6 +11,8 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
         let seasonCheckNeeded: Bool
         let reason: String
         let caveat: String
+        /// LLM의 예상 총비용 범위(원). 예산이 없으면 nil. 검증되지 않은 추정이다.
+        let cost: CostRange?
     }
 
     let id: String
@@ -22,6 +24,10 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
     let excludedCountries: [String]
     /// 코드가 계산한 순위 상위 id. 같은 입력과 시드로 다시 계산해 대조할 수 있다.
     let rankedCityIDs: [String]
+    /// LLM이 설명·비용을 낸 후보(순위 상위). 카드는 이 중 예산 컷을 통과한 도시에서 고른다.
+    let poolCityIDs: [String]
+    /// 예상 비용 범위의 아래쪽이 예산보다 커서 컷된 도시.
+    let budgetCutCityIDs: [String]
     /// LLM에 보낸 그대로. 프롬프트·표를 다시 만들지 않고도 재현·검토할 수 있다.
     let system: String
     let user: String
@@ -65,6 +71,7 @@ nonisolated enum CityRecommendationError: Error, Equatable {
     case notReady
     case notConfigured
     case noCandidates
+    case noneWithinBudget
     case invalidResponse(String)
     case network(String)
 }
@@ -90,8 +97,8 @@ nonisolated struct CityRecommendationService: Sendable {
         input.seed = seed
         input.excludedCountries = excludedCountries
         let ranked = CityRanker.rank(catalog: catalog, input: input)
-        let picks = CityRanker.pickCards(from: ranked, seed: seed)
-        guard !picks.isEmpty else { throw CityRecommendationError.noCandidates }
+        let pool = Array(ranked.prefix(CityLLMRequestBuilder.poolSize))
+        guard !pool.isEmpty else { throw CityRecommendationError.noCandidates }
 
         input.excludedCountries = []
         let excludedRanked = CityRanker.rank(catalog: catalog, input: input)
@@ -101,7 +108,7 @@ nonisolated struct CityRecommendationService: Sendable {
                 request: request, tiers: tiers, catalog: catalog, model: model,
                 excludedCountries: excludedCountries, homeCountryExcluded: homeCountryExcluded
             ),
-            ranked: ranked, excludedRanked: excludedRanked, picks: picks
+            ranked: ranked, excludedRanked: excludedRanked, pool: pool
         )
 
         var raw: String?
@@ -112,7 +119,9 @@ nonisolated struct CityRecommendationService: Sendable {
             do {
                 raw = try await client.complete(system: llmRequest.system, user: llmRequest.user)
                 let response = try CityResponseValidator.parse(raw ?? "")
-                try CityResponseValidator.validate(response, cardIDs: llmRequest.cardIDs)
+                try CityResponseValidator.validate(
+                    response, cardIDs: llmRequest.cardIDs, requiresCost: llmRequest.requiresCost
+                )
                 parsed = response
             } catch let error as CityResponseError {
                 failure = .invalidResponse(String(describing: error))
@@ -123,19 +132,33 @@ nonisolated struct CityRecommendationService: Sendable {
             failure = .notConfigured
         }
 
-        let cards: [CityRecommendationRecord.Card] = parsed.map { response in
-            zip(picks, response.cards).map { pick, card in
-                .init(
-                    cityID: pick.ranked.city.id, cityName: pick.ranked.city.ko, country: pick.ranked.city.country,
-                    isExploration: pick.isExploration, seasonCheckNeeded: pick.ranked.status == .needsSeasonCheck,
-                    reason: card.reason, caveat: card.caveat
-                )
+        // 예산 컷: 예상 비용 범위의 아래쪽이 예산을 넘으면 후보에서 뺀다. 컷 뒤 남은 도시에서 카드를 고른다.
+        var cutIDs: [String] = []
+        var cards: [CityRecommendationRecord.Card] = []
+        if let parsed {
+            let byID = Dictionary(uniqueKeysWithValues: parsed.cards.map { ($0.id, $0) })
+            let budget = request.budgetMaxKRW
+            let survivors = pool.filter { item in
+                guard let budget, let low = byID[item.city.id]?.cost?.low else { return true }
+                if low > budget { cutIDs.append(item.city.id); return false }
+                return true
             }
-        } ?? []
+            cards = CityRanker.pickCards(from: survivors, seed: seed).compactMap { pick in
+                byID[pick.ranked.city.id].map { card in
+                    .init(
+                        cityID: pick.ranked.city.id, cityName: pick.ranked.city.ko, country: pick.ranked.city.country,
+                        isExploration: pick.isExploration, seasonCheckNeeded: pick.ranked.status == .needsSeasonCheck,
+                        reason: card.reason, caveat: card.caveat, cost: card.cost
+                    )
+                }
+            }
+            if cards.isEmpty { failure = .noneWithinBudget }
+        }
         let record = CityRecommendationRecord(
             id: UUID().uuidString, createdAt: now, version: llmRequest.version, seed: seed,
             input: request, tiers: tiers, excludedCountries: excludedCountries.sorted(),
             rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
+            poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: cutIDs,
             system: llmRequest.system, user: llmRequest.user,
             rawResponse: raw, understanding: parsed?.understanding, cards: cards,
             error: failure.map { String(describing: $0) }, latencySeconds: Date().timeIntervalSince(start)

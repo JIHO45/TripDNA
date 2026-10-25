@@ -174,13 +174,13 @@ struct CityLLMRequestTests {
         let ranked = CityRanker.rank(catalog: catalog, input: input)
         input.excludedCountries = []
         let excluded = CityRanker.rank(catalog: catalog, input: input).filter { $0.city.country == "JP" }
-        let picks = CityRanker.pickCards(from: ranked, seed: 1)
+        let pool = Array(ranked.prefix(CityLLMRequestBuilder.poolSize))
         let built = CityLLMRequestBuilder.build(
             context: .init(
                 request: request, tiers: tiers, catalog: catalog, model: "m",
                 excludedCountries: ["JP"], homeCountryExcluded: true
             ),
-            ranked: ranked, excludedRanked: excluded, picks: picks
+            ranked: ranked, excludedRanked: excluded, pool: pool
         )
         return (built, catalog)
     }
@@ -190,7 +190,8 @@ struct CityLLMRequestTests {
         #expect(request.version.catalog == catalog.version)
         #expect(request.version.prompt == CityInputVersion.promptVersion)
         #expect(request.version.model == "m")
-        #expect(request.cardIDs.count == 3)
+        #expect(request.cardIDs.count == CityLLMRequestBuilder.poolSize)
+        #expect(!request.requiresCost)
         #expect(request.user.contains("<<<축제 위주로>>>"))
         #expect(request.user.contains("제외됨"))
         #expect(request.user.contains("시즌 확인 필요("))
@@ -220,27 +221,40 @@ struct CityLLMRequestTests {
 struct CityResponseTests {
     static let ids = ["a", "b", "c"]
 
-    static func json(ids: [String] = ids, reason: String = "좋아요", caveat: String = "") -> String {
-        let cards = ids.map { "{\"id\":\"\($0)\",\"reason\":\"\(reason)\",\"caveat\":\"\(caveat)\"}" }
+    static func json(ids: [String] = ids, reason: String = "좋아요", caveat: String = "", cost: String = "null") -> String {
+        let cards = ids.map { "{\"id\":\"\($0)\",\"reason\":\"\(reason)\",\"caveat\":\"\(caveat)\",\"cost\":\(cost)}" }
         return "```json\n{\"understanding\":\"u\",\"cards\":[\(cards.joined(separator: ","))]}\n```"
     }
 
     @Test func acceptsFencedJsonWithRequestedIDsInOrder() throws {
         let response = try CityResponseValidator.parse(Self.json())
-        try CityResponseValidator.validate(response, cardIDs: Self.ids)
+        try CityResponseValidator.validate(response, cardIDs: Self.ids, requiresCost: false)
+    }
+
+    @Test func costIsRequiredAndOrderedWhenBudgetGiven() throws {
+        let none = try CityResponseValidator.parse(Self.json())
+        #expect(throws: CityResponseError.invalidCost("a")) {
+            try CityResponseValidator.validate(none, cardIDs: Self.ids, requiresCost: true)
+        }
+        let reversed = try CityResponseValidator.parse(Self.json(cost: "{\"low\":3000000,\"high\":1000000}"))
+        #expect(throws: CityResponseError.invalidCost("a")) {
+            try CityResponseValidator.validate(reversed, cardIDs: Self.ids, requiresCost: true)
+        }
+        let ok = try CityResponseValidator.parse(Self.json(cost: "{\"low\":1000000,\"high\":3000000}"))
+        try CityResponseValidator.validate(ok, cardIDs: Self.ids, requiresCost: true)
     }
 
     @Test func rejectsWrongOrMissingIDs() throws {
         let response = try CityResponseValidator.parse(Self.json(ids: ["b", "a", "c"]))
         #expect(throws: CityResponseError.wrongCards) {
-            try CityResponseValidator.validate(response, cardIDs: Self.ids)
+            try CityResponseValidator.validate(response, cardIDs: Self.ids, requiresCost: false)
         }
     }
 
     @Test func rejectsLeakedGradeNamesAndNonJSON() throws {
         let leaked = try CityResponseValidator.parse(Self.json(reason: "일부러 시간을 낼 만함 수준이에요"))
         #expect(throws: CityResponseError.internalTermLeaked("일부러 시간을 낼 만함")) {
-            try CityResponseValidator.validate(leaked, cardIDs: Self.ids)
+            try CityResponseValidator.validate(leaked, cardIDs: Self.ids, requiresCost: false)
         }
         #expect(throws: CityResponseError.notJSON) { try CityResponseValidator.parse("죄송합니다") }
     }
@@ -257,6 +271,21 @@ struct CityRecommendationServiceTests {
         return CityRecommendationService(catalog: catalog, client: client, log: .init(directory: dir))
     }
 
+    /// 요청의 "후보 도시" 구역에서 id를 읽어 응답한다. `lows`의 앞에서부터 비용 하한을 준다(없으면 100만원).
+    static func fake(lows: [Int] = []) -> Fake {
+        Fake { user in
+            let ids = user.components(separatedBy: "[후보 도시")[1]
+                .components(separatedBy: "\n\n")[0]
+                .components(separatedBy: "\n").dropFirst()
+                .map { String($0.split(separator: "|")[0]).trimmingCharacters(in: .whitespaces) }
+            let cards = ids.enumerated().map { index, id in
+                let low = index < lows.count ? lows[index] : 1_000_000
+                return "{\"id\":\"\(id)\",\"reason\":\"이유\",\"caveat\":\"\",\"cost\":{\"low\":\(low),\"high\":\(low * 2)}}"
+            }.joined(separator: ",")
+            return "{\"understanding\":\"요약\",\"cards\":[\(cards)]}"
+        }
+    }
+
     static func request() -> RecommendationRequest {
         var request = RecommendationRequest()
         request.setPrimary(.food)
@@ -267,13 +296,7 @@ struct CityRecommendationServiceTests {
     @Test func storesInputVersionAndResultForReplay() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
-        let client = Fake { user in
-            let ids = user.components(separatedBy: "[카드 도시")[1]
-                .components(separatedBy: "\n").dropFirst().prefix(3)
-                .map { String($0.split(separator: "|")[0]).trimmingCharacters(in: .whitespaces) }
-            let cards = ids.map { "{\"id\":\"\($0)\",\"reason\":\"이유\",\"caveat\":\"\"}" }.joined(separator: ",")
-            return "{\"understanding\":\"요약\",\"cards\":[\(cards)]}"
-        }
+        let client = Self.fake()
         let service = try Self.service(client: client, dir: dir)
         let record = try await service.recommend(
             request: Self.request(), tiers: WantedConceptTiers(), excludedCountries: ["JP"],
@@ -301,6 +324,37 @@ struct CityRecommendationServiceTests {
         #expect(replay.cards.map(\.cityID) == record.cards.map(\.cityID))
         #expect(replay.user == record.user)
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("replay"))
+    }
+
+    @Test func budgetCutsCitiesWhoseLowEstimateExceedsBudget() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = Self.request()
+        request.budgetMaxKRW = 2_000_000
+        // 순위 1·2번째 도시는 하한이 예산을 넘는다.
+        let service = try Self.service(client: Self.fake(lows: [3_000_000, 2_500_000]), dir: dir)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 5
+        )
+        #expect(record.budgetCutCityIDs == Array(record.poolCityIDs.prefix(2)))
+        #expect(record.cards.count == 3)
+        #expect(record.cards.allSatisfy { !record.budgetCutCityIDs.contains($0.cityID) })
+        #expect(record.cards.allSatisfy { ($0.cost?.low ?? .max) <= 2_000_000 })
+    }
+
+    @Test func allCutMeansNoneWithinBudgetAndStillLogged() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = Self.request()
+        request.budgetMaxKRW = 500_000
+        let service = try Self.service(client: Self.fake(lows: Array(repeating: 9_000_000, count: 8)), dir: dir)
+        await #expect(throws: CityRecommendationError.noneWithinBudget) {
+            _ = try await service.recommend(
+                request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
+            )
+        }
+        let logged = try #require(CityRecommendationLog(directory: dir).load().first)
+        #expect(logged.budgetCutCityIDs.count == 8)
     }
 
     @Test func failedResponseIsStillLoggedWithError() async throws {

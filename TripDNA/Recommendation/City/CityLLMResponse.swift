@@ -1,10 +1,17 @@
 import Foundation
 
+nonisolated struct CostRange: Codable, Equatable, Sendable {
+    let low: Int
+    let high: Int
+}
+
 nonisolated struct CityLLMResponse: Codable, Equatable, Sendable {
     struct Card: Codable, Equatable, Sendable {
         let id: String
         let reason: String
         let caveat: String
+        /// 예산이 있을 때만 필수. 원화 총비용 추정 범위.
+        let cost: CostRange?
     }
 
     let understanding: String
@@ -15,6 +22,7 @@ nonisolated enum CityResponseError: Error, Equatable {
     case notJSON
     case wrongCards
     case emptyReason(String)
+    case invalidCost(String)
     case internalTermLeaked(String)
 }
 
@@ -33,11 +41,16 @@ nonisolated enum CityResponseValidator {
         return response
     }
 
-    static func validate(_ response: CityLLMResponse, cardIDs: [String]) throws {
+    static func validate(_ response: CityLLMResponse, cardIDs: [String], requiresCost: Bool) throws {
         guard response.cards.map(\.id) == cardIDs else { throw CityResponseError.wrongCards }
         for card in response.cards {
             guard !card.reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw CityResponseError.emptyReason(card.id)
+            }
+            if requiresCost {
+                guard let cost = card.cost, cost.low > 0, cost.low <= cost.high else {
+                    throw CityResponseError.invalidCost(card.id)
+                }
             }
             if let term = forbiddenTerms.first(where: { card.reason.contains($0) || card.caveat.contains($0) }) {
                 throw CityResponseError.internalTermLeaked(term)

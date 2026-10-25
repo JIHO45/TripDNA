@@ -38,6 +38,8 @@ final class CityRecommendationViewModel {
             state = .done(record)
         } catch CityRecommendationError.notConfigured {
             state = .failed("LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
+        } catch CityRecommendationError.noneWithinBudget {
+            state = .failed("예상 비용이 예산을 넘는 도시뿐이에요. 예산이나 기간을 조정해 보세요.")
         } catch CityRecommendationError.noCandidates {
             state = .failed("조건에 맞는 도시를 찾지 못했어요.")
         } catch {
@@ -89,6 +91,10 @@ struct CityRecommendationSection: View {
         #endif
     }
 
+    private static func won(_ amount: Int) -> String {
+        "\(amount / 10_000)만원"
+    }
+
     private func cityCard(_ card: CityRecommendationRecord.Card) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
             Text("\(CountryFlag.emoji(for: card.country)) \(card.cityName)")
@@ -104,6 +110,11 @@ struct CityRecommendationSection: View {
                 .foregroundStyle(Color.dnaTextPrimary.opacity(0.88))
             if !card.caveat.isEmpty {
                 Text(card.caveat)
+                    .font(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            }
+            if let cost = card.cost {
+                Text("예상 비용 \(Self.won(cost.low))~\(Self.won(cost.high)) (추정, 가격 확인 필요)")
                     .font(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }

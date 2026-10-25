@@ -16,7 +16,7 @@ nonisolated enum CityLLMError: Error, Equatable {
 
 nonisolated struct CityLLMConfiguration: Sendable {
     static let model = "claude-haiku-5-5"
-    static let maxTokens = 2000
+    static let maxTokens = 3500
 
     /// 프록시 주소가 있으면 프록시, 없으면 DEBUG 빌드의 Keychain 키, 둘 다 없으면 nil.
     static func makeClient(bundle: Bundle = .main) -> (any CityLLMClient)? {

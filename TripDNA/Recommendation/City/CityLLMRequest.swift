@@ -8,30 +8,36 @@ nonisolated struct CityInputVersion: Codable, Equatable, Sendable {
     let model: String
     let ranking: String
 
-    static let promptVersion = "city-prompt-v1"
-    static let rankingVersion = "city-rank-v1"
+    static let promptVersion = "city-prompt-v2"
+    static let rankingVersion = "city-rank-v2"
 }
 
 nonisolated struct CityLLMRequest: Codable, Equatable, Sendable {
     let version: CityInputVersion
     let system: String
     let user: String
-    /// 응답이 설명해야 하는 카드 도시. 코드가 순위로 정한 값이다.
+    /// 응답이 설명하고 비용 범위를 내야 하는 후보 도시. 코드가 순위로 정한 값이며 이 중에서 코드가 예산 컷 뒤 카드를 고른다.
     let cardIDs: [String]
+    /// 예산이 있어 비용 범위가 필수인지.
+    let requiresCost: Bool
 }
 
 /// LLM 요청 조립. 후보 표에는 시즌 적용 후 등급 이름, 시즌 미확인 세부, 제외 표시만 넣고
 /// 핵심 경험 문장은 넣지 않는다(2026-10-25 결정).
 nonisolated enum CityLLMRequestBuilder {
     static let tableLimit = 12
+    /// LLM이 설명과 비용을 내는 후보 수. 예산 컷 뒤에도 카드 3장이 남을 여지를 둔다.
+    static let poolSize = 8
     static let excludedRowLimit = 5
 
     static let system = """
     당신은 TripDNA의 여행지 추천 설명 작성자입니다.
 
     역할
-    - 추천할 도시 3곳은 이미 정해져 있습니다. 도시를 바꾸거나 순서를 바꾸거나 다른 도시를 추가하지 마세요.
-    - 각 카드 도시마다 이번 요청에 맞는 이유(reason)와 안 맞을 수 있는 점·확인할 점(caveat)을 씁니다.
+    - 후보 도시는 이미 정해져 있습니다. 도시를 바꾸거나 순서를 바꾸거나 다른 도시를 추가하지 마세요.
+    - 각 후보 도시마다 이번 요청에 맞는 이유(reason)와 안 맞을 수 있는 점·확인할 점(caveat)을 씁니다.
+    - 요청에 예산이 있으면 각 후보 도시마다 이번 여행의 예상 총비용 범위(cost.low, cost.high)를 원화 정수로 냅니다. 범위는 요청의 기간, 인원, 예산 기준(1인/일행 전체), 항공료 포함 여부를 그대로 따르고, 요청 문장에 적힌 숙박 방식과 씀씀이를 기준으로 합니다. 문장에 없으면 보통 수준의 여행으로 잡습니다. 아래쪽은 그 여행을 아끼는 쪽, 위쪽은 넉넉한 쪽입니다. 항공료는 한국 출발의 대략값이며, 모르는 만큼 범위를 넓게 잡으세요. 예산이 없으면 cost는 null입니다.
+    - 비용 범위는 추정입니다. "예산에 맞아요", "예산을 넘어요"처럼 판정하는 문장은 쓰지 마세요. 예산이 범위 아래쪽에 가까워 빠듯하면 caveat에 확인이 필요하다고만 쓰세요.
     - 후보 표는 맥락일 뿐입니다. "제외됨" 도시는 언급하지 않습니다.
 
     규칙
@@ -39,14 +45,13 @@ nonisolated enum CityLLMRequestBuilder {
     - 도시에 대한 설명은 당신이 아는 일반적인 지식으로 씁니다. 날짜, 가격, 운영 시간, 행사 일정을 단정하지 마세요. 필요하면 "정확한 일정·가격·운영 시간은 확인이 필요해요"라고 쓰세요.
     - 표의 등급 이름, 점수, 세부 id, 순서, "탐색 후보" 같은 내부 용어를 문장에 쓰지 마세요.
     - 표의 "시즌 확인 필요" 도시는 caveat에 선택한 시기에 해당 경험이 가능한지 확인이 필요하다고 쓰세요.
-    - 표시가 "탐색"인 카드는 다른 장점이 있는 후보로, 이번 요청과 닿는 부분을 솔직하게 쓰세요.
     - 부 컨셉은 이유를 보강할 때만 쓰고, 맞지 않으면 억지로 언급하지 마세요.
     - 근거 없는 칭찬, 과장, "예산에 맞아요" 같은 단정은 쓰지 않습니다.
     - 한국어 해요체로, reason은 1~2문장, caveat는 한 문장(없으면 빈 문자열)입니다.
 
     출력은 아래 JSON 객체 하나만 쓰고 다른 텍스트는 쓰지 않습니다.
-    {"understanding": "요청을 어떻게 이해했는지 한두 문장", "cards": [{"id": "도시 id", "reason": "...", "caveat": "..."}]}
-    cards는 "카드 도시"에 적힌 id만, 같은 순서로 정확히 한 번씩 씁니다.
+    {"understanding": "요청을 어떻게 이해했는지 한두 문장", "cards": [{"id": "도시 id", "reason": "...", "caveat": "...", "cost": {"low": 1500000, "high": 2600000}}]}
+    cards는 "후보 도시"에 적힌 id만, 같은 순서로 정확히 한 번씩 씁니다.
     """
 
     struct Context: Sendable {
@@ -62,7 +67,7 @@ nonisolated enum CityLLMRequestBuilder {
         context: Context,
         ranked: [RankedCity],
         excludedRanked: [RankedCity],
-        picks: [CityPick]
+        pool: [RankedCity]
     ) -> CityLLMRequest {
         var lines: [String] = []
         let request = context.request
@@ -74,6 +79,9 @@ nonisolated enum CityLLMRequestBuilder {
         lines.append("기간: \(request.nights)박")
         lines.append("인원: \(request.partySize)명")
         lines.append("예산: \(request.budgetMaxKRW.map { "최대 \($0)원 (\(request.budgetBasis == .group ? "일행 전체" : "1인"), 항공료 \(request.budgetIncludesFlight ? "포함" : "제외"))" } ?? "미정")")
+        if let budget = request.budgetMaxKRW, request.nights > 0 {
+            lines.append("하루 예산(예산÷박수, 단순 계산): 약 \(budget / request.nights)원")
+        }
         if context.homeCountryExcluded { lines.append("사는 나라의 도시는 이번 추천에서 제외했습니다.") }
 
         lines.append("")
@@ -90,9 +98,9 @@ nonisolated enum CityLLMRequestBuilder {
         if let avoid = context.tiers.avoidNote, !avoid.isEmpty { lines.append("평소 피하고 싶은 것: <<<\(avoid)>>>") }
 
         lines.append("")
-        lines.append("[카드 도시 — 이 id만, 이 순서로 응답]")
-        for pick in picks {
-            lines.append("\(pick.ranked.city.id) | \(pick.ranked.city.ko) | \(pick.isExploration ? "탐색" : "기본")")
+        lines.append("[후보 도시 — 이 id만, 이 순서로 응답]")
+        for item in pool {
+            lines.append("\(item.city.id) | \(item.city.ko)")
         }
 
         lines.append("")
@@ -116,7 +124,8 @@ nonisolated enum CityLLMRequestBuilder {
             version: version,
             system: system,
             user: lines.joined(separator: "\n"),
-            cardIDs: picks.map(\.ranked.city.id)
+            cardIDs: pool.map(\.city.id),
+            requiresCost: request.budgetMaxKRW != nil
         )
     }
 

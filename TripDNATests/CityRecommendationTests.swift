@@ -623,3 +623,171 @@ struct CityMemoryAndTwoStageTests {
         #expect(CityMemoryConsent.state == .undecided)
     }
 }
+
+// MARK: - 도시 저장·제외·결과 복원
+
+struct CityStateTests {
+    static func card(_ id: String, country: String = "JP", conditions: [ConditionResult] = []) -> CityRecommendationRecord.Card {
+        .init(
+            cityID: id, cityName: id, country: country, isExploration: false, seasonCheckNeeded: false,
+            reason: "이유", caveat: "", cost: nil, conditions: conditions, conditionCheckNeeded: false
+        )
+    }
+
+    static func condition(_ level: CityCondition.Level, _ status: ConditionStatus, text: String = "조건") -> ConditionResult {
+        .init(condition: CityCondition(id: text, text: text, quote: text, level: level, kind: .other), status: status)
+    }
+
+    static func record(dir: URL, excludedCities: Set<String> = []) async throws -> CityRecommendationRecord {
+        let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
+        return try await service.recommend(
+            request: CityRecommendationServiceTests.request(), tiers: WantedConceptTiers(),
+            excludedCountries: [], excludedCities: excludedCities, homeCountryExcluded: false, seed: 7
+        )
+    }
+
+    @Test func excludedCityIsRemovedFromRankingPoolAndRecut() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let base = try await Self.record(dir: dir)
+        let first = try #require(base.rankedCityIDs.first)
+        let record = try await Self.record(dir: dir, excludedCities: [first])
+        #expect(!record.rankedCityIDs.contains(first))
+        #expect(!record.poolCityIDs.contains(first))
+        #expect(!record.cards.contains { $0.cityID == first })
+        #expect(record.excludedCityIDs == [first])
+
+        // 예산만 바꿔 다시 계산해도 제외한 도시는 돌아오지 않는다.
+        let service = try CityRecommendationServiceTests.service(client: nil, dir: dir)
+        let derived = try #require(service.recut(record, budgetMaxKRW: nil))
+        #expect(!derived.poolCityIDs.contains(first))
+    }
+
+    @Test func rankerSkipsExcludedCities() throws {
+        let cat = CityRankerTests.catalog([
+            CityRankerTests.city("a", grades: ["dining": .choose]),
+            CityRankerTests.city("b", grades: ["dining": .makeTime])
+        ])
+        var input = CityRankingInput(primary: .food)
+        input.excludedCities = ["a"]
+        #expect(CityRanker.rank(catalog: cat, input: input).map(\.city.id) == ["b"])
+    }
+
+    @Test func restoredResultHidesCitiesAndCountriesExcludedLater() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let record = try await Self.record(dir: dir)
+        let store = InMemoryAppStore(countries: [], tags: [])
+        await store.updateCityState { $0.lastRecord = record }
+
+        let restored = try #require(await store.cityState().lastRecord)
+        #expect(restored.cards == record.cards)
+        let firstCity = restored.cards[0].cityID
+        let secondCountry = restored.cards[1].country
+        let visible = restored.visibleCards(excludedCities: [firstCity], excludedCountries: [secondCountry])
+        #expect(!visible.contains { $0.cityID == firstCity })
+        #expect(!visible.contains { $0.country == secondCountry })
+        // 저장된 결과 자체는 그대로다.
+        #expect(restored.cards.count == record.cards.count)
+    }
+
+    @Test func savedAndExcludedCitiesSurviveReopeningTheStore() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).store")
+        defer { try? FileManager.default.removeItem(at: url) }
+        do {
+            let store = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+            await store.updateCityState {
+                $0.save(Self.card("kyoto"), conditionSummary: "미식 · 11월 · 3박")
+                $0.exclude(Self.card("osaka"))
+            }
+        }
+        let reopened = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+        let state = await reopened.cityState()
+        #expect(state.saved.map(\.id) == ["kyoto"])
+        #expect(state.saved.first?.conditionSummary == "미식 · 11월 · 3박")
+        #expect(state.saved.first?.card == Self.card("kyoto"))
+        #expect(state.excludedCityIDs == ["osaka"])
+    }
+
+    @Test func readsOldAndPartialFormats() throws {
+        let empty = try JSONDecoder().decode(CityRecommendationState.self, from: Data("{}".utf8))
+        #expect(empty == CityRecommendationState())
+
+        var withSaved = CityRecommendationState()
+        withSaved.save(Self.card("kyoto"), conditionSummary: "")
+        var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(withSaved)) as? [String: Any])
+        object["lastRecord"] = ["unreadable": true]
+        object.removeValue(forKey: "excluded")
+        let decoded = try JSONDecoder().decode(CityRecommendationState.self, from: JSONSerialization.data(withJSONObject: object))
+        #expect(decoded.saved.map(\.id) == ["kyoto"])
+        #expect(decoded.lastRecord == nil)
+        #expect(decoded.excluded.isEmpty)
+    }
+
+    @Test func recordWithoutExcludedCityKeyStillDecodes() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let record = try await Self.record(dir: dir)
+        var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
+        object.removeValue(forKey: "excludedCityIDs")
+        let old = try JSONDecoder().decode(CityRecommendationRecord.self, from: JSONSerialization.data(withJSONObject: object))
+        #expect(old.excludedCityIDs == nil)
+        #expect(old.cards == record.cards)
+    }
+
+    @Test func deleteAllUserDataRemovesSavedCitiesExclusionsAndLastResult() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let record = try await Self.record(dir: dir)
+        let stores: [any AppStore] = [
+            SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(inMemory: true), countries: [], tags: []),
+            InMemoryAppStore(countries: [], tags: [])
+        ]
+        for store in stores {
+            await store.updateCityState {
+                $0.save(Self.card("kyoto"), conditionSummary: "x")
+                $0.exclude(Self.card("osaka"))
+                $0.lastRecord = record
+            }
+            #expect(await store.cityState().saved.count == 1)
+            try await store.deleteAllUserData()
+            #expect(await store.cityState() == CityRecommendationState())
+        }
+    }
+
+    @Test func saveReplacesSameCityAndUnsaveRemoves() {
+        var state = CityRecommendationState()
+        state.save(Self.card("kyoto"), conditionSummary: "a")
+        state.save(Self.card("kyoto"), conditionSummary: "b")
+        #expect(state.saved.count == 1)
+        #expect(state.saved[0].conditionSummary == "b")
+        state.exclude(Self.card("kyoto"))
+        state.release(cityID: "kyoto")
+        #expect(state.excluded.isEmpty)
+        state.unsave(cityID: "kyoto")
+        #expect(state.saved.isEmpty)
+    }
+
+    @Test func badgeFollowsRequiredConditionTable() {
+        #expect(Self.card("a").badge == nil)
+        #expect(Self.card("a", conditions: [Self.condition(.core, .unconfirmed, text: "축제")]).badge == nil)
+        #expect(Self.card("a", conditions: [Self.condition(.core, .unconfirmed, text: "축제")]).unconfirmedPreferences == ["축제"])
+        let met = Self.card("a", conditions: [Self.condition(.required, .met, text: "직항")])
+        #expect(met.badge == .requiredMet(scope: ["직항"]))
+        let unconfirmed = Self.card("a", conditions: [Self.condition(.required, .met, text: "직항"), Self.condition(.required, .unconfirmed, text: "5시간")])
+        #expect(unconfirmed.badge == .needsCheck(names: ["5시간"]))
+        #expect(unconfirmed.needsCheck)
+        let violated = Self.card("a", conditions: [Self.condition(.required, .notMet)])
+        #expect(violated.violatesRequiredCondition)
+    }
+
+    @Test func requestSummaryIsOneLine() {
+        var request = RecommendationRequest()
+        request.setPrimary(.food)
+        request.year = 2026
+        request.month = 11
+        request.nights = 3
+        request.budgetMaxKRW = 1_000_000
+        #expect(request.summaryText == "미식 · 11월 · 3박 · 1인 100만원 이하")
+    }
+}

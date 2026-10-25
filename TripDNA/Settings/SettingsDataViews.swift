@@ -13,6 +13,7 @@ struct PermissionsSettingsView: View {
     @State private var fallbackOn = UserDefaults.standard.bool(forKey: AutoPhotoFallbackService.consentKey)
     @State private var notificationsOn = EvaluationNotificationService.isEnabled
     @State private var message: String?
+    @State private var memoriesOn = CityMemoryConsent.state == .granted
 
     private var photosGranted: Bool { [.authorized, .limited].contains(photoStatus) }
     private var notificationsGranted: Bool {
@@ -47,12 +48,16 @@ struct PermissionsSettingsView: View {
             .listRowBackground(Color.dnaSurface1)
 
             Section {
-                info("보낼 수 있는 것", "고른 컨셉, 취향 지문의 요약, 가고 싶은 때와 기간, 출발 공항")
-                info("보내지 않는 것", "사진, 여행 메모 원문, 위치 기록, 이름이나 연락처")
+                info("추천을 받을 때 보내는 것", "고른 컨셉과 조건, 적은 문장")
+                info("보내지 않는 것", "원본 사진, 위치 기록, 이름이나 연락처")
+                Toggle("지난 여행 평가·메모 보내기", isOn: Binding(
+                    get: { memoriesOn },
+                    set: { memoriesOn = $0; CityMemoryConsent.state = $0 ? .granted : .declined }
+                ))
             } header: {
                 Text("AI로 보내는 정보")
             } footer: {
-                Text("추천이 시작될 때 함께 켜져요. 지금은 아무것도 보내지 않아요.")
+                Text("켜면 추천을 받을 때 최근 여행 평가의 별점과 메모 원문, 다녀온 도시를 외부 AI 모델로 함께 보내요. 끄면 다음 추천부터 보내지 않아요. 이미 보낸 내용은 이 앱에서 되돌릴 수 없어요. 기기에 남은 추천 기록은 데이터 삭제에서 지울 수 있어요.")
             }
             .listRowBackground(Color.dnaSurface1)
         }
@@ -91,6 +96,7 @@ struct PermissionsSettingsView: View {
         notificationStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
         notificationsOn = EvaluationNotificationService.isEnabled
         fallbackOn = UserDefaults.standard.bool(forKey: AutoPhotoFallbackService.consentKey)
+        memoriesOn = CityMemoryConsent.state == .granted
     }
 
     private func openSystemSettings() {

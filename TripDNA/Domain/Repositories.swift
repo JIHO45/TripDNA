@@ -56,6 +56,9 @@ protocol UserProfileRepository {
     /// 온보딩 도중 앱이 꺼져도 이어가기 위한 임시 진행 상태. nil을 저장하면 지운다.
     func loadOnboardingDraft() async throws -> OnboardingDraft?
     func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws
+    /// 저장한 도시·도시 제외·마지막 추천 결과. 없으면 빈 상태.
+    func loadCityState() async throws -> CityRecommendationState
+    func saveCityState(_ state: CityRecommendationState) async throws
 }
 
 nonisolated enum AnalyticsEventType: String, Codable, Sendable {

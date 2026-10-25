@@ -112,11 +112,10 @@ struct SettingsRootView: View {
             wantedSummary = tiers.tier1.isEmpty ? nil : "가장 원해요 \(tiers.tier1.count)개"
             memoryCount = (tiers.avoidNote ?? "").isEmpty ? nil : "1개"
         }
-        let excluded = (try? await dependencies.recommendationService.activeDislikes())?.count ?? 0
+        let cityState = await dependencies.store.cityState()
+        let excluded = ((try? await dependencies.recommendationService.activeDislikes())?.count ?? 0) + cityState.excluded.count
         excludedCount = excluded > 0 ? "\(excluded)곳" : nil
-        var saved = Set<String>()
-        for item in (try? await dependencies.store.feedback()) ?? [] where item.action == .save { saved.insert(item.countryCode) }
-        savedCount = saved.isEmpty ? nil : "\(saved.count)곳"
+        savedCount = cityState.saved.isEmpty ? nil : "\(cityState.saved.count)곳"
     }
 
     private func loadAirportSummary() async {

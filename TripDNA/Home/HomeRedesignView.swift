@@ -12,6 +12,8 @@ struct HomeRedesignView: View {
     @State private var viewModel = HomeViewModel()
     @State private var showingProfile = false
     @State private var showingRegistration = false
+    @State private var showingPhotoScan = false
+    @State private var openedCity: SavedCity?
     @State private var showingFingerprintShare = false
     @State private var dismissedWantedCard = false
 
@@ -42,6 +44,13 @@ struct HomeRedesignView: View {
         .sheet(isPresented: $showingProfile) { SettingsRootView() }
         .sheet(isPresented: $showingRegistration, onDismiss: reload) {
             NavigationStack { TripRegistrationView(prefilledCountryCode: nil) }
+        }
+        // 사진첩 훑기는 온보딩의 사진 단계를 새 상태로 재사용한다. 온보딩 진행 상태와 완료 여부는 건드리지 않는다.
+        .sheet(isPresented: $showingPhotoScan, onDismiss: reload) { HomePhotoScanSheet() }
+        .sheet(item: $openedCity) { city in
+            NavigationStack {
+                CityDetailView(card: city.card, conditionSummary: city.conditionSummary, savedAt: city.savedAt)
+            }
         }
         .sheet(isPresented: $showingFingerprintShare) {
             if let fingerprint = viewModel.fingerprint {
@@ -102,8 +111,8 @@ struct HomeRedesignView: View {
             if let trip = viewModel.trip(id: id) { activeCard(trip) }
         case .upcoming(let id, let days):
             if let trip = viewModel.trip(id: id) { upcomingCard(trip, days: days) }
-        case .recommendations(let codes):
-            HomeRecommendationCarousel(countryCodes: codes) { selection = .recommendation }
+        case .recommendations(let cities):
+            HomeRecommendationCarousel(cities: cities) { openedCity = $0 }
         case .invitation:
             invitationCard
         case .firstUse:
@@ -314,10 +323,13 @@ struct HomeRedesignView: View {
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             HStack(spacing: 8) {
-                // 사진첩 훑기는 아직 온보딩 안에서만 동작한다. 눌러도 아무 일이 없는 버튼은 두지 않는다.
-                recordTile(icon: "photo.on.rectangle", title: "사진첩에서 찾기", subtitle: "곧 지원해요", dark: true)
-                    .opacity(0.45)
-                    .accessibilityAddTraits(.isStaticText)
+                Button {
+                    showingPhotoScan = true
+                } label: {
+                    recordTile(icon: "photo.on.rectangle", title: "사진첩에서 찾기", subtitle: nil, dark: true)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("home.scanPhotos")
                 Button {
                     showingRegistration = true
                 } label: {
@@ -536,24 +548,23 @@ struct HomeRedesignView: View {
 // MARK: - 추천 있음
 
 /// 저장한 추천 최대 3장을 옆으로 넘긴다. "1/3" 같은 숫자 대신 점으로 위치를 알린다.
-/// 도시 추천 결과가 아직 저장되지 않으므로 지금은 저장한 나라만 보여준다.
 struct HomeRecommendationCarousel: View {
-    let countryCodes: [String]
-    let onOpen: () -> Void
+    let cities: [SavedCity]
+    let onOpen: (SavedCity) -> Void
     @State private var page = 0
 
     var body: some View {
         VStack(spacing: 10) {
             TabView(selection: $page) {
-                ForEach(Array(countryCodes.enumerated()), id: \.element) { index, code in
-                    card(code).tag(index)
+                ForEach(Array(cities.enumerated()), id: \.element.id) { index, city in
+                    card(city).tag(index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 260)
-            if countryCodes.count > 1 {
+            if cities.count > 1 {
                 HStack(spacing: 6) {
-                    ForEach(countryCodes.indices, id: \.self) { index in
+                    ForEach(cities.indices, id: \.self) { index in
                         Capsule()
                             .fill(index == page ? Color.dnaTextPrimary : Color.dnaDivider)
                             .frame(width: index == page ? 18 : 6, height: 6)
@@ -564,23 +575,22 @@ struct HomeRecommendationCarousel: View {
         }
     }
 
-    private func card(_ code: String) -> some View {
+    private func card(_ city: SavedCity) -> some View {
         ZStack(alignment: .bottomLeading) {
             LinearGradient(colors: [Color(hex: 0x0F7B73), Color(hex: 0x0A4F4A)], startPoint: .topLeading, endPoint: .bottomTrailing)
             VStack(alignment: .leading, spacing: 4) {
                 Text("저장한 추천")
                     .dnaFont(.caption)
                     .opacity(0.9)
-                Text(CountryCatalog.name(for: code))
+                Text(city.card.cityName)
                     .dnaFont(size: 30, weight: .heavy)
-                Text(CountryFlag.emoji(for: code))
-                    .accessibilityHidden(true)
+                Text("\(CountryFlag.emoji(for: city.card.country)) \(CountryCatalog.name(for: city.card.country))")
             }
             .foregroundStyle(.white)
             .padding(18)
             HStack {
                 Spacer()
-                Button(action: onOpen) {
+                Button { onOpen(city) } label: {
                     Text("자세히")
                         .dnaFont(.button)
                         .foregroundStyle(Color.dnaTextPrimary)

@@ -76,12 +76,13 @@ final class TripRegistrationViewModel {
 
     var isEditing: Bool { editingTripID != nil }
 
-    init(prefilledCountryCode: String?) {
+    init(prefilledCountryCode: String?, prefilledCity: String? = nil) {
         editingTripID = nil
         var leg = TripLegDraft()
         if let prefilledCountryCode {
             leg.countryCode = prefilledCountryCode.uppercased()
         }
+        if let prefilledCity { leg.cityText = prefilledCity }
         legs = [leg]
     }
 
@@ -305,9 +306,11 @@ struct TripRegistrationView: View {
         case scenario, kind, where_, concept, companion, when
     }
 
-    init(prefilledCountryCode: String?, onCreated: (() -> Void)? = nil) {
+    init(prefilledCountryCode: String?, prefilledCity: String? = nil, onCreated: (() -> Void)? = nil) {
         self.onSaved = onCreated
-        _viewModel = State(initialValue: TripRegistrationViewModel(prefilledCountryCode: prefilledCountryCode))
+        _viewModel = State(initialValue: TripRegistrationViewModel(
+            prefilledCountryCode: prefilledCountryCode, prefilledCity: prefilledCity
+        ))
         _openStep = State(initialValue: .scenario)
     }
 

@@ -132,11 +132,12 @@ struct MemorySettingsView: View {
 struct ExclusionsSettingsView: View {
     @Environment(AppDependencies.self) private var dependencies
     @State private var items: [CardFeedback] = []
+    @State private var cities: [ExcludedCity] = []
     @State private var toast: SettingsToast?
 
     var body: some View {
         List {
-            if items.isEmpty {
+            if items.isEmpty && cities.isEmpty {
                 Section {
                     Text("제외한 곳이 없어요")
                         .dnaFont(.body)
@@ -145,12 +146,21 @@ struct ExclusionsSettingsView: View {
                 }
                 .listRowBackground(Color.dnaSurface1)
             } else {
-                Section {
-                    ForEach(items) { item in row(item) }
-                } footer: {
+                if !cities.isEmpty {
+                    Section("도시") {
+                        ForEach(cities) { city in cityRow(city) }
+                    }
+                    .listRowBackground(Color.dnaSurface1)
+                }
+                if !items.isEmpty {
+                    Section("나라") {
+                        ForEach(items) { item in row(item) }
+                    }
+                    .listRowBackground(Color.dnaSurface1)
+                }
+                Section {} footer: {
                     Text("나라 제외를 풀어도 따로 정한 도시 제외는 남아요. 도시를 열어보거나 저장해도 제외가 풀리지 않아요.")
                 }
-                .listRowBackground(Color.dnaSurface1)
             }
         }
         .settingsListStyle()
@@ -158,6 +168,39 @@ struct ExclusionsSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .settingsToast($toast)
         .task { await reload() }
+    }
+
+    private func cityRow(_ city: ExcludedCity) -> some View {
+        HStack(spacing: DNASpacing.sm) {
+            Text(CountryFlag.emoji(for: city.country)).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(city.cityName)
+                    .dnaFont(.cardTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Text("도시 제외 · \(CountryCatalog.name(for: city.country)) · \(city.excludedAt.formatted(.dateTime.year().month().day()))")
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            }
+            Spacer(minLength: 0)
+            Button("해제") { Task { await releaseCity(city) } }
+                .dnaFont(.button)
+                .foregroundStyle(Color.dnaActionText)
+                .buttonStyle(.plain)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityLabel("\(city.cityName) 제외 해제")
+        }
+    }
+
+    private func releaseCity(_ city: ExcludedCity) async {
+        cities = await dependencies.store.updateCityState { $0.release(cityID: city.cityID) }.excluded
+        let store = dependencies.store
+        toast = SettingsToast(message: "\(city.cityName) 제외를 풀었어요", undo: {
+            _ = await store.updateCityState { state in
+                state.excluded.removeAll { $0.cityID == city.cityID }
+                state.excluded.insert(city, at: 0)
+            }
+            await reload()
+        })
     }
 
     private func row(_ item: CardFeedback) -> some View {
@@ -190,6 +233,7 @@ struct ExclusionsSettingsView: View {
 
     private func reload() async {
         items = (try? await dependencies.recommendationService.activeDislikes()) ?? []
+        cities = await dependencies.store.cityState().excluded
     }
 
     private func release(_ item: CardFeedback) async {

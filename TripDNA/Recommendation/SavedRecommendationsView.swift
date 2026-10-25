@@ -1,25 +1,36 @@
 import SwiftUI
 
-/// UI-4D. 저장 목록: 저장 시점의 추천 이유 유지 + 여행 등록 + 저장 해제.
-/// "관심 없어요"로 뺀 나라도 여기서 되돌린다.
+/// 저장한 도시 목록. 누르면 추천 상세와 같은 화면이 열리고, 저장 당시 조건 기준임을 밝힌다.
+/// 도시 추천 이전에 저장한 나라 기록과 "관심 없어요"로 뺀 나라는 "이전 기록(나라)"로 남겨 둔다.
 struct SavedRecommendationsView: View {
     let viewModel: RecommendationViewModel
     @Environment(AppDependencies.self) private var dependencies
     @Environment(\.dismiss) private var dismiss
+    @State private var cities: [SavedCity] = []
 
     var body: some View {
         Group {
-            if viewModel.savedFeedback.isEmpty && viewModel.dislikedFeedback.isEmpty {
+            if cities.isEmpty && viewModel.savedFeedback.isEmpty && viewModel.dislikedFeedback.isEmpty {
                 EmptyStateView(
                     systemImage: "bookmark",
-                    title: "저장한 추천이 없어요",
-                    message: "마음에 드는 추천 카드를 북마크로 저장하면\n여기에 모여요.",
+                    title: "저장한 도시가 없어요",
+                    message: "마음에 드는 도시 카드를 북마크로 저장하면\n여기에 모여요.",
                     actionTitle: "추천 보러 가기",
                     action: { dismiss() }
                 )
             } else {
                 ScrollView {
                     VStack(spacing: DNASpacing.md) {
+                        ForEach(cities) { city in
+                            cityCard(city)
+                        }
+                        if !viewModel.savedFeedback.isEmpty || !viewModel.dislikedFeedback.isEmpty {
+                            Text("이전 기록(나라)")
+                                .dnaFont(.sectionTitle)
+                                .foregroundStyle(Color.dnaTextPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, DNASpacing.sm)
+                        }
                         ForEach(viewModel.savedFeedback) { feedback in
                             savedCard(feedback)
                         }
@@ -34,14 +45,69 @@ struct SavedRecommendationsView: View {
         .dnaBackground()
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationTitle("저장 목록")
+        .navigationTitle("저장한 도시")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            cities = await dependencies.store.cityState().saved
             await viewModel.refreshSavedList(dependencies)
             await viewModel.refreshDislikedList(dependencies)
         }
+        .animation(.easeOut(duration: 0.25), value: cities)
         .animation(.easeOut(duration: 0.25), value: viewModel.savedFeedback)
         .animation(.easeOut(duration: 0.25), value: viewModel.dislikedFeedback)
+    }
+
+    private func cityCard(_ item: SavedCity) -> some View {
+        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+            NavigationLink {
+                CityDetailView(card: item.card, conditionSummary: item.conditionSummary, savedAt: item.savedAt)
+            } label: {
+                VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(CountryFlag.emoji(for: item.card.country)) \(item.card.cityName)")
+                            .font(.headline)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                        Spacer(minLength: 0)
+                        Text(savedDateText(item.savedAt))
+                            .font(.caption2)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
+                    Text(CountryCatalog.name(for: item.card.country))
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                    Text(item.card.reason)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.dnaTextPrimary.opacity(0.85))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    if !item.conditionSummary.isEmpty {
+                        Text("저장 당시 조건: \(item.conditionSummary)")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Button {
+                Task {
+                    cities = await dependencies.store.updateCityState { $0.unsave(cityID: item.id) }.saved
+                }
+            } label: {
+                Label("저장 해제", systemImage: "bookmark.slash")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.dnaTextSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background(Color.dnaSurface2, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(DNASpacing.md)
+        .background(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous).fill(Color.dnaSurface1))
+        .overlay(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1))
     }
 
     private var dislikedSection: some View {

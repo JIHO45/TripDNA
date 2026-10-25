@@ -200,6 +200,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
         static let tastePrior = "tastePrior"
         static let wantedTiers = "wantedTiers"
         static let onboardingDraft = "onboardingDraft"
+        static let cityState = "cityState"
     }
 
     private let container: ModelContainer
@@ -451,6 +452,14 @@ actor SwiftDataAppStore: nonisolated AppStore {
 
     func saveWantedTiers(_ tiers: WantedConceptTiers) async throws {
         try saveSingleton(tiers, key: SingletonKey.wantedTiers)
+    }
+
+    func loadCityState() async throws -> CityRecommendationState {
+        try singleton(CityRecommendationState.self, key: SingletonKey.cityState) ?? CityRecommendationState()
+    }
+
+    func saveCityState(_ state: CityRecommendationState) async throws {
+        try saveSingleton(state, key: SingletonKey.cityState)
     }
 
     func loadOnboardingDraft() async throws -> OnboardingDraft? {

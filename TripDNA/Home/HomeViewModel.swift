@@ -6,8 +6,8 @@ final class HomeViewModel {
     enum TopCard: Equatable {
         case active(tripID: String)
         case upcoming(tripID: String, days: Int)
-        /// 앱이 이미 가진 추천(저장한 도시) 최대 3개의 나라 코드.
-        case recommendations(countryCodes: [String])
+        /// 앱이 이미 가진 추천(저장한 도시) 최대 3개.
+        case recommendations(cities: [SavedCity])
         /// 기록은 있고 추천도 예정 여행도 없을 때 추천을 권한다.
         case invitation
         /// 기록도 "원하는 여행"도 없는 처음.
@@ -16,13 +16,13 @@ final class HomeViewModel {
 
     var trips: [Trip] = []
     var photos: [DailyPhoto] = []
-    var savedCountryCodes: [String] = []
+    var savedCities: [SavedCity] = []
     var tiers: WantedConceptTiers?
     var banner: WrappedBanner = .notYet
     var isLoading = true
 
     var topCard: TopCard {
-        Self.topCard(trips: trips, savedCountryCodes: savedCountryCodes, tiers: tiers)
+        Self.topCard(trips: trips, savedCities: savedCities, tiers: tiers)
     }
 
     var fingerprint: ConceptFingerprint? { ConceptFingerprint(trips: trips) }
@@ -41,13 +41,7 @@ final class HomeViewModel {
         trips = await dependencies.allTrips()
         photos = (try? await dependencies.store.photos(tripID: nil)) ?? []
         tiers = try? await dependencies.store.loadWantedTiers()
-        let feedback = (try? await dependencies.store.feedback()) ?? []
-        var seen = Set<String>()
-        savedCountryCodes = feedback
-            .filter { $0.action == .save }
-            .sorted { $0.createdAt > $1.createdAt }
-            .map(\.countryCode)
-            .filter { seen.insert($0).inserted }
+        savedCities = await dependencies.store.cityState().saved.sorted { $0.savedAt > $1.savedAt }
         banner = WrappedBanner.make(now: Date(), trips: trips, service: dependencies.wrappedService)
     }
 
@@ -63,7 +57,7 @@ final class HomeViewModel {
 
     static func topCard(
         trips: [Trip],
-        savedCountryCodes: [String],
+        savedCities: [SavedCity],
         tiers: WantedConceptTiers?,
         now: Date = Date()
     ) -> TopCard {
@@ -77,8 +71,8 @@ final class HomeViewModel {
         if let upcoming {
             return .upcoming(tripID: upcoming.0.id, days: upcoming.1)
         }
-        if !savedCountryCodes.isEmpty {
-            return .recommendations(countryCodes: Array(savedCountryCodes.prefix(3)))
+        if !savedCities.isEmpty {
+            return .recommendations(cities: Array(savedCities.prefix(3)))
         }
         if trips.isEmpty, tiers?.isEmpty ?? true {
             return .firstUse

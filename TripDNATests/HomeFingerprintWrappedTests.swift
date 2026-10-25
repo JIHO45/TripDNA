@@ -178,13 +178,23 @@ struct HomeFingerprintWrappedTests {
     @Test func homeTopCardFollowsSituation() throws {
         let tiers = { () -> WantedConceptTiers in var t = WantedConceptTiers(); t.place(.food, in: 1); return t }()
         let ended = try trip("e", .food, month: 1)
-        #expect(HomeViewModel.topCard(trips: [], savedCountryCodes: [], tiers: nil) == .firstUse)
-        #expect(HomeViewModel.topCard(trips: [], savedCountryCodes: [], tiers: tiers) == .invitation)
-        #expect(HomeViewModel.topCard(trips: [ended], savedCountryCodes: [], tiers: nil) == .invitation)
-        #expect(HomeViewModel.topCard(trips: [ended], savedCountryCodes: ["PT", "ES", "JP", "KR"], tiers: nil)
-                == .recommendations(countryCodes: ["PT", "ES", "JP"]))
+        func saved(_ id: String) -> SavedCity {
+            SavedCity(
+                card: .init(
+                    cityID: id, cityName: id, country: "JP", isExploration: false, seasonCheckNeeded: false,
+                    reason: "", caveat: "", cost: nil, conditions: [], conditionCheckNeeded: false
+                ),
+                savedAt: Date(), conditionSummary: ""
+            )
+        }
+        let four = ["a", "b", "c", "d"].map(saved)
+        #expect(HomeViewModel.topCard(trips: [], savedCities: [], tiers: nil) == .firstUse)
+        #expect(HomeViewModel.topCard(trips: [], savedCities: [], tiers: tiers) == .invitation)
+        #expect(HomeViewModel.topCard(trips: [ended], savedCities: [], tiers: nil) == .invitation)
+        #expect(HomeViewModel.topCard(trips: [ended], savedCities: four, tiers: nil)
+                == .recommendations(cities: Array(four.prefix(3))))
         var active = try Trip(legs: [TripLeg(countryCode: "JP", startDate: Date(), endDate: Date())], companion: .alone, purpose: .leisure)
         try active.start()
-        #expect(HomeViewModel.topCard(trips: [ended, active], savedCountryCodes: ["PT"], tiers: nil) == .active(tripID: active.id))
+        #expect(HomeViewModel.topCard(trips: [ended, active], savedCities: [four[0]], tiers: nil) == .active(tripID: active.id))
     }
 }

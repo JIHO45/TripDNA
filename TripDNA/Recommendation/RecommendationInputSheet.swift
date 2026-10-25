@@ -51,6 +51,13 @@ struct RecommendationInputSheet: View {
                         stepCard(.when, label: "언제 · 얼마나", value: whenSummary, title: "언제, 얼마나?", subtitle: nil) { whenBody }
                         stepCard(.budget, label: "예산", value: budgetSummary, title: "예산은 얼마까지?", subtitle: "최대 금액이에요") { budgetBody }
                         stepCard(.wants, label: "이번 여행에서는", value: wantsSummary, title: "이번 여행에서는", subtitle: nil) { wantsBody }
+                        // 시안 규칙: 하단에는 버튼만 둔다. 전송 안내는 카드 아래에 둔다.
+                        Text(CityRecommendationSection.sendNotice)
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DNASpacing.md)
+                            .padding(.top, DNASpacing.sm)
                     }
                     .padding(.horizontal, DNASpacing.sm)
                     .padding(.bottom, DNASpacing.lg)
@@ -60,12 +67,6 @@ struct RecommendationInputSheet: View {
                     withAnimation { proxy.scrollTo(step, anchor: .top) }
                 }
             }
-
-            Text(CityRecommendationSection.sendNotice)
-                .dnaFont(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DNASpacing.gutter)
 
             Button(action: submit) {
                 Text("추천 받기")

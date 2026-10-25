@@ -15,6 +15,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     private var storedInterestTagIDs: Set<String> = []
     private var storedWantedTiers: WantedConceptTiers?
     private var storedOnboardingDraft: OnboardingDraft?
+    private var storedCityState = CityRecommendationState()
     private(set) var storedEvents: [AnalyticsEvent]
 
     init(
@@ -176,6 +177,10 @@ nonisolated final class InMemoryAppStore: AppStore {
 
     func saveWantedTiers(_ tiers: WantedConceptTiers) async throws { storedWantedTiers = tiers }
 
+    func loadCityState() async throws -> CityRecommendationState { storedCityState }
+
+    func saveCityState(_ state: CityRecommendationState) async throws { storedCityState = state }
+
     func loadOnboardingDraft() async throws -> OnboardingDraft? { storedOnboardingDraft }
 
     func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws { storedOnboardingDraft = draft }
@@ -205,6 +210,7 @@ nonisolated final class InMemoryAppStore: AppStore {
         storedInterestTagIDs.removeAll()
         storedWantedTiers = nil
         storedOnboardingDraft = nil
+        storedCityState = CityRecommendationState()
         storedEvents.removeAll()
     }
 }

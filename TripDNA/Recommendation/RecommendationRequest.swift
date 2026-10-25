@@ -43,6 +43,18 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
         includeHomeCountry = try c.decodeIfPresent(Bool.self, forKey: .includeHomeCountry) ?? false
     }
 
+    /// 저장한 도시와 결과 화면에 쓰는 한 줄 조건 요약. 예: "미식 · 11월 · 3박 · 1인 100만원 이하".
+    var summaryText: String {
+        var parts: [String] = []
+        if let primary { parts.append(primary.labelKo) }
+        if let month = month ?? startDate.map({ Calendar.current.component(.month, from: $0) }) { parts.append("\(month)월") }
+        parts.append("\(nights)박")
+        if let budgetMaxKRW {
+            parts.append("\(budgetBasis == .perPerson ? "1인" : "전체") \(budgetMaxKRW / 10_000)만원 이하")
+        }
+        return parts.joined(separator: " · ")
+    }
+
     /// 추천을 받으려면 주 컨셉이 필수다.
     var isReady: Bool { primary != nil }
 

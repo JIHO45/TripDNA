@@ -10,6 +10,8 @@ nonisolated struct CityRankingInput: Equatable, Sendable {
     var month: Int?
     /// 후보에서 뺄 나라(사는 나라 기본 제외, 다녀온 곳 제외, 계속 제외 등). 호출자가 이번 요청의 예외까지 반영해 넘긴다.
     var excludedCountries: Set<String> = []
+    /// "다시 추천하지 않기"로 뺀 도시 id.
+    var excludedCities: Set<String> = []
     /// 탐색 후보를 고르는 시드. 같은 입력과 시드는 같은 결과를 낸다.
     var seed: UInt64 = 0
     /// 자유문장에서 뽑아 코드가 받아들인 조건. 필수 불충족은 후보에서 빼고, 확인 못 한 필수는 뒤쪽 묶음, 핵심 선호는 묶음 순서에 쓴다.
@@ -60,7 +62,7 @@ nonisolated enum CityRanker {
 
     static func rank(catalog: CityCatalog, input: CityRankingInput) -> [RankedCity] {
         catalog.cities
-            .filter { !input.excludedCountries.contains($0.country) }
+            .filter { !input.excludedCountries.contains($0.country) && !input.excludedCities.contains($0.id) }
             .compactMap { rankedCity($0, catalog: catalog, input: input) }
             .sorted { lhs, rhs in
                 if lhs.needsCheck != rhs.needsCheck { return !lhs.needsCheck }

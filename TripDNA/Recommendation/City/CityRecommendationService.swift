@@ -36,6 +36,8 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
     let input: RecommendationRequest
     let tiers: WantedConceptTiers
     let excludedCountries: [String]
+    /// 순위 계산에서 뺀 도시 id. 예전 기록에는 없다.
+    var excludedCityIDs: [String]?
     /// 코드가 계산한 순위 상위 id. 같은 입력과 시드로 다시 계산해 대조할 수 있다.
     let rankedCityIDs: [String]
     /// LLM이 설명·비용을 낸 후보(순위 상위). 카드는 이 중 예산 컷을 통과한 도시에서 고른다.
@@ -114,6 +116,7 @@ nonisolated struct CityRecommendationService: Sendable {
         request: RecommendationRequest,
         tiers: WantedConceptTiers,
         excludedCountries: Set<String>,
+        excludedCities: Set<String> = [],
         homeCountryExcluded: Bool,
         memories: [CityMemory] = [],
         seed: UInt64 = UInt64.random(in: .min ... .max),
@@ -124,6 +127,7 @@ nonisolated struct CityRecommendationService: Sendable {
         var input = CityRankingInput(primary: primary, secondary: request.secondary, tiers: tiers, month: month)
         input.seed = seed
         input.excludedCountries = excludedCountries
+        input.excludedCities = excludedCities
 
         // 1단계: 자유문장이 있으면 조건을 먼저 뽑는다. 실패해도 조건 없이 진행하고 기록에 남긴다.
         var conditions: [CityCondition] = []
@@ -194,6 +198,7 @@ nonisolated struct CityRecommendationService: Sendable {
         let record = CityRecommendationRecord(
             id: UUID().uuidString, derivedFrom: nil, createdAt: now, version: llmRequest.version, seed: seed,
             input: request, tiers: tiers, excludedCountries: excludedCountries.sorted(),
+            excludedCityIDs: excludedCities.sorted(),
             rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
             poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: selection.cutIDs,
             conditions: conditions, rejectedConditionIDs: rejected, extraction: extraction,
@@ -243,7 +248,8 @@ nonisolated struct CityRecommendationService: Sendable {
         let month = record.input.month ?? record.input.startDate.map { Calendar.current.component(.month, from: $0) }
         let input = CityRankingInput(
             primary: primary, secondary: record.input.secondary, tiers: record.tiers, month: month,
-            excludedCountries: Set(record.excludedCountries), seed: record.seed, conditions: record.conditions
+            excludedCountries: Set(record.excludedCountries), excludedCities: Set(record.excludedCityIDs ?? []),
+            seed: record.seed, conditions: record.conditions
         )
         let pool = Array(CityRanker.rank(catalog: catalog, input: input).prefix(CityLLMRequestBuilder.poolSize))
         guard pool.map(\.city.id) == record.poolCityIDs else { return nil }
@@ -253,6 +259,7 @@ nonisolated struct CityRecommendationService: Sendable {
         let derived = CityRecommendationRecord(
             id: UUID().uuidString, derivedFrom: record.id, createdAt: now, version: record.version, seed: record.seed,
             input: request, tiers: record.tiers, excludedCountries: record.excludedCountries,
+            excludedCityIDs: record.excludedCityIDs,
             rankedCityIDs: record.rankedCityIDs, poolCityIDs: record.poolCityIDs, budgetCutCityIDs: selection.cutIDs,
             conditions: record.conditions, rejectedConditionIDs: record.rejectedConditionIDs, extraction: record.extraction,
             memories: record.memories, memoriesUsed: record.memoriesUsed,

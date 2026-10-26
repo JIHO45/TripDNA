@@ -183,7 +183,14 @@ nonisolated struct CityRecommendationService: Sendable {
                 )
                 parsed = response
             } catch let error as CityResponseError {
-                failure = .invalidResponse(String(describing: error))
+                var detail = String(describing: error)
+                #if DEBUG
+                // 기기에서 테스트할 때 원인을 바로 보도록 응답 앞부분을 붙인다. 출시 빌드에는 없다.
+                detail += " · " + String((raw ?? "").prefix(300))
+                #endif
+                failure = .invalidResponse(detail)
+            } catch CityLLMError.truncated {
+                failure = .invalidResponse("truncated")
             } catch {
                 failure = .network(String(describing: error))
             }

@@ -12,6 +12,19 @@ nonisolated struct CityLLMResponse: Codable, Equatable, Sendable {
         let caveat: String
         /// 예산이 있을 때만 필수. 원화 총비용 추정 범위.
         let cost: CostRange?
+
+        init(id: String, reason: String, caveat: String, cost: CostRange?) {
+            self.id = id; self.reason = reason; self.caveat = caveat; self.cost = cost
+        }
+
+        /// 유의점이 없으면 모델이 키를 빼기도 한다. 빈 값으로 읽는다.
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(String.self, forKey: .id)
+            reason = try c.decode(String.self, forKey: .reason)
+            caveat = try c.decodeIfPresent(String.self, forKey: .caveat) ?? ""
+            cost = try c.decodeIfPresent(CostRange.self, forKey: .cost)
+        }
     }
 
     struct MemoryUse: Codable, Equatable, Sendable {

@@ -231,6 +231,12 @@ struct CityResponseTests {
         try CityResponseValidator.validate(response, cardIDs: Self.ids, requiresCost: false)
     }
 
+    @Test func cardWithoutCaveatOrCostKeyStillParses() throws {
+        let response = try CityResponseValidator.parse("{\"understanding\":\"u\",\"cards\":[{\"id\":\"a\",\"reason\":\"r\"}]}")
+        #expect(response.cards.first?.caveat == "")
+        #expect(response.cards.first?.cost == nil)
+    }
+
     @Test func costIsRequiredAndOrderedWhenBudgetGiven() throws {
         let none = try CityResponseValidator.parse(Self.json())
         #expect(throws: CityResponseError.invalidCost("a")) {

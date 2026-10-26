@@ -698,6 +698,8 @@ struct CityConsentSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
+            Button("취소") { model.cancelConsent() }
+                .buttonStyle(.dnaGhost)
             Text("추천을 위해 이 정보를 보내요")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
@@ -717,8 +719,6 @@ struct CityConsentSheet: View {
                 .buttonStyle(.dnaPrimary)
             Button("평가는 빼고 추천 받기") { model.answerConsent(false, dependencies: dependencies) }
                 .buttonStyle(.dnaSecondary)
-            Button("취소") { model.cancelConsent() }
-                .buttonStyle(.dnaGhost)
         }
         .padding(DNASpacing.gutter)
         .background(Color.dnaSheet.ignoresSafeArea())

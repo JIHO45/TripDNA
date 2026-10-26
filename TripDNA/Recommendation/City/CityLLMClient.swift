@@ -12,11 +12,14 @@ nonisolated enum CityLLMError: Error, Equatable {
     case notConfigured
     case http(Int)
     case emptyResponse
+    /// `max_tokens`에 닿아 응답이 잘렸다. 생각(thinking) 토큰도 이 한도에 들어간다.
+    case truncated
 }
 
 nonisolated struct CityLLMConfiguration: Sendable {
     static let model = "claude-haiku-5-5"
-    static let maxTokens = 3500
+    /// claude-haiku-5-5는 기본으로 생각을 켜고, 그 토큰도 이 한도에 들어간다. 3500에서는 후보 8곳 설명이 잘렸다.
+    static let maxTokens = 16000
 
     /// 프록시 주소가 있으면 프록시, 없으면 DEBUG 빌드의 Keychain 키, 둘 다 없으면 nil.
     static func makeClient(bundle: Bundle = .main) -> (any CityLLMClient)? {
@@ -114,7 +117,7 @@ nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
     }
 
     func complete(system: String, user: String) async throws -> String {
-        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!, timeoutInterval: 60)
+        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!, timeoutInterval: 120)
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
@@ -133,9 +136,11 @@ nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
         struct Body: Decodable {
             struct Block: Decodable { let type: String; let text: String? }
             let content: [Block]
+            let stop_reason: String?
         }
-        let text = try JSONDecoder().decode(Body.self, from: data).content
-            .compactMap { $0.type == "text" ? $0.text : nil }.joined()
+        let reply = try JSONDecoder().decode(Body.self, from: data)
+        if reply.stop_reason == "max_tokens" { throw CityLLMError.truncated }
+        let text = reply.content.compactMap { $0.type == "text" ? $0.text : nil }.joined()
         guard !text.isEmpty else { throw CityLLMError.emptyResponse }
         return text
     }

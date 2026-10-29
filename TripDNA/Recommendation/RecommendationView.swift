@@ -6,7 +6,13 @@ struct RecommendationView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(AppRouter.self) private var router
     @State private var cityModel = CityRecommendationViewModel()
-    @State private var showingInput = false
+    /// 입력 시트를 연다. 채워서 열 조건(`initial`)은 "사는 나라 포함하기"처럼 지난 요청을 고쳐 다시 받을 때 쓴다.
+    @State private var inputRequest: InputRequest?
+
+    private struct InputRequest: Identifiable {
+        let id = UUID()
+        let initial: RecommendationRequest
+    }
     @State private var showingEdit = false
 
     var body: some View {
@@ -22,7 +28,8 @@ struct RecommendationView: View {
                         guard let request = cityModel.lastRequest else { return }
                         cityModel.begin(request: request, dependencies: dependencies)
                     },
-                    editConditions: { showingEdit = true }
+                    editConditions: { showingEdit = true },
+                    newRequest: { openInput($0) }
                 )
                 if cityModel.state == .idle { introView }
             }
@@ -36,18 +43,18 @@ struct RecommendationView: View {
         .dnaBackground()
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { Task { await cityModel.restore(dependencies: dependencies) } }
-        .fullScreenCover(isPresented: $showingInput) {
-            RecommendationInputSheet { request in
+        .fullScreenCover(item: $inputRequest) { input in
+            RecommendationInputSheet(initial: input.initial) { request in
                 cityModel.begin(request: request, dependencies: dependencies)
             }
         }
         .onChange(of: router.recommendationInputRequested, initial: true) {
             guard router.recommendationInputRequested else { return }
             router.recommendationInputRequested = false
-            showingInput = true
+            openInput()
         }
         .sheet(isPresented: $showingEdit) {
-            CityConditionEditSheet(model: cityModel, onNewRequest: { showingInput = true })
+            CityConditionEditSheet(model: cityModel, onNewRequest: { openInput() })
         }
         .sheet(isPresented: Binding(
             get: { cityModel.pendingConsentRequest != nil },
@@ -55,6 +62,10 @@ struct RecommendationView: View {
         )) {
             CityConsentSheet(model: cityModel)
         }
+    }
+
+    private func openInput(_ initial: RecommendationRequest? = nil) {
+        inputRequest = InputRequest(initial: initial ?? RecommendationRequest())
     }
 
     // MARK: 상단
@@ -65,7 +76,7 @@ struct RecommendationView: View {
             if cityModel.lastRecord != nil {
                 HStack(spacing: DNASpacing.xxs) {
                     headerButton("조건 수정", isPrimary: false) { showingEdit = true }
-                    headerButton("새 여행 추천", isPrimary: true) { showingInput = true }
+                    headerButton("새 여행 추천", isPrimary: true) { openInput() }
                 }
             }
         }
@@ -102,7 +113,7 @@ struct RecommendationView: View {
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .multilineTextAlignment(.center)
-                Button { showingInput = true } label: { Text("새 여행 추천 받기") }
+                Button { openInput() } label: { Text("새 여행 추천 받기") }
                     .buttonStyle(.dnaPrimary)
                     .accessibilityIdentifier("recommendation.new")
             }

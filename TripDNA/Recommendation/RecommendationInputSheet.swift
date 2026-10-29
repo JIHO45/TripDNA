@@ -9,13 +9,26 @@ struct RecommendationInputSheet: View {
 
     private enum Step: Hashable { case concept, when, budget, wants }
 
-    @State private var request = RecommendationRequest()
-    @State private var expanded: Step = .concept
+    @State private var request: RecommendationRequest
+    @State private var expanded: Step
+    @State private var customBudget: Bool
+    @State private var customBudgetText: String
     @State private var highlightConcept = false
     @State private var shownYear = Calendar.current.component(.year, from: .now)
-    @State private var exactDates = false
-    @State private var customBudget = false
-    @State private var customBudgetText = ""
+    @State private var exactDates: Bool
+
+    /// `initial`이 있으면 그 조건을 채워서 연다. 컨셉이 이미 있으면 사는 나라 같은 나머지 설정이 있는 마지막 단계를 먼저 편다.
+    init(initial: RecommendationRequest = RecommendationRequest(), onSubmit: @escaping (RecommendationRequest) -> Void) {
+        self.onSubmit = onSubmit
+        _request = State(initialValue: initial)
+        _expanded = State(initialValue: initial.isReady ? .wants : .concept)
+        _exactDates = State(initialValue: initial.startDate != nil)
+        let custom = initial.budgetMaxKRW.map { !Self.presetBudgets.contains($0) } ?? false
+        _customBudget = State(initialValue: custom)
+        _customBudgetText = State(initialValue: custom ? initial.budgetMaxKRW.map { String($0 / 10_000) } ?? "" : "")
+    }
+
+    private static var presetBudgets: [Int] { RecommendationRequest.budgetPresets }
 
     private let calendar = Calendar.current
     private var thisYear: Int { calendar.component(.year, from: .now) }

@@ -301,6 +301,7 @@ struct TripRegistrationView: View {
     @State private var viewModel: TripRegistrationViewModel
     @State private var countryPickerTarget: CountryPickerTarget?
     @State private var openStep: Step?
+    @State private var keyboardUp = false
 
     private enum Step: Hashable {
         case scenario, kind, where_, concept, companion, when
@@ -348,19 +349,24 @@ struct TripRegistrationView: View {
             .padding(.vertical, DNASpacing.md)
         }
         .scrollDismissesKeyboard(.interactively)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardUp = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboardUp = false }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            DNABottomCTA {
-                Button {
-                    Task { await viewModel.submit(dependencies) }
-                } label: {
-                    if viewModel.isSubmitting {
-                        ProgressView().tint(.white)
-                    } else {
-                        Text(viewModel.primaryCTATitle)
+            // 키보드가 떠 있는 동안은 CTA를 숨겨, 키보드 위에 떠서 입력 칸과 겹치지 않게 한다. 스크롤로 끝까지 닿는다.
+            if !keyboardUp {
+                DNABottomCTA(background: .dnaSheet) {
+                    Button {
+                        Task { await viewModel.submit(dependencies) }
+                    } label: {
+                        if viewModel.isSubmitting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text(viewModel.primaryCTATitle)
+                        }
                     }
+                    .buttonStyle(.dnaPrimary(isDisabled: !viewModel.canSubmit || viewModel.isSubmitting))
+                    .disabled(!viewModel.canSubmit || viewModel.isSubmitting)
                 }
-                .buttonStyle(.dnaPrimary(isDisabled: !viewModel.canSubmit || viewModel.isSubmitting))
-                .disabled(!viewModel.canSubmit || viewModel.isSubmitting)
             }
         }
         .background(Color.dnaSheet)

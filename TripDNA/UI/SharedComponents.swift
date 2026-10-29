@@ -334,6 +334,8 @@ struct DNACircleIcon: View {
 
 /// 화면 하단에 고정하는 코랄 CTA. 한 화면에 주 행동 하나만 두는 원칙을 강제한다.
 struct DNABottomCTA<Content: View>: View {
+    /// 화면 배경색. 버튼 자리는 이 색으로 불투명하게 깔아, 아래로 스크롤되는 내용이 비쳐 버튼과 겹쳐 보이지 않게 한다.
+    var background: Color = .dnaCanvas
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -348,9 +350,9 @@ struct DNABottomCTA<Content: View>: View {
         // 버튼 콘텐츠 폭은 명시적으로 화면 가로 - lg*2 를 유지한다.
         .background(alignment: .bottom) {
             LinearGradient(
-                colors: [Color.dnaCanvas.opacity(0), Color.dnaCanvas.opacity(0.92)],
+                colors: [background.opacity(0), background],
                 startPoint: .top,
-                endPoint: .bottom
+                endPoint: UnitPoint(x: 0.5, y: 0.3)
             )
             .ignoresSafeArea(edges: .bottom)
             .padding(.horizontal, -DNASpacing.lg)

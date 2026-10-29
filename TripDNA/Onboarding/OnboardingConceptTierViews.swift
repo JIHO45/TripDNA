@@ -81,6 +81,7 @@ struct OnboardingConceptsView: View {
                 onTrailing: { advance(save: false) }
             )
             if let trip = viewModel.currentConceptTrip {
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: DNASpacing.lg) {
                         Text("여행 \(viewModel.conceptIndex + 1) / \(viewModel.conceptQueue.count) · \(trip.title) · \(trip.period)")
@@ -93,7 +94,8 @@ struct OnboardingConceptsView: View {
                             }
                         }
                         if let primary {
-                            secondarySection(primary: primary)
+                            // 컨셉을 고르면 "함께 한 것"이 화면 아래에 생기므로, 아래 버튼에 가리지 않게 스크롤해 보여준다.
+                            secondarySection(primary: primary).id("secondary")
                         }
                         if let message = viewModel.errorMessage {
                             Text(message).dnaFont(.caption).foregroundStyle(Color.dnaError)
@@ -104,6 +106,11 @@ struct OnboardingConceptsView: View {
                     .padding(.bottom, DNASpacing.xl)
                 }
                 .id(trip.id)
+                .onChange(of: primary) { _, new in
+                    guard new != nil else { return }
+                    withAnimation { proxy.scrollTo("secondary", anchor: .bottom) }
+                }
+                }
             }
             DNABottomCTA {
                 let isLast = viewModel.conceptIndex + 1 >= viewModel.conceptQueue.count

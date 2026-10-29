@@ -215,7 +215,9 @@ final class AppDependencies {
         )
 
         #if DEBUG
-        let effectivePersistence: AppPersistence = ProcessInfo.processInfo.arguments.contains("-uiTesting") ? .inMemory : persistence
+        // -uiDemo도 인메모리로 받아, 시드가 기기에 남은 실제 기록을 건드리지 않게 한다.
+        let launchArguments = ProcessInfo.processInfo.arguments
+        let effectivePersistence: AppPersistence = launchArguments.contains("-uiTesting") || launchArguments.contains("-uiDemo") ? .inMemory : persistence
         #else
         let effectivePersistence = persistence
         #endif

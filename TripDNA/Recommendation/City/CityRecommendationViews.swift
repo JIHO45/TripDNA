@@ -7,8 +7,21 @@ struct CityRecommendationSection: View {
     let model: CityRecommendationViewModel
     let retry: () -> Void
     let editConditions: () -> Void
+    /// 새 입력 시트를 연다. 인자가 있으면 그 조건을 채워서 연다.
+    let newRequest: (RecommendationRequest?) -> Void
     @Environment(AppDependencies.self) private var dependencies
     @State private var showingKeyEntry = false
+
+    private static let catalog = CityCatalog.load()
+
+    /// 이번 결과가 사는 나라를 뺀 채 받은 것이고 그 나라에 추천 도시가 있을 때, 그 나라 이름.
+    /// 기록에는 따로 저장된 값이 없어, 사는 나라 포함을 껐고 제외 나라에 사는 나라가 들어 있는지로 판단한다.
+    private func excludedHomeName(_ record: CityRecommendationRecord) -> String? {
+        guard let home = dependencies.homeCountryCode, !record.input.includeHomeCountry,
+              record.excludedCountries.contains(home),
+              Self.catalog?.cities.contains(where: { $0.country == home }) == true else { return nil }
+        return CountryCatalog.name(for: home)
+    }
 
     /// 안내 문구는 임시다. 문구와 시점은 사용자가 정한다(docs/data/storage-and-privacy.md).
     static let sendNotice = "추천을 받으면 입력한 여행 조건과 문장이 AI 서버로 전송돼요."
@@ -100,7 +113,7 @@ struct CityRecommendationSection: View {
         if let change = model.budgetChange { budgetChangeNotice(change) }
 
         if cards.isEmpty {
-            emptyNote(record)
+            emptyCard(record)
         } else {
             if !main.isEmpty {
                 Text("추천 도시 \(main.count)곳")
@@ -128,18 +141,47 @@ struct CityRecommendationSection: View {
         }
     }
 
-    private func emptyNote(_ record: CityRecommendationRecord) -> some View {
-        Text(record.cards.isEmpty
-             ? "예상 비용이 예산을 넘는 도시뿐이에요. 예산이나 기간을 조정해 보세요."
-             : "보여드릴 도시가 남지 않았어요. 새 여행 추천으로 다시 받아 보세요.")
-            .dnaFont(.body)
-            .foregroundStyle(Color.dnaTextSecondary)
+    /// 시안 ⓙ: 보여줄 카드가 없을 때. 실제 이유를 적고 조건 수정·새 추천으로 이어 준다.
+    private func emptyCard(_ record: CityRecommendationRecord) -> some View {
+        let cut = record.budgetCutCityIDs.count
+        let (title, reason): (String, String) = if record.cards.isEmpty, cut > 0 {
+            ("예산에 맞는 도시를 찾지 못했어요", "예상 비용이 예산을 넘는 \(cut)곳을 뺐더니 남은 도시가 없어요. 예산이나 기간을 조정해 보세요.")
+        } else if record.cards.isEmpty {
+            ("조건에 맞는 도시를 찾지 못했어요", "이번 조건으로는 보여드릴 도시를 받지 못했어요. 조건을 바꿔 다시 받아 보세요.")
+        } else {
+            ("보여드릴 도시가 남지 않았어요", "받은 \(record.cards.count)곳을 모두 넘기거나 다시 추천하지 않기로 뺐어요. 새 여행 추천으로 다시 받아 보세요.")
+        }
+        return VStack(spacing: DNASpacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .dnaFont(size: 22)
+                .foregroundStyle(Color.dnaActionText)
+                .frame(width: 52, height: 52)
+                .background(Color.dnaSurface2, in: Circle())
+            Text(title)
+                .dnaFont(.sectionTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+                .multilineTextAlignment(.center)
+            Text(reason)
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .multilineTextAlignment(.center)
+            Button("조건 수정", action: editConditions)
+                .buttonStyle(.dnaPrimary)
+            Button("새 여행 추천") { newRequest(nil) }
+                .buttonStyle(.dnaSecondary)
+        }
+        .padding(DNASpacing.md)
+        .frame(maxWidth: .infinity)
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 
     /// 시안 ③④: 처음엔 펼쳐 보이고, 스크롤하거나 카드를 넘기면 한 줄로 접힌다. 접힌 줄에도 꼭 지킬 조건은 남긴다.
     @ViewBuilder
     private func understandingCard(_ record: CityRecommendationRecord) -> some View {
         let required = record.conditions.filter { $0.level == .required }.map(\.text)
+        // 접어도 사는 나라를 뺀 사실은 남긴다.
+        let collapsed = record.input.collapsedLine(required: required)
+            + (excludedHomeName(record).map { " · \($0) 제외" } ?? "")
         if model.understandingExpanded {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 HStack {
@@ -181,6 +223,25 @@ struct CityRecommendationSection: View {
                         .accessibilityLabel("\(chip.contains("원 이하") ? "예산 " : "")\(chip), 바꾸기")
                     }
                 }
+                if let home = excludedHomeName(record) {
+                    Divider()
+                    HStack(spacing: DNASpacing.xs) {
+                        Image(systemName: "minus.circle").foregroundStyle(Color.dnaTextSecondary)
+                        Text("\(home)(사는 나라)은 뺐어요")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                        Spacer(minLength: 0)
+                        Button("포함하기") {
+                            var request = record.input
+                            request.includeHomeCountry = true
+                            newRequest(request)
+                        }
+                        .dnaFont(.button)
+                        .foregroundStyle(Color.dnaActionText)
+                        .frame(minHeight: 44)
+                        .accessibilityHint("조건을 채운 새 추천 화면이 열려요. 다시 추천을 받아야 해요")
+                    }
+                }
                 if !required.isEmpty {
                     Text("꼭 지킬 조건: \(required.joined(separator: ", "))")
                         .dnaFont(.caption)
@@ -208,7 +269,7 @@ struct CityRecommendationSection: View {
         } else {
             Button { withAnimation { model.expandUnderstanding() } } label: {
                 HStack(spacing: DNASpacing.xs) {
-                    Text(record.input.collapsedLine(required: required))
+                    Text(collapsed)
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .lineLimit(1)
@@ -223,7 +284,7 @@ struct CityRecommendationSection: View {
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("이해한 내용 펼치기: \(record.input.collapsedLine(required: required))")
+            .accessibilityLabel("이해한 내용 펼치기: \(collapsed)")
         }
     }
 

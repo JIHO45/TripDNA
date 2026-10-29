@@ -99,7 +99,7 @@ struct MemorySettingsView: View {
                 .listRowBackground(Color.dnaSurface1)
             } else {
                 Section {
-                    Text("추천에서 아쉬운 점을 알려주면 여기에 모여요")
+                    Text("원하는 여행에서 피하고 싶은 것을 적으면 여기에 보여요")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)

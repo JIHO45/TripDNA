@@ -277,7 +277,23 @@ struct HomeRedesignView: View {
     /// 첫 사용: "원하는 여행"을 고르게 한다. 고르지 않아도 다른 것을 쓸 수 있다.
     private var wantedChoiceCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Spacer(minLength: 0)
+            // 컨셉 10개를 보여줘 무엇을 고르는지 알리고, 어느 칩을 눌러도 "원하는 여행"에서 칸을 고른다. 미리 고르지 않는다.
+            DNAFlowLayout(spacing: 8) {
+                ForEach(TripConcept.allCases, id: \.self) { concept in
+                    NavigationLink {
+                        WantedTripsSettingsView()
+                    } label: {
+                        Text(concept.labelKo)
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 36)
+                            .background(Color.dnaRaised, in: Capsule())
+                            .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
             VStack(alignment: .leading, spacing: 4) {
                 Text("원하는 여행부터 골라주세요")
                     .dnaFont(.heroTitle)

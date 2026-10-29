@@ -8,6 +8,7 @@ struct HomePhotoScanSheet: View {
     @State private var viewModel: OnboardingViewModel = {
         let model = OnboardingViewModel()
         model.entryMode = .photoScan
+        model.isFromHome = true
         model.stage = .photoPriming
         return model
     }()

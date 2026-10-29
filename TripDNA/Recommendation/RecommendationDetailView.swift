@@ -63,7 +63,7 @@ struct RecommendationDetailView: View {
                     Spacer(minLength: 0)
                 }
                 Text("\(recommendation.slot.labelKo) 슬롯의 추천이에요")
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(DNASpacing.md)
@@ -86,8 +86,8 @@ struct RecommendationDetailView: View {
         SectionCard(title: "왜 추천하나요") {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 Text(viewModel.reasonText(for: recommendation))
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.9))
+                    .dnaFont(.body)
+                    .foregroundStyle(Color.dnaTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if !recommendation.explanationTagIDs.isEmpty {
@@ -109,12 +109,12 @@ struct RecommendationDetailView: View {
                 FitBadgesRow(badges: recommendation.fitBadges)
 
                 Text("물가 배지는 참고용이에요. 취향 매치 점수와 합쳐서 계산하지 않아요.")
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text("예산·비행시간은 검증된 데이터가 준비되면 보여드릴게요.")
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -125,15 +125,15 @@ struct RecommendationDetailView: View {
         SectionCard(title: "알아둘 점") {
             if recommendation.notices.isEmpty {
                 Text("지금 알려드릴 주의 사항이 없어요.")
-                    .font(.subheadline)
+                    .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             } else {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     ForEach(recommendation.notices, id: \.self) { notice in
                         Label {
                             Text(notice)
-                                .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.9))
+                                .dnaFont(.body)
+                                .foregroundStyle(Color.dnaTextPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                         } icon: {
                             Image(systemName: "exclamationmark.circle")

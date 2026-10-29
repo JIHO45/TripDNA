@@ -179,7 +179,7 @@ struct OnboardingHomeCountryView: View {
                     Label("다른 나라 검색", systemImage: "magnifyingglass")
                 }
                 .buttonStyle(.dnaSecondary)
-                Text("설정에서 언제든 바꿀 수 있어요. 정하지 않으면 아무 나라도 빼지 않고, 비행시간으로 정렬하지도 않아요.")
+                Text("설정에서 언제든 바꿀 수 있어요. 정하지 않으면 아무 나라도 빼지 않아요.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -289,7 +289,7 @@ private struct EntryModeRow: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextTertiary)
             }
             .padding(DNASpacing.md)

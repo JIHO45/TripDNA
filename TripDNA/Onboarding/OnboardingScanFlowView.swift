@@ -19,7 +19,7 @@ struct OnboardingPhotoPrimingView: View {
                     checkLine("사진 원본은 어디에도 보내지 않아요")
                     checkLine("찾은 여행은 후보로만 보여주고, 확인한 것만 기록해요")
                 }
-                Text("허용하지 않아도 직접 등록하거나 취향부터 시작할 수 있어요.")
+                Text(viewModel.isFromHome ? "허용하지 않아도 직접 등록할 수 있어요." : "허용하지 않아도 직접 등록하거나 취향부터 시작할 수 있어요.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -86,6 +86,8 @@ struct OnboardingNoCandidatesView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                 Text(viewModel.scanWasDenied
                      ? "괜찮아요. 다른 방법으로 계속할 수 있어요."
+                     : viewModel.isFromHome
+                     ? "위치 정보가 있는 여행 사진을 찾지 못했어요. 직접 여행을 등록할 수 있어요."
                      : "위치 정보가 있는 여행 사진을 찾지 못했어요. 직접 여행을 등록하거나, 취향부터 먼저 정할 수 있어요.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
@@ -106,8 +108,10 @@ struct OnboardingNoCandidatesView: View {
             DNABottomCTA {
                 Button("직접 등록") { viewModel.selectEntryMode(.manual) }
                     .buttonStyle(.dnaPrimary)
-                Button("여행 기록 없이 취향부터") { viewModel.selectEntryMode(.preferencesOnly) }
-                    .buttonStyle(.dnaSecondary)
+                if !viewModel.isFromHome {
+                    Button("여행 기록 없이 취향부터") { viewModel.selectEntryMode(.preferencesOnly) }
+                        .buttonStyle(.dnaSecondary)
+                }
                 if viewModel.scanWasDenied, let url = URL(string: UIApplication.openSettingsURLString) {
                     Link("허용할 사진 바꾸기 (iOS 설정)", destination: url)
                         .dnaFont(.caption)

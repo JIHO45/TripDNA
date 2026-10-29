@@ -790,6 +790,131 @@ struct CityStateTests {
         #expect(try await dependencies.store.cityState().skippedCityIDs.isEmpty)
     }
 
+    @Test @MainActor func budgetChangeNoticeAndRevertRestoreCondition() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let service = try CityRecommendationServiceTests.service(
+            client: CityRecommendationServiceTests.fake(lows: [3_000_000, 2_500_000]), dir: dir
+        )
+        var request = CityRecommendationServiceTests.request()
+        request.budgetMaxKRW = 4_000_000
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
+            homeCountryExcluded: false, seed: 7
+        )
+        try await dependencies.store.updateCityState { $0.lastRecord = record }
+        let model = CityRecommendationViewModel()
+        await model.restore(dependencies: dependencies)
+        #expect(model.budgetChange == nil)
+        let skipped = record.cards[2].cityID
+        await model.skip(skipped, dependencies: dependencies)
+        let original = model.visibleCards(record).map(\.cityID)
+
+        // 줄어드는 경우
+        await model.applyBudget(2_000_000, dependencies: dependencies)
+        #expect(model.budgetChange?.message == "예산을 1인 200만 원 이하로 바꿔서 2곳이 빠졌어요")
+        #expect(model.skippedCityIDs == [skipped])
+        // 되돌리면 이전 예산과 처음 보이던 카드로 돌아오고, 안내는 사라진다. 넘긴 도시는 그대로다.
+        await model.revertBudget(dependencies: dependencies)
+        #expect(model.lastRecord?.input.budgetMaxKRW == 4_000_000)
+        #expect(model.visibleCards(try #require(model.lastRecord)).map(\.cityID) == original)
+        #expect(model.budgetChange == nil)
+        #expect(model.skippedCityIDs == [skipped])
+        #expect(try await dependencies.store.cityState().lastRecord?.input.budgetMaxKRW == 4_000_000)
+
+        // 영향이 없는 경우
+        await model.applyBudget(5_000_000, dependencies: dependencies)
+        #expect(model.budgetChange?.message == "예산을 1인 500만 원 이하로 바꿨어요")
+        // 다시 늘어나는 경우: 아무것도 안 남는 예산에서 풀면 늘어난다.
+        await model.applyBudget(100_000, dependencies: dependencies)
+        #expect(model.budgetChange?.message == "예산을 1인 10만 원 이하로 바꿔서 \(original.count + 0)곳이 빠졌어요")
+        await model.applyBudget(5_000_000, dependencies: dependencies)
+        let added = try #require(model.budgetChange)
+        #expect(added.message == "예산을 1인 500만 원 이하로 바꿔서 \(added.added)곳이 늘었어요")
+        #expect(added.added > 0)
+    }
+
+    @Test @MainActor func returningToOriginalBudgetRestoresOriginalRecordAndSurvivesRestore() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let service = try CityRecommendationServiceTests.service(
+            client: CityRecommendationServiceTests.fake(lows: [3_000_000, 2_500_000]), dir: dir
+        )
+        var request = CityRecommendationServiceTests.request()
+        request.budgetMaxKRW = 4_000_000
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
+            homeCountryExcluded: false, seed: 7
+        )
+        #expect(record.understanding != nil)
+        try await dependencies.store.updateCityState { $0.lastRecord = record }
+        let model = CityRecommendationViewModel()
+        await model.restore(dependencies: dependencies)
+        let skipped = record.cards[2].cityID
+        await model.skip(skipped, dependencies: dependencies)
+
+        // 바꾸면 파생 결과, 복원해도 원본이 남아 있다.
+        await model.applyBudget(2_000_000, dependencies: dependencies)
+        #expect(model.lastRecord?.derivedFrom == record.id)
+        let reopened = CityRecommendationViewModel()
+        await reopened.restore(dependencies: dependencies)
+        #expect(reopened.originalRecord?.id == record.id)
+
+        // 직접 처음 예산을 입력해도, 되돌려도 원본으로 돌아온다.
+        await reopened.applyBudget(4_000_000, dependencies: dependencies)
+        #expect(reopened.lastRecord?.id == record.id)
+        #expect(reopened.lastRecord?.understanding != nil)
+        #expect(reopened.lastRecord?.derivedFrom == nil)
+        #expect(reopened.budgetChange == nil)
+        #expect(reopened.originalRecord == nil)
+        #expect(reopened.skippedCityIDs == [skipped])
+
+        await model.revertBudget(dependencies: dependencies)
+        #expect(model.lastRecord?.id == record.id)
+        #expect(model.lastRecord?.understanding != nil)
+        #expect(model.budgetChange == nil)
+        let stored = try await dependencies.store.cityState()
+        #expect(stored.lastRecord?.id == record.id)
+        #expect(stored.originalRecord == nil)
+        let again = CityRecommendationViewModel()
+        await again.restore(dependencies: dependencies)
+        #expect(again.lastRecord?.derivedFrom == nil)
+        #expect(again.lastRecord?.understanding != nil)
+    }
+
+    @Test @MainActor func choosingUndecidedBudgetRecutsWithoutBudget() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let service = try CityRecommendationServiceTests.service(
+            client: CityRecommendationServiceTests.fake(lows: [3_000_000, 2_500_000]), dir: dir
+        )
+        var request = CityRecommendationServiceTests.request()
+        request.budgetMaxKRW = 2_000_000
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
+            homeCountryExcluded: false, seed: 7
+        )
+        try await dependencies.store.updateCityState { $0.lastRecord = record }
+        let model = CityRecommendationViewModel()
+        await model.restore(dependencies: dependencies)
+        await model.applyBudget(nil, dependencies: dependencies)
+        #expect(model.lastRecord?.input.budgetMaxKRW == nil)
+        #expect(model.lastRecord?.budgetCutCityIDs.isEmpty == true)
+        #expect(model.budgetChange?.message.hasPrefix("예산을 미정으로 바꿔서") == true)
+        #expect(model.canEditBudget)
+        await model.revertBudget(dependencies: dependencies)
+        #expect(model.lastRecord?.id == record.id)
+    }
+
+    @Test func oldCityStateWithoutNewKeysDecodes() throws {
+        let state = try JSONDecoder().decode(CityRecommendationState.self, from: Data("{\"saved\":[],\"excluded\":[]}".utf8))
+        #expect(state.skippedCityIDs.isEmpty)
+        #expect(state.lastRecord == nil)
+    }
+
     @Test func savedAndExcludedCitiesSurviveReopeningTheStore() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).store")
         defer { try? FileManager.default.removeItem(at: url) }

@@ -72,7 +72,7 @@ struct SavedRecommendationsView: View {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     HStack(alignment: .firstTextBaseline) {
                         Text("\(CountryFlag.emoji(for: item.card.country)) \(item.card.cityName)")
-                            .font(.headline)
+                            .dnaFont(.sectionTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
                         Spacer(minLength: 0)
                         Text(savedDateText(item.savedAt))
@@ -83,7 +83,7 @@ struct SavedRecommendationsView: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                     Text(item.card.reason)
-                        .font(.subheadline)
+                        .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextPrimary.opacity(0.85))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
@@ -108,7 +108,7 @@ struct SavedRecommendationsView: View {
                 }
             } label: {
                 Label("저장 해제", systemImage: "bookmark.slash")
-                    .font(.caption.weight(.semibold))
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 9)
@@ -126,7 +126,7 @@ struct SavedRecommendationsView: View {
         SectionCard(title: "관심 없다고 한 나라") {
             VStack(alignment: .leading, spacing: 0) {
                 Text("되돌리면 다시 추천 후보에 들어가요.")
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .padding(.bottom, DNASpacing.xs)
                 ForEach(viewModel.dislikedFeedback) { feedback in
@@ -134,13 +134,13 @@ struct SavedRecommendationsView: View {
                         Text(CountryFlag.emoji(for: feedback.countryCode))
                             .accessibilityHidden(true)
                         Text(CountryCatalog.name(for: feedback.countryCode))
-                            .font(.subheadline)
+                            .dnaFont(.body)
                             .foregroundStyle(Color.dnaTextPrimary)
                         Spacer(minLength: 0)
                         Button("되돌리기") {
                             Task { await viewModel.revokeDislike(feedback, dependencies: dependencies) }
                         }
-                        .font(.subheadline.weight(.semibold))
+                        .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(CountryCatalog.name(for: feedback.countryCode)) 되돌리기")
@@ -159,7 +159,7 @@ struct SavedRecommendationsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(CountryCatalog.name(for: feedback.countryCode))
-                        .font(.headline)
+                        .dnaFont(.sectionTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                     SlotChip(slot: feedback.slot)
                     if isExcluded(feedback) {
@@ -180,7 +180,7 @@ struct SavedRecommendationsView: View {
             }
 
             Text(viewModel.savedReasonText(for: feedback))
-                .font(.subheadline)
+                .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextPrimary.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -189,7 +189,7 @@ struct SavedRecommendationsView: View {
                     TripRegistrationView(prefilledCountryCode: feedback.countryCode)
                 } label: {
                     Label("여행으로 등록", systemImage: "airplane")
-                        .font(.caption.weight(.semibold))
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaData)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
@@ -203,7 +203,7 @@ struct SavedRecommendationsView: View {
                         Task { await viewModel.revokeDislike(feedback, dependencies: dependencies) }
                     } label: {
                         Label("제외 풀기", systemImage: "arrow.uturn.backward")
-                            .font(.caption.weight(.semibold))
+                            .dnaFont(.caption)
                             .foregroundStyle(Color.dnaActionText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 9)
@@ -216,7 +216,7 @@ struct SavedRecommendationsView: View {
                     Task { await viewModel.unsave(feedback, dependencies: dependencies) }
                 } label: {
                     Label("저장 해제", systemImage: "bookmark.slash")
-                        .font(.caption.weight(.semibold))
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)

@@ -176,6 +176,8 @@ final class OnboardingViewModel {
 
     var stage: Stage = .hook
     var entryMode: EntryMode?
+    /// 홈의 "사진첩에서 찾기"에서 재사용 중인지. 온보딩 전용 "취향부터" 선택지를 숨기는 데 쓴다.
+    var isFromHome = false
     /// 사용자가 온보딩에서 명시적으로 고른 거주 국가. 건너뛰면 nil.
     var homeCountryCode: String?
     var showsManualRegistration = false

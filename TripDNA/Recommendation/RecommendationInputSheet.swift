@@ -30,7 +30,7 @@ struct RecommendationInputSheet: View {
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
-                        .font(.subheadline.weight(.bold))
+                        .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .frame(width: 40, height: 40)
                         .background(Color.dnaRaised, in: Circle())
@@ -273,7 +273,7 @@ struct RecommendationInputSheet: View {
                     customBudget = false
                     request.budgetMaxKRW = nil
                 }
-                ForEach([500_000, 1_000_000, 1_500_000], id: \.self) { amount in
+                ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
                     DNATagChip(
                         title: "\(amount / 10_000)만 원 이하",
                         isSelected: !customBudget && request.budgetMaxKRW == amount
@@ -300,7 +300,7 @@ struct RecommendationInputSheet: View {
                 .padding(DNASpacing.sm)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
-            Text("예산으로 도시를 거르지 않아요. 결과에서 예상 비용과 비교해 보여줘요.")
+            Text("예상 비용이 예산을 넘는 도시는 빼요. 비용은 추정이에요.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }

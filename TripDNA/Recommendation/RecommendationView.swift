@@ -21,7 +21,8 @@ struct RecommendationView: View {
                     retry: {
                         guard let request = cityModel.lastRequest else { return }
                         cityModel.begin(request: request, dependencies: dependencies)
-                    }
+                    },
+                    editConditions: { showingEdit = true }
                 )
                 if cityModel.state == .idle { introView }
             }

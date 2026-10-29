@@ -57,14 +57,14 @@ struct TripPhotoPager: View {
             if let item = items.first(where: { $0.dayIndex == selection }) {
                 VStack(spacing: 4) {
                     Text("\(item.dayIndex)일차")
-                        .font(.subheadline.weight(.semibold))
+                        .dnaFont(.cardTitle)
                         .foregroundStyle(.white)
                     if isEditable(item.dayIndex) {
                         Button {
                             onEditDay?(item.dayIndex)
                         } label: {
                             Text(item.storagePath == nil ? "사진 고르기" : "사진 바꾸기")
-                                .font(.caption.weight(.semibold))
+                                .dnaFont(.caption)
                                 .foregroundStyle(Color.dnaData)
                         }
                         .buttonStyle(.plain)
@@ -183,7 +183,7 @@ struct TripPhotoPager: View {
                             .font(prefersCompact ? .title3 : .title)
                             .foregroundStyle(Color.dnaTextSecondary)
                         Text(isEditable(item.dayIndex) ? "탭해서 사진 고르기" : emptyDayMessage)
-                            .font(.caption)
+                            .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DNASpacing.lg)

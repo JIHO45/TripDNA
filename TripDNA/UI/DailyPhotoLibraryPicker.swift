@@ -112,14 +112,14 @@ struct DailyPhotoLibraryPicker: View {
     private var deniedCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Label("사진 접근이 꺼져 있어요", systemImage: "photo.badge.exclamationmark")
-                .font(.subheadline.weight(.semibold))
+                .dnaFont(.cardTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             Text("설정에서 허용하면 \(dayLabel) 찍은 사진을 고를 수 있어요. 지금은 건너뛰어도 괜찮아요.")
-                .font(.caption)
+                .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             if let url = URL(string: UIApplication.openSettingsURLString) {
                 Link("설정 열기", destination: url)
-                    .font(.subheadline.weight(.semibold))
+                    .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaData)
             }
         }
@@ -145,7 +145,7 @@ struct DailyPhotoLibraryPicker: View {
         } else {
             if filtersToSingleDay {
                 Text("\(dayLabel) 찍은 사진")
-                    .font(.caption.weight(.semibold))
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             LazyVGrid(columns: columns, spacing: 6) {
@@ -167,7 +167,7 @@ struct DailyPhotoLibraryPicker: View {
 
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                 Label("사진첩에서 더 보기", systemImage: "photo.on.rectangle")
-                    .font(.caption.weight(.semibold))
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaData)
             }
             .disabled(isImporting)
@@ -177,14 +177,14 @@ struct DailyPhotoLibraryPicker: View {
     private var emptyTodayCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(filtersToSingleDay ? "\(dayLabel) 찍은 사진이 없어요" : "고를 수 있는 사진이 없어요")
-                .font(.subheadline.weight(.semibold))
+                .dnaFont(.cardTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             Text("건너뛰거나, 사진첩에서 다른 사진을 고를 수 있어요.")
-                .font(.caption)
+                .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                 Text("사진첩에서 고르기")
-                    .font(.subheadline.weight(.semibold))
+                    .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
@@ -391,7 +391,7 @@ struct AnyPhotoLibraryPickerButton: View {
                     ProgressView().tint(Color.dnaTextSecondary)
                 }
                 Text(isImporting ? "불러오는 중…" : title)
-                    .font(.subheadline.weight(.semibold))
+                    .dnaFont(.cardTitle)
             }
             .foregroundStyle(Color.dnaTextPrimary)
             .frame(maxWidth: .infinity)

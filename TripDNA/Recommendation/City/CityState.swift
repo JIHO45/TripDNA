@@ -44,6 +44,8 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     var excluded: [ExcludedCity] = []
     /// 마지막 추천 결과. 앱을 다시 켜면 추천 탭에 복원한다.
     var lastRecord: CityRecommendationRecord?
+    /// `lastRecord`가 예산만 바꿔 다시 거른 결과일 때, 처음 받은 원본. 처음 예산으로 돌아오면 이걸 다시 보여준다. 아니면 nil.
+    var originalRecord: CityRecommendationRecord?
     /// `lastRecord`에서 "이번 결과에서 넘기기"한 도시. 새 결과를 받으면 비운다. 영구 제외와 다르다.
     var skippedCityIDs: [String] = []
     /// `lastRecord`의 "이렇게 이해했어요"를 한 번 접었는지. 다시 열면 접힌 채로 시작한다. 새 결과를 받으면 false로 돌린다.
@@ -57,6 +59,7 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
         saved = try c.decodeIfPresent([SavedCity].self, forKey: .saved) ?? []
         excluded = try c.decodeIfPresent([ExcludedCity].self, forKey: .excluded) ?? []
         lastRecord = try? c.decodeIfPresent(CityRecommendationRecord.self, forKey: .lastRecord)
+        originalRecord = try? c.decodeIfPresent(CityRecommendationRecord.self, forKey: .originalRecord)
         skippedCityIDs = try c.decodeIfPresent([String].self, forKey: .skippedCityIDs) ?? []
         understandingSeen = try c.decodeIfPresent(Bool.self, forKey: .understandingSeen) ?? false
     }
@@ -140,6 +143,9 @@ extension CityRecommendationRecord.Card {
 }
 
 extension RecommendationRequest {
+    /// 예산 선택 칩의 고정 금액. 입력 시트와 조건 수정 시트가 함께 쓴다.
+    static let budgetPresets = [500_000, 1_000_000, 1_500_000]
+
     /// "이렇게 이해했어요"의 조건 칩. 시기는 항상 보이고(미정이면 "시기 미정"), 기간·예산은 모르면 뺀다.
     var conditionChips: [String] {
         var chips = [periodText ?? "시기 미정"]
@@ -171,7 +177,7 @@ extension RecommendationRequest {
         return nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일"
     }
 
-    private var budgetText: String? {
+    var budgetText: String? {
         guard let budgetMaxKRW else { return nil }
         let text = "\(budgetBasis == .perPerson ? "1인" : "전체") \(budgetMaxKRW / 10_000)만 원 이하"
         return budgetIncludesFlight ? text : text + " (항공 제외)"

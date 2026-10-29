@@ -6,6 +6,7 @@ private func won(_ amount: Int) -> String { "\(amount / 10_000)만원" }
 struct CityRecommendationSection: View {
     let model: CityRecommendationViewModel
     let retry: () -> Void
+    let editConditions: () -> Void
     @Environment(AppDependencies.self) private var dependencies
     @State private var showingKeyEntry = false
 
@@ -96,6 +97,7 @@ struct CityRecommendationSection: View {
                 .foregroundStyle(Color.dnaWarning)
         }
         understandingCard(record)
+        if let change = model.budgetChange { budgetChangeNotice(change) }
 
         if cards.isEmpty {
             emptyNote(record)
@@ -112,6 +114,17 @@ struct CityRecommendationSection: View {
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             if !check.isEmpty { checkGroup(check, request: record.input) }
+        }
+    }
+
+    private func budgetChangeNotice(_ change: CityRecommendationViewModel.BudgetChange) -> some View {
+        HStack(spacing: DNASpacing.sm) {
+            Text(change.message + " ·")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+            Button("되돌리기") { Task { await model.revertBudget(dependencies: dependencies) } }
+                .dnaFont(.caption)
+                .frame(minHeight: 44)
         }
     }
 
@@ -156,12 +169,16 @@ struct CityRecommendationSection: View {
                 }
                 DNAFlowLayout(spacing: DNASpacing.xs) {
                     ForEach(record.input.conditionChips, id: \.self) { chip in
-                        Text(chip)
-                            .dnaFont(.button)
-                            .foregroundStyle(Color.dnaTextPrimary)
-                            .padding(.horizontal, DNASpacing.sm)
-                            .padding(.vertical, DNASpacing.xs)
-                            .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.chip, style: .continuous))
+                        Button(action: editConditions) {
+                            Text(chip)
+                                .dnaFont(.button)
+                                .foregroundStyle(Color.dnaTextPrimary)
+                                .padding(.horizontal, DNASpacing.sm)
+                                .padding(.vertical, DNASpacing.xs)
+                                .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.chip, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(chip.contains("원 이하") ? "예산 " : "")\(chip), 바꾸기")
                     }
                 }
                 if !required.isEmpty {
@@ -823,11 +840,15 @@ struct CityConditionEditSheet: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(\.dismiss) private var dismiss
     @State private var budgetText = ""
+    @State private var budget: Int?
+    @State private var isCustom = false
 
     /// 곱셈 오버플로를 막는 상한(10억 원).
     private static let maxBudgetMan = 100_000
 
     private var man: Int? { Int(budgetText).flatMap { (1...Self.maxBudgetMan).contains($0) ? $0 : nil } }
+    /// 지금 고른 예산이 적용할 수 있는 값인지. "직접 입력"은 올바른 금액이 있어야 한다.
+    private var canApply: Bool { !isCustom || man != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
@@ -846,24 +867,43 @@ struct CityConditionEditSheet: View {
                 .accessibilityLabel("닫기")
             }
             if model.canEditBudget {
-                Text("예산 (만원, 최대 금액)")
+                Text("예산 (최대 금액)")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                TextField("예: 100", text: $budgetText)
-                    .keyboardType(.numberPad)
+                DNAFlowLayout(spacing: 8) {
+                    DNATagChip(title: "미정", isSelected: budget == nil && !isCustom) {
+                        isCustom = false
+                        budget = nil
+                    }
+                    ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
+                        DNATagChip(title: "\(amount / 10_000)만 원 이하", isSelected: !isCustom && budget == amount) {
+                            isCustom = false
+                            budget = amount
+                        }
+                    }
+                    DNATagChip(title: "직접 입력", isSelected: isCustom) { isCustom = true }
+                }
+                if isCustom {
+                    HStack {
+                        TextField("금액", text: $budgetText)
+                            .keyboardType(.numberPad)
+                        Text("만 원 이하").foregroundStyle(Color.dnaTextSecondary)
+                    }
                     .textFieldStyle(.roundedBorder)
+                }
                 Text("새로 추천받지 않고 받은 도시만 다시 걸러요. 추천 횟수를 쓰지 않아요.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                 Button("이 조건으로 다시 보기") {
-                    guard let man else { return }
+                    guard canApply else { return }
+                    let amount = isCustom ? man.map { $0 * 10_000 } : budget
                     Task {
-                        await model.applyBudget(man * 10_000, dependencies: dependencies)
+                        await model.applyBudget(amount, dependencies: dependencies)
                         dismiss()
                     }
                 }
-                .buttonStyle(.dnaPrimary(isDisabled: man == nil))
-                .disabled(man == nil)
+                .buttonStyle(.dnaPrimary(isDisabled: !canApply))
+                .disabled(!canApply)
             } else {
                 Text("이번 결과는 예산 없이 받아서 예산으로 다시 거를 수 없어요.")
                     .dnaFont(.body)
@@ -878,9 +918,14 @@ struct CityConditionEditSheet: View {
         }
         .padding(DNASpacing.gutter)
         .background(Color.dnaSheet.ignoresSafeArea())
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .onAppear {
-            if budgetText.isEmpty, let current = model.lastRecord?.input.budgetMaxKRW { budgetText = String(current / 10_000) }
+            let current = model.lastRecord?.input.budgetMaxKRW
+            budget = current
+            if let current, !RecommendationRequest.budgetPresets.contains(current) {
+                isCustom = true
+                budgetText = String(current / 10_000)
+            }
         }
     }
 }

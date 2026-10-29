@@ -370,7 +370,7 @@ struct TripDetailView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextTertiary)
             }
             .padding(DNASpacing.md)

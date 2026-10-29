@@ -77,9 +77,9 @@ struct RecommendationDislikeSheet: View {
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
                 Text("이유를 알려주실래요?")
                     .font(.title3.bold())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.dnaTextPrimary)
                 Text("\(countryName)은(는) 앞으로 추천에서 빠져요. 저장 목록에서 언제든 되돌릴 수 있어요.")
-                    .font(.subheadline)
+                    .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(.top, DNASpacing.lg)
@@ -120,8 +120,8 @@ struct RecommendationToast: View {
 
     var body: some View {
         Label(message, systemImage: "checkmark.circle.fill")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
+            .dnaFont(.cardTitle)
+            .foregroundStyle(Color.dnaTextPrimary)
             .padding(.horizontal, DNASpacing.md)
             .padding(.vertical, DNASpacing.sm)
             .background(
@@ -143,10 +143,10 @@ struct RecommendationTagPill: View {
     var body: some View {
         Text("'\(TagCatalog.labelKo(for: tagID))'")
             .font(.caption.weight(.medium))
-            .foregroundStyle(.white.opacity(0.9))
+            .foregroundStyle(Color.dnaTextPrimary)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.white.opacity(0.07), in: Capsule())
+            .background(Color.dnaTextPrimary.opacity(0.07), in: Capsule())
             .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
     }
 }

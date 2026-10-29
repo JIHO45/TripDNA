@@ -25,6 +25,10 @@ final class CityRecommendationViewModel {
     private(set) var actionError: String?
     /// 넘기기·제외로 빈 자리를 채운 카드. 이번 결과에서만 쓴다.
     private(set) var refills: [CityRecommendationRecord.Card] = []
+    /// 예산만 바꿔 다시 거른 결과를 보는 중일 때 처음 받은 원본. 처음 예산으로 돌아오면 이걸 다시 보여준다.
+    private(set) var originalRecord: CityRecommendationRecord?
+    /// 방금 예산을 바꾼 안내와 되돌릴 이전 예산. 한 단계만 두고, 복원하거나 새 결과를 받으면 없앤다(저장하지 않는다).
+    private(set) var budgetChange: BudgetChange?
     /// 마지막으로 요청한 조건. 실패했을 때 다시 시도에 쓴다.
     private(set) var lastRequest: RecommendationRequest?
     private var task: Task<Void, Never>?
@@ -33,7 +37,7 @@ final class CityRecommendationViewModel {
     private(set) var understandingExpanded = true
 
     /// 마지막 결과에 비용 범위가 있어 예산만 바꿔 다시 계산할 수 있는지.
-    var canEditBudget: Bool { lastRecord?.input.budgetMaxKRW != nil }
+    var canEditBudget: Bool { (originalRecord ?? lastRecord)?.input.budgetMaxKRW != nil }
 
     var isConfigured: Bool { CityLLMConfiguration.makeClient() != nil }
 
@@ -58,6 +62,7 @@ final class CityRecommendationViewModel {
         hiddenCountries = Set((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
         if state == .idle, lastRecord == nil, let record = stored.lastRecord {
             lastRecord = record
+            originalRecord = stored.originalRecord
             lastRequest = record.input
             skipOrder = stored.skippedCityIDs
             skippedCityIDs = Set(skipOrder)
@@ -69,21 +74,71 @@ final class CityRecommendationViewModel {
 
     // MARK: 추천받기
 
-    /// 예산만 바꿔 컷을 다시 계산한다. LLM을 부르지 않는다.
-    func updateBudget(_ budgetMaxKRW: Int, catalog: CityCatalog? = CityCatalog.load()) {
-        guard let lastRecord, let catalog else { return }
-        let service = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
-        if let derived = service.recut(lastRecord, budgetMaxKRW: budgetMaxKRW) {
-            self.lastRecord = derived
-            refills = []
-            state = .done(derived)
-            fillVacancies(catalog: catalog)
+    struct BudgetChange: Equatable {
+        let previous: Int?
+        /// 조사까지 붙인 바꾼 예산 문구. 예: "1인 100만 원 이하로", "미정으로".
+        let phrase: String
+        let removed: Int
+        let added: Int
+
+        var message: String {
+            if removed > 0 { return "예산을 \(phrase) 바꿔서 \(removed)곳이 빠졌어요" }
+            if added > 0 { return "예산을 \(phrase) 바꿔서 \(added)곳이 늘었어요" }
+            return "예산을 \(phrase) 바꿨어요"
         }
     }
 
-    func applyBudget(_ budgetMaxKRW: Int, dependencies: AppDependencies) async {
+    /// 예산만 바꿔 컷을 다시 계산한다. LLM을 부르지 않는다. 넘긴 도시는 그대로 두고, 바뀐 만큼을 안내로 남긴다.
+    func updateBudget(_ budgetMaxKRW: Int?, catalog: CityCatalog? = CityCatalog.load()) {
+        guard let before = lastRecord else { return }
+        let previous = before.input.budgetMaxKRW
+        let shown = Set(visibleCards(before).map(\.cityID))
+        guard recut(budgetMaxKRW, catalog: catalog), let now = lastRecord else { return }
+        // 처음 예산으로 돌아오면 원본을 다시 보여주므로 바뀐 안내가 없다.
+        guard previous != budgetMaxKRW, now.derivedFrom != nil else { budgetChange = nil; return }
+        let after = Set(visibleCards(now).map(\.cityID))
+        budgetChange = BudgetChange(
+            previous: previous, phrase: now.input.budgetText.map { $0 + "로" } ?? "미정으로",
+            removed: shown.subtracting(after).count, added: after.subtracting(shown).count
+        )
+    }
+
+    /// 항상 처음 받은 원본에서 다시 계산한다. 원본의 예산과 같으면 계산 없이 원본을 그대로 쓴다.
+    private func recut(_ budgetMaxKRW: Int?, catalog: CityCatalog?) -> Bool {
+        guard let base = originalRecord ?? lastRecord else { return false }
+        let result: CityRecommendationRecord
+        if budgetMaxKRW == base.input.budgetMaxKRW {
+            result = base
+        } else {
+            guard let catalog,
+                  let derived = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
+                    .recut(base, budgetMaxKRW: budgetMaxKRW) else { return false }
+            result = derived
+        }
+        originalRecord = result.derivedFrom == nil ? nil : base
+        lastRecord = result
+        refills = []
+        state = .done(result)
+        fillVacancies(catalog: catalog ?? CityCatalog.load())
+        return true
+    }
+
+    func applyBudget(_ budgetMaxKRW: Int?, dependencies: AppDependencies) async {
         updateBudget(budgetMaxKRW)
-        if let lastRecord { try? await dependencies.store.updateCityState { $0.lastRecord = lastRecord } }
+        await saveRecuts(dependencies)
+    }
+
+    /// 바꾸기 전 예산 조건으로 되돌린다(예산이 없었으면 없는 조건으로). LLM을 부르지 않는다.
+    func revertBudget(dependencies: AppDependencies, catalog: CityCatalog? = CityCatalog.load()) async {
+        guard let change = budgetChange, recut(change.previous, catalog: catalog) else { return }
+        budgetChange = nil
+        await saveRecuts(dependencies)
+    }
+
+    private func saveRecuts(_ dependencies: AppDependencies) async {
+        guard let lastRecord else { return }
+        let original = originalRecord
+        _ = try? await dependencies.store.updateCityState { $0.lastRecord = lastRecord; $0.originalRecord = original }
     }
 
     /// 추천받기. 취소할 수 있게 작업을 들고 있는다.
@@ -151,6 +206,8 @@ final class CityRecommendationViewModel {
             )
             guard !Task.isCancelled else { return }
             lastRecord = record
+            originalRecord = nil
+            budgetChange = nil
             skippedCityIDs = []
             skipOrder = []
             refills = []
@@ -158,6 +215,7 @@ final class CityRecommendationViewModel {
             state = .done(record)
             _ = try? await dependencies.store.updateCityState {
                 $0.lastRecord = record
+                $0.originalRecord = nil
                 $0.skippedCityIDs = []
                 $0.understandingSeen = false
             }

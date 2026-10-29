@@ -146,7 +146,7 @@ struct DailyPhotoView: View {
                 .font(.title2.bold())
                 .foregroundStyle(Color.dnaTextPrimary)
             Text("사진은 저장됐어요. 반응은 기록용이고 취향 지문에는 반영되지 않아요.")
-                .font(.subheadline)
+                .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DNASpacing.lg)
@@ -233,7 +233,7 @@ struct DailyPhotoView: View {
     private var header: some View {
         VStack(spacing: 6) {
             Text("\(trip.titleKo) · \(resolvedDayIndex)일차")
-                .font(.caption.weight(.semibold))
+                .dnaFont(.caption)
                 .foregroundStyle(Color.dnaData)
             Text(isToday ? "오늘을 한 장으로 남긴다면?" : "\(resolvedDayIndex)일차를 한 장으로 남긴다면?")
                 .font(.title3.bold())
@@ -255,7 +255,7 @@ struct DailyPhotoView: View {
                     .foregroundStyle(Color.dnaData)
             }
             Text(isToday ? "오늘의 한 장을 남겼어요" : "\(resolvedDayIndex)일차 사진을 남겼어요")
-                .font(.headline)
+                .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
         }
         .padding(DNASpacing.xl)

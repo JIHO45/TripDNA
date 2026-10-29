@@ -62,7 +62,7 @@ struct RecommendationFilterSheet: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.subheadline.weight(.semibold))
+                            .dnaFont(.cardTitle)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 44, height: 44)
                     }
@@ -96,18 +96,18 @@ struct RecommendationFilterSheet: View {
                     Text(CountryFlag.emoji(for: code))
                         .font(.title3)
                     Text(CountryCatalog.name(for: code))
-                        .font(.subheadline.weight(.semibold))
+                        .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                 } else {
                     Image(systemName: "questionmark.circle")
                         .foregroundStyle(Color.dnaTextSecondary)
                     Text("거주 국가가 아직 설정되지 않았어요")
-                        .font(.subheadline)
+                        .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "lock")
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(DNASpacing.md)
@@ -131,12 +131,12 @@ struct RecommendationFilterSheet: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Text(title)
-                .font(.headline)
+                .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             content()
             if let caption {
                 Text(caption)
-                    .font(.caption)
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
         }

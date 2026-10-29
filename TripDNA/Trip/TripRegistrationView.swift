@@ -445,7 +445,7 @@ struct TripRegistrationView: View {
                             .lineLimit(1)
                     }
                     Image(systemName: isOpen ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.semibold))
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextTertiary)
                 }
                 .frame(minHeight: 44)
@@ -565,7 +565,7 @@ struct TripRegistrationView: View {
                             .foregroundStyle(leg.countryCode.isEmpty ? Color.dnaTextSecondary : Color.dnaTextPrimary)
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
+                            .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextTertiary)
                     }
                     .frame(minHeight: 44)
@@ -577,7 +577,7 @@ struct TripRegistrationView: View {
                         viewModel.removeLeg(id: leg.id)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.caption.weight(.semibold))
+                            .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())

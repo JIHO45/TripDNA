@@ -31,26 +31,26 @@ struct AffiliateActivitySection: View {
                     } label: {
                         HStack(spacing: DNASpacing.sm) {
                             Image(systemName: link.category.systemImage)
-                                .font(.headline)
+                                .dnaFont(.sectionTitle)
                                 .foregroundStyle(Color.dnaData)
                                 .frame(width: 38, height: 38)
                                 .background(Color.dnaData.opacity(0.12), in: Circle())
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("\(link.city) · \(link.category.labelKo)")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.white)
+                                    .dnaFont(.cardTitle)
+                                    .foregroundStyle(Color.dnaTextPrimary)
                                 Text("\(link.providerName) 웹에서 보기")
-                                    .font(.caption)
+                                    .dnaFont(.caption)
                                     .foregroundStyle(Color.dnaTextSecondary)
                             }
                             Spacer(minLength: 0)
                             Image(systemName: "arrow.up.right")
-                                .font(.caption.weight(.semibold))
+                                .dnaFont(.caption)
                                 .foregroundStyle(Color.dnaData)
                         }
                         .padding(DNASpacing.sm)
-                        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                        .background(Color.dnaTextPrimary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
                         .overlay {
                             RoundedRectangle(cornerRadius: 14)
                                 .strokeBorder(Color.dnaDivider, lineWidth: 1)
@@ -76,8 +76,8 @@ struct AffiliateActivitySection: View {
             } icon: {
                 Image(systemName: "info.circle.fill")
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.92))
+            .dnaFont(.caption)
+            .foregroundStyle(Color.dnaTextPrimary)
         } else {
             Label {
                 Text("현재는 제휴 연결 전 테스트 링크예요. 예약 수수료는 발생하지 않습니다.")
@@ -85,7 +85,7 @@ struct AffiliateActivitySection: View {
             } icon: {
                 Image(systemName: "hammer.fill")
             }
-            .font(.caption.weight(.semibold))
+            .dnaFont(.caption)
             .foregroundStyle(Color.dnaWarning)
         }
     }

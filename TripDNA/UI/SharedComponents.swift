@@ -229,7 +229,7 @@ struct DNAPrimaryButtonStyle: ButtonStyle {
 struct DNASecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .dnaFont(.cardTitle)
             .foregroundStyle(Color.dnaTextPrimary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -246,7 +246,7 @@ struct DNASecondaryButtonStyle: ButtonStyle {
 struct DNAGhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline)
+            .dnaFont(.body)
             .foregroundStyle(Color.dnaTextSecondary)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
@@ -287,7 +287,7 @@ struct DNAScreenHeader<Trailing: View>: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                 if let subtitle {
                     Text(subtitle)
-                        .font(.caption)
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
             }
@@ -393,7 +393,7 @@ struct DNASkipButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
+                .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
     }
@@ -427,14 +427,14 @@ struct DNAStepTopBar: View {
                 Spacer(minLength: 0)
                 if let counterText {
                     Text(counterText)
-                        .font(.caption.weight(.semibold))
+                        .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .monospacedDigit()
                 }
                 Spacer(minLength: 0)
                 if let trailingTitle, let onTrailing {
                     Button(trailingTitle, action: onTrailing)
-                        .font(.subheadline)
+                        .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                 } else if onBack != nil {
                     // 좌측 뒤로가기와 시각 균형을 맞추는 자리 채움.
@@ -466,18 +466,18 @@ struct DNASelectableCard: View {
                         .fill(Color.dnaSurface2)
                         .frame(width: 44, height: 44)
                     Image(systemName: systemImage)
-                        .font(.headline)
+                        .dnaFont(.sectionTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.dnaTextPrimary)
+                    Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
                     if let subtitle {
-                        Text(subtitle).font(.caption).foregroundStyle(Color.dnaTextSecondary)
+                        Text(subtitle).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
                 Spacer(minLength: 0)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             .padding(DNASpacing.md)
@@ -565,7 +565,7 @@ struct DNASatisfactionEmojiRow: View {
                         .overlay(alignment: .bottomTrailing) {
                             if satisfaction == value {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption)
+                                    .dnaFont(.caption)
                                     .foregroundStyle(Color.dnaTextPrimary, Color.dnaElevated)
                                     .accessibilityHidden(true)
                             }
@@ -593,7 +593,7 @@ struct DNATrustPanel: View {
                 .font(.title3)
                 .foregroundStyle(Color.dnaData)
             Text(text)
-                .font(.subheadline)
+                .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextPrimary.opacity(0.9))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -677,7 +677,7 @@ struct DNATagChip: View {
             HStack(spacing: DNASpacing.xs) {
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.caption.weight(.semibold))
+                        .dnaFont(.caption)
                         .accessibilityHidden(true)
                 }
                 Text(title)
@@ -733,7 +733,7 @@ struct SectionCard<Content: View>: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             if let title {
                 Text(title)
-                    .font(.headline)
+                    .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
             }
             content()
@@ -849,7 +849,7 @@ struct ScoreBadge: View {
 
     var body: some View {
         Text("취향 매치 \(Int((score * 100).rounded()))%")
-            .font(.caption.weight(.semibold))
+            .dnaFont(.caption)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(Color.dnaData.opacity(0.16), in: Capsule())
@@ -881,7 +881,7 @@ struct StatusPill: View {
 
     var body: some View {
         Text(status.labelKo)
-            .font(.caption.weight(.semibold))
+            .dnaFont(.caption)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(color.opacity(0.16), in: Capsule())
@@ -926,10 +926,10 @@ struct EmptyStateView: View {
                     .foregroundStyle(Color.dnaData)
             }
             Text(title)
-                .font(.headline)
+                .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             Text(message)
-                .font(.subheadline)
+                .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
             if let actionTitle, let action {
@@ -1173,7 +1173,7 @@ extension View {
 #Preview("SectionCard") {
     SectionCard(title: "섹션 카드") {
         Text("내용이 여기에 들어가요.")
-            .font(.subheadline)
+            .dnaFont(.body)
             .foregroundStyle(Color.dnaTextSecondary)
     }
     .padding()

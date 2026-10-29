@@ -80,11 +80,11 @@ nonisolated enum CityLLMRequestBuilder {
         lines.append("주 컨셉: \((request.primary?.labelKo ?? "미정"))")
         lines.append("함께 하고 싶은 것: \(request.secondary.isEmpty ? "없음" : request.secondary.map(\.labelKo).joined(separator: ", "))")
         lines.append("시기: \(period(request))")
-        lines.append("기간: \(request.nights)박")
+        lines.append("기간: \(request.nights.map { "\($0)박" } ?? "미정")")
         lines.append("인원: \(request.partySize)명")
         lines.append("예산: \(request.budgetMaxKRW.map { "최대 \($0)원 (\(request.budgetBasis == .group ? "일행 전체" : "1인"), 항공료 \(request.budgetIncludesFlight ? "포함" : "제외"))" } ?? "미정")")
-        if let budget = request.budgetMaxKRW, request.nights > 0 {
-            lines.append("하루 예산(예산÷박수, 단순 계산): 약 \(budget / request.nights)원")
+        if let budget = request.budgetMaxKRW, let nights = request.nights, nights > 0 {
+            lines.append("하루 예산(예산÷박수, 단순 계산): 약 \(budget / nights)원")
         }
         if context.homeCountryExcluded { lines.append("사는 나라의 도시는 이번 추천에서 제외했습니다.") }
 

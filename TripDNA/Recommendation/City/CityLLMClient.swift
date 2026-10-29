@@ -20,6 +20,8 @@ nonisolated struct CityLLMConfiguration: Sendable {
     static let model = "claude-haiku-5-5"
     /// claude-haiku-5-5는 기본으로 생각을 켜고, 그 토큰도 이 한도에 들어간다. 3500에서는 후보 8곳 설명이 잘렸다.
     static let maxTokens = 16000
+    /// 응답에 사용자 조건·평가 메모가 담기므로 디스크 캐시를 남기지 않는다(`.shared`는 응답을 앱 캐시 폴더에 저장했다).
+    static let session = URLSession(configuration: .ephemeral)
 
     /// 프록시 주소가 있으면 프록시, 없으면 DEBUG 빌드의 Keychain 키, 둘 다 없으면 nil.
     static func makeClient(bundle: Bundle = .main) -> (any CityLLMClient)? {
@@ -57,7 +59,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
             "system": system, "user": user, "model": model,
             "maxTokens": String(CityLLMConfiguration.maxTokens), "webSearchMaxUses": maxUses
         ] as [String: Any])
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         try Self.check(response)
         return try JSONDecoder().decode(CitySearchReply.self, from: data)
     }
@@ -70,7 +72,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
         request.httpBody = try JSONEncoder().encode(
             ["system": system, "user": user, "model": model, "maxTokens": String(CityLLMConfiguration.maxTokens)]
         )
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         try Self.check(response)
         return try messageText(from: data)
     }
@@ -107,7 +109,7 @@ nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
         request.httpBody = try JSONSerialization.data(
             withJSONObject: Self.searchBody(model: model, system: system, user: user, maxUses: maxUses)
         )
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw CityLLMError.http(http.statusCode)
         }
@@ -127,7 +129,7 @@ nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
             "messages": [["role": "user", "content": user]]
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw CityLLMError.http(http.statusCode)
         }

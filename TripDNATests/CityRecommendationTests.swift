@@ -890,6 +890,24 @@ struct CityStateTests {
         #expect(request.summaryText == "미식 · 11월 · 3박 · 1인 100만원 이하")
     }
 
+    /// 기간을 고르지 않으면 미정이다. 예전에는 기본값 3박이 화면에 안 보인 채 요청과 요약에 들어갔다.
+    @Test func unsetNightsStayUnknownInSummaryAndLLMRequest() throws {
+        var request = RecommendationRequest()
+        request.setPrimary(.food)
+        request.budgetMaxKRW = 1_000_000
+        #expect(request.nights == nil)
+        #expect(request.summaryText == "미식 · 1인 100만원 이하")
+
+        let (built, _) = try CityLLMRequestTests.makeRequest()
+        #expect(built.user.contains("기간: 미정"))
+        #expect(!built.user.contains("하루 예산"))
+
+        // 저장된 예전 요청: 박 수가 있으면 그대로, 없으면 미정으로 읽는다.
+        let decoder = JSONDecoder()
+        #expect(try decoder.decode(RecommendationRequest.self, from: Data(#"{"nights":5}"#.utf8)).nights == 5)
+        #expect(try decoder.decode(RecommendationRequest.self, from: Data("{}".utf8)).nights == nil)
+    }
+
     // MARK: 저장 실패 처리
 
     /// 읽기·저장을 골라 실패시키는 저장소. 저장 호출 횟수를 센다.

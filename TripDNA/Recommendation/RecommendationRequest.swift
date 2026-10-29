@@ -12,7 +12,8 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
     var year: Int?
     var month: Int?
     var startDate: Date?
-    var nights = 3
+    /// 박 수. nil이면 미정, 0이면 당일.
+    var nights: Int?
     var budgetBasis: BudgetBasis = .perPerson
     var budgetIncludesFlight = true
     /// 최대 금액(원). nil이면 미정.
@@ -33,7 +34,7 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
         year = try c.decodeIfPresent(Int.self, forKey: .year)
         month = try c.decodeIfPresent(Int.self, forKey: .month)
         startDate = try c.decodeIfPresent(Date.self, forKey: .startDate)
-        nights = try c.decodeIfPresent(Int.self, forKey: .nights) ?? 3
+        nights = try c.decodeIfPresent(Int.self, forKey: .nights)
         budgetBasis = try c.decodeIfPresent(BudgetBasis.self, forKey: .budgetBasis) ?? .perPerson
         budgetIncludesFlight = try c.decodeIfPresent(Bool.self, forKey: .budgetIncludesFlight) ?? true
         budgetMaxKRW = try c.decodeIfPresent(Int.self, forKey: .budgetMaxKRW)
@@ -48,7 +49,7 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
         var parts: [String] = []
         if let primary { parts.append(primary.labelKo) }
         if let month = month ?? startDate.map({ Calendar.current.component(.month, from: $0) }) { parts.append("\(month)월") }
-        parts.append("\(nights)박")
+        if let nights { parts.append("\(nights)박") }
         if let budgetMaxKRW {
             parts.append("\(budgetBasis == .perPerson ? "1인" : "전체") \(budgetMaxKRW / 10_000)만원 이하")
         }

@@ -193,7 +193,11 @@ struct RecommendationInputSheet: View {
             } else {
                 monthGrid
             }
-            stepperRow("얼마나", text: nightsText, value: $request.nights, range: 0...60)
+            // -1은 미정이다. 미정 → 당일 → 1박 순서로 움직인다.
+            stepperRow("얼마나", text: nightsText, value: Binding(
+                get: { request.nights ?? -1 },
+                set: { request.nights = $0 < 0 ? nil : $0 }
+            ), range: -1...60)
         }
     }
 
@@ -237,19 +241,19 @@ struct RecommendationInputSheet: View {
     }
 
     private var nightsText: String {
-        request.nights == 0 ? "당일" : "\(request.nights)박 \(request.nights + 1)일"
+        guard let nights = request.nights else { return "미정" }
+        return nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일"
     }
 
     private var whenSummary: String {
-        let when: String
+        var parts: [String] = []
         if let date = request.startDate {
-            when = date.formatted(.dateTime.month().day())
+            parts.append(date.formatted(.dateTime.month().day()))
         } else if let month = request.month {
-            when = "\(month)월"
-        } else {
-            return "미정"
+            parts.append("\(month)월")
         }
-        return "\(when) · \(nightsText)"
+        if request.nights != nil { parts.append(nightsText) }
+        return parts.isEmpty ? "미정" : parts.joined(separator: " · ")
     }
 
     // MARK: ④ 예산

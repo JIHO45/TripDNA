@@ -7,6 +7,7 @@ struct RecommendationView: View {
     @Environment(AppRouter.self) private var router
     @State private var cityModel = CityRecommendationViewModel()
     @State private var showingInput = false
+    @State private var showingEdit = false
 
     var body: some View {
         ScrollView {
@@ -17,7 +18,6 @@ struct RecommendationView: View {
                 }
                 CityRecommendationSection(
                     model: cityModel,
-                    onNewRequest: { showingInput = true },
                     retry: {
                         guard let request = cityModel.lastRequest else { return }
                         cityModel.begin(request: request, dependencies: dependencies)
@@ -26,6 +26,10 @@ struct RecommendationView: View {
                 if cityModel.state == .idle { introView }
             }
             .padding(DNASpacing.lg)
+        }
+        // 아래로 스크롤하면 "이렇게 이해했어요"를 한 줄로 접는다.
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 60 } action: { _, scrolled in
+            if scrolled { Task { await cityModel.collapseUnderstanding(dependencies: dependencies) } }
         }
         .dnaTopScrollBlur()
         .dnaBackground()
@@ -41,6 +45,9 @@ struct RecommendationView: View {
             router.recommendationInputRequested = false
             showingInput = true
         }
+        .sheet(isPresented: $showingEdit) {
+            CityConditionEditSheet(model: cityModel, onNewRequest: { showingInput = true })
+        }
         .sheet(isPresented: Binding(
             get: { cityModel.pendingConsentRequest != nil },
             set: { _ in }
@@ -51,21 +58,29 @@ struct RecommendationView: View {
 
     // MARK: 상단
 
+    /// 결과가 있을 때만 "조건 수정"·"새 여행 추천"을 둔다. 저장한 도시는 설정과 홈에서 연다.
     private var header: some View {
         DNAScreenHeader(title: "추천") {
-            HStack(spacing: DNASpacing.sm) {
-                Button { showingInput = true } label: {
-                    DNACircleIcon(systemImage: "plus", isEmphasized: false)
+            if cityModel.lastRecord != nil {
+                HStack(spacing: DNASpacing.xxs) {
+                    headerButton("조건 수정", isPrimary: false) { showingEdit = true }
+                    headerButton("새 여행 추천", isPrimary: true) { showingInput = true }
                 }
-                .accessibilityLabel("새 여행 추천")
-                NavigationLink {
-                    SavedRecommendationsView(viewModel: RecommendationViewModel())
-                } label: {
-                    DNACircleIcon(systemImage: "bookmark", isEmphasized: false)
-                }
-                .accessibilityLabel("저장한 도시")
             }
         }
+    }
+
+    private func headerButton(_ title: String, isPrimary: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .dnaFont(.button)
+                .foregroundStyle(isPrimary ? Color.white : Color.dnaTextPrimary)
+                .padding(.horizontal, DNASpacing.sm)
+                .frame(minHeight: 44)
+                .background(isPrimary ? Color.dnaAction : Color.dnaSurface1,
+                            in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: 본문
@@ -75,7 +90,7 @@ struct RecommendationView: View {
         VStack(spacing: DNASpacing.md) {
             VStack(spacing: DNASpacing.sm) {
                 Image(systemName: "sparkles")
-                    .font(.title2)
+                    .dnaFont(size: 22)
                     .foregroundStyle(Color.dnaActionText)
                     .frame(width: 56, height: 56)
                     .background(Color.dnaSurface2, in: Circle())

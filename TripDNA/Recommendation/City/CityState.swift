@@ -46,6 +46,8 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     var lastRecord: CityRecommendationRecord?
     /// `lastRecord`에서 "이번 결과에서 넘기기"한 도시. 새 결과를 받으면 비운다. 영구 제외와 다르다.
     var skippedCityIDs: [String] = []
+    /// `lastRecord`의 "이렇게 이해했어요"를 한 번 접었는지. 다시 열면 접힌 채로 시작한다. 새 결과를 받으면 false로 돌린다.
+    var understandingSeen = false
 
     init() {}
 
@@ -56,6 +58,7 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
         excluded = try c.decodeIfPresent([ExcludedCity].self, forKey: .excluded) ?? []
         lastRecord = try? c.decodeIfPresent(CityRecommendationRecord.self, forKey: .lastRecord)
         skippedCityIDs = try c.decodeIfPresent([String].self, forKey: .skippedCityIDs) ?? []
+        understandingSeen = try c.decodeIfPresent(Bool.self, forKey: .understandingSeen) ?? false
     }
 
     var excludedCityIDs: Set<String> { Set(excluded.map(\.cityID)) }
@@ -134,4 +137,43 @@ extension CityRecommendationRecord.Card {
 
     /// "추가 확인 필요" 묶음에 속하는지.
     var needsCheck: Bool { if case .needsCheck = badge { true } else { false } }
+}
+
+extension RecommendationRequest {
+    /// "이렇게 이해했어요"의 조건 칩. 시기는 항상 보이고(미정이면 "시기 미정"), 기간·예산은 모르면 뺀다.
+    var conditionChips: [String] {
+        var chips = [periodText ?? "시기 미정"]
+        if let lengthText { chips.append(lengthText) }
+        if let budgetText { chips.append(budgetText) }
+        return chips
+    }
+
+    /// 접힌 한 줄. 예: "미식 · 11월 3박 4일 · 필수: 비행 5시간 이내". 모르는 부분은 뺀다.
+    func collapsedLine(required: [String]) -> String {
+        var parts: [String] = []
+        if let primary { parts.append(primary.labelKo) }
+        let when = [periodText, lengthText].compactMap { $0 }.joined(separator: " ")
+        if !when.isEmpty { parts.append(when) }
+        if !required.isEmpty { parts.append("필수: \(required.joined(separator: ", "))") }
+        return parts.joined(separator: " · ")
+    }
+
+    private var periodText: String? {
+        if let startDate {
+            let parts = Calendar.current.dateComponents([.month, .day], from: startDate)
+            if let m = parts.month, let d = parts.day { return "\(m)월 \(d)일" }
+        }
+        return month.map { "\($0)월" }
+    }
+
+    private var lengthText: String? {
+        guard let nights else { return nil }
+        return nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일"
+    }
+
+    private var budgetText: String? {
+        guard let budgetMaxKRW else { return nil }
+        let text = "\(budgetBasis == .perPerson ? "1인" : "전체") \(budgetMaxKRW / 10_000)만 원 이하"
+        return budgetIncludesFlight ? text : text + " (항공 제외)"
+    }
 }

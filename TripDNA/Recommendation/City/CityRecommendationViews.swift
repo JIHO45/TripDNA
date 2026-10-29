@@ -5,10 +5,8 @@ private func won(_ amount: Int) -> String { "\(amount / 10_000)만원" }
 /// 도시 추천 결과(시안 RecoResult ③④). 받는 중·실패·지난 결과 복원까지 한 곳에서 그린다.
 struct CityRecommendationSection: View {
     let model: CityRecommendationViewModel
-    let onNewRequest: () -> Void
     let retry: () -> Void
     @Environment(AppDependencies.self) private var dependencies
-    @State private var showingEdit = false
     @State private var showingKeyEntry = false
 
     /// 안내 문구는 임시다. 문구와 시점은 사용자가 정한다(docs/data/storage-and-privacy.md).
@@ -35,7 +33,6 @@ struct CityRecommendationSection: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .sheet(isPresented: $showingEdit) { CityConditionEditSheet(model: model, onNewRequest: onNewRequest) }
         #if DEBUG
         .sheet(isPresented: $showingKeyEntry) { NavigationStack { DevKeyForm() } }
         #endif
@@ -88,12 +85,6 @@ struct CityRecommendationSection: View {
         let main = cards.filter { !$0.needsCheck }
         let check = cards.filter(\.needsCheck)
 
-        HStack(spacing: DNASpacing.xs) {
-            Button("조건 수정") { showingEdit = true }
-                .buttonStyle(.dnaSecondary)
-            Button("새 여행 추천", action: onNewRequest)
-                .buttonStyle(.dnaSecondary)
-        }
         if isPrevious {
             Text("\(record.createdAt.formatted(.dateTime.month().day()))에 받은 결과")
                 .dnaFont(.caption)
@@ -132,37 +123,91 @@ struct CityRecommendationSection: View {
             .foregroundStyle(Color.dnaTextSecondary)
     }
 
+    /// 시안 ③④: 처음엔 펼쳐 보이고, 스크롤하거나 카드를 넘기면 한 줄로 접힌다. 접힌 줄에도 꼭 지킬 조건은 남긴다.
+    @ViewBuilder
     private func understandingCard(_ record: CityRecommendationRecord) -> some View {
         let required = record.conditions.filter { $0.level == .required }.map(\.text)
-        return VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text("이렇게 이해했어요")
-                .dnaFont(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
-            if let understanding = record.understanding {
-                Text(understanding)
-                    .dnaFont(.body)
-                    .foregroundStyle(Color.dnaTextPrimary)
-            }
-            Text(record.input.summaryText)
-                .dnaFont(.cardTitle)
-                .foregroundStyle(Color.dnaTextPrimary)
-            if !required.isEmpty {
-                Text("꼭 지킬 조건: \(required.joined(separator: ", "))")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            }
-            if !record.memoriesUsed.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("지난 여행에서 참고").dnaFont(.caption)
-                    ForEach(record.memoriesUsed, id: \.id) { use in Text("· \(use.how)").dnaFont(.caption) }
+        if model.understandingExpanded {
+            VStack(alignment: .leading, spacing: DNASpacing.sm) {
+                HStack {
+                    Text("이렇게 이해했어요")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                    Spacer(minLength: 0)
+                    Button {
+                        Task { await model.collapseUnderstanding(dependencies: dependencies) }
+                    } label: {
+                        Image(systemName: "chevron.up")
+                            .dnaFont(size: 14, weight: .bold)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("이해한 내용 접기")
                 }
-                .foregroundStyle(Color.dnaTextSecondary)
-                .padding(.top, DNASpacing.xxs)
+                .padding(.trailing, -DNASpacing.xs)
+                if let understanding = record.understanding {
+                    Text(understanding)
+                        .dnaFont(.body)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                } else if let primary = record.input.primary {
+                    Text(primary.labelKo)
+                        .dnaFont(.cardTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                }
+                DNAFlowLayout(spacing: DNASpacing.xs) {
+                    ForEach(record.input.conditionChips, id: \.self) { chip in
+                        Text(chip)
+                            .dnaFont(.button)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                            .padding(.horizontal, DNASpacing.sm)
+                            .padding(.vertical, DNASpacing.xs)
+                            .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.chip, style: .continuous))
+                    }
+                }
+                if !required.isEmpty {
+                    Text("꼭 지킬 조건: \(required.joined(separator: ", "))")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                // 예산 수정은 저장된 응답을 다시 거를 뿐이라 횟수를 쓰지 않는다. 예산 없이 받은 결과는 수정할 수 없어 말하지 않는다.
+                if model.canEditBudget {
+                    Text("예산은 바꿔도 추천 횟수를 쓰지 않아요")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                if !record.memoriesUsed.isEmpty {
+                    VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                        Text("지난 여행에서 참고").dnaFont(.caption)
+                        ForEach(record.memoriesUsed, id: \.id) { use in Text("· \(use.how)").dnaFont(.caption) }
+                    }
+                    .foregroundStyle(Color.dnaTextSecondary)
+                }
             }
+            .padding(.horizontal, DNASpacing.md)
+            .padding(.bottom, DNASpacing.md)
+            .padding(.top, DNASpacing.xxs)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+        } else {
+            Button { withAnimation { model.expandUnderstanding() } } label: {
+                HStack(spacing: DNASpacing.xs) {
+                    Text(record.input.collapsedLine(required: required))
+                        .dnaFont(.body)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .dnaFont(size: 14, weight: .bold)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                .padding(.horizontal, DNASpacing.md)
+                .frame(minHeight: 44)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("이해한 내용 펼치기: \(record.input.collapsedLine(required: required))")
         }
-        .padding(DNASpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 
     /// "추가 확인 필요" 묶음. 기본 추천과 섞지 않고 확인할 조건 이름을 적는다.
@@ -232,6 +277,7 @@ private struct CityCardCarousel: View {
     let model: CityRecommendationViewModel
     let request: RecommendationRequest
     @State private var page: String?
+    @Environment(AppDependencies.self) private var dependencies
 
     private var index: Int { cards.firstIndex { $0.cityID == page } ?? 0 }
 
@@ -241,7 +287,7 @@ private struct CityCardCarousel: View {
                 LazyHStack(alignment: .top, spacing: DNASpacing.sm) {
                     ForEach(cards, id: \.cityID) { card in
                         CityCardView(card: card, model: model, request: request)
-                            .containerRelativeFrame(.horizontal) { width, _ in width * (cards.count > 1 ? 0.9 : 1) }
+                            .containerRelativeFrame(.horizontal) { width, _ in width }
                             .id(card.cityID)
                     }
                 }
@@ -249,11 +295,16 @@ private struct CityCardCarousel: View {
             }
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $page)
+            .onChange(of: page) { _, new in
+                // 처음 자리를 잡는 변화는 넘긴 것이 아니다.
+                guard let new, new != cards.first?.cityID else { return }
+                Task { await model.collapseUnderstanding(dependencies: dependencies) }
+            }
             // "1/3" 같은 숫자는 순위로 읽혀 쓰지 않는다. 점과 화살표로만 위치를 알린다.
             if cards.count > 1 {
                 HStack(spacing: DNASpacing.md) {
                     arrow("chevron.left", label: "이전 도시", target: index - 1)
-                    HStack(spacing: 6) {
+                    HStack(spacing: DNASpacing.xxs) {
                         ForEach(cards.indices, id: \.self) { i in
                             Capsule()
                                 .fill(i == index ? Color.dnaTextPrimary : Color.dnaDivider)
@@ -273,7 +324,7 @@ private struct CityCardCarousel: View {
             withAnimation { page = cards[target].cityID }
         } label: {
             Image(systemName: symbol)
-                .font(.subheadline.weight(.semibold))
+                .dnaFont(size: 15, weight: .semibold)
                 .foregroundStyle(cards.indices.contains(target) ? Color.dnaTextPrimary : Color.dnaTextTertiary)
                 .frame(width: 44, height: 44)
         }
@@ -420,8 +471,8 @@ private struct CityBadgeView: View {
                 Label("필수조건 충족 · \(scope.joined(separator: ", "))", systemImage: "checkmark.circle")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaData)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DNASpacing.xs)
+                    .padding(.vertical, DNASpacing.xxs)
                     .background(Color.dnaData.opacity(0.12), in: Capsule())
             case .needsCheck, nil:
                 EmptyView()
@@ -453,19 +504,22 @@ struct CityDetailView: View {
     @State private var errorMessage: String?
     @State private var question = ""
     @State private var questionState: QuestionState = .idle
+    @FocusState private var questionFocused: Bool
+    @State private var keyboardUp = false
 
     private enum QuestionState { case idle, loading, answered(CityAnswer), failed(String) }
 
     private var summary: String { request?.summaryText ?? conditionSummary }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
-                if cityExcluded || countryExcluded { exclusionRow }
                 CityNameArea(card: card, height: 160)
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                 basis
                 CityBadgeView(card: card)
+                if cityExcluded || countryExcluded { exclusionRow }
                 SectionCard(title: "이번 여행에 맞는 이유") {
                     Text(card.reason)
                         .dnaFont(.body)
@@ -482,37 +536,36 @@ struct CityDetailView: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
-                questionSection
+                questionSection.id(Self.questionID)
             }
             .padding(DNASpacing.lg)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .onChange(of: questionFocused) { _, focused in
+            guard focused else { return }
+            // 키보드가 올라오는 동안 기다렸다가 질문 칸이 보이게 올린다.
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                withAnimation { proxy.scrollTo(Self.questionID, anchor: .top) }
+            }
         }
         .dnaBackground()
         .toolbar(.hidden, for: .tabBar)
         .navigationTitle(card.cityName)
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            DNABottomCTA {
-                Button {
-                    Task { await toggleSave() }
-                } label: {
-                    Label(isSaved ? "저장했어요" : "저장", systemImage: isSaved ? "bookmark.fill" : "bookmark")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await toggleSave() } } label: {
+                    Image(systemName: isSaved ? "bookmark.fill" : "bookmark")
                 }
-                .buttonStyle(.dnaSecondary)
-                NavigationLink {
-                    TripRegistrationView(prefilledCountryCode: card.country, prefilledCity: card.cityName)
-                } label: {
-                    Text("이곳으로 여행 등록")
-                }
-                .buttonStyle(.dnaPrimary)
-                Text("날짜·동행은 자동으로 정하지 않아요")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                if let errorMessage {
-                    Text(errorMessage)
-                        .dnaFont(.caption)
-                        .foregroundStyle(Color.dnaError)
-                }
+                .accessibilityLabel(isSaved ? "저장 해제" : "저장")
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardUp = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboardUp = false }
+        .safeAreaInset(edge: .bottom) {
+            // 키보드가 떠 있는 동안은 숨겨 키보드와 함께 올라와 내용을 가리지 않게 한다.
+            if !keyboardUp { bottomBar }
         }
         .task {
             let state = try? await dependencies.store.cityState()
@@ -522,12 +575,38 @@ struct CityDetailView: View {
                 .contains { $0.countryCode == card.country }
             cityExcluded = state?.excludedCityIDs.contains(card.cityID) ?? false
         }
+        }
+    }
+
+    private static let questionID = "question"
+
+    /// 아래 고정 막대. 배경을 채워 뒤의 내용이 비치지 않고, 위에 구분선을 둔다.
+    private var bottomBar: some View {
+        DNABottomCTA {
+            NavigationLink {
+                TripRegistrationView(prefilledCountryCode: card.country, prefilledCity: card.cityName)
+            } label: {
+                Text("이곳으로 여행 등록")
+            }
+            .buttonStyle(.dnaPrimary)
+            Text("날짜·동행은 자동으로 정하지 않아요")
+                .dnaFont(.caption)
+                .foregroundStyle(Color.dnaTextSecondary)
+            if let errorMessage {
+                Text(errorMessage)
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaError)
+            }
+        }
+        .background(Color.dnaCanvas.ignoresSafeArea(edges: .bottom))
+        .overlay(alignment: .top) { Divider() }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     private var exclusionRow: some View {
         HStack(spacing: DNASpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(cityExcluded ? "추천에서 제외한 도시예요" : "추천에서 제외한 나라예요")
+            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                Text(cityExcluded ? "추천에서 제외 중" : "추천에서 제외한 나라예요")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextPrimary)
                 if countryExcluded {
@@ -544,7 +623,7 @@ struct CityDetailView: View {
                     .frame(minHeight: 44)
             }
         }
-        .padding(DNASpacing.md)
+        .padding(.horizontal, DNASpacing.md)
         .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 
@@ -559,8 +638,9 @@ struct CityDetailView: View {
                 TextField("이 도시에 대해 물어보세요", text: $question, axis: .vertical)
                     .lineLimit(1...3)
                     .textFieldStyle(.roundedBorder)
+                    .focused($questionFocused)
                 Button { Task { await ask() } } label: {
-                    Image(systemName: "arrow.up.circle.fill").font(.title2)
+                    Image(systemName: "arrow.up.circle.fill").dnaFont(size: 28)
                 }
                 .foregroundStyle(Color.dnaActionText)
                 .frame(minWidth: 44, minHeight: 44)
@@ -758,7 +838,7 @@ struct CityConditionEditSheet: View {
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
-                        .font(.subheadline.weight(.bold))
+                        .dnaFont(size: 15, weight: .bold)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .frame(width: 40, height: 40)
                         .background(Color.dnaRaised, in: Circle())

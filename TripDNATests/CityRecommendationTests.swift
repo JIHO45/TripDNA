@@ -1039,3 +1039,42 @@ struct CityStateTests {
         #expect((record.cards + filled + recut.cards).allSatisfy { pool.contains($0.cityID) })
     }
 }
+
+struct CityConditionTextTests {
+    @Test func chipsShowKnownPeriodLengthAndBudget() {
+        var request = RecommendationRequest()
+        request.month = 11
+        request.nights = 3
+        request.budgetMaxKRW = 1_000_000
+        #expect(request.conditionChips == ["11월", "3박 4일", "1인 100만 원 이하"])
+    }
+
+    @Test func unknownLengthAndBudgetAreOmittedAndPeriodSaysUndecided() {
+        #expect(RecommendationRequest().conditionChips == ["시기 미정"])
+    }
+
+    @Test func dateWinsAndGroupBudgetWithoutFlightIsSpelledOut() {
+        var request = RecommendationRequest()
+        request.startDate = Calendar.current.date(from: DateComponents(year: 2026, month: 12, day: 5))
+        request.nights = 0
+        request.budgetBasis = .group
+        request.budgetIncludesFlight = false
+        request.budgetMaxKRW = 2_000_000
+        #expect(request.conditionChips == ["12월 5일", "당일", "전체 200만 원 이하 (항공 제외)"])
+    }
+
+    @Test func collapsedLineKeepsRequiredConditions() {
+        var request = RecommendationRequest()
+        request.primary = .food
+        request.month = 11
+        request.nights = 3
+        #expect(request.collapsedLine(required: ["비행 5시간 이내"]) == "미식 · 11월 3박 4일 · 필수: 비행 5시간 이내")
+        #expect(request.collapsedLine(required: []) == "미식 · 11월 3박 4일")
+        #expect(RecommendationRequest().collapsedLine(required: ["비행 5시간 이내"]) == "필수: 비행 5시간 이내")
+    }
+
+    @Test func understandingSeenDefaultsToFalseForOldState() throws {
+        let state = try JSONDecoder().decode(CityRecommendationState.self, from: Data("{}".utf8))
+        #expect(!state.understandingSeen)
+    }
+}

@@ -29,6 +29,9 @@ final class CityRecommendationViewModel {
     private(set) var lastRequest: RecommendationRequest?
     private var task: Task<Void, Never>?
 
+    /// "이렇게 이해했어요"를 펼쳐 보일지. 새 결과는 펼쳐서 시작하고, 접은 적 있는 결과를 복원하면 접힌 채로 시작한다.
+    private(set) var understandingExpanded = true
+
     /// 마지막 결과에 비용 범위가 있어 예산만 바꿔 다시 계산할 수 있는지.
     var canEditBudget: Bool { lastRecord?.input.budgetMaxKRW != nil }
 
@@ -58,6 +61,7 @@ final class CityRecommendationViewModel {
             lastRequest = record.input
             skipOrder = stored.skippedCityIDs
             skippedCityIDs = Set(skipOrder)
+            understandingExpanded = !stored.understandingSeen
             state = .done(record)
         }
         fillVacancies()
@@ -150,8 +154,13 @@ final class CityRecommendationViewModel {
             skippedCityIDs = []
             skipOrder = []
             refills = []
+            understandingExpanded = true
             state = .done(record)
-            try? await dependencies.store.updateCityState { $0.lastRecord = record; $0.skippedCityIDs = [] }
+            _ = try? await dependencies.store.updateCityState {
+                $0.lastRecord = record
+                $0.skippedCityIDs = []
+                $0.understandingSeen = false
+            }
         } catch {
             guard !Task.isCancelled else { return }
             switch error {
@@ -164,6 +173,18 @@ final class CityRecommendationViewModel {
             }
         }
     }
+
+    // MARK: 이해한 내용 접기
+
+    /// 스크롤하거나 카드를 넘기면 한 줄로 접고, 다시 열면 접힌 채로 시작하도록 남긴다.
+    func collapseUnderstanding(dependencies: AppDependencies) async {
+        guard understandingExpanded, lastRecord != nil else { return }
+        understandingExpanded = false
+        _ = try? await dependencies.store.updateCityState { $0.understandingSeen = true }
+    }
+
+    /// 접힌 줄을 누르면 펼친다. 이번 화면에서만이고 저장한 "봤음"은 그대로 둔다.
+    func expandUnderstanding() { understandingExpanded = true }
 
     // MARK: 카드 행동
 

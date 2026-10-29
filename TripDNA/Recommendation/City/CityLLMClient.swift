@@ -59,6 +59,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
             "system": system, "user": user, "model": model,
             "maxTokens": String(CityLLMConfiguration.maxTokens), "webSearchMaxUses": maxUses
         ] as [String: Any])
+        for (field, value) in try await CityLLMCredentials.headers() { request.setValue(value, forHTTPHeaderField: field) }
         let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         try Self.check(response)
         return try JSONDecoder().decode(CitySearchReply.self, from: data)
@@ -72,6 +73,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
         request.httpBody = try JSONEncoder().encode(
             ["system": system, "user": user, "model": model, "maxTokens": String(CityLLMConfiguration.maxTokens)]
         )
+        for (field, value) in try await CityLLMCredentials.headers() { request.setValue(value, forHTTPHeaderField: field) }
         let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         try Self.check(response)
         return try messageText(from: data)

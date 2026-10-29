@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CityLLMProxyURL</key>
-	<string></string>
+	<string>https://us-central1-tripdna-8a073.cloudfunctions.net/cityLLM</string>
 	<key>TripDNAShareURL</key>
 	<string></string>
 </dict>

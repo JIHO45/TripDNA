@@ -1,14 +1,38 @@
 // 앱의 LLM 호출 중계. API 키는 서버에만 두고, 앱이 보낸 요청은 아래 상한 안에서만 전달한다.
-// 계약(앱: TripDNA/Recommendation/City/CityLLMClient.swift)
+// 계약(앱: TripDNA/Recommendation/City/CityLLMClient.swift, CityLLMCredentials.swift)
 //   POST {system, user, model, maxTokens, webSearchMaxUses?}
+//   헤더: Authorization: Bearer <익명 로그인 ID 토큰>, X-Firebase-AppCheck: <App Check 토큰>
 //   → 200 {content, stop_reason}: Messages API 응답 그대로. 잘림·빈 응답 판정은 앱이 한다.
+//   → 401: 두 토큰 중 하나라도 없거나 검증에 실패.
 // 사용자 내용은 기록하지 않는다(로그에는 상태 코드만).
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
+const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const { getAppCheck } = require("firebase-admin/app-check");
 const Anthropic = require("@anthropic-ai/sdk");
 
+initializeApp();
 const apiKey = defineSecret("ANTHROPIC_API_KEY");
+
+const verifiers = {
+  appCheck: (token) => getAppCheck().verifyToken(token),
+  idToken: (token) => getAuth().verifyIdToken(token),
+};
+
+// 정식 앱(App Check)의 이 프로젝트 사용자(익명 로그인)인지 확인하고 uid를 돌려준다. 아니면 null.
+async function verifyCaller(req, verify = verifiers) {
+  const appCheckToken = req.get("X-Firebase-AppCheck");
+  const idToken = /^Bearer (.+)$/.exec(req.get("Authorization") ?? "")?.[1];
+  if (!appCheckToken || !idToken) return null;
+  try {
+    await verify.appCheck(appCheckToken);
+    return (await verify.idToken(idToken)).uid;
+  } catch {
+    return null;
+  }
+}
 
 const MODEL = "claude-haiku-5-5";
 const MAX_TOKENS = 16000;
@@ -35,11 +59,12 @@ function buildParams(body) {
   return { params };
 }
 
-// ponytail: 인증 없이 열린 주소다. 출시 전에 App Check·익명 ID·횟수 계수를 붙인다(구독 단계).
+// ponytail: 호출 횟수 제한이 없다. 정식 앱 사용자라면 무제한으로 부를 수 있다. 무료 한도는 Firestore 계수로 붙인다(구독 단계).
 exports.cityLLM = onRequest(
   { secrets: [apiKey], timeoutSeconds: 180, maxInstances: 5 },
   async (req, res) => {
     if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+    if (!(await verifyCaller(req))) return res.status(401).json({ error: "unauthorized" });
     const { params, error } = buildParams(req.body);
     if (error) return res.status(400).json({ error });
 
@@ -57,3 +82,4 @@ exports.cityLLM = onRequest(
 );
 
 exports.buildParams = buildParams;
+exports.verifyCaller = verifyCaller;

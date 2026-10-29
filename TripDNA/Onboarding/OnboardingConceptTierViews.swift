@@ -17,16 +17,20 @@ extension WantedConceptTiers {
         case 1: tier1
         case 2: tier2
         case 3: tier3
-        default: TripConcept.allCases.filter { self.tier(of: $0) == nil }
+        default: TripConcept.displayOrder.filter { self.tier(of: $0) == nil }
         }
     }
 }
 
-/// 컨셉·티어 화면이 함께 쓰는 선택형 칩.
+/// 컨셉·티어 화면이 함께 쓰는 선택형 칩. 고르는 규칙은 `dnaOption`을 따른다.
+/// 티어 칸의 칩은 고른 것이 아니라 칸의 무게를 보여주므로 `tone`으로 겉모습만 바꾼다.
 struct OnboardingChip: View {
+    enum Tone { case strong, raised }
+
     let title: String
     var isSelected = false
     var showsChevron = false
+    var tone: Tone?
 
     var body: some View {
         HStack(spacing: 4) {
@@ -35,13 +39,24 @@ struct OnboardingChip: View {
                 Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
             }
         }
-        .dnaFont(.body)
-        .foregroundStyle(isSelected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
+        .dnaFont(.cardTitle)
         .padding(.horizontal, 14)
-        .frame(minHeight: 40)
-        .background(isSelected ? Color.dnaSelectedBackground : Color.dnaRaised, in: Capsule())
-        .overlay { Capsule().strokeBorder(isSelected ? Color.clear : Color.dnaDivider, lineWidth: 1) }
+        .frame(minHeight: 44)
+        .modifier(ChipLook(isSelected: isSelected, tone: tone))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private struct ChipLook: ViewModifier {
+        let isSelected: Bool
+        let tone: Tone?
+
+        func body(content: Content) -> some View {
+            if tone == .raised {
+                content.foregroundStyle(Color.dnaTextPrimary).background(Color.dnaRaised, in: Capsule())
+            } else {
+                content.dnaOption(isSelected: isSelected || tone == .strong, in: Capsule())
+            }
+        }
     }
 }
 
@@ -89,7 +104,7 @@ struct OnboardingConceptsView: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                         OnboardingHeader(title: "어떤 여행이었나요?", subtitle: "가장 큰 것 하나 · 나중에 고칠 수 있어요")
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DNASpacing.xs) {
-                            ForEach(TripConcept.allCases, id: \.self) { concept in
+                            ForEach(TripConcept.displayOrder, id: \.self) { concept in
                                 tile(concept)
                             }
                         }
@@ -136,25 +151,17 @@ struct OnboardingConceptsView: View {
         } label: {
             Text(concept.labelKo)
                 .dnaFont(.cardTitle)
-                .foregroundStyle(isSelected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
                 .frame(maxWidth: .infinity, minHeight: 56)
-                .background(
-                    isSelected ? Color.dnaSelectedBackground : Color.dnaRaised,
-                    in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        .strokeBorder(isSelected ? Color.clear : Color.dnaDivider, lineWidth: 1)
-                }
+                .dnaOption(isSelected: isSelected, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func secondarySection(primary: TripConcept) -> some View {
-        let options = TripConcept.allCases.filter { $0 != primary }
-        let rows = [options.enumerated().filter { $0.offset % 2 == 0 }.map(\.element),
-                    options.enumerated().filter { $0.offset % 2 == 1 }.map(\.element)]
+        let options = TripConcept.displayOrder.filter { $0 != primary }
+        let half = (options.count + 1) / 2
+        let rows = [Array(options.prefix(half)), Array(options.dropFirst(half))]
         return VStack(alignment: .leading, spacing: DNASpacing.xs) {
             HStack {
                 Text("함께 한 것 · 선택")
@@ -179,7 +186,7 @@ struct OnboardingConceptsView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(locked)
-                                .opacity(locked ? 0.35 : 1)
+                                .opacity(locked ? 0.4 : 1)
                             }
                         }
                     }
@@ -235,7 +242,7 @@ struct ConceptTierBox: View {
                                 }
                             }
                         } label: {
-                            OnboardingChip(title: concept.labelKo, showsChevron: true)
+                            OnboardingChip(title: concept.labelKo, showsChevron: true, tone: tier == 1 ? .strong : (tier == nil ? nil : .raised))
                         }
                     }
                 }
@@ -243,10 +250,12 @@ struct ConceptTierBox: View {
         }
         .padding(DNASpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(tier == nil ? Color.dnaSurface1 : Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+        .background(tier == nil ? Color.clear : Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaDivider, lineWidth: 1)
+            if tier == nil {
+                RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
+                    .strokeBorder(Color.dnaDivider, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+            }
         }
     }
 }

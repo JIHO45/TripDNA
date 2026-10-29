@@ -57,6 +57,10 @@ extension Color {
     // 선택한 칩·세그먼트 (다크는 반전)
     static let dnaSelectedBackground = Color(light: 0x222222, dark: 0xF5F5F5)
     static let dnaSelectedForeground = Color(light: 0xFFFFFF, dark: 0x141414)
+    // 고르지 않은 칩·타일: 카드(흰색/다크 262626) 위에서도 보이는 옅은 회색 채움. 테두리는 두지 않는다.
+    static let dnaChipFill = Color(light: 0xF7F7F7, dark: 0x333333)
+    // 세그먼트 컨트롤의 선택 조각 (트랙은 dnaSurface2)
+    static let dnaSegmentThumb = Color(light: 0xFFFFFF, dark: 0x4A4A4A)
 
     // MARK: 이전 이름
     //
@@ -80,6 +84,10 @@ enum DNASpacing {
     static let gutter: CGFloat = 20
     static let lg: CGFloat = 24
     static let xl: CGFloat = 32
+    /// 제목과 그 아래 내용 사이.
+    static let titleGap: CGFloat = 12
+    /// 같은 화면의 섹션과 섹션 사이.
+    static let section: CGFloat = 24
 }
 
 enum DNARadius {
@@ -163,12 +171,13 @@ private struct DNAScaledFont: ViewModifier {
 
 /// 토큰 시트의 타이포 역할. 시스템 폰트(SF Pro + Apple SD Gothic Neo)만 쓴다.
 enum DNAFontRole {
-    case screenTitle, heroTitle, sectionTitle, cardTitle, body, button, caption, tabLabel
+    case screenTitle, heroTitle, stepTitle, sectionTitle, cardTitle, body, button, caption, tabLabel
 
     fileprivate var spec: (size: CGFloat, weight: Font.Weight, style: Font.TextStyle, tracking: CGFloat) {
         switch self {
         case .screenTitle: (26, .heavy, .title2, -0.52)
         case .heroTitle: (21, .heavy, .title3, -0.21)
+        case .stepTitle: (24, .heavy, .title2, -0.3)
         case .sectionTitle: (17, .heavy, .headline, 0)
         case .cardTitle: (15, .heavy, .subheadline, 0)
         case .body: (15, .medium, .subheadline, 0)
@@ -210,7 +219,7 @@ struct DNAPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .dnaFont(size: 16, weight: .semibold)
-            .foregroundStyle(isDisabled ? Color.dnaTextTertiary : .white)
+            .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 54)
             .background(
@@ -221,23 +230,47 @@ struct DNAPrimaryButtonStyle: ButtonStyle {
     }
 
     private func fillColor(isPressed: Bool) -> Color {
-        if isDisabled { return Color.dnaTextPrimary.opacity(0.08) }
+        if isDisabled { return Color.dnaAction.opacity(0.35) }
         return isPressed ? .dnaActionPressed : .dnaAction
     }
 }
 
+/// 보조 행동: 옅은 회색 채움, 테두리 없음, 짙은 글자. 시안의 나중에·건너뛰기·홈으로.
+/// 회색 시트(`dnaSheet`) 위에서는 `onSheet`로 흰 채움을 쓴다.
 struct DNASecondaryButtonStyle: ButtonStyle {
+    var onSheet = false
+    var fullWidth = true
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .dnaFont(.cardTitle)
+            .dnaFont(.button)
             .foregroundStyle(Color.dnaTextPrimary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .padding(.horizontal, fullWidth ? 0 : DNASpacing.md)
+            .frame(maxWidth: fullWidth ? .infinity : nil)
+            .frame(minHeight: fullWidth ? 48 : 44)
             .background(
-                Capsule(style: .continuous).fill(Color.dnaTextPrimary.opacity(0.06))
+                RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
+                    .fill(onSheet ? Color.dnaRaised : Color.dnaSurface2)
             )
-            .overlay(
-                Capsule(style: .continuous).strokeBorder(Color.dnaDivider, lineWidth: 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+}
+
+/// 검정 채움 행동: 결과 머리글의 "새 여행 추천", 홈 카드의 "여행 보기". 코랄은 화면의 핵심 행동 하나에만 쓴다.
+/// 다크에서는 선택 칩과 같이 밝게 뒤집힌다. `fullWidth`가 아니면 글자 폭에 맞는다.
+struct DNADarkButtonStyle: ButtonStyle {
+    var fullWidth = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .dnaFont(.button)
+            .foregroundStyle(Color.dnaSelectedForeground)
+            .padding(.horizontal, DNASpacing.md)
+            .frame(maxWidth: fullWidth ? .infinity : nil)
+            .frame(minHeight: 44)
+            .background(
+                RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
+                    .fill(Color.dnaSelectedBackground)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
@@ -246,7 +279,7 @@ struct DNASecondaryButtonStyle: ButtonStyle {
 struct DNAGhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .dnaFont(.body)
+            .dnaFont(.button)
             .foregroundStyle(Color.dnaTextSecondary)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
@@ -261,6 +294,14 @@ extension ButtonStyle where Self == DNAPrimaryButtonStyle {
 
 extension ButtonStyle where Self == DNASecondaryButtonStyle {
     static var dnaSecondary: DNASecondaryButtonStyle { DNASecondaryButtonStyle() }
+    static func dnaSecondary(onSheet: Bool = false, fullWidth: Bool = true) -> DNASecondaryButtonStyle {
+        DNASecondaryButtonStyle(onSheet: onSheet, fullWidth: fullWidth)
+    }
+}
+
+extension ButtonStyle where Self == DNADarkButtonStyle {
+    static var dnaDark: DNADarkButtonStyle { DNADarkButtonStyle() }
+    static func dnaDark(fullWidth: Bool) -> DNADarkButtonStyle { DNADarkButtonStyle(fullWidth: fullWidth) }
 }
 
 extension ButtonStyle where Self == DNAGhostButtonStyle {
@@ -668,6 +709,16 @@ struct DNAFlowLayout: Layout {
     }
 }
 
+extension View {
+    /// 칩·타일·월 칸 공통 선택 규칙. 고르지 않으면 옅은 회색 채움에 짙은 글자, 고르면 검정 채움(다크는 뒤집힘)에 흰 글자.
+    /// 테두리와 체크 표시는 쓰지 않고, 접근성에는 `.isSelected`로 알린다.
+    func dnaOption<S: Shape>(isSelected: Bool, in shape: S) -> some View {
+        self
+            .foregroundStyle(isSelected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
+            .background(isSelected ? Color.dnaSelectedBackground : Color.dnaChipFill, in: shape)
+    }
+}
+
 /// 선택 가능한 태그 칩. 온보딩 관심사·평가 태그·필터에서 재사용한다.
 struct DNATagChip: View {
     let title: String
@@ -676,31 +727,104 @@ struct DNATagChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DNASpacing.xs) {
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .dnaFont(.caption)
-                        .accessibilityHidden(true)
-                }
-                Text(title)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .font(.subheadline.weight(isSelected ? .semibold : .regular))
-            .foregroundStyle(isSelected ? Color.dnaTextPrimary : Color.dnaTextSecondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(minHeight: 44)
-            .background(isSelected ? Color.dnaElevated : Color.dnaSurface1, in: Capsule())
-            .overlay {
-                Capsule().strokeBorder(
-                    isSelected ? Color.dnaTextSecondary.opacity(0.5) : Color.dnaDivider,
-                    lineWidth: 1
-                )
-            }
-            .animation(.easeOut(duration: 0.15), value: isSelected)
+            Text(title)
+                .fixedSize(horizontal: false, vertical: true)
+                .dnaFont(.cardTitle)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .frame(minHeight: 44)
+                .dnaOption(isSelected: isSelected, in: Capsule())
+                .animation(.easeOut(duration: 0.15), value: isSelected)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// 회색 트랙 위에 선택한 칸이 흰 조각으로 뜨는 세그먼트 컨트롤. 1인/일행 전체, 항공 포함/제외, 목록/내 랭킹.
+struct DNASegmentedControl<V: Hashable>: View {
+    let items: [(title: String, value: V)]
+    let selection: V
+    let onSelect: (V) -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(items.indices, id: \.self) { index in
+                let selected = items[index].value == selection
+                Button { onSelect(items[index].value) } label: {
+                    Text(items[index].title)
+                        .dnaFont(.cardTitle)
+                        .foregroundStyle(selected ? Color.dnaTextPrimary : Color.dnaTextSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background {
+                            if selected {
+                                Capsule().fill(Color.dnaSegmentThumb)
+                                    .shadow(color: Color.black.opacity(0.14), radius: 2, y: 1)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .background(Color.dnaSurface2, in: Capsule())
+        .animation(.easeOut(duration: 0.15), value: selection)
+    }
+}
+
+/// 둥근 − / + 버튼 스테퍼. 회색 상자 안에 라벨, 값, 흰 원형 버튼. 인원·박수에 쓴다.
+/// 값이 범위 끝이면 해당 버튼이 꺼진다. VoiceOver에서는 위아래 조절로 바꾼다.
+struct DNAStepper: View {
+    let label: String
+    let valueText: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    /// 이미 회색 상자 안에 놓였으면 false로 두어 상자를 겹치지 않는다.
+    var boxed = true
+
+    var body: some View {
+        HStack(spacing: DNASpacing.xs) {
+            Text(label)
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
+            Spacer(minLength: DNASpacing.xs)
+            button("minus", enabled: value > range.lowerBound) { value -= 1 }
+            Text(valueText)
+                .dnaFont(.cardTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+                .multilineTextAlignment(.center)
+                .frame(minWidth: 56)
+            button("plus", enabled: value < range.upperBound) { value += 1 }
+        }
+        .padding(.leading, boxed ? DNASpacing.md : 0)
+        .padding(.trailing, boxed ? DNASpacing.xs : 0)
+        .padding(.vertical, boxed ? DNASpacing.xs : 0)
+        .background(boxed ? Color.dnaSurface1 : Color.clear, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(valueText)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment where value < range.upperBound: value += 1
+            case .decrement where value > range.lowerBound: value -= 1
+            default: break
+            }
+        }
+    }
+
+    private func button(_ systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.bold))
+                .foregroundStyle(enabled ? Color.dnaTextPrimary : Color.dnaTextTertiary)
+                .frame(width: 44, height: 44)
+                .background(Color.dnaRaised, in: Circle())
+                .overlay(Circle().strokeBorder(Color.dnaDivider, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 }
 
@@ -732,7 +856,7 @@ struct SectionCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DNASpacing.sm) {
+        VStack(alignment: .leading, spacing: DNASpacing.titleGap) {
             if let title {
                 Text(title)
                     .dnaFont(.sectionTitle)

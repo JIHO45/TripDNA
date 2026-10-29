@@ -876,7 +876,7 @@ struct CityConsentSheet: View {
             Button("동의하고 추천 받기") { model.answerConsent(true, dependencies: dependencies) }
                 .buttonStyle(.dnaPrimary)
             Button("평가는 빼고 추천 받기") { model.answerConsent(false, dependencies: dependencies) }
-                .buttonStyle(.dnaSecondary)
+                .buttonStyle(.dnaSecondary(onSheet: true))
         }
         .padding(DNASpacing.gutter)
         .background(Color.dnaSheet.ignoresSafeArea())
@@ -974,7 +974,7 @@ struct CityConditionEditSheet: View {
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             Button("새 여행 추천") { dismiss(); onNewRequest() }
-                .buttonStyle(.dnaSecondary)
+                .buttonStyle(.dnaSecondary(onSheet: true))
             Spacer(minLength: 0)
         }
         .padding(DNASpacing.gutter)

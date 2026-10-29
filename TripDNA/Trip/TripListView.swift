@@ -71,26 +71,7 @@ struct TripListView: View {
     }
 
     private var modePicker: some View {
-        HStack(spacing: 0) {
-            ForEach(Mode.allCases, id: \.self) { item in
-                Button { mode = item } label: {
-                    Text(item.rawValue)
-                        .dnaFont(.cardTitle)
-                        .foregroundStyle(mode == item ? Color.dnaTextPrimary : Color.dnaTextSecondary)
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .background {
-                            if mode == item {
-                                Capsule().fill(Color.dnaRaised)
-                                    .shadow(color: Color.dnaTextPrimary.opacity(0.12), radius: 2, y: 1)
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(mode == item ? .isSelected : [])
-            }
-        }
-        .padding(2)
-        .background(Color.dnaSurface2, in: Capsule())
+        DNASegmentedControl(items: Mode.allCases.map { ($0.rawValue, $0) }, selection: mode) { mode = $0 }
     }
 
     // MARK: - 목록
@@ -101,7 +82,7 @@ struct TripListView: View {
             LoadingView()
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: DNASpacing.lg) {
+                VStack(alignment: .leading, spacing: DNASpacing.section) {
                     if viewModel.trips.isEmpty {
                         emptyCard
                     }

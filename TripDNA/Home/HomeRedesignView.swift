@@ -175,12 +175,8 @@ struct HomeRedesignView: View {
                     TripDetailView(tripID: trip.id)
                 } label: {
                     Text("여행 보기")
-                        .dnaFont(.button)
-                        .foregroundStyle(Color.dnaTextPrimary)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 44)
-                        .dnaGlass(in: Capsule())
                 }
+                .buttonStyle(.dnaDark)
             }
             .padding(14)
             .dnaGlass(in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
@@ -213,12 +209,8 @@ struct HomeRedesignView: View {
                     TripDetailView(tripID: trip.id)
                 } label: {
                     Text("여행 보기")
-                        .dnaFont(.button)
-                        .foregroundStyle(Color.dnaTextPrimary)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 44)
-                        .dnaGlass(in: Capsule())
                 }
+                .buttonStyle(.dnaDark)
             }
             .foregroundStyle(.white)
             .padding(16)
@@ -279,7 +271,7 @@ struct HomeRedesignView: View {
         VStack(alignment: .leading, spacing: 14) {
             // 컨셉 10개를 보여줘 무엇을 고르는지 알리고, 어느 칩을 눌러도 "원하는 여행"에서 칸을 고른다. 미리 고르지 않는다.
             DNAFlowLayout(spacing: 8) {
-                ForEach(TripConcept.allCases, id: \.self) { concept in
+                ForEach(TripConcept.displayOrder, id: \.self) { concept in
                     NavigationLink {
                         WantedTripsSettingsView()
                     } label: {
@@ -317,13 +309,9 @@ struct HomeRedesignView: View {
                 Button {
                     dismissedWantedCard = true
                 } label: {
-                    Text("나중에")
-                        .dnaFont(.button)
-                        .foregroundStyle(Color.dnaTextPrimary)
-                        .padding(.horizontal, 18)
-                        .frame(minHeight: 48)
-                        .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
+                    Text("나중에").frame(minHeight: 48)
                 }
+                .buttonStyle(.dnaSecondary(onSheet: true, fullWidth: false))
             }
         }
         .padding(DNASpacing.md)
@@ -407,12 +395,9 @@ struct HomeRedesignView: View {
                         Task { await viewModel.skipEvaluation(trip, dependencies: dependencies, userID: session.userID) }
                     } label: {
                         Text("건너뛰기")
-                            .dnaFont(.button)
-                            .foregroundStyle(Color.dnaTextPrimary)
-                            .padding(.horizontal, 18)
-                            .frame(minHeight: 44)
-                            .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
+                            .padding(.horizontal, DNASpacing.sm)
                     }
+                    .buttonStyle(.dnaGhost)
                 }
             }
             .padding(DNASpacing.md)

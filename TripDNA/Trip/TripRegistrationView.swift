@@ -677,17 +677,16 @@ struct TripRegistrationView: View {
                         displayedComponents: .date
                     )
                     .dnaFont(.body)
-                    Stepper(
+                    DNAStepper(
+                        label: "얼마나",
+                        valueText: viewModel.nights(of: leg) == 0 ? "당일" : "\(viewModel.nights(of: leg))박 \(viewModel.nights(of: leg) + 1)일",
                         value: Binding(
                             get: { viewModel.nights(of: leg) },
                             set: { viewModel.setNights($0, legIndex: index) }
                         ),
-                        in: 0...60
-                    ) {
-                        let nights = viewModel.nights(of: leg)
-                        Text(nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일")
-                            .dnaFont(.body)
-                    }
+                        range: 0...60,
+                        boxed: false
+                    )
                 }
                 .padding(DNASpacing.sm)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))

@@ -16,7 +16,7 @@ struct TripConceptPicker: View {
                 columns: [GridItem(.flexible(), spacing: DNASpacing.xs), GridItem(.flexible())],
                 spacing: DNASpacing.xs
             ) {
-                ForEach(TripConcept.allCases, id: \.self) { concept in
+                ForEach(TripConcept.displayOrder, id: \.self) { concept in
                     tile(concept)
                 }
             }
@@ -31,7 +31,7 @@ struct TripConceptPicker: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextTertiary)
                 }
-                let others = TripConcept.allCases.filter { $0 != primary }
+                let others = TripConcept.displayOrder.filter { $0 != primary }
                 let half = (others.count + 1) / 2
                 chipRow(Array(others.prefix(half)))
                 chipRow(Array(others.dropFirst(half)))
@@ -44,12 +44,8 @@ struct TripConceptPicker: View {
         return Button { onPrimary(concept) } label: {
             Text(concept.labelKo)
                 .dnaFont(.cardTitle)
-                .foregroundStyle(isSelected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(
-                    isSelected ? Color.dnaSelectedBackground : Color.dnaSurface1,
-                    in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                )
+                .dnaOption(isSelected: isSelected, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -63,7 +59,7 @@ struct TripConceptPicker: View {
                     let locked = !selected && secondary.count >= 2
                     DNATagChip(title: concept.labelKo, isSelected: selected) { onSecondary(concept) }
                         .disabled(locked)
-                        .opacity(locked ? 0.35 : 1)
+                        .opacity(locked ? 0.4 : 1)
                 }
             }
         }

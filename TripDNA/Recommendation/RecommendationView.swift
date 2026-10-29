@@ -17,7 +17,7 @@ struct RecommendationView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DNASpacing.lg) {
+            VStack(alignment: .leading, spacing: DNASpacing.section) {
                 VStack(alignment: .leading, spacing: DNASpacing.sm) {
                     header
                     DNAHeaderDivider()
@@ -82,17 +82,13 @@ struct RecommendationView: View {
         }
     }
 
+    @ViewBuilder
     private func headerButton(_ title: String, isPrimary: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .dnaFont(.button)
-                .foregroundStyle(isPrimary ? Color.white : Color.dnaTextPrimary)
-                .padding(.horizontal, DNASpacing.sm)
-                .frame(minHeight: 44)
-                .background(isPrimary ? Color.dnaAction : Color.dnaSurface1,
-                            in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+        if isPrimary {
+            Button(title, action: action).buttonStyle(.dnaDark)
+        } else {
+            Button(title, action: action).buttonStyle(.dnaSecondary(fullWidth: false))
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: 본문

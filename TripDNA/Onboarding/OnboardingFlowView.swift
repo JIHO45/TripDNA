@@ -70,6 +70,7 @@ struct OnboardingHookView: View {
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DNASpacing.gutter)
             .padding(.top, DNASpacing.lg)

@@ -61,7 +61,7 @@ struct RecommendationInputSheet: View {
                                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                                     .strokeBorder(Color.dnaAction, lineWidth: highlightConcept ? 2 : 0)
                             )
-                        stepCard(.when, label: "언제 · 얼마나", value: whenSummary, title: "언제, 얼마나?", subtitle: nil) { whenBody }
+                        stepCard(.when, label: "언제 · 얼마나", value: whenSummary, title: "언제, 얼마나?", subtitle: nil, accessory: AnyView(exactDatesToggle)) { whenBody }
                         stepCard(.budget, label: "예산", value: budgetSummary, title: "예산은 얼마까지?", subtitle: "최대 금액이에요") { budgetBody }
                         stepCard(.wants, label: "이번 여행에서는", value: wantsSummary, title: "이번 여행에서는", subtitle: nil) { wantsBody }
                         // 시안 규칙: 하단에는 버튼만 둔다. 전송 안내는 카드 아래에 둔다.
@@ -82,16 +82,9 @@ struct RecommendationInputSheet: View {
             }
 
             Button(action: submit) {
-                Text("추천 받기")
-                    .dnaFont(size: 16, weight: .semibold)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 54)
-                    .background(
-                        request.isReady ? Color.dnaAction : Color.dnaAction.opacity(0.35),
-                        in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                    )
+                Label("추천 받기", systemImage: "sparkles")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.dnaPrimary(isDisabled: !request.isReady))
             .accessibilityHint(request.isReady ? "" : "먼저 여행 컨셉을 골라 주세요")
             .accessibilityIdentifier("recommendationInput.submit")
             .padding(.horizontal, DNASpacing.gutter)
@@ -114,16 +107,21 @@ struct RecommendationInputSheet: View {
 
     private func stepCard<Content: View>(
         _ step: Step, label: String, value: String, title: String, subtitle: String?,
+        accessory: AnyView? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
         Group {
             if expanded == step {
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title).dnaFont(.sectionTitle).foregroundStyle(Color.dnaTextPrimary)
-                        if let subtitle {
-                            Text(subtitle).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(title).dnaFont(.stepTitle).foregroundStyle(Color.dnaTextPrimary)
+                            if let subtitle {
+                                Text(subtitle).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+                            }
                         }
+                        Spacer(minLength: DNASpacing.xs)
+                        accessory
                     }
                     content()
                 }
@@ -167,7 +165,7 @@ struct RecommendationInputSheet: View {
                 },
                 onSecondary: { request.toggleSecondary($0) }
             )
-            stepperRow("몇 명이서", text: "\(request.partySize)명", value: $request.partySize, range: 1...20)
+            DNAStepper(label: "몇 명이서", valueText: "\(request.partySize)명", value: $request.partySize, range: 1...20)
         }
     }
 
@@ -180,18 +178,6 @@ struct RecommendationInputSheet: View {
 
     private var whenBody: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
-            HStack {
-                Spacer()
-                Button(exactDates ? "월로 고르기" : "날짜 지정") {
-                    exactDates.toggle()
-                    if !exactDates { request.startDate = nil }
-                }
-                .dnaFont(.caption)
-                .foregroundStyle(Color.dnaActionText)
-                .frame(minHeight: 44)
-            }
-            .padding(.top, -DNASpacing.lg)
-
             if exactDates {
                 DatePicker(
                     "시작일",
@@ -207,28 +193,35 @@ struct RecommendationInputSheet: View {
                 monthGrid
             }
             // -1은 미정이다. 미정 → 당일 → 1박 순서로 움직인다.
-            stepperRow("얼마나", text: nightsText, value: Binding(
+            DNAStepper(label: "얼마나", valueText: nightsText, value: Binding(
                 get: { request.nights ?? -1 },
                 set: { request.nights = $0 < 0 ? nil : $0 }
             ), range: -1...60)
         }
     }
 
+    private var exactDatesToggle: some View {
+        Button(exactDates ? "월로 고르기" : "날짜 지정") {
+            exactDates.toggle()
+            if !exactDates { request.startDate = nil }
+        }
+        .dnaFont(.caption)
+        .underline()
+        .foregroundStyle(Color.dnaTextPrimary)
+        .frame(minHeight: 44)
+    }
+
     private var monthGrid: some View {
         VStack(spacing: DNASpacing.xs) {
             HStack {
-                Button { shownYear -= 1 } label: { Image(systemName: "chevron.left") }
-                    .disabled(shownYear <= thisYear)
+                yearButton("chevron.left", enabled: shownYear > thisYear) { shownYear -= 1 }
                     .accessibilityLabel("이전 해")
                 Spacer()
                 Text("\(String(shownYear))년").dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
-                Button { shownYear += 1 } label: { Image(systemName: "chevron.right") }
-                    .disabled(shownYear >= thisYear + 1)
+                yearButton("chevron.right", enabled: shownYear < thisYear + 1) { shownYear += 1 }
                     .accessibilityLabel("다음 해")
             }
-            .foregroundStyle(Color.dnaTextPrimary)
-            .frame(minHeight: 44)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DNASpacing.xs), count: 4), spacing: DNASpacing.xs) {
                 ForEach(1...12, id: \.self) { month in
@@ -236,21 +229,32 @@ struct RecommendationInputSheet: View {
                     let selected = request.year == shownYear && request.month == month
                     Button { request.toggleMonth(shownYear, month) } label: {
                         Text("\(month)월")
-                            .dnaFont(.body)
-                            .foregroundStyle(selected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
+                            .dnaFont(.cardTitle)
                             .frame(maxWidth: .infinity, minHeight: 48)
+                            .foregroundStyle(past ? Color.dnaTextTertiary : (selected ? Color.dnaSelectedForeground : Color.dnaTextPrimary))
                             .background(
-                                selected ? Color.dnaSelectedBackground : Color.dnaSurface1,
+                                selected ? Color.dnaSelectedBackground : Color.dnaChipFill,
                                 in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
                             )
                     }
                     .buttonStyle(.plain)
                     .disabled(past)
-                    .opacity(past ? 0.35 : 1)
                     .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
         }
+    }
+
+    private func yearButton(_ systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.bold))
+                .foregroundStyle(enabled ? Color.dnaTextPrimary : Color.dnaTextTertiary)
+                .frame(width: 44, height: 44)
+                .background(Color.dnaChipFill, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 
     private var nightsText: String {
@@ -273,11 +277,11 @@ struct RecommendationInputSheet: View {
 
     private var budgetBody: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            segments(
-                [("1인", RecommendationRequest.BudgetBasis.perPerson), ("일행 전체", .group)],
+            DNASegmentedControl(
+                items: [("1인", RecommendationRequest.BudgetBasis.perPerson), ("일행 전체", .group)],
                 selection: request.budgetBasis
             ) { request.budgetBasis = $0 }
-            segments([("항공 포함", true), ("항공 제외", false)], selection: request.budgetIncludesFlight) {
+            DNASegmentedControl(items: [("항공 포함", true), ("항공 제외", false)], selection: request.budgetIncludesFlight) {
                 request.budgetIncludesFlight = $0
             }
 
@@ -368,38 +372,6 @@ struct RecommendationInputSheet: View {
         }
     }
 
-    // MARK: 공통
-
-    private func stepperRow(_ label: String, text: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        HStack {
-            Text(label).dnaFont(.body).foregroundStyle(Color.dnaTextSecondary)
-            Spacer()
-            Stepper(value: value, in: range) {
-                Text(text).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary).frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            .fixedSize()
-        }
-    }
-
-    private func segments<V: Equatable>(_ items: [(String, V)], selection: V, onSelect: @escaping (V) -> Void) -> some View {
-        HStack(spacing: 4) {
-            ForEach(items.indices, id: \.self) { index in
-                let selected = items[index].1 == selection
-                Button { onSelect(items[index].1) } label: {
-                    Text(items[index].0)
-                        .dnaFont(.body)
-                        .foregroundStyle(selected ? Color.dnaSelectedForeground : Color.dnaTextPrimary)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(
-                            selected ? Color.dnaSelectedBackground : Color.dnaSurface1,
-                            in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
-                        )
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-    }
 }
 
 #Preview("RecommendationInputSheet") {

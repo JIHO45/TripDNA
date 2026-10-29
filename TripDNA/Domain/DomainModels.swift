@@ -155,6 +155,12 @@ nonisolated enum TripConcept: String, CaseIterable, Codable, Sendable {
     case nightlife
     case meetingPeople = "meeting_people"
     case event
+
+    /// 화면에 늘어놓는 순서(2열 타일을 왼쪽에서 오른쪽, 위에서 아래로 읽는다). 저장 값과 `allCases` 순서는 그대로다.
+    static let displayOrder: [TripConcept] = [
+        .natureScenery, .relaxation, .cityExploration, .food, .cultureHistory,
+        .activities, .shopping, .nightlife, .meetingPeople, .event
+    ]
 }
 
 /// 여가 여행의 주 컨셉 1개와 부 컨셉 0~2개.

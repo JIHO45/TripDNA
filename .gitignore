@@ -65,3 +65,9 @@ data/exploration/memo-check/run*/my-*.md
 data/exploration/memo-check/run[3-9]/responses.jsonl
 data/exploration/memo-check/run[3-9]/key.json
 data/exploration/cost-check/**/responses.jsonl
+
+# Firebase
+functions/node_modules/
+functions/.secret.local
+.firebase/
+firebase-debug.log

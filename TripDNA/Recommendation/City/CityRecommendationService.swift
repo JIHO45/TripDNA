@@ -176,12 +176,10 @@ nonisolated struct CityRecommendationService: Sendable {
         } else if let client {
             do {
                 raw = try await client.complete(system: llmRequest.system, user: llmRequest.user)
-                let response = try CityResponseValidator.parse(raw ?? "")
-                try CityResponseValidator.validate(
-                    response, cardIDs: llmRequest.cardIDs, requiresCost: llmRequest.requiresCost,
-                    memoryIDs: Set(memories.map(\.id))
+                parsed = try CityResponseValidator.validate(
+                    CityResponseValidator.parse(raw ?? ""), cardIDs: llmRequest.cardIDs,
+                    requiresCost: llmRequest.requiresCost, memoryIDs: Set(memories.map(\.id))
                 )
-                parsed = response
             } catch let error as CityResponseError {
                 var detail = String(describing: error)
                 #if DEBUG
@@ -257,7 +255,8 @@ nonisolated struct CityRecommendationService: Sendable {
             seed: record.seed, conditions: record.conditions
         )
         let pool = Array(CityRanker.rank(catalog: catalog, input: input).prefix(CityLLMRequestBuilder.poolSize))
-        return pool.map(\.city.id) == record.poolCityIDs ? (pool, response) : nil
+        // 원문에는 검사에서 버린 후보 밖 카드가 남아 있다. 여기서도 버려야 같은 id가 겹쳐도 select가 멈추지 않는다.
+        return pool.map(\.city.id) == record.poolCityIDs ? (pool, response.keepingCards(in: record.poolCityIDs)) : nil
     }
 
     /// 넘기기·제외로 빈 자리를 채울 카드. 저장된 응답에서 같은 풀의 다음 도시를 코드 순서대로 고르며 LLM을 부르지 않는다.

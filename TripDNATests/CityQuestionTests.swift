@@ -83,3 +83,25 @@ struct CityQuestionTests {
         }
     }
 }
+
+/// 프록시와 직접 호출이 같은 Messages API 응답 판정을 쓴다.
+struct MessageTextTests {
+    static func data(_ json: String) -> Data { Data(json.utf8) }
+
+    @Test func joinsTextBlocksAndSkipsThinking() throws {
+        let text = try messageText(from: Self.data(#"{"stop_reason":"end_turn","content":[{"type":"thinking","thinking":""},{"type":"text","text":"{\"a\":"},{"type":"text","text":"1}"}]}"#))
+        #expect(text == #"{"a":1}"#)
+    }
+
+    @Test func truncatedReplyThrows() {
+        #expect(throws: CityLLMError.truncated) {
+            try messageText(from: Self.data(#"{"stop_reason":"max_tokens","content":[{"type":"text","text":"{\"a\":"}]}"#))
+        }
+    }
+
+    @Test func emptyReplyThrows() {
+        #expect(throws: CityLLMError.emptyResponse) {
+            try messageText(from: Self.data(#"{"stop_reason":"end_turn","content":[]}"#))
+        }
+    }
+}

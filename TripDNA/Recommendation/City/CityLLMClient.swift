@@ -41,12 +41,10 @@ nonisolated struct CityLLMConfiguration: Sendable {
     }
 }
 
-/// 프록시 계약: POST {system, user, model, maxTokens} → 200 {"text": "..."}.
-///
-/// 검색 계약(프록시 서버는 이 저장소에 없고 아직 구현·검증되지 않았다): 같은 주소로
-/// POST {system, user, model, maxTokens, webSearchMaxUses: 3}를 보내면, 서버는 `web_search_20250305` 도구
-/// (max_uses = webSearchMaxUses)를 붙여 Messages API를 호출하고 응답의 `content` 배열과 `stop_reason`을
-/// 가공 없이 → 200 {"content": [...], "stop_reason": "..."}로 돌려줘야 한다.
+/// 프록시 계약(서버: functions/index.js): POST {system, user, model, maxTokens, webSearchMaxUses?}
+/// → 200 {"content": [...], "stop_reason": "..."}. Messages API 응답을 가공 없이 돌려주므로
+/// 잘림·빈 응답 판정은 직접 호출과 같은 `messageText(from:)`로 한다.
+/// webSearchMaxUses가 있으면 서버가 `web_search_20250305` 도구를 붙인다.
 nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
     let url: URL
     let model: String
@@ -65,7 +63,8 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
     }
 
     func complete(system: String, user: String) async throws -> String {
-        var request = URLRequest(url: url, timeoutInterval: 60)
+        // 직접 호출과 같은 120초. 생각 토큰을 포함한 16000토큰 응답은 60초를 넘을 수 있다.
+        var request = URLRequest(url: url, timeoutInterval: 120)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONEncoder().encode(
@@ -73,8 +72,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
         )
         let (data, response) = try await URLSession.shared.data(for: request)
         try Self.check(response)
-        struct Body: Decodable { let text: String }
-        return try JSONDecoder().decode(Body.self, from: data).text
+        return try messageText(from: data)
     }
 
     private static func check(_ response: URLResponse) throws {
@@ -133,17 +131,22 @@ nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw CityLLMError.http(http.statusCode)
         }
-        struct Body: Decodable {
-            struct Block: Decodable { let type: String; let text: String? }
-            let content: [Block]
-            let stop_reason: String?
-        }
-        let reply = try JSONDecoder().decode(Body.self, from: data)
-        if reply.stop_reason == "max_tokens" { throw CityLLMError.truncated }
-        let text = reply.content.compactMap { $0.type == "text" ? $0.text : nil }.joined()
-        guard !text.isEmpty else { throw CityLLMError.emptyResponse }
-        return text
+        return try messageText(from: data)
     }
+}
+
+/// Messages API 응답({content, stop_reason})에서 글을 꺼낸다. 직접 호출과 프록시가 같이 쓴다.
+nonisolated func messageText(from data: Data) throws -> String {
+    struct Body: Decodable {
+        struct Block: Decodable { let type: String; let text: String? }
+        let content: [Block]
+        let stop_reason: String?
+    }
+    let reply = try JSONDecoder().decode(Body.self, from: data)
+    if reply.stop_reason == "max_tokens" { throw CityLLMError.truncated }
+    let text = reply.content.compactMap { $0.type == "text" ? $0.text : nil }.joined()
+    guard !text.isEmpty else { throw CityLLMError.emptyResponse }
+    return text
 }
 
 nonisolated enum DevAPIKeyStore {

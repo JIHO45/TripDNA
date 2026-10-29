@@ -255,6 +255,29 @@ struct CityResponseTests {
         #expect(throws: CityResponseError.wrongCards) {
             try CityResponseValidator.validate(response, cardIDs: Self.ids, requiresCost: false)
         }
+        // 후보 밖 도시를 덧붙여도 후보가 빠지면 여전히 실패한다.
+        let missing = try CityResponseValidator.parse(Self.json(ids: ["a", "c", "x"]))
+        #expect(throws: CityResponseError.wrongCards) {
+            try CityResponseValidator.validate(missing, cardIDs: Self.ids, requiresCost: false)
+        }
+    }
+
+    /// 2026-10-27 실호출에서 모델이 후보 8곳 뒤에 후보 표의 다른 도시 4곳을 덧붙였다.
+    @Test func dropsCitiesOutsideCandidatesWhenCandidateOrderHolds() throws {
+        let response = try CityResponseValidator.parse(Self.json(ids: ["x", "a", "b", "y", "c", "z"]))
+        let kept = try CityResponseValidator.validate(response, cardIDs: Self.ids, requiresCost: false)
+        #expect(kept.cards.map(\.id) == Self.ids)
+        #expect(kept.understanding == "u")
+    }
+
+    @Test func droppedCardsAreNotChecked() throws {
+        let good = Self.ids.map { "{\"id\":\"\($0)\",\"reason\":\"좋아요\",\"cost\":{\"low\":1,\"high\":2}}" }
+        let bad = "{\"id\":\"x\",\"reason\":\"일부러 시간을 낼 만함\",\"cost\":null}"
+        let response = try CityResponseValidator.parse(
+            "{\"understanding\":\"u\",\"cards\":[\((good + [bad]).joined(separator: ","))]}"
+        )
+        let kept = try CityResponseValidator.validate(response, cardIDs: Self.ids, requiresCost: true)
+        #expect(kept.cards.map(\.id) == Self.ids)
     }
 
     @Test func rejectsLeakedGradeNamesAndNonJSON() throws {
@@ -278,8 +301,10 @@ struct CityRecommendationServiceTests {
     }
 
     /// 요청의 "후보 도시" 구역에서 id를 읽어 응답한다. `lows`의 앞에서부터 비용 하한을 준다(없으면 100만원).
+    /// `extra`는 후보 뒤에 덧붙이는 후보 밖 도시 id다(모델이 지시를 어긴 경우).
     static func fake(
-        lows: [Int] = [], withCost: Bool = true, extraction: String = "{\"conditions\":[]}", memoriesUsed: String = "[]"
+        lows: [Int] = [], withCost: Bool = true, extraction: String = "{\"conditions\":[]}", memoriesUsed: String = "[]",
+        extra: [String] = []
     ) -> Fake {
         Fake { user in
             if user.contains("[고른 컨셉]") { return extraction }
@@ -287,7 +312,7 @@ struct CityRecommendationServiceTests {
                 .components(separatedBy: "\n\n")[0]
                 .components(separatedBy: "\n").dropFirst()
                 .map { String($0.split(separator: "|")[0]).trimmingCharacters(in: .whitespaces) }
-            let cards = ids.enumerated().map { index, id in
+            let cards = (ids + extra).enumerated().map { index, id in
                 let low = index < lows.count ? lows[index] : 1_000_000
                 let cost = withCost ? "{\"low\":\(low),\"high\":\(low * 2)}" : "null"
                 return "{\"id\":\"\(id)\",\"reason\":\"이유\",\"caveat\":\"\",\"cost\":\(cost)}"
@@ -971,5 +996,28 @@ struct CityStateTests {
         let all = service.refill(record, count: 100, shown: shown, removedCities: [], removedCountries: [])
         #expect(all.count <= record.poolCityIDs.count - shown.count)
         #expect(all.allSatisfy { !shown.contains($0.cityID) })
+    }
+
+    /// 저장된 원문에는 후보 밖 카드가 남는다. 같은 id가 두 번 나와도 채우기·예산 재계산이 멈추지 않고 그 도시를 쓰지 않는다.
+    @Test func citiesOutsideCandidatesAreDroppedInResultRefillAndRecut() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let client = CityRecommendationServiceTests.fake(extra: ["zz-extra", "zz-extra"])
+        let service = try CityRecommendationServiceTests.service(client: client, dir: dir)
+        let record = try await service.recommend(
+            request: CityRecommendationServiceTests.request(), tiers: WantedConceptTiers(),
+            excludedCountries: [], homeCountryExcluded: false, seed: 7
+        )
+        #expect(record.error == nil)
+        #expect(record.cards.count == 3)
+        #expect(record.rawResponse?.contains("zz-extra") == true)
+
+        let pool = Set(record.poolCityIDs)
+        let filled = service.refill(
+            record, count: 100, shown: Set(record.cards.map(\.cityID)), removedCities: [], removedCountries: []
+        )
+        #expect(!filled.isEmpty)
+        let recut = try #require(service.recut(record, budgetMaxKRW: 5_000_000))
+        #expect((record.cards + filled + recut.cards).allSatisfy { pool.contains($0.cityID) })
     }
 }

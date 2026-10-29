@@ -45,6 +45,12 @@ nonisolated struct CityLLMResponse: Codable, Equatable, Sendable {
         self.understanding = understanding; self.cards = cards; self.memoriesUsed = memoriesUsed
     }
 
+    /// 코드가 정한 후보(`ids`) 밖의 카드를 버린다. 모델이 후보 표의 다른 도시를 덧붙여도 그 카드는 쓰지 않는다.
+    func keepingCards(in ids: [String]) -> CityLLMResponse {
+        let allowed = Set(ids)
+        return .init(understanding: understanding, cards: cards.filter { allowed.contains($0.id) }, memoriesUsed: memoriesUsed)
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         understanding = try c.decode(String.self, forKey: .understanding)
@@ -62,8 +68,8 @@ nonisolated enum CityResponseError: Error, Equatable {
     case internalTermLeaked(String)
 }
 
-/// 응답 검사. 코드가 정한 카드 도시와 순서를 그대로 따랐는지, 등급 이름 같은 내부 용어가 문장에 샜는지 본다.
-/// 사실의 정확성은 검사하지 못한다(테스터가 읽고 기록한다).
+/// 응답 검사. 후보 밖 카드는 버리고, 남은 카드가 코드가 정한 도시와 순서를 그대로 따랐는지,
+/// 등급 이름 같은 내부 용어가 문장에 샜는지 본다. 사실의 정확성은 검사하지 못한다(테스터가 읽고 기록한다).
 nonisolated enum CityResponseValidator {
     static let forbiddenTerms: [String] =
         [CityGrade.ifThere, .makeTime, .choose].map(\.nameKo) + ["탐색 후보", "make_time", "if_there"]
@@ -77,9 +83,12 @@ nonisolated enum CityResponseValidator {
         return response
     }
 
+    /// 후보 밖 카드를 버린 응답을 돌려준다. 검사를 통과한 뒤에는 이 값을 쓴다.
+    @discardableResult
     static func validate(
-        _ response: CityLLMResponse, cardIDs: [String], requiresCost: Bool, memoryIDs: Set<String> = []
-    ) throws {
+        _ raw: CityLLMResponse, cardIDs: [String], requiresCost: Bool, memoryIDs: Set<String> = []
+    ) throws -> CityLLMResponse {
+        let response = raw.keepingCards(in: cardIDs)
         if let unknown = response.memoriesUsed.first(where: { !memoryIDs.contains($0.id) }) {
             throw CityResponseError.unknownMemory(unknown.id)
         }
@@ -97,6 +106,7 @@ nonisolated enum CityResponseValidator {
                 throw CityResponseError.internalTermLeaked(term)
             }
         }
+        return response
     }
 }
 

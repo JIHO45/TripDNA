@@ -101,10 +101,16 @@ struct TripListView: View {
                             ForEach(viewModel.awaitingTrips) { trip in awaitingCard(trip) }
                         }
                     }
-                    ForEach(viewModel.pastTripsByYear, id: \.year) { group in
-                        section("지난 여행 · \(group.year)") {
-                            ForEach(group.trips) { trip in
-                                row(trip, trailing: AnyView(pastTrailing(trip)))
+                    if !viewModel.pastTripsByYear.isEmpty {
+                        section("지난 여행") {
+                            ForEach(viewModel.pastTripsByYear, id: \.year) { group in
+                                Text(String(group.year))
+                                    .dnaFont(.caption)
+                                    .foregroundStyle(Color.dnaTextSecondary)
+                                    .padding(.top, DNASpacing.xxs)
+                                ForEach(group.trips) { trip in
+                                    row(trip, trailing: AnyView(pastTrailing(trip)))
+                                }
                             }
                         }
                     }
@@ -145,6 +151,7 @@ struct TripListView: View {
             TripDetailView(tripID: trip.id)
         } label: {
             HStack(spacing: DNASpacing.sm) {
+                thumbnail(trip)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: DNASpacing.xs) {
                         Text(trip.placeTitleKo)
@@ -175,6 +182,17 @@ struct TripListView: View {
         .buttonStyle(.plain)
     }
 
+    /// 대표 사진이 있으면 그것을, 없으면 색 면을 쓴다. 가짜 사진은 넣지 않는다.
+    private func thumbnail(_ trip: Trip) -> some View {
+        ZStack {
+            Color.dnaData.opacity(0.12).background(Color.dnaSurface2)
+            if let path = trip.coverPhotoStoragePath { TripPhotoImage(storagePath: path) }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
     /// "11월 14일 – 17일 · 친구 · 문화·역사". 입력하지 않은 항목은 쓰지 않는다.
     private func subtitle(_ trip: Trip) -> String {
         var parts = [trip.shortDateRangeKo]
@@ -186,9 +204,16 @@ struct TripListView: View {
     @ViewBuilder
     private func dDayLabel(_ trip: Trip) -> some View {
         if let days = trip.daysUntilStart {
-            Text("D-\(days)")
-                .dnaFont(.cardTitle)
-                .foregroundStyle(Color.dnaTextPrimary)
+            VStack(spacing: 0) {
+                Text("D-").dnaFont(size: 11, weight: .semibold)
+                Text("\(days)").dnaFont(.cardTitle)
+            }
+            .foregroundStyle(Color.dnaTextPrimary)
+            .frame(width: 48, height: 48)
+            .background(Color.dnaRaised, in: Circle())
+            .overlay(Circle().strokeBorder(Color.dnaDivider, lineWidth: 1))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("D-\(days)")
         }
     }
 
@@ -204,11 +229,20 @@ struct TripListView: View {
             Text("평가 안 함")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextTertiary)
-        } else if let rank = trip.rankPosition {
-            Text("\(rank)")
-                .dnaFont(.cardTitle)
-                .foregroundStyle(Color.dnaTextPrimary)
-                .monospacedDigit()
+        } else {
+            VStack(alignment: .trailing, spacing: 2) {
+                if let stars = trip.evaluation?.satisfaction {
+                    Text("★ \(stars)")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+                if let rank = trip.rankPosition {
+                    Text("\(rank)위")
+                        .dnaFont(.cardTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                        .monospacedDigit()
+                }
+            }
         }
     }
 

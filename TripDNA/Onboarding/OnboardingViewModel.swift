@@ -199,6 +199,8 @@ final class OnboardingViewModel {
     /// 컨셉 단계에서 물을 여행 id와 현재 위치.
     var conceptQueue: [String] = []
     var conceptIndex = 0
+    /// 확인 화면에서 "수정"으로 들어왔으면 끝나고 확인 화면으로 돌아간다. 저장하지 않는 화면 상태다.
+    private(set) var returnsToSummary = false
     var tiers = WantedConceptTiers()
 
     // MARK: 퀴즈 상태 (온보딩 경로에서는 쓰지 않지만 기존 테스트가 다루는 평가 로직이 의존한다)
@@ -287,8 +289,17 @@ final class OnboardingViewModel {
             } else {
                 stage = .entryModeSelection
             }
-        case .hook, .concepts, .summary: break
+        case .summary: stage = .tiers
+        case .hook, .concepts: break
         }
+    }
+
+    /// 확인 화면에서 여행 컨셉을 다시 고른다.
+    func editTripConcepts() {
+        guard !conceptQueue.isEmpty else { return }
+        returnsToSummary = true
+        conceptIndex = 0
+        stage = .concepts
     }
 
     func confirmHomeCountry(_ code: String?, dependencies: AppDependencies, session: SessionStore) async {
@@ -463,11 +474,16 @@ final class OnboardingViewModel {
             }
         }
         conceptIndex += 1
-        if conceptIndex >= conceptQueue.count { stage = .tiers }
+        if conceptIndex >= conceptQueue.count { leaveConcepts() }
     }
 
     func skipRemainingConcepts() {
-        stage = .tiers
+        leaveConcepts()
+    }
+
+    private func leaveConcepts() {
+        stage = returnsToSummary ? .summary : .tiers
+        returnsToSummary = false
     }
 
     // MARK: 원하는 여행 (티어)

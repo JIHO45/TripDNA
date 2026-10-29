@@ -55,6 +55,10 @@ struct TripDetailView: View {
                         .accessibilityIdentifier("trip.sharePreview")
                     }
                 }
+                // 공유와 더 보기를 한 알약에 묶지 않고 따로 둔다.
+                if #available(iOS 26.0, *), isPast(trip) {
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button("여행 정보 수정") { showingEdit = true }
@@ -226,7 +230,7 @@ struct TripDetailView: View {
                 Button { showingCoverPicker = true } label: {
                     Text("사진 바꾸기")
                         .dnaFont(.caption)
-                        .foregroundStyle(Color.white)
+                        .foregroundStyle(path == nil ? Color.dnaTextPrimary : Color.white)
                         .padding(.horizontal, DNASpacing.sm)
                         .frame(minHeight: 36)
                         .dnaGlass(in: Capsule())
@@ -341,7 +345,8 @@ struct TripDetailView: View {
                     showingConceptEdit = true
                 }
                 .dnaFont(.caption)
-                .foregroundStyle(Color.dnaActionText)
+                .underline()
+                .foregroundStyle(Color.dnaTextPrimary)
                 .frame(minHeight: 44)
             }
             Spacer(minLength: 0)
@@ -409,9 +414,7 @@ struct TripDetailView: View {
                                 .foregroundStyle(Color.dnaTextSecondary)
                             Spacer()
                             Button("평가하기") { showingEvaluation = true }
-                                .dnaFont(.caption)
-                                .foregroundStyle(Color.dnaActionText)
-                                .frame(minHeight: 44)
+                                .buttonStyle(.dnaDark(fullWidth: false))
                         }
                     }
                 }
@@ -448,7 +451,7 @@ struct TripDetailView: View {
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 8) {
                 ForEach(days, id: \.self) { day in
                     dayCell(day, trip: trip)
                 }
@@ -469,13 +472,13 @@ struct TripDetailView: View {
                 if editable { photoDayEdit = PhotoDayEdit(dayIndex: day) }
             } label: {
                 Color.clear
-                    .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                    .aspectRatio(1, contentMode: .fit)
                     .overlay {
                         if let photo {
                             TripPhotoImage(storagePath: photo.storagePath)
                         } else {
                             ZStack {
-                                RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
+                                RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous)
                                     .strokeBorder(Color.dnaTextTertiary, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                                 if editable {
                                     Image(systemName: "plus").foregroundStyle(Color.dnaTextSecondary)
@@ -494,7 +497,7 @@ struct TripDetailView: View {
                                 .padding(6)
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
             .buttonStyle(.plain)
             .disabled(!editable)

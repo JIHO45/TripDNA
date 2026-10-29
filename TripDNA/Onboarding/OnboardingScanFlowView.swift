@@ -157,11 +157,11 @@ struct OnboardingCandidatesView: View {
                         switch candidate.state {
                         case .pending: pendingCard(candidate)
                         case .recorded:
-                            collapsedRow("✓ \(candidate.title) 기록함", action: "취소") {
+                            collapsedRow(candidate.title, status: "기록함", recorded: true, action: "취소") {
                                 viewModel.setState(.pending, for: candidate.id)
                             }
                         case .removed:
-                            collapsedRow("\(candidate.title) 뺐어요", action: "되돌리기") {
+                            collapsedRow(candidate.title, status: "뺐어요", recorded: false, action: "되돌리기") {
                                 viewModel.setState(.pending, for: candidate.id)
                             }
                         }
@@ -203,15 +203,18 @@ struct OnboardingCandidatesView: View {
         }
     }
 
-    private func collapsedRow(_ text: String, action: String, onTap: @escaping () -> Void) -> some View {
-        HStack {
-            Text(text)
-                .dnaFont(.body)
-                .foregroundStyle(Color.dnaTextSecondary)
+    private func collapsedRow(_ title: String, status: String, recorded: Bool, action: String, onTap: @escaping () -> Void) -> some View {
+        HStack(spacing: DNASpacing.xs) {
+            if recorded {
+                Image(systemName: "checkmark").foregroundStyle(Color.dnaData).accessibilityHidden(true)
+            }
+            Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
+            Text(status).dnaFont(.body).foregroundStyle(Color.dnaTextSecondary)
             Spacer()
             Button(action, action: onTap)
-                .dnaFont(.caption)
+                .dnaFont(.button)
                 .foregroundStyle(Color.dnaTextPrimary)
+                .frame(minHeight: 44)
         }
         .padding(DNASpacing.md)
         .frame(maxWidth: .infinity, minHeight: 52)
@@ -224,7 +227,7 @@ struct OnboardingCandidatesView: View {
                 HStack(spacing: DNASpacing.xs) {
                     ForEach(Array(candidate.photoAssetIDs.prefix(3).enumerated()), id: \.offset) { _, assetID in
                         PhotoAssetImage(localIdentifier: assetID, targetSize: CGSize(width: 300, height: 300))
-                            .frame(height: 84)
+                            .frame(height: 56)
                             .clipShape(RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
                     }
                 }
@@ -252,19 +255,15 @@ struct OnboardingCandidatesView: View {
 
             HStack(spacing: DNASpacing.sm) {
                 Button("빼기") { viewModel.setState(.removed, for: candidate.id) }
-                    .buttonStyle(.dnaSecondary)
+                    .buttonStyle(.dnaSecondary(onSheet: true))
                 Button(candidate.isCityUnknown ? "나라만 기록하기" : "기록하기") {
                     viewModel.setState(.recorded, for: candidate.id)
                 }
-                .buttonStyle(.dnaPrimary)
+                .buttonStyle(.dnaDark(fullWidth: true))
             }
         }
         .padding(DNASpacing.md)
-        .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaDivider, lineWidth: 1)
-        }
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 
     private func suggestionRow(text: String, action: String, onTap: @escaping () -> Void) -> some View {

@@ -230,7 +230,7 @@ struct ConceptTierBox: View {
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             if concepts.isEmpty {
-                Text(" ").dnaFont(.body).frame(minHeight: 40)
+                Text(" ").dnaFont(.body).frame(minHeight: 20)
             } else {
                 DNAFlowLayout(spacing: DNASpacing.xs) {
                     ForEach(concepts, id: \.self) { concept in
@@ -248,7 +248,8 @@ struct ConceptTierBox: View {
                 }
             }
         }
-        .padding(DNASpacing.md)
+        .padding(.horizontal, DNASpacing.md)
+        .padding(.vertical, DNASpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tier == nil ? Color.clear : Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         .overlay {
@@ -286,8 +287,9 @@ struct OnboardingTiersView: View {
                     } label: {
                         let hasNote = !(viewModel.tiers.avoidNote ?? "").isEmpty
                         Text(hasNote ? "피하고 싶은 것: \(viewModel.tiers.avoidNote ?? "") ›" : "피하고 싶은 게 있다면 적기 ›")
-                            .dnaFont(.body)
-                            .foregroundStyle(Color.dnaTextSecondary)
+                            .dnaFont(.button)
+                            .underline()
+                            .foregroundStyle(Color.dnaTextPrimary)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
                     .buttonStyle(.plain)
@@ -317,10 +319,10 @@ struct OnboardingTiersView: View {
         if !top.isEmpty {
             Text("지난 여행 참고 · " + top.map { "\($0.concept.labelKo) \($0.count)번" }.joined(separator: " · "))
                 .dnaFont(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
-                .padding(.horizontal, DNASpacing.sm)
-                .padding(.vertical, 6)
-                .background(Color.dnaSurface1, in: Capsule())
+                .foregroundStyle(Color.dnaData)
+                .padding(DNASpacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.dnaData.opacity(0.12), in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
         }
     }
 
@@ -370,7 +372,7 @@ struct OnboardingSummaryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            DNAStepTopBar(progress: viewModel.progress)
+            DNAStepTopBar(progress: viewModel.progress, onBack: { viewModel.goBack() })
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
                     OnboardingHeader(
@@ -378,7 +380,7 @@ struct OnboardingSummaryView: View {
                         subtitle: "여행은 여행 탭에서, 원하는 여행은 설정에서 고칠 수 있어요."
                     )
                     if !viewModel.recordedTrips.isEmpty {
-                        card(title: "다녀온 여행 \(viewModel.recordedTrips.count)개") {
+                        card(title: "다녀온 여행 \(viewModel.recordedTrips.count)개", onEdit: viewModel.conceptQueue.isEmpty ? nil : { viewModel.editTripConcepts() }) {
                             ForEach(viewModel.recordedTrips) { trip in
                                 HStack(alignment: .firstTextBaseline) {
                                     Text(trip.title)
@@ -392,7 +394,7 @@ struct OnboardingSummaryView: View {
                         }
                     }
                     if viewModel.hasTierAnswers {
-                        card(title: "원하는 여행") {
+                        card(title: "원하는 여행", onEdit: { viewModel.goBack() }) {
                             ForEach([1, 2, 3], id: \.self) { tier in
                                 let concepts = viewModel.tiers.concepts(in: tier)
                                 if !concepts.isEmpty {
@@ -439,19 +441,26 @@ struct OnboardingSummaryView: View {
         return ([concepts.primary] + concepts.secondary).map(\.labelKo).joined(separator: " + ")
     }
 
-    private func card<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func card<Content: View>(title: String, onEdit: (() -> Void)? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text(title)
-                .dnaFont(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
+            HStack {
+                Text(title)
+                    .dnaFont(.cardTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Spacer(minLength: 0)
+                if let onEdit {
+                    Button("수정", action: onEdit)
+                        .dnaFont(.caption)
+                        .underline()
+                        .foregroundStyle(Color.dnaTextPrimary)
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+            }
             content()
         }
-        .padding(DNASpacing.md)
+        .padding(.horizontal, DNASpacing.md)
+        .padding(.vertical, DNASpacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-                .strokeBorder(Color.dnaDivider, lineWidth: 1)
-        }
+        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 }

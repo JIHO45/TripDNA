@@ -186,23 +186,34 @@ struct HomeRedesignView: View {
     }
 
     private func upcomingCard(_ trip: Trip, days: Int) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            heroPhoto(trip, height: 260)
-            LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
+        ZStack(alignment: .bottom) {
+            heroPhoto(trip, height: 300)
+                .overlay(Color.dnaData.opacity(0.12))
             VStack {
-                HStack { photoBadge("다가오는 여행", dot: false); Spacer() }
+                HStack(alignment: .top) {
+                    photoBadge("다가오는 여행", dot: false)
+                    Spacer()
+                    VStack(spacing: 0) {
+                        Text("D-").dnaFont(size: 11, weight: .semibold)
+                        Text("\(days)").dnaFont(size: 20, weight: .heavy)
+                    }
+                    .foregroundStyle(Color.dnaTextPrimary)
+                    .frame(width: 56, height: 56)
+                    .dnaGlass(in: Circle())
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("D-\(days)")
+                }
                 Spacer()
             }
             .padding(12)
-            HStack(alignment: .bottom) {
+            HStack(alignment: .center, spacing: DNASpacing.sm) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("D-\(days)")
-                        .dnaFont(size: 44, weight: .heavy)
                     Text(HomeViewModel.placeName(trip))
                         .dnaFont(.heroTitle)
+                        .foregroundStyle(Color.dnaTextPrimary)
                     Text("\(trip.shortDateRangeKo.components(separatedBy: " – ").first ?? "") 출발 · \(trip.durationKo)")
                         .dnaFont(.caption)
-                        .opacity(0.85)
+                        .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Spacer(minLength: 0)
                 NavigationLink {
@@ -212,8 +223,9 @@ struct HomeRedesignView: View {
                 }
                 .buttonStyle(.dnaDark)
             }
-            .foregroundStyle(.white)
-            .padding(16)
+            .padding(14)
+            .background(Color.dnaCanvas, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+            .padding(10)
         }
         .clipShape(RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
     }
@@ -223,10 +235,16 @@ struct HomeRedesignView: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             DNAFlowLayout(spacing: 8) {
                 ForEach(wantedChips, id: \.self) { concept in
-                    Text(concept.labelKo)
+                    HStack(spacing: 4) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.dnaAction)
+                            .accessibilityHidden(true)
+                        Text(concept.labelKo)
+                    }
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextPrimary)
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 12)
                         .frame(minHeight: 36)
                         .background(Color.dnaRaised, in: Capsule())
                         .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
@@ -238,11 +256,10 @@ struct HomeRedesignView: View {
                     .frame(minHeight: 36)
                     .overlay(Capsule().strokeBorder(Color.dnaDivider, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
             }
-            Spacer(minLength: DNASpacing.sm)
             Text("다음 여행지를 찾아볼까요?")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("여행 컨셉을 고르면 조건에 맞는 도시를 골라 이유와 함께 보여줘요.")
+            Text("이번 여행에서 하고 싶은 걸 하나만 고르면 맞는 도시를 골라드려요.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -256,7 +273,7 @@ struct HomeRedesignView: View {
             .accessibilityIdentifier("home.recommend")
         }
         .padding(DNASpacing.md)
-        .frame(maxWidth: .infinity, minHeight: 280, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
     }
 
@@ -315,7 +332,7 @@ struct HomeRedesignView: View {
             }
         }
         .padding(DNASpacing.md)
-        .frame(maxWidth: .infinity, minHeight: 240, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
     }
 
@@ -505,7 +522,8 @@ struct HomeRedesignView: View {
                     kicker: "지난 Wrapped",
                     title: "\(year) Wrapped 다시 보기",
                     subtitle: "올해 Wrapped는 12월 15일에 열려요",
-                    showsChevron: true
+                    showsChevron: true,
+                    dark: true
                 )
             }
             .buttonStyle(.plain)
@@ -516,32 +534,32 @@ struct HomeRedesignView: View {
         }
     }
 
-    private func bannerLabel(kicker: String, title: String, subtitle: String?, showsChevron: Bool) -> some View {
+    private func bannerLabel(kicker: String, title: String, subtitle: String?, showsChevron: Bool, dark: Bool = false) -> some View {
         HStack(spacing: 12) {
             HStack(spacing: -8) {
                 ForEach([Color.dnaData, Color.dnaDataMuted, Color.dnaDataFaint], id: \.self) { color in
                     Circle().fill(color).frame(width: 22, height: 22)
-                        .overlay(Circle().strokeBorder(Color.dnaSurface1, lineWidth: 2))
+                        .overlay(Circle().strokeBorder(dark ? Color.dnaControlDark : Color.dnaSurface1, lineWidth: 2))
                 }
             }
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(kicker).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
-                Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
+                Text(kicker).dnaFont(.caption).foregroundStyle(dark ? Color.white.opacity(0.7) : Color.dnaTextSecondary)
+                Text(title).dnaFont(.cardTitle).foregroundStyle(dark ? Color.white : Color.dnaTextPrimary)
                 if let subtitle {
-                    Text(subtitle).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+                    Text(subtitle).dnaFont(.caption).foregroundStyle(dark ? Color.white.opacity(0.7) : Color.dnaTextSecondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if showsChevron {
                 Image(systemName: "chevron.right")
                     .dnaFont(size: 13, weight: .semibold)
-                    .foregroundStyle(Color.dnaTextTertiary)
+                    .foregroundStyle(dark ? Color.white.opacity(0.7) : Color.dnaTextTertiary)
                     .accessibilityHidden(true)
             }
         }
         .padding(DNASpacing.md)
-        .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+        .background(dark ? Color.dnaControlDark : Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         .contentShape(Rectangle())
     }
 }

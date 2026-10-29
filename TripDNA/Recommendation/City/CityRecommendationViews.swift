@@ -116,9 +116,6 @@ struct CityRecommendationSection: View {
             emptyCard(record)
         } else {
             if !main.isEmpty {
-                Text("추천 도시 \(main.count)곳")
-                    .dnaFont(.sectionTitle)
-                    .foregroundStyle(Color.dnaTextPrimary)
                 CityCardCarousel(cards: main, model: model, request: record.input)
             }
             if !record.budgetCutCityIDs.isEmpty {
@@ -361,6 +358,16 @@ private struct CityCardCarousel: View {
 
     var body: some View {
         VStack(spacing: DNASpacing.sm) {
+            HStack {
+                Text("추천 도시 \(cards.count)곳")
+                    .dnaFont(.sectionTitle)
+                    .foregroundStyle(Color.dnaTextPrimary)
+                Spacer(minLength: 0)
+                if cards.count > 1 {
+                    arrow("chevron.left", label: "이전 도시", target: index - 1)
+                    arrow("chevron.right", label: "다음 도시", target: index + 1)
+                }
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DNASpacing.sm) {
                     ForEach(cards, id: \.cityID) { card in
@@ -381,7 +388,6 @@ private struct CityCardCarousel: View {
             // "1/3" 같은 숫자는 순위로 읽혀 쓰지 않는다. 점과 화살표로만 위치를 알린다.
             if cards.count > 1 {
                 HStack(spacing: DNASpacing.md) {
-                    arrow("chevron.left", label: "이전 도시", target: index - 1)
                     HStack(spacing: DNASpacing.xxs) {
                         ForEach(cards.indices, id: \.self) { i in
                             Capsule()
@@ -390,7 +396,6 @@ private struct CityCardCarousel: View {
                         }
                     }
                     .accessibilityHidden(true)
-                    arrow("chevron.right", label: "다음 도시", target: index + 1)
                 }
             }
         }
@@ -405,6 +410,7 @@ private struct CityCardCarousel: View {
                 .dnaFont(size: 15, weight: .semibold)
                 .foregroundStyle(cards.indices.contains(target) ? Color.dnaTextPrimary : Color.dnaTextTertiary)
                 .frame(width: 44, height: 44)
+                .background(Color.dnaSurface1, in: Circle())
         }
         .accessibilityLabel(label)
     }
@@ -433,8 +439,11 @@ private struct CityCardView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            CityNameArea(card: card, height: 140)
+            Color.dnaData.opacity(0.12)
+                .background(Color.dnaSurface2)
+                .frame(height: 96)
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                CityTitleBlock(card: card)
                 if card.isExploration {
                     Text("다른 장점이 있는 후보")
                         .dnaFont(.caption)
@@ -444,10 +453,11 @@ private struct CityCardView: View {
                 Text(card.reason)
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextPrimary)
-                    .lineLimit(5)
+                    .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 if let cost = card.cost {
-                    Text("예상 \(won(cost.low))~\(won(cost.high)) (추정)")
+                    Divider()
+                    Text("예상 \(request.nights.map { "\($0)박 " } ?? "")\(won(cost.low))~\(won(cost.high)) (추정)")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -514,27 +524,19 @@ private struct CityCardMenu: View {
     }
 }
 
-/// 사진 자리. 색 면 위에 도시·나라 이름만 올린다.
-private struct CityNameArea: View {
+/// 사진 아래 흰 영역의 도시·나라 이름.
+private struct CityTitleBlock: View {
     let card: CityRecommendationRecord.Card
-    let height: CGFloat
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Color.dnaSurface2
-            Color.dnaData.opacity(0.12)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(card.cityName)
-                    .dnaFont(.screenTitle)
-                    .foregroundStyle(Color.dnaTextPrimary)
-                Text("\(CountryFlag.emoji(for: card.country)) \(CountryCatalog.name(for: card.country))")
-                    .dnaFont(.body)
-                    .foregroundStyle(Color.dnaTextSecondary)
-            }
-            .padding(DNASpacing.md)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(card.cityName)
+                .dnaFont(.screenTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            Text("\(CountryFlag.emoji(for: card.country)) \(CountryCatalog.name(for: card.country))")
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
     }
 }
 
@@ -593,19 +595,23 @@ struct CityDetailView: View {
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
-                CityNameArea(card: card, height: 160)
+                // 도시 사진 자료가 없어 색 면으로 둔다. 이름은 사진 아래에 둔다.
+                Color.dnaData.opacity(0.12)
+                    .background(Color.dnaSurface2)
+                    .frame(height: 150)
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
-                basis
+                CityTitleBlock(card: card)
                 CityBadgeView(card: card)
+                basis
                 if cityExcluded || countryExcluded { exclusionRow }
-                SectionCard(title: "이번 여행에 맞는 이유") {
+                plainSection("이번 여행에 맞는 이유") {
                     Text(card.reason)
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextPrimary)
                 }
                 caveatSection
                 if let cost = card.cost {
-                    SectionCard(title: "예상 비용") {
+                    plainSection("예상 비용") {
                         Text("\(won(cost.low))~\(won(cost.high))")
                             .dnaFont(.heroTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
@@ -708,20 +714,25 @@ struct CityDetailView: View {
     // 답은 화면이 열려 있는 동안만 메모리에 둔다. 질문 횟수는 세지 않는다.
     // 초안: 답의 세 부분 이름(자료 근거 / 조언 / 확인하지 못한 것)은 시안 ⓖ의 임시 문구다.
     private var questionSection: some View {
-        SectionCard(title: "궁금한 점") {
+        plainSection("궁금한 점") {
             Text(savedAt != nil ? "저장할 때의 조건 기준으로 답해요" : "이 추천의 조건 기준으로 답해요")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             HStack(spacing: DNASpacing.sm) {
                 TextField("이 도시에 대해 물어보세요", text: $question, axis: .vertical)
                     .lineLimit(1...3)
-                    .textFieldStyle(.roundedBorder)
+                    .padding(.horizontal, DNASpacing.md)
+                    .frame(minHeight: 44)
+                    .background(Color.dnaSurface1, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
                     .focused($questionFocused)
                 Button { Task { await ask() } } label: {
-                    Image(systemName: "arrow.up.circle.fill").dnaFont(size: 28)
+                    Image(systemName: "arrow.up")
+                        .dnaFont(size: 16, weight: .bold)
+                        .foregroundStyle(Color.dnaSelectedForeground)
+                        .frame(width: 44, height: 44)
+                        .background(Color.dnaSelectedBackground, in: Circle())
                 }
-                .foregroundStyle(Color.dnaActionText)
-                .frame(minWidth: 44, minHeight: 44)
                 .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAsking)
                 .accessibilityLabel("질문 보내기")
             }
@@ -811,6 +822,15 @@ struct CityDetailView: View {
         }
     }
 
+    /// 카드 없이 제목과 본문을 잇는 섹션.
+    private func plainSection<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: DNASpacing.titleGap) {
+            Text(title).dnaFont(.sectionTitle).foregroundStyle(Color.dnaTextPrimary)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var notes: [String] {
         var result = [card.caveat].filter { !$0.isEmpty }
         if card.seasonCheckNeeded { result.append("선택한 시기에 가능한지 확인이 필요해요") }
@@ -822,12 +842,17 @@ struct CityDetailView: View {
     @ViewBuilder
     private var caveatSection: some View {
         if !notes.isEmpty {
-            SectionCard(title: "안 맞을 수 있는 점 · 확인할 것") {
-                ForEach(notes, id: \.self) { note in
-                    Text("· \(note)")
-                        .dnaFont(.body)
-                        .foregroundStyle(Color.dnaTextPrimary)
+            plainSection("안 맞을 수 있는 점 · 확인할 것") {
+                VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                    ForEach(notes, id: \.self) { note in
+                        Text("· \(note)")
+                            .dnaFont(.body)
+                            .foregroundStyle(Color.dnaUnverifiedText)
+                    }
                 }
+                .padding(DNASpacing.sm)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.dnaUnverifiedBackground, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
         }
     }

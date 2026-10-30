@@ -3,10 +3,13 @@ import SwiftUI
 import UIKit
 
 /// 미리보기와 내보내기에 같은 고정 크기 이미지를 사용한다. 카드는 자체 배경색을 가지므로 밝은 외형으로 고정해 렌더링한다.
+/// 비율은 4:5(저장 1080×1350)다. 세 카드 모두 내용이 한 덩어리라 9:16에서는 아래가 비고, 정사각에 가까운 4:5는 피드와 메신저에서 잘리지 않는다.
 enum ShareCardRenderer {
+    static let size = CGSize(width: 360, height: 450)
+
     @MainActor static func render<Content: View>(_ content: Content) -> UIImage? {
         let renderer = ImageRenderer(content: content
-            .frame(width: 360, height: 640)
+            .frame(width: size.width, height: size.height)
             .environment(\.colorScheme, .light)
             .environment(\.dynamicTypeSize, .medium))
         renderer.scale = 3
@@ -47,7 +50,7 @@ struct ShareCardSheet<Card: View>: View {
                         Image(uiImage: renderedImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 230)
+                            .frame(maxWidth: 300)
                             .clipShape(RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
                             .frame(maxWidth: .infinity)
                             .accessibilityLabel("\(title) 이미지")
@@ -78,7 +81,12 @@ struct ShareCardSheet<Card: View>: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("닫기") { dismiss() }
+                    Button { dismiss() } label: {
+                        // 시스템 툴바가 원형 배경을 그려 주므로 아이콘만 둔다.
+                        Image(systemName: "xmark")
+                            .foregroundStyle(Color.dnaTextPrimary)
+                    }
+                    .accessibilityLabel("닫기")
                 }
             }
             .safeAreaInset(edge: .bottom) { bottomBar }
@@ -134,10 +142,13 @@ struct ShareCardSheet<Card: View>: View {
 
     private var bottomBar: some View {
         DNABottomCTA {
-            Toggle("공개할 내용을 확인했어요", isOn: $confirmed)
-                .dnaFont(size: 14, weight: .bold)
-                .foregroundStyle(Color.dnaTextPrimary)
-                .accessibilityIdentifier("shareCard.confirm")
+            Toggle(isOn: $confirmed) {
+                Text("공개할 내용을 확인했어요")
+                    .dnaFont(size: 14, weight: .bold)
+                    .foregroundStyle(Color.dnaTextPrimary)
+            }
+            .toggleStyle(ShareConfirmCheckStyle())
+            .accessibilityIdentifier("shareCard.confirm")
             if let renderedImage {
                 HStack(spacing: DNASpacing.xs) {
                     Button {
@@ -154,12 +165,9 @@ struct ShareCardSheet<Card: View>: View {
                         guard confirmed, !isSaving else { return }
                         sharePayload = ShareCardPayload(image: renderedImage)
                     } label: {
-                        Text("공유")
-                            .dnaFont(.button)
-                            .foregroundStyle(Color.dnaSelectedForeground)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .background(Color.dnaSelectedBackground, in: Capsule())
+                        Text("공유").frame(minHeight: 48)
                     }
+                    .buttonStyle(.dnaDark(fullWidth: true))
                     .accessibilityIdentifier("shareCard.share")
                     .disabled(!confirmed || isSaving)
                     .opacity(confirmed ? 1 : 0.35)
@@ -240,6 +248,26 @@ struct ShareCardSheet<Card: View>: View {
         ]
         payload["activityType"] = activityType
         await dependencies.track(.shareCardExported, payload)
+    }
+}
+
+/// 공개 확인은 켜고 끄는 설정이 아니라 동의라서 체크 상자로 보인다. 접근성에는 토글로 읽힌다.
+private struct ShareConfirmCheckStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            HStack(spacing: DNASpacing.xs) {
+                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
+                    .dnaFont(size: 22, weight: .regular)
+                    .foregroundStyle(configuration.isOn ? Color.dnaSelectedBackground : Color.dnaTextSecondary)
+                configuration.label
+                Spacer(minLength: 0)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(configuration.isOn ? "켜짐" : "꺼짐")
     }
 }
 

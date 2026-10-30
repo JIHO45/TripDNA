@@ -21,7 +21,7 @@ final class ShareCardRenderingTests: XCTestCase {
             let image = try XCTUnwrap(ShareCardRenderer.render(card), name)
             let cgImage = try XCTUnwrap(image.cgImage)
             XCTAssertEqual(cgImage.width, 1080)
-            XCTAssertEqual(cgImage.height, 1920)
+            XCTAssertEqual(cgImage.height, 1350)
             let attachment = XCTAttachment(image: image)
             attachment.name = name
             attachment.lifetime = .keepAlways

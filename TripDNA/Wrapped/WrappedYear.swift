@@ -80,19 +80,24 @@ struct WrappedYear: Equatable {
 
     var periodKo: String { isInProgress ? "올해 지금까지" : "\(year)년" }
 
-    var topConceptEyebrowKo: String { isSingleTrip ? "올해의 여행" : "올해 가장 많이 떠난 여행" }
+    /// 진행 중인 해는 "올해", 지난 해는 "2025년". 지난 해 화면에서 "올해"라고 말하지 않는다.
+    var yearWordKo: String { isInProgress ? "올해" : "\(year)년" }
+
+    var topConceptEyebrowKo: String { isSingleTrip ? "\(yearWordKo)의 여행" : "\(yearWordKo) 가장 많이 떠난 여행" }
 
     /// ③의 큰 글씨. 동점이면 함께 둔다.
     var topConceptBigKo: String {
         guard let fingerprint else { return "" }
-        return fingerprint.top.map(\.labelKo).joined(separator: " · ")
+        let names = fingerprint.top.map(\.labelKo).joined(separator: " · ")
+        // 한 번뿐이면 "미식 여행"처럼 여행 단어까지 큰 제목에 둔다.
+        return isSingleTrip ? "\(names)\n여행" : names
     }
 
     /// ③의 설명. 한 번뿐이면 "가장 많이" 같은 말을 쓰지 않는다.
     var topConceptCaptionKo: String {
         guard let fingerprint else { return "" }
         if isSingleTrip, let place = singleTripPlace {
-            return "올해는 \(place)\(KoreanParticle.roParticle(after: place)) 한 번 떠났어요"
+            return "\(isInProgress ? "올해는" : "\(year)년에는") \(place)\(KoreanParticle.roParticle(after: place)) 한 번 떠났어요"
         }
         if fingerprint.isTie { return "\(fingerprint.total)번 중 \(fingerprint.topCount)번씩" }
         return fingerprint.homeHeadlineKo

@@ -16,7 +16,8 @@ struct WrappedStoryView: View {
 
     var body: some View {
         ZStack {
-            background
+            // 배경만 안전 영역 밖까지 편다. 글자와 버튼은 안쪽에 둔다.
+            background.ignoresSafeArea()
             content
                 .id(index)
                 .transition(.opacity)
@@ -87,12 +88,13 @@ struct WrappedStoryView: View {
     private var topRow: some View {
         HStack {
             Text(yearLabel)
-                .dnaFont(.caption)
-                .opacity(0.8)
+                .dnaFont(size: 15, weight: .bold)
             Spacer()
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .dnaFont(size: 15, weight: .bold)
+                    .frame(width: 36, height: 36)
+                    .background(foreground.opacity(0.18), in: Circle())
                     .frame(width: 44, height: 44)
                     .contentShape(Circle())
             }
@@ -165,10 +167,10 @@ struct WrappedStoryView: View {
     private var topTrip: some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
             Spacer()
-            kicker("올해의 1위 여행")
+            kicker("\(wrapped.yearWordKo)의 1위 여행")
             bigText(wrapped.topTrip?.place ?? "", size: 44)
             Text(wrapped.topTrip?.detail ?? "").dnaFont(size: 15, weight: .bold).opacity(0.9)
-            footnote("여행 탭 랭킹에서 올해 여행 중 가장 위에 둔 여행이에요").padding(.top, DNASpacing.sm)
+            footnote("여행 탭 랭킹에서 \(wrapped.yearWordKo) 여행 중 가장 위에 둔 여행이에요").padding(.top, DNASpacing.sm)
         }
     }
 
@@ -197,7 +199,9 @@ struct WrappedStoryView: View {
                 }
                 .accessibilityHidden(true)
             }
-            footnote("여행마다 고른 주 컨셉을 센 거예요 · 성격 진단이 아니에요")
+            footnote(wrapped.isSingleTrip
+                ? "\(wrapped.yearWordKo) 여행이 한 번이라 순위나 비교 없이 보여드려요"
+                : "여행마다 고른 주 컨셉을 센 거예요 · 성격 진단이 아니에요")
         }
     }
 
@@ -205,7 +209,7 @@ struct WrappedStoryView: View {
     private var concepts: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Spacer().frame(height: 8)
-            Text("올해의 여행들").dnaFont(size: 30, weight: .heavy)
+            Text("\(wrapped.yearWordKo)의 여행들").dnaFont(size: 30, weight: .heavy)
             // ponytail: 여덟 번째 이후 여행은 줄이지 않고 자른다. 스크롤을 넣으려면 탭 이동과 제스처를 나눠야 한다.
             VStack(spacing: 10) {
                     ForEach(wrapped.rows.prefix(8)) { row in
@@ -239,7 +243,7 @@ struct WrappedStoryView: View {
     private var photos: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             Spacer().frame(height: 8)
-            Text(wrapped.photos.isEmpty ? "올해 남긴 한 장이\n아직 없어요" : "하루 한 장으로\n남긴 \(wrapped.photos.count)개의 순간")
+            Text(wrapped.photos.isEmpty ? "\(wrapped.yearWordKo) 남긴 한 장이\n아직 없어요" : "하루 한 장으로\n남긴 \(wrapped.photos.count)개의 순간")
                 .dnaFont(size: 30, weight: .heavy)
             if !wrapped.photos.isEmpty {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
@@ -281,7 +285,7 @@ struct WrappedStoryView: View {
             } label: {
                 Text("공유 카드 만들기")
                     .dnaFont(.button)
-                    .foregroundStyle(Color.dnaAction)
+                    .foregroundStyle(Color.dnaInk)
                     .frame(maxWidth: .infinity, minHeight: 54)
                     .background(Color.white, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }

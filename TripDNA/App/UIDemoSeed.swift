@@ -26,6 +26,10 @@ enum UIDemoSeed {
         case memory
         /// 저장한 도시와 제외한 도시.
         case saved
+        /// 지난 해에 다녀온 평가 완료 여행 6건(랭킹은 기본 순서) → 홈 "지난 Wrapped"와 풀 스토리.
+        case wrappedPast
+        /// 지난 해에 다녀온 여행이 1건뿐 → 1건 전용 문구.
+        case wrappedOne
     }
 
     /// `-uiDemo` 다음 인자. 없거나 모르는 이름이면 `.upcoming`.
@@ -84,6 +88,17 @@ enum UIDemoSeed {
         case .memory:
             try await seedTrips(store, now: now)
             try await store.saveWantedTiers(tiers)
+        case .wrappedPast:
+            for (index, spec) in manyTrips.enumerated() {
+                let from = lastYearOffset(30 + index * 55, now)
+                try await store.create(evaluated(
+                    spec.country, spec.city, from: from, to: from + 4,
+                    spec.concept, secondary: spec.secondary, stars: spec.stars, now: now
+                ))
+            }
+        case .wrappedOne:
+            let from = lastYearOffset(200, now)
+            try await store.create(evaluated("JP", "오사카", from: from, to: from + 4, .food, stars: 5, now: now))
         case .saved:
             try await store.updateCityState {
                 $0.save(card(of: "jp-kyoto"), conditionSummary: "문화·역사 · 11월", now: day(-3, now))
@@ -92,6 +107,13 @@ enum UIDemoSeed {
             }
         }
         session.onboardingPhase = .completed
+    }
+
+    /// 지난 해 1월 1일에서 `n`일 뒤가 오늘로부터 며칠 전인지(음수). 올해가 바뀌어도 "지난 해"로 남도록 `now`에서 계산한다.
+    private static func lastYearOffset(_ n: Int, _ now: Date) -> Int {
+        let calendar = Calendar.current
+        let start = calendar.date(from: DateComponents(year: calendar.component(.year, from: now) - 1, month: 1, day: 1, hour: 12)) ?? now
+        return calendar.dateComponents([.day], from: now, to: calendar.date(byAdding: .day, value: n, to: start) ?? now).day ?? 0
     }
 
     // MARK: 여행

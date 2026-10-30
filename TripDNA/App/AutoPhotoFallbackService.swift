@@ -6,7 +6,7 @@ enum AutoPhotoFallbackService {
     static let consentKey = "tripdna.dailyPhotoAutoFallbackConsent"
 
     static func fillMissingDays(dependencies: AppDependencies) async {
-        guard UserDefaults.standard.bool(forKey: consentKey),
+        guard AppStorageLocation.defaults.bool(forKey: consentKey),
               [.authorized, .limited].contains(PHPhotoLibrary.authorizationStatus(for: .readWrite)),
               let trips = try? await dependencies.store.trips() else { return }
         let calendar = Calendar.current

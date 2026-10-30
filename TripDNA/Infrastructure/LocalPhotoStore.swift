@@ -7,7 +7,7 @@ enum LocalPhotoStore {
     static let pathPrefix = "local://photos/"
 
     private static var directory: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        AppStorageLocation.directory(.documentDirectory)
             .appendingPathComponent("DailyPhotos", isDirectory: true)
     }
 

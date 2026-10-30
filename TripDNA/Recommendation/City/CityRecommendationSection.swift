@@ -202,7 +202,7 @@ final class CityRecommendationViewModel {
         do {
             let record = try await service.recommend(
                 request: request, tiers: tiers, excludedCountries: excludedCountries, excludedCities: excludedCities,
-                homeCountryExcluded: homeExcluded, memories: memories
+                homeCountryExcluded: homeExcluded, homeCountry: dependencies.homeCountryCode, memories: memories
             )
             guard !Task.isCancelled else { return }
             lastRecord = record

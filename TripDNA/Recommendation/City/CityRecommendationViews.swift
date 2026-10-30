@@ -14,13 +14,8 @@ struct CityRecommendationSection: View {
 
     private static let catalog = CityCatalog.load()
 
-    /// 이번 결과가 사는 나라를 뺀 채 받은 것이고 그 나라에 추천 도시가 있을 때, 그 나라 이름.
-    /// 기록에는 따로 저장된 값이 없어, 사는 나라 포함을 껐고 제외 나라에 사는 나라가 들어 있는지로 판단한다.
     private func excludedHomeName(_ record: CityRecommendationRecord) -> String? {
-        guard let home = dependencies.homeCountryCode, !record.input.includeHomeCountry,
-              record.excludedCountries.contains(home),
-              Self.catalog?.cities.contains(where: { $0.country == home }) == true else { return nil }
-        return CountryCatalog.name(for: home)
+        record.excludedHomeName(catalog: Self.catalog)
     }
 
     /// 안내 문구는 임시다. 문구와 시점은 사용자가 정한다(docs/data/storage-and-privacy.md).
@@ -176,9 +171,7 @@ struct CityRecommendationSection: View {
     @ViewBuilder
     private func understandingCard(_ record: CityRecommendationRecord) -> some View {
         let required = record.conditions.filter { $0.level == .required }.map(\.text)
-        // 접어도 사는 나라를 뺀 사실은 남긴다.
         let collapsed = record.input.collapsedLine(required: required)
-            + (excludedHomeName(record).map { " · \($0) 제외" } ?? "")
         if model.understandingExpanded {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 HStack {
@@ -265,23 +258,33 @@ struct CityRecommendationSection: View {
             .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         } else {
             Button { withAnimation { model.expandUnderstanding() } } label: {
-                HStack(spacing: DNASpacing.xs) {
-                    Text(collapsed)
-                        .dnaFont(.body)
-                        .foregroundStyle(Color.dnaTextPrimary)
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.down")
-                        .dnaFont(size: 14, weight: .bold)
-                        .foregroundStyle(Color.dnaTextSecondary)
+                // 접어도 사는 나라를 뺀 사실은 자르지 않고 별도 줄에 남긴다.
+                VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                    HStack(spacing: DNASpacing.xs) {
+                        Text(collapsed)
+                            .dnaFont(.body)
+                            .foregroundStyle(Color.dnaTextPrimary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.down")
+                            .dnaFont(size: 14, weight: .bold)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                    }
+                    if let home = excludedHomeName(record) {
+                        Text("\(home) 제외")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaTextSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(.horizontal, DNASpacing.md)
+                .padding(.vertical, DNASpacing.xs)
                 .frame(minHeight: 44)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("이해한 내용 펼치기: \(collapsed)")
+            .accessibilityLabel("이해한 내용 펼치기: \(collapsed)\(excludedHomeName(record).map { ", \($0) 제외" } ?? "")")
         }
     }
 
@@ -1013,5 +1016,16 @@ struct CityConditionEditSheet: View {
                 budgetText = String(current / 10_000)
             }
         }
+    }
+}
+
+extension CityRecommendationRecord {
+    /// 이번 결과가 사는 나라를 뺀 채 받은 것이고 그 나라에 추천 도시가 있을 때, 그 나라 이름.
+    /// 추천을 받던 때의 사는 나라(`homeCountryAtRequest`)를 쓴다. 예전 기록에는 없어 안내하지 않는다.
+    func excludedHomeName(catalog: CityCatalog?) -> String? {
+        guard let home = homeCountryAtRequest, !input.includeHomeCountry,
+              excludedCountries.contains(home),
+              catalog?.cities.contains(where: { $0.country == home }) == true else { return nil }
+        return CountryCatalog.name(for: home)
     }
 }

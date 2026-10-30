@@ -84,9 +84,10 @@ private struct OnboardingHeader: View {
 struct OnboardingConceptsView: View {
     let viewModel: OnboardingViewModel
     let dependencies: AppDependencies
-    @State private var primary: TripConcept?
-    @State private var secondary: [TripConcept] = []
     @State private var isSaving = false
+
+    private var primary: TripConcept? { viewModel.conceptPrimary }
+    private var secondary: [TripConcept] { viewModel.conceptSecondary }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -137,8 +138,6 @@ struct OnboardingConceptsView: View {
             }
         }
         .onChange(of: viewModel.conceptIndex) {
-            primary = nil
-            secondary = []
             isSaving = false
         }
     }
@@ -146,8 +145,7 @@ struct OnboardingConceptsView: View {
     private func tile(_ concept: TripConcept) -> some View {
         let isSelected = primary == concept
         return Button {
-            primary = concept
-            secondary.removeAll { $0 == concept }
+            viewModel.selectConceptPrimary(concept)
         } label: {
             Text(concept.labelKo)
                 .dnaFont(.cardTitle)
@@ -180,7 +178,7 @@ struct OnboardingConceptsView: View {
                                 let selected = secondary.contains(concept)
                                 let locked = !selected && secondary.count >= 2
                                 Button {
-                                    toggleSecondary(concept)
+                                    viewModel.toggleConceptSecondary(concept)
                                 } label: {
                                     OnboardingChip(title: concept.labelKo, isSelected: selected)
                                 }
@@ -195,18 +193,12 @@ struct OnboardingConceptsView: View {
         }
     }
 
-    private func toggleSecondary(_ concept: TripConcept) {
-        if let index = secondary.firstIndex(of: concept) {
-            secondary.remove(at: index)
-        } else if secondary.count < 2 {
-            secondary.append(concept)
-        }
-    }
-
     private func advance(save: Bool) {
-        let concepts = save ? primary.flatMap { try? TripConcepts(primary: $0, secondary: secondary) } : nil
         isSaving = true
-        Task { await viewModel.finishConcept(concepts, dependencies: dependencies) }
+        Task {
+            if save { await viewModel.saveCurrentConcept(dependencies: dependencies) }
+            else { await viewModel.finishConcept(nil, dependencies: dependencies) }
+        }
     }
 }
 
@@ -380,7 +372,7 @@ struct OnboardingSummaryView: View {
                         subtitle: "여행은 여행 탭에서, 원하는 여행은 설정에서 고칠 수 있어요."
                     )
                     if !viewModel.recordedTrips.isEmpty {
-                        card(title: "다녀온 여행 \(viewModel.recordedTrips.count)개", onEdit: viewModel.conceptQueue.isEmpty ? nil : { viewModel.editTripConcepts() }) {
+                        card(title: "다녀온 여행 \(viewModel.recordedTrips.count)개", onEdit: { viewModel.editTripConcepts() }) {
                             ForEach(viewModel.recordedTrips) { trip in
                                 HStack(alignment: .firstTextBaseline) {
                                     Text(trip.title)

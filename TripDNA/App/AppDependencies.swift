@@ -43,8 +43,8 @@ final class AppDependencies {
     /// 앱 진입 시 1회. 기기에 남아 있는 프로필로 홈 국가와 세션을 복원한다.
     /// 온보딩을 마친 기록이 있으면 다시 온보딩을 돌리지 않는다.
     func restore(session: SessionStore) async {
-        if UserDefaults.standard.object(forKey: Self.firstLaunchKey) == nil {
-            UserDefaults.standard.set(Date(), forKey: Self.firstLaunchKey)
+        if AppStorageLocation.defaults.object(forKey: Self.firstLaunchKey) == nil {
+            AppStorageLocation.defaults.set(Date(), forKey: Self.firstLaunchKey)
         }
         guard let profile = try? await store.loadProfile() else { return }
         localUserID = profile.id
@@ -62,7 +62,7 @@ final class AppDependencies {
 
     /// 설치 후 한 번만 기록한다. `source`는 추천을 처음 본 화면이다.
     func recordFirstRecommendationIfNeeded(source: String) async {
-        let defaults = UserDefaults.standard
+        let defaults = AppStorageLocation.defaults
         guard !defaults.bool(forKey: Self.firstRecommendationKey) else { return }
         defaults.set(true, forKey: Self.firstRecommendationKey)
         let firstLaunch = defaults.object(forKey: Self.firstLaunchKey) as? Date ?? Date()
@@ -172,9 +172,9 @@ final class AppDependencies {
         try CityRecommendationLog.standard.deleteAll()
         CityMemoryConsent.reset()
         EvaluationNotificationService.clearAll()
-        UserDefaults.standard.removeObject(forKey: AutoPhotoFallbackService.consentKey)
-        UserDefaults.standard.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")
-        UserDefaults.standard.removeObject(forKey: Self.firstRecommendationKey)
+        AppStorageLocation.defaults.removeObject(forKey: AutoPhotoFallbackService.consentKey)
+        AppStorageLocation.defaults.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")
+        AppStorageLocation.defaults.removeObject(forKey: Self.firstRecommendationKey)
         RankingReorderFlag.clear()
         homeCountryCode = nil
         interestTagIDs.removeAll()

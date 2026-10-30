@@ -3,9 +3,10 @@ import SwiftUI
 import UIKit
 
 /// 미리보기와 내보내기에 같은 고정 크기 이미지를 사용한다. 카드는 자체 배경색을 가지므로 밝은 외형으로 고정해 렌더링한다.
-/// 비율은 4:5(저장 1080×1350)다. 세 카드 모두 내용이 한 덩어리라 9:16에서는 아래가 비고, 정사각에 가까운 4:5는 피드와 메신저에서 잘리지 않는다.
+/// 비율은 9:16(저장 1080×1920)이다. 피드가 4:5로 잘라도 읽히도록 핵심 내용은 가운데 4:5 안전 구역(높이 `safeHeight`)에 둔다.
 enum ShareCardRenderer {
-    static let size = CGSize(width: 360, height: 450)
+    static let size = CGSize(width: 360, height: 640)
+    static let safeHeight: CGFloat = 450
 
     @MainActor static func render<Content: View>(_ content: Content) -> UIImage? {
         let renderer = ImageRenderer(content: content
@@ -50,7 +51,7 @@ struct ShareCardSheet<Card: View>: View {
                         Image(uiImage: renderedImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 300)
+                            .frame(maxWidth: 270)
                             .clipShape(RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
                             .frame(maxWidth: .infinity)
                             .accessibilityLabel("\(title) 이미지")

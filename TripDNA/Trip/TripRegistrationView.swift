@@ -275,7 +275,7 @@ final class TripRegistrationViewModel {
             primingPlaceTitle = stored.placeTitleKo
             try? await EvaluationNotificationService.scheduleIfEnabled(for: stored)
             if shouldShowNotificationPriming {
-                UserDefaults.standard.set(true, forKey: Self.notificationPrimingShownKey)
+                AppStorageLocation.defaults.set(true, forKey: Self.notificationPrimingShownKey)
                 showNotificationPriming = true
             } else {
                 didSave = true
@@ -289,7 +289,7 @@ final class TripRegistrationViewModel {
     }
 
     private var shouldShowNotificationPriming: Bool {
-        !isEditing && scenario != .past && !isPastTrip && !UserDefaults.standard.bool(forKey: Self.notificationPrimingShownKey)
+        !isEditing && scenario != .past && !isPastTrip && !AppStorageLocation.defaults.bool(forKey: Self.notificationPrimingShownKey)
     }
 }
 

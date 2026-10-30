@@ -14,7 +14,7 @@ final class SessionStore {
     var onboardingPhase: OnboardingPhase = .notStarted
 
     init() {
-        Self.legacyKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        Self.legacyKeys.forEach { AppStorageLocation.defaults.removeObject(forKey: $0) }
     }
 
     /// 앱에는 로그인이 없다. 기록이 기기에 남으니 온보딩만 끝나면 홈으로 들어간다.

@@ -198,21 +198,62 @@ enum UIDemoSeed {
         id: "c2", text: "비행 5시간 이내", quote: "비행 5시간 이내", level: .required, kind: .other
     )
 
+    /// 후보 풀은 서비스의 `replay`와 같은 입력으로 순위를 다시 계산해 만든다. 그래야 저장된 응답을 믿고
+    /// 예산 컷·채우기가 풀 일치 검사를 통과한다. 응답은 풀 전체를 덮고, 비용은 정해 둔 값(없으면 풀 순서 기준)을 쓴다.
+    private static let demoCosts: [String: CostRange] = [
+        "jp-osaka": .init(low: 900_000, high: 1_300_000), "jp-fukuoka": .init(low: 800_000, high: 1_200_000),
+        "jp-kyoto": .init(low: 1_000_000, high: 1_400_000), "jp-sapporo": .init(low: 1_800_000, high: 2_300_000),
+        "it-rome": .init(low: 1_100_000, high: 1_450_000), "es-barcelona": .init(low: 1_000_000, high: 1_400_000)
+    ]
+
+    private static func demoCost(_ cityID: String, index: Int) -> CostRange {
+        demoCosts[cityID] ?? .init(low: 900_000 + 100_000 * (index % 8), high: 1_500_000 + 100_000 * (index % 8))
+    }
+
+    private static func rankedCities(
+        _ request: RecommendationRequest, conditions: [CityCondition], excludedCountries: [String]
+    ) -> [RankedCity] {
+        guard let catalog = CityCatalog.load(), let primary = request.primary else { return [] }
+        return CityRanker.rank(catalog: catalog, input: CityRankingInput(
+            primary: primary, secondary: request.secondary, tiers: tiers, month: request.month,
+            excludedCountries: Set(excludedCountries), excludedCities: [], seed: 1, conditions: conditions
+        ))
+    }
+
     private static func record(
         _ request: RecommendationRequest, cards: [CityRecommendationRecord.Card], conditions: [CityCondition] = [],
-        poolCityIDs: [String], budgetCut: [String] = [], excludedCountries: [String] = [],
+        excludedCountries: [String] = [], homeCountry: String? = nil,
         understanding: String?, error: String? = nil, now: Date
     ) -> CityRecommendationRecord {
-        .init(
+        let catalog = CityCatalog.load()
+        let ranked = rankedCities(request, conditions: conditions, excludedCountries: excludedCountries)
+        let pool = Array(ranked.prefix(CityLLMRequestBuilder.poolSize))
+        let response = CityLLMResponse(
+            understanding: understanding ?? "데모 응답",
+            cards: pool.enumerated().map { index, item in
+                .init(
+                    id: item.city.id, reason: "데모용 설명이에요.", caveat: "데모용 유의점이에요.",
+                    cost: demoCost(item.city.id, index: index)
+                )
+            }
+        )
+        let cut = CityRecommendationService.select(
+            pool: pool, response: response, budget: request.budgetMaxKRW, seed: 1
+        ).cutIDs
+        return .init(
             id: UUID().uuidString, derivedFrom: nil, createdAt: now,
             version: .init(
-                catalog: CityCatalog.load()?.version ?? "demo", prompt: CityInputVersion.promptVersion,
+                catalog: catalog?.version ?? "demo", prompt: CityInputVersion.promptVersion,
                 model: "demo", ranking: CityInputVersion.rankingVersion
             ),
             seed: 1, input: request, tiers: tiers, excludedCountries: excludedCountries, excludedCityIDs: [],
-            rankedCityIDs: poolCityIDs, poolCityIDs: poolCityIDs, budgetCutCityIDs: budgetCut,
+            homeCountryAtRequest: homeCountry,
+            rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
+            poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: cut,
             conditions: conditions, rejectedConditionIDs: [], extraction: nil, memories: [], memoriesUsed: [],
-            system: "", user: "", rawResponse: nil, understanding: understanding, cards: cards,
+            system: "", user: "",
+            rawResponse: (try? JSONEncoder().encode(response)).flatMap { String(data: $0, encoding: .utf8) },
+            understanding: understanding, cards: cards,
             error: error, latencySeconds: 0
         )
     }
@@ -239,16 +280,14 @@ enum UIDemoSeed {
                 card(of: "jp-fukuoka", cost: .init(low: 800_000, high: 1_200_000), conditions: [met, unconfirmed]),
                 card(of: "jp-kyoto", cost: .init(low: 1_000_000, high: 1_400_000), conditions: [met])
             ],
-            conditions: [japanOnly, shortFlight], poolCityIDs: ["jp-osaka", "jp-fukuoka", "jp-kyoto", "jp-sapporo"],
-            budgetCut: ["jp-sapporo"],
+            conditions: [japanOnly, shortFlight],
             understanding: "11월에 3박으로, 먹는 즐거움이 중심인 일본 여행을 찾고 있어요.", now: now
         )
     }
 
     private static func zeroRecord(now: Date) -> CityRecommendationRecord {
         record(
-            request(budget: 500_000), cards: [], poolCityIDs: ["jp-osaka", "jp-fukuoka", "jp-kyoto"],
-            budgetCut: ["jp-osaka", "jp-fukuoka", "jp-kyoto"],
+            request(budget: 500_000), cards: [], conditions: [japanOnly, shortFlight],
             understanding: nil, error: "noneWithinBudget", now: now
         )
     }
@@ -258,11 +297,11 @@ enum UIDemoSeed {
         request.wants = ""
         return record(
             request,
-            cards: [
-                card(of: "it-rome", cost: .init(low: 1_100_000, high: 1_450_000)),
-                card(of: "es-barcelona", cost: .init(low: 1_000_000, high: 1_400_000))
-            ],
-            poolCityIDs: ["it-rome", "es-barcelona", "jp-osaka"], excludedCountries: ["JP"],
+            // 사는 나라(일본)를 뺀 순위에서 카드를 고른다. 도시는 카탈로그가 정한다.
+            cards: rankedCities(request, conditions: [], excludedCountries: ["JP"]).prefix(2).enumerated().map { index, item in
+                card(of: item.city.id, cost: demoCost(item.city.id, index: index))
+            },
+            excludedCountries: ["JP"], homeCountry: "JP",
             understanding: "11월에 3박으로, 먹는 즐거움이 중심인 여행을 찾고 있어요.", now: now
         )
     }

@@ -38,6 +38,8 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
     let excludedCountries: [String]
     /// 순위 계산에서 뺀 도시 id. 예전 기록에는 없다.
     var excludedCityIDs: [String]?
+    /// 추천을 받던 때의 사는 나라. 설정이 나중에 바뀌어도 안내가 달라지지 않게 남긴다. 예전 기록에는 없다.
+    var homeCountryAtRequest: String?
     /// 코드가 계산한 순위 상위 id. 같은 입력과 시드로 다시 계산해 대조할 수 있다.
     let rankedCityIDs: [String]
     /// LLM이 설명·비용을 낸 후보(순위 상위). 카드는 이 중 예산 컷을 통과한 도시에서 고른다.
@@ -66,7 +68,7 @@ nonisolated struct CityRecommendationLog: Sendable {
     let directory: URL
 
     static var standard: CityRecommendationLog {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let base = AppStorageLocation.directory(.applicationSupportDirectory)
         return CityRecommendationLog(directory: base.appendingPathComponent("CityRecommendationLogs", isDirectory: true))
     }
 
@@ -118,6 +120,7 @@ nonisolated struct CityRecommendationService: Sendable {
         excludedCountries: Set<String>,
         excludedCities: Set<String> = [],
         homeCountryExcluded: Bool,
+        homeCountry: String? = nil,
         memories: [CityMemory] = [],
         seed: UInt64 = UInt64.random(in: .min ... .max),
         now: Date = Date()
@@ -203,7 +206,7 @@ nonisolated struct CityRecommendationService: Sendable {
         let record = CityRecommendationRecord(
             id: UUID().uuidString, derivedFrom: nil, createdAt: now, version: llmRequest.version, seed: seed,
             input: request, tiers: tiers, excludedCountries: excludedCountries.sorted(),
-            excludedCityIDs: excludedCities.sorted(),
+            excludedCityIDs: excludedCities.sorted(), homeCountryAtRequest: homeCountry,
             rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
             poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: selection.cutIDs,
             conditions: conditions, rejectedConditionIDs: rejected, extraction: extraction,
@@ -283,7 +286,7 @@ nonisolated struct CityRecommendationService: Sendable {
         let derived = CityRecommendationRecord(
             id: UUID().uuidString, derivedFrom: record.id, createdAt: now, version: record.version, seed: record.seed,
             input: request, tiers: record.tiers, excludedCountries: record.excludedCountries,
-            excludedCityIDs: record.excludedCityIDs,
+            excludedCityIDs: record.excludedCityIDs, homeCountryAtRequest: record.homeCountryAtRequest,
             rankedCityIDs: record.rankedCityIDs, poolCityIDs: record.poolCityIDs, budgetCutCityIDs: selection.cutIDs,
             conditions: record.conditions, rejectedConditionIDs: record.rejectedConditionIDs, extraction: record.extraction,
             memories: record.memories, memoriesUsed: record.memoriesUsed,

@@ -201,6 +201,9 @@ final class OnboardingViewModel {
     var conceptIndex = 0
     /// 확인 화면에서 "수정"으로 들어왔으면 끝나고 확인 화면으로 돌아간다. 저장하지 않는 화면 상태다.
     private(set) var returnsToSummary = false
+    /// 컨셉 화면에서 지금 고른 값. 여행이 바뀔 때마다 그 여행에 저장된 컨셉으로 채운다.
+    private(set) var conceptPrimary: TripConcept?
+    private(set) var conceptSecondary: [TripConcept] = []
     var tiers = WantedConceptTiers()
 
     // MARK: 퀴즈 상태 (온보딩 경로에서는 쓰지 않지만 기존 테스트가 다루는 평가 로직이 의존한다)
@@ -267,6 +270,7 @@ final class OnboardingViewModel {
         entryMode = saved.entryMode.flatMap(EntryMode.init(rawValue:))
         conceptQueue = saved.conceptQueue
         conceptIndex = saved.conceptIndex
+        loadConceptSelection()
         tiers = saved.tiers
         switch savedStage {
         case .photoPriming, .photoScanning, .noCandidates, .candidates: stage = .entryModeSelection
@@ -294,11 +298,13 @@ final class OnboardingViewModel {
         }
     }
 
-    /// 확인 화면에서 여행 컨셉을 다시 고른다.
+    /// 확인 화면에서 여행 컨셉을 다시 고른다. 직접 등록처럼 컨셉이 이미 있는 여행까지 기록한 여행 전체를 돈다.
     func editTripConcepts() {
-        guard !conceptQueue.isEmpty else { return }
+        guard !recordedTrips.isEmpty else { return }
         returnsToSummary = true
+        conceptQueue = recordedTrips.map(\.id)
         conceptIndex = 0
+        loadConceptSelection()
         stage = .concepts
     }
 
@@ -449,7 +455,33 @@ final class OnboardingViewModel {
     private func beginConcepts() {
         conceptQueue = recordedTrips.filter { $0.concepts == nil }.map(\.id)
         conceptIndex = 0
+        loadConceptSelection()
         stage = conceptQueue.isEmpty ? .tiers : .concepts
+    }
+
+    private func loadConceptSelection() {
+        let saved = currentConceptTrip?.concepts
+        conceptPrimary = saved?.primary
+        conceptSecondary = saved?.secondary ?? []
+    }
+
+    func selectConceptPrimary(_ concept: TripConcept) {
+        conceptPrimary = concept
+        conceptSecondary.removeAll { $0 == concept }
+    }
+
+    func toggleConceptSecondary(_ concept: TripConcept) {
+        if let index = conceptSecondary.firstIndex(of: concept) {
+            conceptSecondary.remove(at: index)
+        } else if conceptSecondary.count < 2 {
+            conceptSecondary.append(concept)
+        }
+    }
+
+    /// 지금 고른 컨셉으로 현재 여행을 저장하고 다음 여행으로 간다.
+    func saveCurrentConcept(dependencies: AppDependencies) async {
+        let concepts = conceptPrimary.flatMap { try? TripConcepts(primary: $0, secondary: conceptSecondary) }
+        await finishConcept(concepts, dependencies: dependencies)
     }
 
     var currentConceptTrip: OnboardingTripSummary? {
@@ -474,6 +506,7 @@ final class OnboardingViewModel {
             }
         }
         conceptIndex += 1
+        loadConceptSelection()
         if conceptIndex >= conceptQueue.count { leaveConcepts() }
     }
 

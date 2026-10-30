@@ -5,7 +5,7 @@ import Foundation
 enum RankingReorderFlag {
     static let key = "tripdna.rankingReordered"
 
-    static func isSet(_ defaults: UserDefaults = .standard) -> Bool { defaults.bool(forKey: key) }
-    static func mark(_ defaults: UserDefaults = .standard) { defaults.set(true, forKey: key) }
-    static func clear(_ defaults: UserDefaults = .standard) { defaults.removeObject(forKey: key) }
+    static func isSet(_ defaults: UserDefaults = AppStorageLocation.defaults) -> Bool { defaults.bool(forKey: key) }
+    static func mark(_ defaults: UserDefaults = AppStorageLocation.defaults) { defaults.set(true, forKey: key) }
+    static func clear(_ defaults: UserDefaults = AppStorageLocation.defaults) { defaults.removeObject(forKey: key) }
 }

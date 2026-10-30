@@ -278,14 +278,14 @@ struct DailyPhotoView: View {
             DNATrustPanel(text: "원본 사진은 사진첩에 그대로 있어요. 앱은 위치 정보를 지운 줄인 사본만 보관하고, iCloud 백업이 켜져 있으면 이 사본도 내 iCloud에 백업돼요.")
             Spacer(minLength: 0)
             Button("골라두기") {
-                UserDefaults.standard.set(true, forKey: AutoPhotoFallbackService.consentKey)
+                AppStorageLocation.defaults.set(true, forKey: AutoPhotoFallbackService.consentKey)
                 showConsentSheet = false
                 withAnimation { stage = .reaction }
             }
             .buttonStyle(.dnaPrimary)
 
             Button("직접 고른 사진만") {
-                UserDefaults.standard.set(false, forKey: AutoPhotoFallbackService.consentKey)
+                AppStorageLocation.defaults.set(false, forKey: AutoPhotoFallbackService.consentKey)
                 showConsentSheet = false
                 withAnimation { stage = .reaction }
             }
@@ -338,9 +338,9 @@ struct DailyPhotoView: View {
             return
         }
 
-        let asked = UserDefaults.standard.bool(forKey: Self.consentAskedKey)
+        let asked = AppStorageLocation.defaults.bool(forKey: Self.consentAskedKey)
         if !asked {
-            UserDefaults.standard.set(true, forKey: Self.consentAskedKey)
+            AppStorageLocation.defaults.set(true, forKey: Self.consentAskedKey)
             showConsentSheet = true
         } else {
             withAnimation { stage = .reaction }

@@ -10,7 +10,7 @@ struct PermissionsSettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
-    @State private var fallbackOn = UserDefaults.standard.bool(forKey: AutoPhotoFallbackService.consentKey)
+    @State private var fallbackOn = AppStorageLocation.defaults.bool(forKey: AutoPhotoFallbackService.consentKey)
     @State private var notificationsOn = EvaluationNotificationService.isEnabled
     @State private var message: String?
     @State private var memoriesOn = CityMemoryConsent.state == .granted
@@ -95,7 +95,7 @@ struct PermissionsSettingsView: View {
         photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         notificationStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
         notificationsOn = EvaluationNotificationService.isEnabled
-        fallbackOn = UserDefaults.standard.bool(forKey: AutoPhotoFallbackService.consentKey)
+        fallbackOn = AppStorageLocation.defaults.bool(forKey: AutoPhotoFallbackService.consentKey)
         memoriesOn = CityMemoryConsent.state == .granted
     }
 
@@ -105,7 +105,7 @@ struct PermissionsSettingsView: View {
 
     private func setFallback(_ on: Bool) {
         guard on else {
-            UserDefaults.standard.set(false, forKey: AutoPhotoFallbackService.consentKey)
+            AppStorageLocation.defaults.set(false, forKey: AutoPhotoFallbackService.consentKey)
             fallbackOn = false
             return
         }
@@ -114,7 +114,7 @@ struct PermissionsSettingsView: View {
                 photoStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
             }
             let granted = photosGranted
-            UserDefaults.standard.set(granted, forKey: AutoPhotoFallbackService.consentKey)
+            AppStorageLocation.defaults.set(granted, forKey: AutoPhotoFallbackService.consentKey)
             fallbackOn = granted
             message = granted ? nil : "사진 접근을 허용해야 켤 수 있어요. iOS 설정에서 바꿔 주세요."
         }

@@ -137,7 +137,7 @@ struct WrappedYear: Equatable {
             var parts = [trip.legs.first.map { "\(calendar.component(.month, from: $0.startDate))월" } ?? "", trip.durationKo]
             if let concept = trip.concepts?.primary { parts.append("\(concept.labelKo) 여행") }
             topTrip = TopTrip(place: trip.placeTitleKo, detail: parts.filter { !$0.isEmpty }.joined(separator: " · "),
-                              countriesKo: trip.titleKo, conceptKo: trip.concepts?.primary.labelKo, coverPath: cover(of: trip))
+                              countriesKo: ShareText.list(trip.legs.map { CountryCatalog.name(for: $0.countryCode) }), conceptKo: trip.concepts?.primary.labelKo, coverPath: cover(of: trip))
         }
 
         return WrappedYear(

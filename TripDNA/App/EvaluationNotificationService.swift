@@ -4,25 +4,25 @@ import UserNotifications
 enum EvaluationNotificationService {
     private static let enabledKey = "tripdna.evaluationNotificationsEnabled"
 
-    static var isEnabled: Bool { UserDefaults.standard.bool(forKey: enabledKey) }
+    static var isEnabled: Bool { AppStorageLocation.defaults.bool(forKey: enabledKey) }
 
     /// 설정에서 끈다. 예약돼 있던 평가 알림도 함께 거둔다.
     static func disable() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        UserDefaults.standard.set(false, forKey: enabledKey)
+        AppStorageLocation.defaults.set(false, forKey: enabledKey)
     }
 
     static func enable(for trips: [Trip]) async throws -> Bool {
         let granted = try await UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .badge, .sound])
         guard granted else { return false }
-        UserDefaults.standard.set(true, forKey: enabledKey)
+        AppStorageLocation.defaults.set(true, forKey: enabledKey)
         for trip in trips { try await scheduleIfEnabled(for: trip) }
         return true
     }
 
     static func scheduleIfEnabled(for trip: Trip) async throws {
-        guard UserDefaults.standard.bool(forKey: enabledKey) else { return }
+        guard AppStorageLocation.defaults.bool(forKey: enabledKey) else { return }
         let center = UNUserNotificationCenter.current()
         let identifier = notificationID(for: trip.id)
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
@@ -53,8 +53,8 @@ enum EvaluationNotificationService {
 
     static func clearAll() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        UserDefaults.standard.removeObject(forKey: enabledKey)
-        UserDefaults.standard.removeObject(forKey: TripRegistrationViewModel.notificationPrimingShownKey)
+        AppStorageLocation.defaults.removeObject(forKey: enabledKey)
+        AppStorageLocation.defaults.removeObject(forKey: TripRegistrationViewModel.notificationPrimingShownKey)
     }
 
     private static func notificationID(for tripID: String) -> String { "evaluation.\(tripID)" }

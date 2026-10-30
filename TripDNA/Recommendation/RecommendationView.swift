@@ -35,10 +35,6 @@ struct RecommendationView: View {
             }
             .padding(DNASpacing.lg)
         }
-        // 아래로 스크롤하면 "이렇게 이해했어요"를 한 줄로 접는다.
-        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 60 } action: { _, scrolled in
-            if scrolled { Task { await cityModel.collapseUnderstanding(dependencies: dependencies) } }
-        }
         .dnaTopScrollBlur()
         .dnaBackground()
         .toolbar(.hidden, for: .navigationBar)

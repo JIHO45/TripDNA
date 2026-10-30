@@ -126,9 +126,7 @@ struct WrappedYear: Equatable {
         let cities = Set(annual.flatMap { $0.legs.flatMap(\.cities) })
         let months = Set(annual.compactMap { $0.legs.first.map { calendar.component(.month, from: $0.startDate) } }).sorted()
 
-        func cover(of trip: Trip) -> String? {
-            trip.coverPhotoStoragePath ?? photos.first { $0.tripID == trip.id }?.storagePath
-        }
+        func cover(of trip: Trip) -> String? { trip.displayCoverPath(photos: photos) }
 
         var topTrip: TopTrip?
         if rankingReordered, annual.count >= 2,

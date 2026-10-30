@@ -117,8 +117,7 @@ final class HomeViewModel {
         return leg.cities.first ?? CountryCatalog.name(for: leg.countryCode)
     }
 
-    /// 대표 사진, 없으면 그 여행의 하루 한 장 중 하나.
     func coverPath(for trip: Trip) -> String? {
-        trip.coverPhotoStoragePath ?? photos.first { $0.tripID == trip.id }?.storagePath
+        trip.displayCoverPath(photos: photos)
     }
 }

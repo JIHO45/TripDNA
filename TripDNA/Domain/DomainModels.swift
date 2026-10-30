@@ -524,6 +524,17 @@ nonisolated struct DailyPhoto: Identifiable, Codable, Equatable, Sendable {
     let createdAt: Date
 }
 
+extension Trip {
+    /// 화면에 보일 대표 사진. 고른 대표 사진, 없으면 직접 고른 하루 한 장 중 가장 이른 날.
+    /// 자동으로 채운 사진은 사용자가 고르지 않았으므로 대표로 쓰지 않는다(docs/screens/daily-photo.md).
+    func displayCoverPath(photos: [DailyPhoto]) -> String? {
+        coverPhotoStoragePath ?? photos
+            .filter { $0.tripID == id && $0.selection == .manual }
+            .min { $0.tripDayIndex < $1.tripDayIndex }?
+            .storagePath
+    }
+}
+
 nonisolated struct TripRanking: Codable, Equatable, Sendable {
     private(set) var tripIDsOrdered: [String]
     private(set) var ledgerVersion: Int

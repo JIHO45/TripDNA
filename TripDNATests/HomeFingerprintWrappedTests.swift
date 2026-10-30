@@ -57,6 +57,25 @@ struct HomeFingerprintWrappedTests {
         #expect(print.homeHeadlineKo == print.detailHeadlineKo)
     }
 
+    @Test func headlineCountsThreeOrMoreTiesInsteadOfListingNames() throws {
+        let print = try fingerprint([.food, .cityExploration, .natureScenery])
+        #expect(print.top.count == 3)
+        #expect(print.homeHeadlineKo == "3가지 여행을 1번씩 떠났어요")
+        #expect(print.detailHeadlineKo == print.homeHeadlineKo)
+    }
+
+    @Test func displayCoverSkipsAutoFilledPhotos() throws {
+        var t = try trip("a", .food, month: 1)
+        func photo(_ day: Int, _ selection: PhotoSelection) -> DailyPhoto {
+            DailyPhoto(id: "\(day)", tripID: "a", tripDayIndex: day, storagePath: "p\(day)",
+                       selection: selection, dayReaction: nil, createdAt: Date())
+        }
+        #expect(t.displayCoverPath(photos: [photo(0, .autoFallback)]) == nil)
+        #expect(t.displayCoverPath(photos: [photo(0, .autoFallback), photo(2, .manual), photo(1, .manual)]) == "p1")
+        t.setCoverPhoto(storagePath: "cover")
+        #expect(t.displayCoverPath(photos: [photo(1, .manual)]) == "cover")
+    }
+
     @Test func headlineForOneTripDoesNotClaimMost() throws {
         let print = try fingerprint([.food])
         #expect(print.detailHeadlineKo == "첫 기록은 미식 여행이에요")

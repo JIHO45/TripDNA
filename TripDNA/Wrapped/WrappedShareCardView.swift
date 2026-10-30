@@ -16,7 +16,7 @@ struct WrappedShareCardView: View {
                 line("나라", showsDestinationNames ? ShareText.list(wrapped.countryNames) : "\(wrapped.countryCount)곳")
                 // 한 번뿐인 해에는 "가장 많이"를 말하지 않는다.
                 if let fingerprint = wrapped.fingerprint, !wrapped.isSingleTrip {
-                    line(fingerprint.isTie ? "같이 많이" : "가장 많이", ShareText.list(fingerprint.top.map(\.labelKo)))
+                    line(fingerprint.isTie ? "같이 많이" : "가장 많이", fingerprint.topCountedKo ?? ShareText.list(fingerprint.top.map(\.labelKo)))
                 }
                 if let topTrip = wrapped.topTrip {
                     let value = [showsDestinationNames ? topTrip.countriesKo : nil, topTrip.conceptKo.map(ShareText.keepTogether)]

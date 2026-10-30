@@ -157,6 +157,7 @@ struct FingerprintShareCard: View {
     }
 
     private var topNames: String {
+        if let counted = fingerprint.topCountedKo { return counted }
         let names = fingerprint.top.map { ShareText.keepTogether($0.labelKo) }
         return names.count == 2 ? KoreanParticle.andJoined(names[0], names[1]) : names.joined(separator: ", ")
     }

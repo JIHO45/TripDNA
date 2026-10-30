@@ -206,10 +206,9 @@ struct TripDetailView: View {
         .refreshable { await viewModel.load(tripID: tripID, dependencies: dependencies) }
     }
 
-    /// 대표 사진 → 오늘/첫 하루 한 장 → 빈 자리 순서로 보여준다. 사진 위 글자는 흰색이다.
+    /// 대표 사진 → 직접 고른 첫 하루 한 장 → 빈 자리 순서로 보여준다. 사진 위 글자는 흰색이다.
     private func hero(_ trip: Trip) -> some View {
-        let path = trip.coverPhotoStoragePath
-            ?? viewModel.photos.sorted { $0.tripDayIndex < $1.tripDayIndex }.first?.storagePath
+        let path = trip.displayCoverPath(photos: viewModel.photos)
         return ZStack(alignment: .bottomLeading) {
             if let path {
                 TripPhotoImage(storagePath: path)

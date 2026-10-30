@@ -270,7 +270,7 @@ struct WrappedStoryView: View {
                 summaryLine("여행", "\(wrapped.tripCount)번")
                 summaryLine("나라", "\(wrapped.countryCount)곳")
                 if let fingerprint = wrapped.fingerprint, !wrapped.isSingleTrip {
-                    summaryLine(fingerprint.isTie ? "같이 많이" : "가장 많이 떠난 여행", fingerprint.top.map(\.labelKo).joined(separator: " · "))
+                    summaryLine(fingerprint.isTie ? "같이 많이" : "가장 많이 떠난 여행", fingerprint.topCountedKo ?? fingerprint.top.map(\.labelKo).joined(separator: " · "))
                 }
                 if let topTrip = wrapped.topTrip {
                     summaryLine("1위 여행", topTrip.place)

@@ -383,11 +383,6 @@ private struct CityCardCarousel: View {
             }
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $page)
-            .onChange(of: page) { _, new in
-                // 처음 자리를 잡는 변화는 넘긴 것이 아니다.
-                guard let new, new != cards.first?.cityID else { return }
-                Task { await model.collapseUnderstanding(dependencies: dependencies) }
-            }
             // "1/3" 같은 숫자는 순위로 읽혀 쓰지 않는다. 점과 화살표로만 위치를 알린다.
             if cards.count > 1 {
                 HStack(spacing: DNASpacing.md) {
@@ -628,6 +623,21 @@ struct CityDetailView: View {
             .padding(DNASpacing.lg)
         }
         .scrollDismissesKeyboard(.interactively)
+        // 질문 칸이 맨 아래라 잘 안 보여서, 누르면 질문 칸으로 가 바로 입력하게 한다.
+        .overlay(alignment: .bottomTrailing) {
+            if !keyboardUp {
+                Button { questionFocused = true } label: {
+                    Image(systemName: "questionmark.bubble")
+                        .dnaFont(size: 20, weight: .bold)
+                        .foregroundStyle(Color.dnaSelectedForeground)
+                        .frame(width: 56, height: 56)
+                        .background(Color.dnaSelectedBackground, in: Circle())
+                        .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+                }
+                .padding(DNASpacing.gutter)
+                .accessibilityLabel("이 도시에 대해 묻기")
+            }
+        }
         .onChange(of: questionFocused) { _, focused in
             guard focused else { return }
             // 키보드가 올라오는 동안 기다렸다가 질문 칸이 보이게 올린다.
@@ -832,6 +842,8 @@ struct CityDetailView: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // 섹션 사이를 제목·본문 간격보다 넓혀 구분한다(바깥 간격 md + 이 값 = section).
+        .padding(.top, DNASpacing.section - DNASpacing.md)
     }
 
     private var notes: [String] {
@@ -846,9 +858,9 @@ struct CityDetailView: View {
     private var caveatSection: some View {
         if !notes.isEmpty {
             plainSection("안 맞을 수 있는 점 · 확인할 것") {
-                VStack(alignment: .leading, spacing: DNASpacing.xxs) {
+                VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     ForEach(notes, id: \.self) { note in
-                        Text("· \(note)")
+                        Text(note)
                             .dnaFont(.body)
                             .foregroundStyle(Color.dnaUnverifiedText)
                     }
@@ -940,6 +952,8 @@ struct CityConditionEditSheet: View {
     private var canApply: Bool { !isCustom || man != nil }
 
     var body: some View {
+        // 직접 입력 칸까지 열리면 중간 높이를 넘으므로 스크롤로 감싸 위가 잘리지 않게 한다.
+        ScrollView {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             HStack {
                 Text("조건 수정")
@@ -1003,9 +1017,10 @@ struct CityConditionEditSheet: View {
                 .foregroundStyle(Color.dnaTextSecondary)
             Button("새 여행 추천") { dismiss(); onNewRequest() }
                 .buttonStyle(.dnaSecondary(onSheet: true))
-            Spacer(minLength: 0)
         }
         .padding(DNASpacing.gutter)
+        }
+        .scrollBounceBehavior(.basedOnSize)
         .background(Color.dnaSheet.ignoresSafeArea())
         .presentationDetents([.medium, .large])
         .onAppear {

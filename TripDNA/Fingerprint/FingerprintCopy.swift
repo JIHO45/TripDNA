@@ -18,8 +18,12 @@ enum KoreanParticle {
 /// 지문 문장. 컨셉 횟수를 세어 말할 뿐 성향을 추정하지 않는다
 /// (docs/screens/home-and-fingerprint.md "취향 지문").
 extension ConceptFingerprint {
-    /// 1위 컨셉 이름. 동점이면 둘은 "X와 Y", 셋 이상은 "X·Y·Z".
+    /// 셋 이상 동점이면 이름 대신 "N가지". 이름은 함께 보이는 막대 목록에 이미 나온다.
+    var topCountedKo: String? { top.count >= 3 ? "\(top.count)가지" : nil }
+
+    /// 1위 컨셉 이름. 동점이면 둘은 "X와 Y", 셋 이상은 "N가지".
     var topNamesKo: String {
+        if let topCountedKo { return topCountedKo }
         let names = top.map(\.labelKo)
         if names.count == 2 { return KoreanParticle.andJoined(names[0], names[1]) }
         return names.joined(separator: "·")

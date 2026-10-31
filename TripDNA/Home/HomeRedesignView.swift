@@ -10,6 +10,8 @@ struct HomeRedesignView: View {
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// D-day 원 지름. 안의 숫자(20pt)와 같은 비율로 커진다.
+    @ScaledMetric(relativeTo: .title3) private var dDayDiameter: CGFloat = 56
     @State private var viewModel = HomeViewModel()
     @State private var showingProfile = false
     @State private var showingRegistration = false
@@ -207,7 +209,7 @@ struct HomeRedesignView: View {
                         Text("\(days)").dnaFont(size: 20, weight: .heavy)
                     }
                     .foregroundStyle(Color.dnaTextPrimary)
-                    .frame(width: 56, height: 56)
+                    .frame(width: dDayDiameter, height: dDayDiameter)
                     .dnaGlass(in: Circle())
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("D-\(days)")

@@ -232,10 +232,12 @@ actor SwiftDataAppStore: nonisolated AppStore {
     /// - Parameter url: 저장 파일 위치. 기본 위치를 쓰려면 nil. 테스트가 앱 재실행을
     ///   흉내 내려고 같은 파일을 다시 열 때 지정한다.
     static func makeContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
+        // 앱에 CloudKit 권한이 있으면 SwiftData가 스스로 동기화를 켜려 한다. 이 스키마(.unique)는 동기화할 수 없고,
+        // iCloud에는 ICloudBackup이 따로 올리므로 끈다. 빼면 저장소가 열리지 않는다.
         let configuration = if let url {
-            ModelConfiguration(url: url)
+            ModelConfiguration(url: url, cloudKitDatabase: .none)
         } else {
-            ModelConfiguration(isStoredInMemoryOnly: inMemory)
+            ModelConfiguration(isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)
         }
         return try ModelContainer(
             for: Schema(versionedSchema: TripDNASchemaV2.self),
@@ -509,6 +511,52 @@ actor SwiftDataAppStore: nonisolated AppStore {
         try modelContext.delete(model: StoredAnalyticsEvent.self)
         try modelContext.delete(model: StoredSingleton.self)
         try modelContext.save()
+    }
+
+    // MARK: iCloud 백업
+
+    /// 백업에 넣을 행을 그대로 꺼낸다. 이벤트(기기 안 측정 기록)는 넣지 않는다.
+    /// 같은 내용이면 같은 바이트가 나오도록 id 순으로 정렬한다(바뀐 게 없으면 올리지 않으려고).
+    func exportBackup() throws -> BackupSnapshot {
+        let trips = try modelContext.fetch(FetchDescriptor<StoredTrip>(sortBy: [SortDescriptor(\.tripID)]))
+        let feedback = try modelContext.fetch(FetchDescriptor<StoredCardFeedback>(sortBy: [SortDescriptor(\.feedbackID)]))
+        let photos = try modelContext.fetch(FetchDescriptor<StoredDailyPhoto>(sortBy: [SortDescriptor(\.photoID)]))
+        let singletons = try modelContext.fetch(FetchDescriptor<StoredSingleton>(sortBy: [SortDescriptor(\.key)]))
+        return BackupSnapshot(
+            trips: trips.map { .init(id: $0.tripID, createdAt: $0.createdAt, updatedAt: $0.updatedAt, payload: $0.payload) },
+            feedback: feedback.map { .init(id: $0.feedbackID, createdAt: $0.createdAt, updatedAt: $0.updatedAt, payload: $0.payload) },
+            photos: photos.map { .init(id: $0.photoID, tripID: $0.tripID, tripDayIndex: $0.tripDayIndex, updatedAt: $0.updatedAt, payload: $0.payload) },
+            singletons: singletons.map { .init(key: $0.key, updatedAt: $0.updatedAt, payload: $0.payload) }
+        )
+    }
+
+    /// 기기의 기록을 백업으로 바꾼다. 지우기 전에 여행·반응·사진 기록을 모두 읽어 보고, 하나라도 못 읽으면 아무것도 바꾸지 않는다.
+    func restoreBackup(_ snapshot: BackupSnapshot) throws {
+        guard snapshot.version <= BackupSnapshot.currentVersion else { throw BackupError.newerVersion }
+        try snapshot.validate()
+
+        try modelContext.delete(model: StoredTrip.self)
+        try modelContext.delete(model: StoredCardFeedback.self)
+        try modelContext.delete(model: StoredDailyPhoto.self)
+        try modelContext.delete(model: StoredSingleton.self)
+        for row in snapshot.trips {
+            modelContext.insert(StoredTrip(tripID: row.id, createdAt: row.createdAt, updatedAt: row.updatedAt, payload: row.payload))
+        }
+        for row in snapshot.feedback {
+            modelContext.insert(StoredCardFeedback(feedbackID: row.id, createdAt: row.createdAt, updatedAt: row.updatedAt, payload: row.payload))
+        }
+        for row in snapshot.photos {
+            modelContext.insert(StoredDailyPhoto(photoID: row.id, tripID: row.tripID, tripDayIndex: row.tripDayIndex, updatedAt: row.updatedAt, payload: row.payload))
+        }
+        for row in snapshot.singletons {
+            modelContext.insert(StoredSingleton(key: row.key, updatedAt: row.updatedAt, payload: row.payload))
+        }
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
+        }
     }
 
     // MARK: 내부

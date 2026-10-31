@@ -19,6 +19,8 @@ final class AppDependencies {
     let affiliateActivitiesEnabled: Bool
     let dailyPhotoService: DailyPhotoService
     let wrappedService = WrappedService()
+    /// 기기에 남는 저장소일 때만 있다. 프리뷰·테스트·데모는 iCloud에 닿지 않는다.
+    let backup: ICloudBackup?
     let quizService = TasteQuizService()
 
     var interestTagIDs: Set<String> = []
@@ -166,6 +168,8 @@ final class AppDependencies {
     }
 
     func deleteAccount(session: SessionStore) async throws {
+        // iCloud 사본을 먼저 지운다. 실패하면 기기 기록도 그대로 두고 알린다(사본만 남는 일을 막는다).
+        try await backup?.deleteRemote()
         try await store.deleteAllUserData()
         try LocalPhotoStore.deleteAll()
         // 추천 기록에는 메모 원문과 요청 문장이 있다. 전체 삭제에 포함하고, 실패는 호출자가 사용자에게 알린다.
@@ -224,6 +228,11 @@ final class AppDependencies {
         #endif
         let store = Self.makeStore(persistence: effectivePersistence, countries: countries, tags: tags)
         self.store = store
+        if effectivePersistence == .onDisk, !AppStorageLocation.isIsolated, let local = store as? SwiftDataAppStore {
+            backup = ICloudBackup(store: local)
+        } else {
+            backup = nil
+        }
         let analytics = AnalyticsRecorder(store: store, sink: analyticsSink)
         self.analytics = analytics
 

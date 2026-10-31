@@ -6,7 +6,7 @@ import UIKit
 enum LocalPhotoStore {
     static let pathPrefix = "local://photos/"
 
-    private static var directory: URL {
+    static var directory: URL {
         AppStorageLocation.directory(.documentDirectory)
             .appendingPathComponent("DailyPhotos", isDirectory: true)
     }

@@ -15,15 +15,13 @@ struct SettingsRootView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                        Text("지금은 이 기기에만 저장돼요")
-                            .dnaFont(.cardTitle)
-                            .foregroundStyle(Color.dnaTextPrimary)
-                        Text("앱을 지우거나 기기를 바꾸면 기록을 되찾을 수 없어요.")
-                            .dnaFont(.caption)
-                            .foregroundStyle(Color.dnaTextSecondary)
+                    if let backup = dependencies.backup {
+                        NavigationLink { BackupSettingsView(backup: backup) } label: {
+                            BackupStatusLabel(backup: backup)
+                        }
+                    } else {
+                        BackupStatusLabel(backup: nil)
                     }
-                    .padding(.vertical, DNASpacing.xxs)
                 }
                 .listRowBackground(Color.dnaSurface1)
 

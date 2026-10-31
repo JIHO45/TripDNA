@@ -32,7 +32,7 @@ struct RecordLifecycleTests {
         do {
             let v1 = try ModelContainer(
                 for: Schema(versionedSchema: TripDNASchemaV1.self),
-                configurations: ModelConfiguration(url: url)
+                configurations: ModelConfiguration(url: url, cloudKitDatabase: .none)
             )
             let context = ModelContext(v1)
             context.insert(TripDNASchemaV1.StoredSingleton(key: "interestTags", payload: try JSONEncoder().encode(["food"])))

@@ -22,6 +22,8 @@ TripDNA(이하 “앱”)는 지난 여행의 기록을 바탕으로 다음 여�
 
 여행 기록, 평가와 메모, 고른 사진의 사본, 원하는 여행·기억하는 취향 같은 선호, 추천 결과는 사용자의 기기에만 저장합니다. 운영자는 이 정보를 서버에 모으지 않습니다. 앱을 삭제하면 이 정보도 함께 지워집니다.
 
+기기에서 iCloud에 로그인되어 있으면 이 기록(사진 사본 포함)을 사용자 Apple 계정의 iCloud에 백업합니다. 백업은 기본으로 켜져 있고 설정 > iCloud 백업에서 끌 수 있습니다. 백업은 Apple의 iCloud에 저장되며 운영자는 볼 수 없습니다. 같은 Apple 계정의 새 기기에서 기록을 되살리는 데만 씁니다.
+
 ## 3. 사진 접근
 
 사진 접근을 허용하면 사진의 날짜와 위치로 지난 여행을 찾고, 여행일의 사진을 고르고, 공유 카드를 사진첩에 저장합니다. 사진 원본은 기기 밖으로 보내지 않습니다. 사진의 위치를 장소 이름으로 바꿀 때 Apple의 위치 서비스에 좌표가 전송됩니다.
@@ -68,6 +70,7 @@ AI 제공자(Anthropic)는 받은 정보를 자체 정책에 따라 처리·보�
 
 - 기기에 저장된 정보는 앱에서 직접 보고, 고치고, 지울 수 있습니다.
 - 설정 > 데이터 삭제 > 모든 데이터 지우기를 하면 기기의 모든 기록과 서버의 익명 ID를 삭제합니다. 인터넷에 연결되지 않아 서버 삭제에 실패하면 기기에서 연결을 끊고, 다음부터 새 익명 ID를 씁니다.
+- 모든 데이터 지우기는 iCloud에 있는 백업도 지웁니다. 백업을 지우지 못하면 기기 기록도 지우지 않고 그 사실을 알립니다.
 - 그 밖의 열람·정정·삭제·처리 정지 요청은 위 이메일로 보내 주세요.
 
 ## 10. 아동
@@ -99,6 +102,8 @@ TripDNA (“the app”) suggests your next destination based on your past trips.
 ## 2. Information kept only on your device
 
 Your trips, ratings and notes, copies of photos you choose, preferences such as wanted trips and remembered tastes, and recommendation results are stored only on your device. The operator does not collect them on a server. Deleting the app deletes them.
+
+If the device is signed in to iCloud, these records (including photo copies) are backed up to your Apple account's iCloud. Backup is on by default and can be turned off in Settings > iCloud backup. The backup is stored in Apple's iCloud and the operator cannot see it. It is used only to restore your records on a new device with the same Apple account.
 
 ## 3. Photo access
 
@@ -146,6 +151,7 @@ Each time you request a recommendation or ask a question, the information in sec
 
 - You can view, edit, and delete information on your device directly in the app.
 - Settings > Delete data > Delete all data removes all records on the device and the anonymous ID on the server. If the server deletion fails because you are offline, the device disconnects from that ID and uses a new one from then on.
+- Delete all data also deletes the iCloud backup. If the backup cannot be deleted, the records on the device are kept and the app tells you.
 - For any other access, correction, deletion, or restriction request, email the address above.
 
 ## 10. Children

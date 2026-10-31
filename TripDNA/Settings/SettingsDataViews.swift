@@ -144,6 +144,7 @@ struct StoredDataCounts: Equatable {
     var photos = 0
     var feedback = 0
     var hasPreferences = false
+    var iCloudBackupRemains = false
 
     var isEmpty: Bool { trips == 0 && photos == 0 && feedback == 0 && !hasPreferences }
 
@@ -162,6 +163,7 @@ struct StoredDataCounts: Equatable {
     var lines: [String] {
         var result = ["여행 \(trips)개", "평가 \(evaluations)개", "사진 \(photos)장", "저장·제외·반응 기록 \(feedback)개"]
         if hasPreferences { result.append("원하는 여행과 기억하는 취향") }
+        if iCloudBackupRemains { result.append("iCloud에 있는 백업") }
         return result
     }
 }
@@ -188,13 +190,15 @@ struct DataDeletionSettingsView: View {
                 Button("모든 데이터 지우기", role: .destructive) { showingConfirm = true }
                     .disabled(isDeleting)
             } footer: {
-                Text("이 기기에 저장된 모든 기록이 지워져요. 계정이 없어서 다른 곳에서 복구할 수 없어요.")
+                Text("이 기기의 모든 기록과 iCloud에 있는 백업이 지워져요. 지우면 어디서도 복구할 수 없어요.")
             }
             .listRowBackground(Color.dnaSurface1)
 
             if let failure {
                 Section("지우지 못한 데이터") {
-                    Text("삭제를 끝내지 못했어요. 아래는 아직 남아 있는 데이터예요.")
+                    Text(failure.iCloudBackupRemains
+                         ? "iCloud 백업을 지우지 못해서 기기 기록도 그대로 두었어요. 인터넷과 iCloud 로그인을 확인하고 다시 시도해 주세요."
+                         : "삭제를 끝내지 못했어요. 아래는 아직 남아 있는 데이터예요.")
                         .foregroundStyle(Color.dnaError)
                     ForEach(failure.lines, id: \.self) { Text($0).foregroundStyle(Color.dnaTextPrimary) }
                 }
@@ -251,6 +255,8 @@ struct DataDeletionSettingsView: View {
             onFinished()
         } catch {
             failure = await StoredDataCounts(store: dependencies.store)
+            // iCloud 사본을 못 지우면 기기 기록도 지우지 않고 멈춘다(AppDependencies.deleteAccount).
+            failure?.iCloudBackupRemains = (error as? BackupError) == .remoteDeleteFailed
             counts = failure ?? counts
             showingConfirm = false
         }

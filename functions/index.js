@@ -11,6 +11,7 @@ const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { getAppCheck } = require("firebase-admin/app-check");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const Anthropic = require("@anthropic-ai/sdk");
 
 initializeApp();
@@ -81,5 +82,33 @@ exports.cityLLM = onRequest(
   }
 );
 
+// 출시 후 관측(R5)용 익명 집계. 앱이 POST {event}를 보내면 그날(UTC) 그 이벤트 수만 1 올린다.
+// 정식 앱(App Check)만 받고 익명 ID는 받지 않는다: 누가 보냈는지 남기지 않는다. 로그도 남기지 않는다.
+// Firestore: metrics/{YYYY-MM-DD} = {이벤트: 수}. 앱: TripDNA/App/ServerMetricsSink.swift(보내는 이벤트 목록).
+const METRIC_EVENTS = new Set([
+  "onboarding_completed", "first_recommendation_shown", "city_recommendation_received", "city_recommendation_failed",
+  "city_saved", "city_skipped", "city_excluded", "memory_forgotten",
+  "share_card_exported", "error_report_opened",
+]);
+
+const metricEventOf = (body) => (METRIC_EVENTS.has(body?.event) ? body.event : null);
+
+exports.metric = onRequest({ maxInstances: 2 }, async (req, res) => {
+  if (req.method !== "POST") return res.status(405).end();
+  const token = req.get("X-Firebase-AppCheck");
+  try {
+    if (!token) throw new Error();
+    await verifiers.appCheck(token);
+  } catch {
+    return res.status(401).end();
+  }
+  const event = metricEventOf(req.body);
+  if (!event) return res.status(400).end();
+  const day = new Date().toISOString().slice(0, 10);
+  await getFirestore().collection("metrics").doc(day).set({ [event]: FieldValue.increment(1) }, { merge: true });
+  res.status(204).end();
+});
+
+exports.metricEventOf = metricEventOf;
 exports.buildParams = buildParams;
 exports.verifyCaller = verifyCaller;

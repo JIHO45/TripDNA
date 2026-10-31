@@ -1,10 +1,26 @@
 {
   "functions": {
     "source": "functions",
-    "ignore": ["node_modules", ".secret.local", "*.test.js"]
+    "ignore": [
+      "node_modules",
+      ".secret.local",
+      "*.test.js"
+    ]
   },
   "emulators": {
-    "functions": { "port": 5001 },
-    "ui": { "enabled": false }
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": false
+    }
+  },
+  "hosting": {
+    "public": "hosting",
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
+    "redirects": []
   }
 }

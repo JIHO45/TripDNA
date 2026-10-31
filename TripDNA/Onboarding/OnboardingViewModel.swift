@@ -552,6 +552,7 @@ final class OnboardingViewModel {
         Task {
             try? await dependencies.store.saveOnboardingDraft(nil)
             await dependencies.markOnboardingCompleted()
+            await dependencies.track(.onboardingCompleted)
         }
     }
 

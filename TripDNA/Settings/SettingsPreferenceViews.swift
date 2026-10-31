@@ -121,6 +121,7 @@ struct MemorySettingsView: View {
         do {
             try await dependencies.store.saveWantedTiers(updated)
             tiers = updated
+            await dependencies.track(.memoryForgotten)
         } catch {
             toast = SettingsToast(message: "지우지 못했어요")
         }

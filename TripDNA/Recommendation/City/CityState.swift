@@ -38,6 +38,16 @@ nonisolated struct ExcludedCity: Codable, Equatable, Sendable, Identifiable {
     let excludedAt: Date
 }
 
+/// 상세의 "궁금한 점"에서 한 질문과 답. 질문마다 이전 기록 없이 따로 답한다.
+nonisolated struct CityQuestionEntry: Codable, Equatable, Sendable, Identifiable {
+    var id = UUID()
+    let question: String
+    let askedAt: Date
+    /// 답할 때 쓴 조건 한 줄 요약. 조건이 바뀌면 답도 달라질 수 있어 함께 보여준다.
+    let conditionSummary: String
+    let answer: CityAnswer
+}
+
 /// 도시 추천의 기기 내 상태 한 덩어리(단일 값 표 하나). 전체 삭제가 이 표를 지운다.
 nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     var saved: [SavedCity] = []
@@ -50,6 +60,8 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     var skippedCityIDs: [String] = []
     /// `lastRecord`의 "이렇게 이해했어요"를 한 번 접었는지. 다시 열면 접힌 채로 시작한다. 새 결과를 받으면 false로 돌린다.
     var understandingSeen = false
+    /// 도시 ID별 질문 기록. 오래된 것부터.
+    var questions: [String: [CityQuestionEntry]] = [:]
 
     init() {}
 
@@ -62,6 +74,7 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
         originalRecord = try? c.decodeIfPresent(CityRecommendationRecord.self, forKey: .originalRecord)
         skippedCityIDs = try c.decodeIfPresent([String].self, forKey: .skippedCityIDs) ?? []
         understandingSeen = try c.decodeIfPresent(Bool.self, forKey: .understandingSeen) ?? false
+        questions = (try? c.decodeIfPresent([String: [CityQuestionEntry]].self, forKey: .questions)) ?? [:]
     }
 
     var excludedCityIDs: Set<String> { Set(excluded.map(\.cityID)) }
@@ -83,6 +96,10 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     }
 
     mutating func release(cityID: String) { excluded.removeAll { $0.cityID == cityID } }
+
+    mutating func addQuestion(_ entry: CityQuestionEntry, cityID: String) {
+        questions[cityID, default: []].append(entry)
+    }
 }
 
 extension UserProfileRepository {

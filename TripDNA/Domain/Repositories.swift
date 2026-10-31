@@ -74,6 +74,16 @@ nonisolated enum AnalyticsEventType: String, Codable, Sendable {
     case firstRecommendationShown = "first_recommendation_shown"
     /// 지문·여행·Wrapped 카드를 저장했거나 공유 시트에서 실제로 보냈을 때.
     case shareCardExported = "share_card_exported"
+    case onboardingCompleted = "onboarding_completed"
+    case cityRecommendationReceived = "city_recommendation_received"
+    /// 한도 초과·연결 미설정을 뺀 추천 실패(응답 검증 탈락·네트워크 등).
+    case cityRecommendationFailed = "city_recommendation_failed"
+    case citySaved = "city_saved"
+    case citySkipped = "city_skipped"
+    case cityExcluded = "city_excluded"
+    case memoryForgotten = "memory_forgotten"
+    /// 카드 메뉴의 "틀린 내용 알리기"를 눌렀다. 메일을 실제로 보냈는지는 알 수 없다.
+    case errorReportOpened = "error_report_opened"
 }
 
 nonisolated struct AnalyticsEvent: Identifiable, Codable, Equatable, Sendable {

@@ -54,3 +54,12 @@ test("토큰이 없거나 하나라도 틀리면 거부한다", async () => {
   assert.equal(await verifyCaller(req(both), { ...pass, appCheck: reject }), null);
   assert.equal(await verifyCaller(req(both), { ...pass, idToken: reject }), null);
 });
+
+const { metricEventOf } = require("./index.js");
+
+test("집계 이벤트는 정해진 이름만 받는다", () => {
+  assert.equal(metricEventOf({ event: "share_card_exported" }), "share_card_exported");
+  for (const bad of [undefined, {}, { event: "toString" }, { event: "x/y" }, { event: ["share_card_exported"] }]) {
+    assert.equal(metricEventOf(bad), null, JSON.stringify(bad));
+  }
+});

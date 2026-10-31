@@ -1,7 +1,6 @@
 import Foundation
 
-/// 외부 분석 도구를 붙일 자리. 도구를 정하면 이 프로토콜을 구현해 `AppDependencies`에 넘긴다.
-/// 서버가 없으므로 다른 사용자의 공유율·첫 추천 도달은 이 경로로만 관측된다.
+/// 기기 밖으로 보내는 자리. 출시 빌드는 `ServerMetricsSink`(익명 일별 집계)를 넘긴다.
 nonisolated protocol AnalyticsSink: Sendable {
     func send(_ event: AnalyticsEvent)
 }

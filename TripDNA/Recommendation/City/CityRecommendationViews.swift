@@ -502,6 +502,7 @@ private struct CityCardMenu: View {
     let model: CityRecommendationViewModel
     var glass = false
     @Environment(AppDependencies.self) private var dependencies
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         Menu {
@@ -510,6 +511,12 @@ private struct CityCardMenu: View {
             }
             Button("다시 추천하지 않기", systemImage: "hand.raised", role: .destructive) {
                 Task { await model.exclude(card, dependencies: dependencies) }
+            }
+            if let record = model.lastRecord, let url = CityErrorReport.mailURL(card: card, record: record) {
+                Button("틀린 내용 알리기", systemImage: "exclamationmark.bubble") {
+                    openURL(url)
+                    Task { await dependencies.track(.errorReportOpened) }
+                }
             }
         } label: {
             if glass {
@@ -525,6 +532,33 @@ private struct CityCardMenu: View {
         Image(systemName: "ellipsis")
             .foregroundStyle(Color.dnaTextPrimary)
             .frame(width: 44, height: 44)
+    }
+}
+
+/// "틀린 내용 알리기": 메일 앱에 도시와 결과의 버전을 채워 연다. 보낼지와 무엇을 적을지는 사용자가 정한다.
+/// 조건·메모·추천 문장은 넣지 않는다(필요하면 사용자가 직접 적는다).
+enum CityErrorReport {
+    static let address = "joe45dev@gmail.com"
+
+    static func mailURL(card: CityRecommendationRecord.Card, record: CityRecommendationRecord,
+                        appVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?") -> URL? {
+        let body = """
+        어떤 내용이 틀렸거나 맞지 않았나요?
+
+
+        ---
+        도시: \(card.cityName) (\(card.cityID))
+        결과: \(record.id) · \(record.createdAt.formatted(.iso8601))
+        버전: \(record.version.prompt) · \(record.version.ranking) · \(record.version.catalog) · \(record.version.model) · 앱 \(appVersion)
+        """
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = address
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "[TripDNA] 추천 내용 알림: \(card.cityName)"),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return components.url
     }
 }
 
@@ -586,17 +620,14 @@ struct CityDetailView: View {
     @State private var cityExcluded = false
     @State private var countryExcluded = false
     @State private var errorMessage: String?
-    @State private var question = ""
-    @State private var questionState: QuestionState = .idle
-    @FocusState private var questionFocused: Bool
-    @State private var keyboardUp = false
-
-    private enum QuestionState { case idle, loading, answered(CityAnswer), failed(String) }
+    /// 시트를 닫아도 기다리던 답을 받도록 상세가 들고 있는다.
+    @State private var questions = CityQuestionModel()
+    @State private var showingQuestions = false
+    @State private var questionDetent = PresentationDetent.medium
 
     private var summary: String { request?.summaryText ?? conditionSummary }
 
     var body: some View {
-        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
                 // 도시 사진 자료가 없어 색 면으로 둔다. 이름은 사진 아래에 둔다.
@@ -624,15 +655,17 @@ struct CityDetailView: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
-                questionSection.id(Self.questionID)
             }
             .padding(DNASpacing.lg)
+            // 떠 있는 질문 버튼이 마지막 문단을 덮지 않게 그 높이만큼 더 내린다.
+            .padding(.bottom, 56)
         }
-        .scrollDismissesKeyboard(.interactively)
-        // 질문 칸이 맨 아래라 잘 안 보여서, 누르면 질문 칸으로 가 바로 입력하게 한다.
+        // 누르면 질문 시트를 중간 높이로 연다. 지난 질문을 먼저 읽고, 입력하면 전체 높이로 늘어난다.
         .overlay(alignment: .bottomTrailing) {
-            if !keyboardUp {
-                Button { questionFocused = true } label: {
+                Button {
+                    questionDetent = .medium
+                    showingQuestions = true
+                } label: {
                     Image(systemName: "questionmark.bubble")
                         .dnaFont(size: 20, weight: .bold)
                         .foregroundStyle(Color.dnaSelectedForeground)
@@ -642,15 +675,14 @@ struct CityDetailView: View {
                 }
                 .padding(DNASpacing.gutter)
                 .accessibilityLabel("이 도시에 대해 묻기")
-            }
         }
-        .onChange(of: questionFocused) { _, focused in
-            guard focused else { return }
-            // 키보드가 올라오는 동안 기다렸다가 질문 칸이 보이게 올린다.
-            Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                withAnimation { proxy.scrollTo(Self.questionID, anchor: .top) }
-            }
+        .sheet(isPresented: $showingQuestions) {
+            CityQuestionSheet(
+                model: questions, card: card, request: request, summary: summary,
+                isSavedBasis: savedAt != nil, detent: $questionDetent
+            )
+            .presentationDetents([.medium, .large], selection: $questionDetent)
+            .presentationDragIndicator(.visible)
         }
         .dnaBackground()
         .toolbar(.hidden, for: .tabBar)
@@ -664,13 +696,9 @@ struct CityDetailView: View {
                 .accessibilityLabel(isSaved ? "저장 해제" : "저장")
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardUp = true }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboardUp = false }
-        .safeAreaInset(edge: .bottom) {
-            // 키보드가 떠 있는 동안은 숨겨 키보드와 함께 올라와 내용을 가리지 않게 한다.
-            if !keyboardUp { bottomBar }
-        }
+        .safeAreaInset(edge: .bottom) { bottomBar }
         .task {
+            await questions.load(cityID: card.cityID, store: dependencies.store)
             let state = try? await dependencies.store.cityState()
             isSaved = state?.saved.contains { $0.id == card.cityID } ?? false
             // 도시 제외는 따로 저장되고, 나라 제외는 평가 서비스에 있다.
@@ -678,10 +706,7 @@ struct CityDetailView: View {
                 .contains { $0.countryCode == card.country }
             cityExcluded = state?.excludedCityIDs.contains(card.cityID) ?? false
         }
-        }
     }
-
-    private static let questionID = "question"
 
     /// 아래 고정 막대. 배경을 채워 뒤의 내용이 비치지 않고, 위에 구분선을 둔다.
     private var bottomBar: some View {
@@ -728,94 +753,6 @@ struct CityDetailView: View {
         }
         .padding(.horizontal, DNASpacing.md)
         .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
-    }
-
-    // 답은 화면이 열려 있는 동안만 메모리에 둔다. 질문 횟수는 세지 않는다.
-    // 초안: 답의 세 부분 이름(자료 근거 / 조언 / 확인하지 못한 것)은 시안 ⓖ의 임시 문구다.
-    private var questionSection: some View {
-        plainSection("궁금한 점") {
-            Text(savedAt != nil ? "저장할 때의 조건 기준으로 답해요" : "이 추천의 조건 기준으로 답해요")
-                .dnaFont(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
-            HStack(spacing: DNASpacing.sm) {
-                TextField("이 도시에 대해 물어보세요", text: $question, axis: .vertical)
-                    .lineLimit(1...3)
-                    .padding(.horizontal, DNASpacing.md)
-                    .frame(minHeight: 44)
-                    .background(Color.dnaSurface1, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
-                    .focused($questionFocused)
-                Button { Task { await ask() } } label: {
-                    Image(systemName: "arrow.up")
-                        .dnaFont(size: 16, weight: .bold)
-                        .foregroundStyle(Color.dnaSelectedForeground)
-                        .frame(width: 44, height: 44)
-                        .background(Color.dnaSelectedBackground, in: Circle())
-                }
-                .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAsking)
-                .accessibilityLabel("질문 보내기")
-            }
-            switch questionState {
-            case .idle: EmptyView()
-            case .loading: ProgressView("확인하고 있어요")
-            case .failed(let message):
-                Text(message).dnaFont(.body).foregroundStyle(Color.dnaError)
-                Button("다시 시도") { Task { await ask() } }.buttonStyle(.dnaSecondary)
-            case .answered(let answer): answerView(answer)
-            }
-        }
-    }
-
-    private var isAsking: Bool { if case .loading = questionState { true } else { false } }
-
-    @ViewBuilder
-    private func answerView(_ answer: CityAnswer) -> some View {
-        answerPart("자료 근거", answer.evidence)
-        answerPart("조언", answer.advice)
-        answerPart("확인하지 못한 것", answer.unconfirmed)
-        if !answer.sources.isEmpty {
-            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                // 출처는 답 전체에 대한 것이다. 문장별로 어느 출처인지 연결하지 않으므로 본문에 번호를 달지 않는다.
-                Text("검색에서 확인한 출처")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                ForEach(Array(answer.sources.enumerated()), id: \.offset) { index, source in
-                    let published = source.published.map { "게시일 \($0)" } ?? "게시일 미확인"
-                    Link(destination: source.url) {
-                        Text("[\(index + 1)] \(source.title) · \(published) · \(source.retrievedAt.formatted(.dateTime.month().day())) 조회")
-                            .dnaFont(.caption)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .foregroundStyle(Color.dnaActionText)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func answerPart(_ title: String, _ text: String) -> some View {
-        if !text.isEmpty {
-            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
-                Text(text).dnaFont(.body).foregroundStyle(Color.dnaTextPrimary)
-            }
-        }
-    }
-
-    private func ask() async {
-        let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, let catalog = CityCatalog.load() else { return }
-        questionState = .loading
-        let service = CityQuestionService(catalog: catalog, client: CityLLMConfiguration.makeSearchClient())
-        do {
-            let answer = try await service.ask(text, card: card, request: request, conditionSummary: summary)
-            questionState = .answered(answer)
-        } catch CityQuestionError.notConfigured {
-            questionState = .failed("LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
-        } catch {
-            guard !Task.isCancelled else { return }
-            questionState = .failed("답을 확인하지 못했어요. 다시 시도해 주세요.")
-        }
     }
 
     private func releaseExclusion() async {

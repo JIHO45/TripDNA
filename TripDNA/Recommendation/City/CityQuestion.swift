@@ -54,8 +54,8 @@ nonisolated struct CityContentBlock: Decodable, Equatable, Sendable {
 // MARK: - 답
 
 /// 초안: 세 부분의 이름은 시안(RecoStates ⓖ)의 임시 문구이며 최종 문구는 정해지지 않았다.
-nonisolated struct CityAnswer: Equatable, Sendable {
-    struct Source: Equatable, Sendable {
+nonisolated struct CityAnswer: Codable, Equatable, Sendable {
+    struct Source: Codable, Equatable, Sendable {
         let title: String
         let url: URL
         /// 검색 결과가 준 page_age. 없으면 nil("게시일 미확인"으로 표시한다).

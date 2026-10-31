@@ -2,7 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @State private var dependencies = AppDependencies()
+    @State private var dependencies = AppDependencies(analyticsSink: ServerMetricsSink.make())
     @State private var session = SessionStore()
 
     var body: some View {

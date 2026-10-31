@@ -22,7 +22,7 @@
 
 ## 프라이버시 선언(nutrition label) 초안
 
-전제: [추천 구조의 Firebase 결정](recommendation/README.md#2026-10-07-추가-결정-구독-자료-배포-저장)대로 Cloud Functions 중계, Firestore에 사용 횟수와 목록 밖 도시 이름, 익명 로그인, App Check, 서버의 구독 검증. 분석·광고·충돌 수집 SDK는 계획에 없다. 이 전제가 바뀌면 표를 다시 쓴다.
+전제: [추천 구조의 Firebase 결정](recommendation/README.md#2026-10-07-추가-결정-구독-자료-배포-저장)대로 Cloud Functions 중계, Firestore에 사용 횟수와 목록 밖 도시 이름, 익명 로그인, App Check, 서버의 구독 검증. 분석·광고·충돌 수집 SDK는 계획에 없다. 2026-10-31 추가: 자체 익명 일별 합계(`metric` 함수, 출시 빌드만)를 넣었다. 이 전제가 바뀌면 표를 다시 쓴다.
 
 **추적: 없음.** 광고·데이터 브로커 공유 계획이 없다. App Tracking Transparency 요청도 필요 없다(전제가 유지될 때).
 
@@ -32,6 +32,7 @@
 |---|---|---|---|---|
 | Identifiers › User ID | Firebase 익명 UID | 연결 | App Functionality | 선언 대상으로 봄 |
 | Usage Data › Product Interaction 또는 Other Usage Data | 사용자별 추천 호출 횟수 | 연결 | App Functionality(한도) | 유형 선택 미정 |
+| Usage Data › Product Interaction | 이벤트별 일별 합계(`metric`) | No | No | Analytics | ID·기기 정보 없이 숫자만. 자동 수집이라 선택적 공개 예외에 들지 않는다고 보고 선언한다 |
 | Purchases › Purchase History | 구독 상태·만료일 | 서버에 저장하면 연결 | App Functionality | 서버 저장 여부 미정. 검증 후 버리면 비대상 |
 | User Content › Other User Content 또는 Search History | 목록 밖 도시 이름 | [선택지 D](data/storage-and-privacy.md#d-목록-밖-도시-요청-기록)에 따라 연결/비연결 | App Functionality 또는 Analytics | 유형·연결 미정 |
 

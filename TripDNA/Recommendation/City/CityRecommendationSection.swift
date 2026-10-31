@@ -228,6 +228,8 @@ final class CityRecommendationViewModel {
                 $0.skippedCityIDs = []
                 $0.understandingSeen = false
             }
+            await dependencies.recordFirstRecommendationIfNeeded(source: "city")
+            await dependencies.track(.cityRecommendationReceived)
         } catch {
             guard !Task.isCancelled else { return }
             switch error {
@@ -237,6 +239,7 @@ final class CityRecommendationViewModel {
                 state = .failed("조건에 맞는 도시를 찾지 못했어요.")
             default:
                 state = .failed("추천을 받지 못했어요. 다시 시도해 주세요. (\(error))")
+                await dependencies.track(.cityRecommendationFailed)
             }
         }
     }
@@ -265,6 +268,7 @@ final class CityRecommendationViewModel {
             skippedCityIDs.insert(cityID)
             actionError = nil
             fillVacancies()
+            await dependencies.track(.citySkipped)
         } catch {
             actionError = Self.saveFailure
         }
@@ -281,6 +285,7 @@ final class CityRecommendationViewModel {
             }
             saved = updated.saved
             actionError = nil
+            if !wasSaved { await dependencies.track(.citySaved) }
         } catch {
             actionError = Self.saveFailure
         }
@@ -294,6 +299,7 @@ final class CityRecommendationViewModel {
             exclusionNotice = updated.excluded.first { $0.cityID == card.cityID }
             actionError = nil
             fillVacancies()
+            await dependencies.track(.cityExcluded)
         } catch {
             actionError = Self.saveFailure
         }

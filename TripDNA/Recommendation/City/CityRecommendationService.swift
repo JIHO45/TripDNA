@@ -105,6 +105,7 @@ nonisolated enum CityRecommendationError: Error, Equatable {
     case extractionFailed(String)
     case invalidResponse(String)
     case network(String)
+    case quotaExceeded(resetAt: Date)
 }
 
 nonisolated struct CityRecommendationService: Sendable {
@@ -137,6 +138,7 @@ nonisolated struct CityRecommendationService: Sendable {
         var rejected: [String] = []
         var extraction: CityRecommendationRecord.Extraction?
         var extractionFailure: String?
+        var quotaResetAt: Date?
         let userText = request.wants + "\n" + request.avoids
         if let client, !userText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             let prompt = CityConditionExtraction.build(request: request, catalog: catalog)
@@ -147,6 +149,7 @@ nonisolated struct CityRecommendationService: Sendable {
                 let parsedConditions = try CityResponseValidator.parseConditions(rawExtraction ?? "")
                 (conditions, rejected) = CityConditionJudge.accept(parsedConditions, userText: userText, catalog: catalog)
             } catch {
+                if case CityLLMError.quotaExceeded(let resetAt) = error { quotaResetAt = resetAt }
                 extractionError = String(describing: error)
                 extractionFailure = extractionError
             }
@@ -173,7 +176,9 @@ nonisolated struct CityRecommendationService: Sendable {
         var parsed: CityLLMResponse?
         var failure: CityRecommendationError?
         let start = Date()
-        if let extractionFailure {
+        if let quotaResetAt {
+            failure = .quotaExceeded(resetAt: quotaResetAt)
+        } else if let extractionFailure {
             // 필수 조건이 사라진 채 정상 추천처럼 보이지 않도록 2단계를 부르지 않고 중단한다.
             failure = .extractionFailed(extractionFailure)
         } else if let client {
@@ -192,6 +197,8 @@ nonisolated struct CityRecommendationService: Sendable {
                 failure = .invalidResponse(detail)
             } catch CityLLMError.truncated {
                 failure = .invalidResponse("truncated")
+            } catch CityLLMError.quotaExceeded(let resetAt) {
+                failure = .quotaExceeded(resetAt: resetAt)
             } catch {
                 failure = .network(String(describing: error))
             }

@@ -361,6 +361,49 @@ struct CityRecommendationServiceTests {
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("replay"))
     }
 
+    /// 프록시의 한도 초과(429)는 조건 추출 단계에서 나도 "추출 실패"가 아니라 한도 초과로 알린다.
+    @Test func quotaExceededIsReportedFromEitherStep() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let resetAt = Date(timeIntervalSince1970: 1_796_083_200)
+        let quota = Fake { _ in throw CityLLMError.quotaExceeded(resetAt: resetAt) }
+        var plain = Self.request()
+        plain.wants = ""
+        for request in [Self.request(), plain] {
+            await #expect(throws: CityRecommendationError.quotaExceeded(resetAt: resetAt)) {
+                try await Self.service(client: quota, dir: dir).recommend(
+                    request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
+                )
+            }
+        }
+    }
+
+    @Test func proxyReadsQuotaResponse() throws {
+        let url = URL(string: "https://example.test")!
+        let response = { (code: Int) in HTTPURLResponse(url: url, statusCode: code, httpVersion: nil, headerFields: nil)! }
+        let body = Data(#"{"error":"quota","kind":"recommend","resetAt":1796083200}"#.utf8)
+        #expect(throws: CityLLMError.quotaExceeded(resetAt: Date(timeIntervalSince1970: 1_796_083_200))) {
+            try CityLLMProxyClient.check(response(429), body)
+        }
+        #expect(throws: CityLLMError.http(429)) { try CityLLMProxyClient.check(response(429), Data()) }
+        #expect(throws: CityLLMError.http(503)) { try CityLLMProxyClient.check(response(503), body) }
+        try CityLLMProxyClient.check(response(200), Data())
+    }
+
+    @Test func failedRecommendationReusesItsIDOnce() {
+        let id = "A-RECO-ID"
+        #expect(CityRecommendationViewModel.retryID(after: CityRecommendationError.invalidResponse("x"), usageID: id, isRetry: false) == id)
+        #expect(CityRecommendationViewModel.retryID(after: CityRecommendationError.network("x"), usageID: id, isRetry: true) == nil)
+        #expect(CityRecommendationViewModel.retryID(
+            after: CityRecommendationError.quotaExceeded(resetAt: .now), usageID: id, isRetry: false
+        ) == nil)
+    }
+
+    @Test func proxyClientsGetFreshUsageIDs() {
+        let url = URL(string: "https://example.test")!
+        #expect(CityLLMProxyClient(url: url, model: "m").usageID != CityLLMProxyClient(url: url, model: "m").usageID)
+    }
+
     @Test func budgetCutsCitiesWhoseLowEstimateExceedsBudget() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -541,6 +584,13 @@ struct CityMemoryAndTwoStageTests {
             at: evaluatedAt
         )
         return trip
+    }
+
+    @Test func longMemoIsCutToLimitBeforeSending() throws {
+        let long = String(repeating: "가", count: CityMemory.memoLimit + 50)
+        let trip = try Self.trip(city: "교토", rating: 4, liked: long, evaluatedAt: Date(timeIntervalSince1970: 1_000))
+        let memory = try #require(CityMemory.recent(from: [trip]).first)
+        #expect(memory.liked?.count == CityMemory.memoLimit)
     }
 
     @Test func memoriesAreRecentFirstAndCapped() throws {
@@ -763,12 +813,15 @@ struct CityStateTests {
         defer { try? FileManager.default.removeItem(at: url) }
         do {
             let store = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
-            try await store.updateCityState { $0.skippedCityIDs = ["a", "b"] }
+            try await store.updateCityState { $0.skippedCityIDs = ["a", "b"]; $0.retryUsageID = "RETRY-ID" }
         }
         let reopened = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
         #expect(try await reopened.cityState().skippedCityIDs == ["a", "b"])
+        // 실패한 추천의 ID는 앱을 다시 켜도 남아 다음 추천받기가 이어 쓴다.
+        #expect(try await reopened.cityState().retryUsageID == "RETRY-ID")
         let old = try JSONDecoder().decode(CityRecommendationState.self, from: Data("{\"saved\":[]}".utf8))
         #expect(old.skippedCityIDs == [])
+        #expect(old.retryUsageID == nil)
     }
 
     private static func seed(_ dependencies: AppDependencies, budget: Int? = nil) async throws -> CityRecommendationRecord {

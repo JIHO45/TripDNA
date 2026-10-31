@@ -831,8 +831,8 @@ struct CityDetailView: View {
 
 // MARK: - ⓑ 첫 전송 동의
 
-/// 지난 여행 평가를 처음 보내기 전의 안내·동의 시트.
-/// 문구는 초안이다. 최종 문구와 절차는 사용자가 정한다(docs/data/storage-and-privacy.md, 시안 RecoStates ⓑ).
+/// 처음 보내기 전의 안내·동의 시트. 취소하면 아무것도 보내지 않는다.
+/// 무엇을 누구에게 보내는지는 처리방침 4·7절과 같다(docs/data/storage-and-privacy.md A1).
 struct CityConsentSheet: View {
     let model: CityRecommendationViewModel
     @Environment(AppDependencies.self) private var dependencies
@@ -844,18 +844,22 @@ struct CityConsentSheet: View {
             Text("추천을 위해 이 정보를 보내요")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("도시를 고르고 이유를 쓰는 데 외부 AI 모델을 써요. 이 정보는 외부 AI 모델로 보내져 처리돼요.")
-                .dnaFont(.body)
-                .foregroundStyle(Color.dnaTextSecondary)
-            group("보내는 것", [
-                "고른 여행 컨셉과 조건, 적은 문장",
-                "동의하면: 최근 여행 평가의 별점과 메모 원문, 다녀온 도시"
-            ])
-            group("보내지 않는 것", ["원본 사진, 위치 기록"])
-            Text("동의하지 않아도 평가 없이 추천받을 수 있어요. 나중에 설정 > 권한과 보내는 정보에서 바꿀 수 있어요.")
-                .dnaFont(.caption)
-                .foregroundStyle(Color.dnaTextSecondary)
-            Spacer(minLength: 0)
+            ScrollView {
+                VStack(alignment: .leading, spacing: DNASpacing.md) {
+                    Text("도시 추천과 도시 질문의 답은 외부 AI 모델이 써요. 그래서 아래 정보를 중계 서버를 거쳐 AI 모델로 보내요.")
+                        .dnaFont(.body)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                    group("항상 보내는 것", CityMemoryConsent.alwaysSent)
+                    group("동의할 때만 보내는 것", CityMemoryConsent.sentIfGranted)
+                    group("보내지 않는 것", CityMemoryConsent.neverSent)
+                    group("받는 곳", CityMemoryConsent.recipients)
+                    Text("평가를 빼도 추천받을 수 있어요. 나중에 설정 > 권한과 보내는 정보에서 바꿀 수 있어요. 취소하면 아무것도 보내지 않아요.")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                    Link("개인정보 처리방침 보기", destination: SettingsRootView.privacyPolicyURL)
+                        .dnaFont(.caption)
+                }
+            }
             Button("동의하고 추천 받기") { model.answerConsent(true, dependencies: dependencies) }
                 .buttonStyle(.dnaPrimary)
             Button("평가는 빼고 추천 받기") { model.answerConsent(false, dependencies: dependencies) }
@@ -867,10 +871,10 @@ struct CityConsentSheet: View {
         .interactiveDismissDisabled()
     }
 
-    private func group(_ title: String, _ lines: [String]) -> some View {
+    private func group(_ title: String, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xxs) {
             Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
-            ForEach(lines, id: \.self) { Text("· \($0)").dnaFont(.body).foregroundStyle(Color.dnaTextPrimary) }
+            Text(text).dnaFont(.body).foregroundStyle(Color.dnaTextPrimary)
         }
     }
 }

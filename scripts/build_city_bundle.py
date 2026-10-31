@@ -20,6 +20,7 @@ for cid, c in sorted(catalog["cities"].items()):
         "ko": c["name"]["ko"],
         "en": c["name"]["en"],
         "country": c["country"],
+        "scope": c["scope"],
         "grades": c["grades"],
         "season": c["season"],
         "seasonUnverified": c["season_unverified"],

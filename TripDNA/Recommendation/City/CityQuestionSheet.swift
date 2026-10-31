@@ -47,6 +47,8 @@ final class CityQuestionModel {
                 }
             } catch CityQuestionError.notConfigured {
                 status = .failed(question: text, message: "LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
+            } catch CityLLMError.quotaExceeded(let resetAt) {
+                status = .failed(question: text, message: CityLLMProxyClient.quotaMessage("질문", resetAt: resetAt))
             } catch {
                 status = .failed(question: text, message: "답을 확인하지 못했어요. 다시 시도해 주세요.")
             }

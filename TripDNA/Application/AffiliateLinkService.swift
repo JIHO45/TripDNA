@@ -86,22 +86,35 @@ nonisolated enum ActivityCategory: String, CaseIterable, Sendable {
 nonisolated struct AffiliateProviderConfiguration: Equatable, Sendable {
     let providerName: String
     let searchBaseURL: URL
+    /// 제휴 링크는 이 주소를 거쳐 `k_site`로 이동한다.
+    let redirectURL: URL
     let partnerID: String?
-    let partnerIDQueryName: String
-    let subIDQueryName: String
+    /// 라벨은 광고 ID에 묶여 저장되고 링크에 실을 수 없다. 그래서 진입 위치마다
+    /// 광고를 하나씩 두고 대시보드에서 위치별 실적을 본다. 도시별 실적은 볼 수 없다.
+    let tripAdID: String
+    let recommendationAdID: String
 
     var isAffiliateActive: Bool {
         guard let partnerID else { return false }
         return !partnerID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// 3.5단계에서 승인받은 공급자의 ID와 실제 파라미터명으로 교체한다.
-    nonisolated static let launchPlaceholder = AffiliateProviderConfiguration(
+    func adID(for entryPoint: AffiliateEntryPoint) -> String {
+        switch entryPoint {
+        case .trip: tripAdID
+        case .recommendation: recommendationAdID
+        }
+    }
+
+    /// Klook 제휴 대시보드(affiliate.klook.com)의 링크 변환기에서 만든 값.
+    /// 광고 1535734는 여행 상세, 1535735는 추천 상세 위치다.
+    nonisolated static let klook = AffiliateProviderConfiguration(
         providerName: "Klook",
         searchBaseURL: URL(string: "https://www.klook.com/ko/search/result/")!,
-        partnerID: nil,
-        partnerIDQueryName: "aid",
-        subIDQueryName: "subid"
+        redirectURL: URL(string: "https://affiliate.klook.com/redirect")!,
+        partnerID: "141494",
+        tripAdID: "1535734",
+        recommendationAdID: "1535735"
     )
 }
 
@@ -126,7 +139,7 @@ nonisolated struct AffiliateLinkService {
 
     init(
         events: any EventRepository,
-        configuration: AffiliateProviderConfiguration = .launchPlaceholder,
+        configuration: AffiliateProviderConfiguration = .klook,
         calendar: Calendar = Calendar(identifier: .gregorian)
     ) {
         self.events = events
@@ -211,12 +224,12 @@ nonisolated struct AffiliateLinkService {
             name: "query",
             value: "\(trimmedCity) \(category.searchTerm)"
         ))
-        queryItems.append(URLQueryItem(name: configuration.subIDQueryName, value: subID))
-        if let partnerID = configuration.partnerID, configuration.isAffiliateActive {
-            queryItems.append(URLQueryItem(name: configuration.partnerIDQueryName, value: partnerID))
-        }
         components.queryItems = queryItems
-        guard let url = components.url else { return nil }
+        guard let searchURL = components.url,
+              let url = configuration.isAffiliateActive
+                ? redirectURL(to: searchURL, entryPoint: entryPoint)
+                : searchURL
+        else { return nil }
 
         return AffiliateActivityLink(
             id: "\(subID)_\(category.rawValue)",
@@ -229,6 +242,22 @@ nonisolated struct AffiliateLinkService {
             url: url,
             isAffiliateActive: configuration.isAffiliateActive
         )
+    }
+
+    /// 대시보드가 만드는 링크와 같이 `k_site` 값을 `:`·`/`·`?`까지 모두 인코딩한다.
+    private func redirectURL(to target: URL, entryPoint: AffiliateEntryPoint) -> URL? {
+        guard let partnerID = configuration.partnerID,
+              var components = URLComponents(url: configuration.redirectURL, resolvingAgainstBaseURL: false)
+        else { return nil }
+        let unreserved = CharacterSet(charactersIn:
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        let encode = { (value: String) in value.addingPercentEncoding(withAllowedCharacters: unreserved) ?? value }
+        components.percentEncodedQuery = [
+            "aid=\(encode(partnerID))",
+            "aff_adid=\(encode(configuration.adID(for: entryPoint)))",
+            "k_site=\(encode(target.absoluteString))"
+        ].joined(separator: "&")
+        return components.url
     }
 
     private func slug(_ value: String) -> String {

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_on": "2026-10-17",
+  "updated_on": "2026-10-27",
   "status": "draft",
   "release_ready": false,
   "author": "Codex; 사람 검수 없음",
@@ -213,6 +213,20 @@
       "access": "search_excerpt",
       "supports": "2026년 한정 5월 29일~10월 4일; 초반 제한 운영. 두 스키장 core 전체 합집합은 미확인",
       "checked_on": "2026-10-17",
+      "review_status": "pending"
+    },
+    "hawaii-surf-seasons": {
+      "url": "https://oceansafety.hawaii.gov/hawaiis-surf-seasons/",
+      "access": "page_read",
+      "supports": "11–4월 북쪽 해안의 높은 파도 때 수영을 피해야 하며 해안별 상태가 다름. 도시 전체의 월별 해변 이용 불가를 뜻하지 않음.",
+      "checked_on": "2026-10-27",
+      "review_status": "pending"
+    },
+    "cairns-reef-year-round": {
+      "url": "https://sunlover.com.au/faqs/",
+      "access": "page_read",
+      "supports": "케언스 출발 Moore Reef 투어 연중 매일 예정 운영 및 스노클링·다이빙. 날씨·해상 상태에 따라 출항·활동 변경 가능.",
+      "checked_on": "2026-10-27",
       "review_status": "pending"
     }
   },
@@ -637,7 +651,22 @@
         "sports": "none",
         "concert": "none"
       },
-      "season": {},
+      "season": {
+        "water": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      },
       "nearby": {
         "데인트리·케이프 트리뷸레이션": [
           "scenery",
@@ -659,8 +688,7 @@
       },
       "season_unverified": [
         "hiking",
-        "wildlife",
-        "water"
+        "wildlife"
       ],
       "candidate_id": "au-cairns",
       "status": "draft",
@@ -673,7 +701,11 @@
       },
       "provenance": "reassessed_pilot",
       "grade_note": "새 정의에 따른 편집 초안. choose는 이 경험 때문에 여행지를 고를 수준, make_time은 일부러 시간을 낼 수준, if_there는 부수적으로 즐길 수준이다. none은 근거를 찾지 못함이며 부재 확인이 아니다. 전수 사실 대조·사람 판정 전이다.",
-      "evidence": {},
+      "evidence": {
+        "water": [
+          "cairns-reef-year-round"
+        ]
+      },
       "review_flags": [
         "등급 경계와 범위의 사람 판정 필요",
         "core에 적힌 장소·체험의 사실과 운영·접근 조건 대조 필요",
@@ -681,7 +713,16 @@
         "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
       ],
       "previous_season": {},
-      "season_basis": {},
+      "season_basis": {
+        "water": {
+          "year": null,
+          "sources": [
+            "cairns-reef-year-round"
+          ],
+          "note": "케언스 출발 리프 수상 활동의 연중 예정 운영. 특정 날짜 출항이나 모든 활동 가능을 보장하지 않으며 날씨·해상 조건을 별도 확인한다.",
+          "review_status": "pending"
+        }
+      },
       "reassessment": {
         "date": "2026-10-17",
         "author": "Codex",
@@ -8786,7 +8827,7 @@
       "core": {
         "scenery": "다이아몬드 헤드와 누우아누 팔리 전망대에서 풍경을 보고 동쪽 해안 도로를 달린다.",
         "hiking": "다이아몬드 헤드, 마노아 폭포, 코코 헤드의 등산로를 걷는다.",
-        "beach": "와이키키, 라니카이, 노스쇼어의 해변에서 수영하고 쉰다.",
+        "beach": "와이키키와 라니카이 등에서 해변을 즐기고 노스쇼어 해변을 둘러본다. 수영 장소는 당일 파도와 현장 안내에 따라 고른다.",
         "resort": "와이키키와 코올리나의 해변 리조트에서 숙소 중심으로 쉰다.",
         "water": "서핑 강습을 받고 하나우마 베이에서 스노클링을 한다.",
         "brands": "알라모아나 센터, 와이키키의 칼라카우아 거리, 와이켈레 아울렛을 돈다.",
@@ -8811,7 +8852,11 @@
       },
       "provenance": "reassessed_pilot",
       "grade_note": "새 정의에 따른 편집 초안. choose는 이 경험 때문에 여행지를 고를 수준, make_time은 일부러 시간을 낼 수준, if_there는 부수적으로 즐길 수준이다. none은 근거를 찾지 못함이며 부재 확인이 아니다. 전수 사실 대조·사람 판정 전이다.",
-      "evidence": {},
+      "evidence": {
+        "beach": [
+          "hawaii-surf-seasons"
+        ]
+      },
       "review_flags": [
         "등급 경계와 범위의 사람 판정 필요",
         "core에 적힌 장소·체험의 사실과 운영·접근 조건 대조 필요",

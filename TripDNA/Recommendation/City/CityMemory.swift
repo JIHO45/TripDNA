@@ -12,8 +12,10 @@ nonisolated struct CityMemory: Codable, Equatable, Sendable {
     let disliked: String?
 
     static let limit = 10
+    /// 메모 한 칸(좋았던 점·아쉬웠던 점)에서 보내는 최대 글자 수(2026-10-31 결정 C1).
+    static let memoLimit = 500
 
-    /// 최근 평가한 여행의 도시별 별점·메모. 상한과 "최근"의 기준은 문서에서 미정이라 평가 시각 순 10건으로 시작한다.
+    /// 최근 평가한 여행의 도시별 별점·메모. 평가 시각 순 10건, 메모는 칸마다 500자까지.
     static func recent(from trips: [Trip], limit: Int = limit) -> [CityMemory] {
         let reviews = trips
             .filter { $0.evaluation?.skipped == false }
@@ -24,15 +26,24 @@ nonisolated struct CityMemory: Codable, Equatable, Sendable {
         return reviews.prefix(limit).enumerated().map { index, item in
             CityMemory(
                 id: "m\(index + 1)", tripID: item.0, countryCode: item.1.countryCode, city: item.1.city,
-                rating: item.1.rating, liked: item.1.liked, disliked: item.1.disliked
+                rating: item.1.rating,
+                liked: item.1.liked.map { String($0.prefix(memoLimit)) },
+                disliked: item.1.disliked.map { String($0.prefix(memoLimit)) }
             )
         }
     }
 }
 
-/// 지난 여행 평가를 외부 모델에 보내는 것에 대한 사용자의 선택. 처음에는 정하지 않은 상태다.
+/// 첫 추천 전 전송 동의와, 그중 지난 여행 평가를 보낼지에 대한 선택. 처음에는 정하지 않은 상태다.
+/// granted·declined 모두 항상 보내는 정보(`alwaysSent`)에는 동의한 상태다. 결정: docs/data/storage-and-privacy.md A1.
 nonisolated enum CityMemoryConsent {
     static let key = "tripdna.cityMemoryConsent"
+
+    // 동의 시트와 설정이 같은 문구를 쓴다. 처리방침 4·7절과 맞춘다.
+    static let alwaysSent = "고른 여행 컨셉, 조건(시기·기간·인원·예산), 적은 문장, 원하는 여행, 도시에 대한 질문"
+    static let sentIfGranted = "최근 여행 평가 10건까지의 별점과 메모(메모당 500자까지), 다녀온 도시"
+    static let neverSent = "원본 사진, 위치 기록, 이름이나 연락처"
+    static let recipients = "Google Firebase(중계 서버), Anthropic(AI 모델). 모두 미국에서 처리돼요."
 
     enum State: String { case undecided, granted, declined }
 

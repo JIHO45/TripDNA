@@ -180,6 +180,7 @@ final class AppDependencies {
         interestTagIDs.removeAll()
         localUserID = UUID().uuidString
         session.resetAfterDeletion()
+        await CityLLMCredentials.deleteAnonymousAccount()
     }
 
     private func loadOrCreateProfile() async -> UserProfile {

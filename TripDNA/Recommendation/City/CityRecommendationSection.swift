@@ -10,6 +10,14 @@ final class CityRecommendationViewModel {
     }
 
     private(set) var state = State.idle
+
+    /// 실패한 추천의 ID는 다음 추천받기에서 한 번 다시 써서(`CityRecommendationState.retryUsageID`), 실패로 무료 횟수를 잃지 않게 한다.
+    /// 서버는 ID 하나를 호출 4번까지 1회로 센다. 한도 초과가 아닌 첫 실패만 넘기고, 다시 실패하면 새 ID(1회 차감)로 간다.
+    static func retryID(after error: Error, usageID: String, isRetry: Bool) -> String? {
+        if isRetry { return nil }
+        if case CityRecommendationError.quotaExceeded = error { return nil }
+        return usageID
+    }
     /// 마지막으로 받은(또는 복원한) 결과. 실패해도 남아 있어 지난 결과를 계속 보여준다.
     private(set) var lastRecord: CityRecommendationRecord?
     private(set) var saved: [SavedCity] = []
@@ -50,7 +58,7 @@ final class CityRecommendationViewModel {
 
     var isConfigured: Bool { CityLLMConfiguration.makeClient() != nil }
 
-    /// 동의를 아직 묻지 않았고 보낼 평가가 있을 때 채워진다. 화면이 시트로 묻고 `answerConsent`로 답한다.
+    /// 동의를 아직 묻지 않았을 때 채워진다. 화면이 시트로 묻고 `answerConsent`로 답한다.
     private(set) var pendingConsentRequest: RecommendationRequest?
 
     func isSaved(_ cityID: String) -> Bool { saved.contains { $0.id == cityID } }
@@ -163,10 +171,9 @@ final class CityRecommendationViewModel {
         state = lastRecord.map(State.done) ?? .idle
     }
 
-    /// 지난 여행 평가를 처음 보내기 전에는 동의를 먼저 묻는다.
+    /// 처음 보내기 전에는 평가가 없어도 동의를 먼저 묻는다(조건·자유문장도 동의 대상, A1).
     private func start(request: RecommendationRequest, dependencies: AppDependencies) async {
-        if CityMemoryConsent.state == .undecided,
-           !CityMemory.recent(from: await dependencies.allTrips()).isEmpty {
+        if CityMemoryConsent.state == .undecided {
             pendingConsentRequest = request
             return
         }
@@ -194,19 +201,22 @@ final class CityRecommendationViewModel {
         let homeExcluded = dependencies.homeCountryCode != nil && !request.includeHomeCountry
         if homeExcluded, let home = dependencies.homeCountryCode { excludedCountries.insert(home) }
         // 제외 목록을 읽지 못하면 제외한 도시가 다시 나올 수 있으므로 추천을 받지 않는다.
-        guard let storedExcludedCities = try? await dependencies.store.cityState().excludedCityIDs else {
+        guard let cityState = try? await dependencies.store.cityState() else {
             state = .failed("제외한 도시를 읽지 못했어요. 다시 시도해 주세요.")
             return
         }
         // 다녀온 곳은 도시 단위로 뺀다. 나라에 다녀왔다고 그 나라의 다른 도시까지 빼지 않는다.
         let visitedCities = request.includeVisited ? [] : catalog.cityIDs(visitedIn: await dependencies.allTrips())
-        let excludedCities = storedExcludedCities.union(visitedCities)
+        let excludedCities = cityState.excludedCityIDs.union(visitedCities)
 
         let memories = CityMemoryConsent.state == .granted
             ? CityMemory.recent(from: await dependencies.allTrips())
             : []
+        let usageID = cityState.retryUsageID ?? UUID().uuidString
+        let isRetry = cityState.retryUsageID != nil
+        if isRetry { _ = try? await dependencies.store.updateCityState { $0.retryUsageID = nil } }
         let service = CityRecommendationService(
-            catalog: catalog, client: CityLLMConfiguration.makeClient(), log: .standard
+            catalog: catalog, client: CityLLMConfiguration.makeClient(usageID: usageID), log: .standard
         )
         do {
             let record = try await service.recommend(
@@ -231,12 +241,17 @@ final class CityRecommendationViewModel {
             await dependencies.recordFirstRecommendationIfNeeded(source: "city")
             await dependencies.track(.cityRecommendationReceived)
         } catch {
+            if let retryID = Self.retryID(after: error, usageID: usageID, isRetry: isRetry) {
+                _ = try? await dependencies.store.updateCityState { $0.retryUsageID = retryID }
+            }
             guard !Task.isCancelled else { return }
             switch error {
             case CityRecommendationError.notConfigured:
                 state = .failed("LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
             case CityRecommendationError.noCandidates:
                 state = .failed("조건에 맞는 도시를 찾지 못했어요.")
+            case CityRecommendationError.quotaExceeded(let resetAt):
+                state = .failed(CityLLMProxyClient.quotaMessage("추천", resetAt: resetAt))
             default:
                 state = .failed("추천을 받지 못했어요. 다시 시도해 주세요. (\(error))")
                 await dependencies.track(.cityRecommendationFailed)

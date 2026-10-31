@@ -24,27 +24,48 @@ struct AffiliateLinkTests {
 
         let links = service.links(for: trip, now: date(2026, 7, 1))
         let first = try #require(links.first)
-        let queryItems = try #require(URLComponents(url: first.url, resolvingAgainstBaseURL: false)?.queryItems)
+        let redirect = try #require(URLComponents(url: first.url, resolvingAgainstBaseURL: false))
+        let items = try #require(redirect.queryItems)
+        let target = try #require(items.first { $0.name == "k_site" }?.value)
+        let targetItems = try #require(URLComponents(string: target)?.queryItems)
 
         #expect(links.map(\.city) == ["도쿄", "오사카"])
         #expect(first.subID.hasPrefix("trip_d14_JP_"))
         #expect(!first.subID.contains(" "))
-        #expect(queryItems.first { $0.name == "query" }?.value == "도쿄 things to do")
-        #expect(queryItems.first { $0.name == "subid" }?.value == first.subID)
-        #expect(queryItems.first { $0.name == "aid" } == nil)
+        #expect(redirect.host == "affiliate.klook.com")
+        #expect(items.first { $0.name == "aid" }?.value == "141494")
+        #expect(items.first { $0.name == "aff_adid" }?.value == "1535734")
+        // 대시보드 링크처럼 k_site 안의 :/?=는 모두 인코딩돼야 한다.
+        #expect(redirect.percentEncodedQuery?.contains("k_site=https%3A%2F%2Fwww.klook.com%2Fko%2Fsearch%2Fresult%2F%3Fquery%3D") == true)
+        #expect(targetItems.first { $0.name == "query" }?.value == "도쿄 things to do")
+        #expect(first.isAffiliateActive)
+    }
+
+    @Test func inactiveConfigurationLinksStraightToSearchWithoutPartnerID() throws {
+        let configuration = AffiliateProviderConfiguration(
+            providerName: "Klook",
+            searchBaseURL: try #require(URL(string: "https://www.klook.com/ko/search/result/")),
+            redirectURL: try #require(URL(string: "https://affiliate.klook.com/redirect")),
+            partnerID: nil,
+            tripAdID: "1",
+            recommendationAdID: "2"
+        )
+        let service = AffiliateLinkService(events: InMemoryAppStore(), configuration: configuration)
+        let recommendation = Recommendation(
+            countryCode: "JP", slot: .bestMatch, matchScore: 0.8,
+            explanationTagIDs: [], rankingAnchorTripID: nil, fitBadges: [], notices: []
+        )
+        let first = try #require(service.links(for: recommendation).first)
+        let items = try #require(URLComponents(url: first.url, resolvingAgainstBaseURL: false)?.queryItems)
+
+        #expect(first.url.host == "www.klook.com")
+        #expect(items.map(\.name) == ["query"])
         #expect(!first.isAffiliateActive)
     }
 
     @Test func recommendationActivityLinksUseExplanationTagsWithoutChangingRecommendation() throws {
         let store = InMemoryAppStore()
-        let configuration = AffiliateProviderConfiguration(
-            providerName: "Partner",
-            searchBaseURL: try #require(URL(string: "https://partner.example/search")),
-            partnerID: "partner-123",
-            partnerIDQueryName: "pid",
-            subIDQueryName: "sid"
-        )
-        let service = AffiliateLinkService(events: store, configuration: configuration)
+        let service = AffiliateLinkService(events: store)
         let recommendation = Recommendation(
             countryCode: "JP",
             slot: .bestMatch,
@@ -62,8 +83,8 @@ struct AffiliateLinkTests {
         #expect(links.map(\.city) == ["Tokyo", "Osaka", "Kyoto"])
         #expect(links.map(\.category) == [.food, .history, .food])
         #expect(first.subID == "rec_bestmatch_JP_tokyo")
-        #expect(queryItems.first { $0.name == "pid" }?.value == "partner-123")
-        #expect(queryItems.first { $0.name == "sid" }?.value == first.subID)
+        #expect(queryItems.first { $0.name == "aid" }?.value == "141494")
+        #expect(queryItems.first { $0.name == "aff_adid" }?.value == "1535735")
         #expect(first.isAffiliateActive)
         #expect(recommendation.matchScore == 0.91)
     }
@@ -92,7 +113,7 @@ struct AffiliateLinkTests {
         #expect(event.payload["city"] == "Bangkok")
         #expect(event.payload["category"] == "wellness")
         #expect(event.payload["subID"] == link.subID)
-        #expect(event.payload["affiliateActive"] == "false")
+        #expect(event.payload["affiliateActive"] == "true")
     }
 
     private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {

@@ -48,8 +48,9 @@ struct PermissionsSettingsView: View {
             .listRowBackground(Color.dnaSurface1)
 
             Section {
-                info("추천을 받을 때 보내는 것", "고른 컨셉과 조건, 적은 문장")
-                info("보내지 않는 것", "원본 사진, 위치 기록, 이름이나 연락처")
+                info("추천을 받을 때 보내는 것", CityMemoryConsent.alwaysSent)
+                info("보내지 않는 것", CityMemoryConsent.neverSent)
+                info("받는 곳", CityMemoryConsent.recipients)
                 Toggle("지난 여행 평가·메모 보내기", isOn: Binding(
                     get: { memoriesOn },
                     set: { memoriesOn = $0; CityMemoryConsent.state = $0 ? .granted : .declined }

@@ -38,13 +38,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TripDNA uses photo locations on your device to find past trips. Photos never leave your device."
+            "value" : "TripDNA reads photo dates and locations on this device to find past trips and lets you choose a photo for each travel day. Photos stay on your device."
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "지난 여행을 찾기 위해 기기 안의 사진 위치만 분석해요. 사진은 서버로 전송되지 않아요."
+            "value" : "기기 안 사진의 날짜와 위치로 지난 여행을 찾고, 여행한 날마다 사진을 고를 수 있게 해요. 사진은 기기 밖으로 보내지 않아요."
           }
         }
       }

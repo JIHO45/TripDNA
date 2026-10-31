@@ -66,13 +66,19 @@ struct SettingsRootView: View {
                 #endif
 
                 Section {
-                    // 문서 주소가 정해지기 전까지 이동하지 않는 자리표시자다.
-                    Text("개인정보 처리방침").foregroundStyle(Color.dnaTextPrimary)
+                    // Notion에 게시한 방침(2026-10-31). 원본은 Notion 페이지, 사본은 docs/privacy-policy.md.
+                    Link(destination: Self.privacyPolicyURL) {
+                        LabeledContent("개인정보 처리방침") {
+                            Image(systemName: "arrow.up.right").foregroundStyle(Color.dnaTextSecondary)
+                        }
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    }
+                    // 약관 주소가 정해지기 전까지 이동하지 않는 자리표시자다.
                     Text("이용약관").foregroundStyle(Color.dnaTextPrimary)
                     LabeledContent("버전", value: Self.versionText)
                         .foregroundStyle(Color.dnaTextPrimary)
                 } footer: {
-                    Text("방침과 약관 문서는 준비 중이에요.")
+                    Text("이용약관은 준비 중이에요.")
                 }
                 .listRowBackground(Color.dnaSurface1)
             }
@@ -90,6 +96,8 @@ struct SettingsRootView: View {
             }
         }
     }
+
+    static let privacyPolicyURL = URL(string: "https://woolly-devourer-5d2.notion.site/TripDNA-Privacy-Policy-4093ed084bab809a99c9ffcf15daf337")!
 
     private func link<Destination: View>(
         _ title: String,

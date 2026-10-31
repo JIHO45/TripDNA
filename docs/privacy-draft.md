@@ -1,7 +1,9 @@
 # 개인정보 초안: 프라이버시 선언과 처리방침 골격
 
+2026-10-29 보완: 서버 미구현·제공자 미정 표현을 현재 호출 경로에 맞추고, 실제 전송·보관·삭제 확인은 저장 계약으로 연결했다. 선언 유형과 최종 처리방침은 확정하지 않았다.
 2026-10-17 작성: [출시 차단 요건](release.md)의 프라이버시 선언·처리방침·권한 문구 항목을 준비하기 위한 초안이다.
-상태: **초안, 사용자 결정 전.** 법률 자문이 아니다. 출시 전 공식 요건을 다시 확인한다([R3](release.md#출시-검사와-병행-업무)). 저장·전송 정책의 원문은 [저장·전송](data/storage-and-privacy.md)이며, 미정 항목의 선택지는 그 문서의 [결정 선택지(초안)](data/storage-and-privacy.md#결정-선택지초안)에 있다. 이 문서는 현재 **설계** 기준이다. 서버·LLM 호출은 앱에 구현되지 않았다.
+2026-10-31: 선언 입력표를 코드 대조로 다시 쓰고, 매니페스트 추가·사진 권한 문구 수정을 했다.
+상태: **선언 입력표는 사용자 입력 전.** 법률 자문이 아니다. 출시 전 공식 요건을 다시 확인한다([R3](release.md#출시-검사와-병행-업무)). 저장·전송 정책의 원문은 [저장·전송](data/storage-and-privacy.md)이며, 미정 항목의 선택지는 그 문서의 [결정 선택지(초안)](data/storage-and-privacy.md#결정-선택지초안)에 있다. 현재 항목과 미확인 운영 설정은 [저장 계약의 구현 점검](data/storage-and-privacy.md#현재-구현-점검2026-10-29)을 우선 참고한다.
 
 ## 확인한 Apple 요건
 
@@ -17,67 +19,45 @@
   - 5.1.1(iii): 가능하면 전체 사진 접근 대신 시스템 사진 선택기를 쓴다.
   - 5.1.1(v): 계정 생성을 지원하면 앱 안에서 계정 삭제를 제공한다.
   - 5.1.2(i): 제3자 AI를 포함해 제3자와 개인 데이터를 공유할 때 명확히 알리고 **명시적 허락**을 받는다.
-- 미확인: 개인정보 매니페스트(`PrivacyInfo.xcprivacy`)·필수 사유 API 요건. 공식 문서 페이지 본문을 읽지 못했다. 저장소에는 매니페스트 파일이 없다. Firebase SDK를 넣을 때 함께 확인한다.
-- 미확인: 익명 로그인(Firebase)만 있는 경우가 5.1.1(v)의 “계정 생성”에 해당하는지. 2026-10-23에 Apple 로그인을 빼기로 해서 앱이 계정을 만들지 않는다(코드 제거 전).
+- 개인정보 매니페스트: 2026-10-31 [`TripDNA/PrivacyInfo.xcprivacy`](../TripDNA/PrivacyInfo.xcprivacy)를 추가했다. 앱 코드의 필수 사유 API는 UserDefaults뿐이라 `CA92.1`(앱 자신의 값만 읽고 씀)을 적었다(사진의 `creationDate`는 PHAsset 속성이라 파일 시각 API가 아니다). Firebase SDK의 매니페스트는 SDK가 제공한다. 이번에 Apple 문서를 다시 읽지는 않았다. 업로드 때 App Store Connect 경고로 확인한다.
+- 미확인: 익명 로그인(Firebase)만 있는 경우가 5.1.1(v)의 “계정 생성”에 해당하는지. 앱 로그인 화면과 Apple 로그인은 없지만 Firebase 익명 계정은 만든다. 2026-10-31부터 앱의 모든 데이터 지우기가 그 계정과 서버 사용량 문서를 지운다([실제 삭제 범위](data/storage-and-privacy.md#남는-기록과-현재-삭제-범위)). 해당하더라도 요건을 충족한다고 본다.
 
-## 프라이버시 선언(nutrition label) 초안
+## App Store Connect 입력표
 
-전제: [추천 구조의 Firebase 결정](recommendation/README.md#2026-10-07-추가-결정-구독-자료-배포-저장)대로 Cloud Functions 중계, Firestore에 사용 횟수와 목록 밖 도시 이름, 익명 로그인, App Check, 서버의 구독 검증. 분석·광고·충돌 수집 SDK는 계획에 없다. 2026-10-31 추가: 자체 익명 일별 합계(`metric` 함수, 출시 빌드만)를 넣었다. 이 전제가 바뀌면 표를 다시 쓴다.
+2026-10-31 코드 대조로 다시 썼다(이전 표는 구독·목록 밖 도시 기록을 전제로 했다). 근거: 앱이 넣은 Firebase SDK는 Core·Auth·AppCheck뿐이고(Analytics·Crashlytics 없음, `GoogleService-Info.plist`의 `IS_ANALYTICS_ENABLED` false), StoreKit 코드가 없고, 목록 밖 도시는 기록하지 않는다(결정 D). 같은 내용을 [`PrivacyInfo.xcprivacy`](../TripDNA/PrivacyInfo.xcprivacy)에 넣었다. App Store Connect에는 사용자가 직접 입력한다.
 
-**추적: 없음.** 광고·데이터 브로커 공유 계획이 없다. App Tracking Transparency 요청도 필요 없다(전제가 유지될 때).
+**Do you or your third-party partners collect data from this app? → Yes.** **Tracking → No.**
 
-### 개발자 서버(Firebase)가 보관하는 데이터
-
-| Apple 데이터 유형 | 내용 | 사용자 연결 | 목적 | 상태 |
-|---|---|---|---|---|
-| Identifiers › User ID | Firebase 익명 UID | 연결 | App Functionality | 선언 대상으로 봄 |
-| Usage Data › Product Interaction 또는 Other Usage Data | 사용자별 추천 호출 횟수 | 연결 | App Functionality(한도) | 유형 선택 미정 |
+| Apple 데이터 유형 | 내용 | Linked to user | Tracking | 목적 | 판단 근거 |
+|---|---|---|---|---|---|
+| Identifiers › User ID | Firebase 익명 UID(설치별, 이름·이메일 없음) | Yes | No | App Functionality | 서버(Auth·`usage/{uid}`)에 남는다 |
+| Usage Data › Other Usage Data | 익명 UID별 이번 달 추천·질문 횟수 | Yes | No | App Functionality | 무료 한도 확인. 그 달 끝 + 7일에 삭제 |
 | Usage Data › Product Interaction | 이벤트별 일별 합계(`metric`) | No | No | Analytics | ID·기기 정보 없이 숫자만. 자동 수집이라 선택적 공개 예외에 들지 않는다고 보고 선언한다 |
-| Purchases › Purchase History | 구독 상태·만료일 | 서버에 저장하면 연결 | App Functionality | 서버 저장 여부 미정. 검증 후 버리면 비대상 |
-| User Content › Other User Content 또는 Search History | 목록 밖 도시 이름 | [선택지 D](data/storage-and-privacy.md#d-목록-밖-도시-요청-기록)에 따라 연결/비연결 | App Functionality 또는 Analytics | 유형·연결 미정 |
+| User Content › Other User Content | 조건·자유문장·질문, 동의 시 평가 별점·메모·다녀온 도시 | No | No | App Functionality | 중계 서버는 저장하지 않지만 Anthropic이 자체 정책(일반적으로 30일 이내)으로 보관할 수 있어 "실시간 처리 후 폐기"로 보기 어렵다. 요청에 UID를 넣지 않는다 |
 
-### LLM 제공자에게 전송되는 데이터
+선언하지 않는 것과 이유:
 
-제공자(Gemini, Claude 등)는 미정이다. 보내는 것: 컨셉·티어·조건·자유문장, 최근 도시별 별점과 메모 원문, 확인된 방문 도시, 제외 목록. 사진·EXIF·위치 이력·계정 식별자는 보내지 않는다([LLM 전송과 서버](data/storage-and-privacy.md#llm-전송과-서버)).
+- 여행·평가·사진·프로필: 기기에만 저장한다.
+- 사진 위치의 장소 이름 변환: Apple `CLGeocoder`. Apple의 수집은 개발자가 선언하지 않는다(처리방침 3절에는 적었다).
+- App Check·App Attest 토큰: 요청 검증 후 보관하지 않는다.
+- 서버 운영 로그의 IP 등 접속 정보: Google Cloud 기본 보관(30일). Apple 데이터 유형에 IP 자체는 없고 위치 추정에 쓰지 않아 선언하지 않는다. 처리방침 5절에는 적었다.
+- "틀린 내용 알리기" 메일: 사용자가 직접 보낼 때만 받는 선택적 의견이라 선택적 공개(optional disclosure) 예외로 본다. 처리방침 5절에는 적었다.
+- 구매 기록: 구독 미구현. 구독(StoreKit 서버 검증)을 넣으면 Purchases › Purchase History를 다시 판단한다.
 
-| Apple 데이터 유형 | 사용자 연결 | 상태 |
-|---|---|---|
-| User Content › Other User Content (메모·자유문장·별점) | 요청에 UID를 넣지 않으면 비연결 가능성 | 제공자가 실시간 처리 후 바로 버리고 중계 서버도 [선택지 B1](data/storage-and-privacy.md#b-서버cloud-functions-측-보관-여부기간삭제)이면 “수집” 비대상일 수 있다. 제공자가 남용 감시 등으로 보관하면 선언 대상. 제공자 약관 확인 전 미정 |
+검토할 점(사용자 판단):
 
-선언 대상이 아니어도 5.1.2(i)의 제3자 AI 고지·명시적 허락은 별도로 필요하다.
+- 사용 횟수를 Product Interaction이 아니라 Other Usage Data로 둔 것은, 한 유형을 Linked와 Not linked로 동시에 답할 수 없어서다. 둘 다 Product Interaction으로 두면 합계까지 Linked로 표시해야 한다.
+- Other User Content를 빼려면 Anthropic 무보관(Zero Data Retention) 계약 같은 근거가 있어야 한다. 지금은 선언하는 쪽이 안전하다.
 
-### 선언 대상이 아닌 것으로 본 데이터
+5.1.2(i) 제3자 AI 고지·명시적 허락은 선언과 별개로 첫 추천 전 동의 시트가 맡는다(결정 A1, 2026-10-31 구현).
 
-- 여행·평가·사진·프로필: 기기(SwiftData·LocalPhotoStore)에만 저장한다.
-- 사진의 날짜·위치: 기기 안에서 읽는다. 온보딩은 사진 좌표를 Apple의 `CLGeocoder`로 역지오코딩한다(`TripDNA/Onboarding/OnboardingViewModel.swift`). Apple 수집은 개발자 선언 대상이 아니라는 위 요건에 근거한 판단이며, 처리방침에는 적는다.
-- Apple 로그인 사용자 ID·이메일·이름: 2026-10-23에 로그인을 빼기로 해서 받지 않는다(코드 제거 전에는 기기 세션에만 쓴다).
-- App Check 토큰·IP: 요청 처리 후 보관하지 않으면 비대상. Firebase의 실제 로그 보관은 미확인.
+## 개인정보 처리방침
 
-## 개인정보 처리방침 골격
+2026-10-31 확정·게시했다. 본문은 [처리방침 사본](privacy-policy.md), 원본은 그 파일 머리의 Notion 주소다(영어만 게시). 이전 골격은 지웠다.
 
-자리표시 `[[…]]`는 결정 후 채운다.
+## 권한 문구
 
-1. **운영자와 연락처**: `[[운영자 이름]]`, `[[문의 이메일]]`, 시행일 `[[날짜]]`.
-2. **기기에만 저장하는 정보**: 여행·평가·메모·사진·선호. 우리 서버로 보내지 않는다. 사용자의 iCloud에 백업한다(2026-10-23 결정, 구현 전). `[[iCloud 백업이 꺼졌을 때 앱 삭제 시 사라진다는 문구]]`
-3. **사진 접근**: 지난 여행 찾기(사진 날짜·위치), 여행일 사진 고르기, 공유 카드 저장. 사진 원본은 보내지 않는다. 위치 이름 변환에 Apple 서비스를 쓴다.
-4. **추천을 위해 외부로 보내는 정보**: 보내는 항목, 중계 서버(Google Firebase), LLM 제공자 `[[제공자 이름]]`, 동의 시점 `[[선택지 A 결과]]`, 동의하지 않을 때의 동작.
-5. **서버에 남는 정보**: 익명 식별자, 사용 횟수, 구독 상태 `[[저장 여부]]`, 목록 밖 도시 요청 `[[선택지 D 결과]]`. 요청 본문 보관 `[[선택지 B 결과]]`. 제공자 측 보관 `[[제공자 약관 확인 결과]]`.
-6. **이용 목적**: 추천 생성, 사용 한도·구독 확인, 부정 이용 방지, 도시 추가 우선순위. 광고·추적에 쓰지 않는다.
-7. **제3자 제공·처리 위탁**: Google(Firebase), `[[LLM 제공자]]`, Apple(결제·역지오코딩·사용자 iCloud 백업). 각 업체가 이 방침과 같은 수준의 보호를 제공함을 확인한 근거 `[[계약·약관 링크]]`.
-8. **보관 기간**: `[[항목별 기간]]`.
-9. **동의 철회와 삭제**: 설정에서 LLM 전송 동의 끄기 `[[화면 위치]]`, 앱 안 전체 데이터 삭제의 서버 적용 범위 `[[범위]]`, 삭제 요청 연락처.
-10. **국외 이전**: 서버·제공자의 처리 지역 `[[지역]]`. 적용 법령에 따른 고지 필요 여부는 미확인이다.
-11. **아동**: `[[연령 기준]]`.
-12. **변경 고지**: 방침 변경 시 알리는 방법.
+2026-10-31 고침: 실제로 쓰이는 `InfoPlist.xcstrings`(en·ko)의 사진 읽기 문구가 위치로 지난 여행 찾기만 적고 있어, 빌드 설정 문구와 처리방침 3절에 맞춰 "날짜·위치로 지난 여행 찾기, 여행일마다 사진 고르기, 사진은 기기 밖으로 보내지 않음"으로 바꿨다. 좌표가 Apple 장소 이름 변환으로 나가는 것은 처리방침에 적었다. 빌드 산출물 `ko.lproj/InfoPlist.strings`에 반영된 것을 확인했고, 권한 창을 실제로 띄워 보지는 않았다.
 
-## 권한 문구 점검(2026-10-17, 보고만 함)
-
-현재 설계는 위치 권한·도착 감지를 제외한다([루트 README 범위](../README.md#범위)). 권한 문구는 고치지 않았다.
-
-- 위치 권한 키(`NSLocation…`)는 없다. 설계와 맞다. 추적 권한 키도 없다.
-- 사진 읽기(`NSPhotoLibraryUsageDescription`)의 문구가 두 곳에서 다르다.
-  - 빌드 설정(`TripDNA.xcodeproj` `INFOPLIST_KEY_…`): 사진 날짜·위치로 지난 여행 제안, 여행일마다 사진 선택.
-  - `TripDNA/InfoPlist.xcstrings`(en·ko): 위치로 지난 여행 찾기만 있고 “사진은 기기 밖으로 나가지 않는다”고 적는다. 여행일 사진 선택(`DailyPhotoLibraryPicker`의 전체 접근)과 자동 대표 사진(`AutoPhotoFallbackService`) 용도가 빠져 5.1.1(ii)의 “완전한 설명”에 못 미칠 수 있다. 런타임에 어느 쪽이 보이는지는 실행해서 확인하지 않았다.
-  - “서버로 전송되지 않아요”는 사진 원본에는 맞지만 좌표가 Apple 역지오코딩으로 나간다.
-- 사진 추가(`NSPhotoLibraryAddUsageDescription`): 공유 카드 저장 용도와 맞다.
-- 알림은 권한 문구 키가 필요 없다. Apple 로그인 entitlement가 있다. 로그인을 빼면서 함께 지운다.
+- 위치·추적 권한 키 없음(설계와 맞음). Apple 로그인 entitlement는 이미 없고 App Attest만 있다.
+- 사진 추가 문구: 공유 카드 저장 용도와 맞다.

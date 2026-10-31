@@ -14,6 +14,8 @@ nonisolated enum CityLLMError: Error, Equatable {
     case emptyResponse
     /// `max_tokens`에 닿아 응답이 잘렸다. 생각(thinking) 토큰도 이 한도에 들어간다.
     case truncated
+    /// 프록시의 이번 달 무료 한도를 다 썼다. `resetAt`에 다시 채워진다.
+    case quotaExceeded(resetAt: Date)
 }
 
 nonisolated struct CityLLMConfiguration: Sendable {
@@ -24,8 +26,11 @@ nonisolated struct CityLLMConfiguration: Sendable {
     static let session = URLSession(configuration: .ephemeral)
 
     /// 프록시 주소가 있으면 프록시, 없으면 DEBUG 빌드의 Keychain 키, 둘 다 없으면 nil.
-    static func makeClient(bundle: Bundle = .main) -> (any CityLLMClient)? {
-        makeSearchClient(bundle: bundle)
+    /// `usageID`는 추천받기 한 번의 ID다. 프록시는 이 ID로 추천 1회를 센다.
+    static func makeClient(usageID: String = UUID().uuidString, bundle: Bundle = .main) -> (any CityLLMClient)? {
+        guard var proxy = makeSearchClient(bundle: bundle) as? CityLLMProxyClient else { return makeSearchClient(bundle: bundle) }
+        proxy.usageID = usageID
+        return proxy
     }
 
     /// 두 클라이언트 모두 웹 검색 호출도 지원한다. 질문 기능이 쓴다.
@@ -47,9 +52,13 @@ nonisolated struct CityLLMConfiguration: Sendable {
 /// → 200 {"content": [...], "stop_reason": "..."}. Messages API 응답을 가공 없이 돌려주므로
 /// 잘림·빈 응답 판정은 직접 호출과 같은 `messageText(from:)`로 한다.
 /// webSearchMaxUses가 있으면 서버가 `web_search_20250305` 도구를 붙인다.
+/// 서버는 검색 호출을 질문 1회로, 검색 없는 호출을 usageId별 추천 1회로 센다. 한도를 넘으면
+/// 429 {"resetAt": 유닉스 초}.
 nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
     let url: URL
     let model: String
+    /// 추천받기 한 번의 ID. 조건 추출과 추천 본문이 같은 ID로 한 번만 세진다(`makeClient(usageID:)`).
+    var usageID = UUID().uuidString
 
     func completeWithSearch(system: String, user: String, maxUses: Int) async throws -> CitySearchReply {
         var request = URLRequest(url: url, timeoutInterval: 90)
@@ -61,7 +70,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
         ] as [String: Any])
         for (field, value) in try await CityLLMCredentials.headers() { request.setValue(value, forHTTPHeaderField: field) }
         let (data, response) = try await CityLLMConfiguration.session.data(for: request)
-        try Self.check(response)
+        try Self.check(response, data)
         return try JSONDecoder().decode(CitySearchReply.self, from: data)
     }
 
@@ -71,18 +80,29 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONEncoder().encode(
-            ["system": system, "user": user, "model": model, "maxTokens": String(CityLLMConfiguration.maxTokens)]
+            [
+                "system": system, "user": user, "model": model,
+                "maxTokens": String(CityLLMConfiguration.maxTokens), "usageId": usageID
+            ]
         )
         for (field, value) in try await CityLLMCredentials.headers() { request.setValue(value, forHTTPHeaderField: field) }
         let (data, response) = try await CityLLMConfiguration.session.data(for: request)
-        try Self.check(response)
+        try Self.check(response, data)
         return try messageText(from: data)
     }
 
-    private static func check(_ response: URLResponse) throws {
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw CityLLMError.http(http.statusCode)
+    static func check(_ response: URLResponse, _ data: Data) throws {
+        guard let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) else { return }
+        struct Quota: Decodable { let resetAt: TimeInterval }
+        if http.statusCode == 429, let quota = try? JSONDecoder().decode(Quota.self, from: data) {
+            throw CityLLMError.quotaExceeded(resetAt: Date(timeIntervalSince1970: quota.resetAt))
         }
+        throw CityLLMError.http(http.statusCode)
+    }
+
+    /// 한도 소진 안내. 다시 채워지는 시각은 기기 시간대로 보여준다(예: 한국이면 12월 1일 오전 9:00).
+    static func quotaMessage(_ what: String, resetAt: Date) -> String {
+        "이번 달 무료 \(what)을 다 썼어요. \(resetAt.formatted(.dateTime.month().day().hour().minute()))에 다시 채워져요."
     }
 }
 

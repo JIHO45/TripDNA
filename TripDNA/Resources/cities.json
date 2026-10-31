@@ -36,6 +36,7 @@
    },
    "id": "ae-abu-dhabi",
    "ko": "아부다비",
+   "scope": "아부다비 시내·야스·사디야트. 리와·알아인 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -79,6 +80,7 @@
    },
    "id": "ae-dubai",
    "ko": "두바이",
+   "scope": "두바이 시내와 두바이의 사막 투어 지역",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -126,6 +128,7 @@
    },
    "id": "ar-buenos-aires",
    "ko": "부에노스아이레스",
+   "scope": "부에노스아이레스 시내. 티그레·콜로니아 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -168,6 +171,7 @@
    },
    "id": "at-vienna",
    "ko": "빈",
+   "scope": "빈 시내. 바하우·잘츠부르크 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -210,11 +214,26 @@
    },
    "id": "au-cairns",
    "ko": "케언스",
-   "season": {},
+   "scope": "케언스 시내와 북부 해변(팜 코브), 쿠란다, 케언스에서 출발하는 그레이트 배리어 리프 보트",
+   "season": {
+    "water": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ]
+   },
    "seasonUnverified": [
     "hiking",
-    "wildlife",
-    "water"
+    "wildlife"
    ]
   },
   {
@@ -253,6 +272,7 @@
    },
    "id": "au-melbourne",
    "ko": "멜버른",
+   "scope": "멜버른 시내와 세인트킬다. 그레이트오션로드·필립섬·야라밸리 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -295,6 +315,7 @@
    },
    "id": "au-sydney",
    "ko": "시드니",
+   "scope": "시드니 도심과 해안 교외(본다이, 맨리 등)",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -342,6 +363,7 @@
    },
    "id": "be-brussels",
    "ko": "브뤼셀",
+   "scope": "브뤼셀 시내. 브뤼허·겐트 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife"
@@ -383,6 +405,7 @@
    },
    "id": "br-rio-de-janeiro",
    "ko": "리우데자네이루",
+   "scope": "리우데자네이루 시내와 티주카. 부지우스·일랴그란지 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -427,6 +450,7 @@
    },
    "id": "br-sao-paulo",
    "ko": "상파울루",
+   "scope": "상파울루 시내. 산투스·캄푸스두조르당 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -469,6 +493,7 @@
    },
    "id": "ca-montreal",
    "ko": "몬트리올",
+   "scope": "몬트리올섬. 퀘벡시·몽트랑블랑 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -512,6 +537,7 @@
    },
    "id": "ca-toronto",
    "ko": "토론토",
+   "scope": "토론토 시내와 토론토 아일랜드. 나이아가라 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -555,6 +581,7 @@
    },
    "id": "ca-vancouver",
    "ko": "밴쿠버",
+   "scope": "밴쿠버 시, 리치먼드, 노스쇼어(노스밴쿠버·웨스트밴쿠버)의 산과 숲. 도심에서 출발하는 고래 관찰 투어 포함; UBC 캠퍼스 포함",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -603,6 +630,7 @@
    },
    "id": "ch-zurich",
    "ko": "취리히",
+   "scope": "취리히 시내와 위틀리베르크. 루체른·융프라우 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -645,6 +673,7 @@
    },
    "id": "cl-santiago",
    "ko": "산티아고",
+   "scope": "산티아고 시내와 산크리스토발. 발파라이소·카혼델마이포·안데스 스키장 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -687,6 +716,7 @@
    },
    "id": "cn-beijing",
    "ko": "베이징",
+   "scope": "베이징 도심과 무톈위 만리장성. 청더 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -730,6 +760,7 @@
    },
    "id": "cn-guangzhou",
    "ko": "광저우",
+   "scope": "광저우 시내와 판위. 포산·선전 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -772,6 +803,7 @@
    },
    "id": "cn-shanghai",
    "ko": "상하이",
+   "scope": "상하이 시내와 푸둥·상하이 디즈니리조트. 쑤저우·항저우 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -814,6 +846,7 @@
    },
    "id": "cn-shenzhen",
    "ko": "선전",
+   "scope": "선전 시내와 다펑반도. 홍콩·광저우 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -857,6 +890,7 @@
    },
    "id": "cn-zhuhai",
    "ko": "주하이",
+   "scope": "주하이 시내와 헝친. 마카오·광저우 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -899,6 +933,7 @@
    },
    "id": "co-bogota",
    "ko": "보고타",
+   "scope": "보고타 시내와 몬세라테. 시파키라 제외",
    "season": {},
    "seasonUnverified": [
     "hiking"
@@ -940,6 +975,7 @@
    },
    "id": "cz-prague",
    "ko": "프라하",
+   "scope": "프라하 시내. 체스키크룸로프·쿠트나호라 제외",
    "season": {},
    "seasonUnverified": [
     "concert"
@@ -981,6 +1017,7 @@
    },
    "id": "de-berlin",
    "ko": "베를린",
+   "scope": "베를린 시내. 포츠담 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1023,6 +1060,7 @@
    },
    "id": "de-frankfurt",
    "ko": "프랑크푸르트",
+   "scope": "프랑크푸르트 시내. 라인강 와인 지역·하이델베르크 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1065,6 +1103,7 @@
    },
    "id": "de-hamburg",
    "ko": "함부르크",
+   "scope": "함부르크 시내. 뤼베크·북해 해변 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1107,6 +1146,7 @@
    },
    "id": "de-munich",
    "ko": "뮌헨",
+   "scope": "뮌헨 시내. 퓌센·노이슈반슈타인·알프스 제외",
    "season": {
     "festival": [
      9,
@@ -1154,6 +1194,7 @@
    },
    "id": "dk-copenhagen",
    "ko": "코펜하겐",
+   "scope": "코펜하겐 시내. 루이지애나 미술관·헬싱외르 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1196,6 +1237,7 @@
    },
    "id": "do-punta-cana",
    "ko": "푼타카나",
+   "scope": "푼타카나·바바로 해변 관광권. 산토도밍고·사오나섬 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1238,6 +1280,7 @@
    },
    "id": "eg-cairo",
    "ko": "카이로",
+   "scope": "카이로 도시권과 기자 피라미드. 사카라·룩소르·홍해 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -1277,6 +1320,7 @@
    },
    "id": "es-barcelona",
    "ko": "바르셀로나",
+   "scope": "바르셀로나 시내. 몬세라트·시체스 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -1321,6 +1365,7 @@
    },
    "id": "es-madrid",
    "ko": "마드리드",
+   "scope": "마드리드 시내. 톨레도·세고비아 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1363,6 +1408,7 @@
    },
    "id": "es-palma-de-mallorca",
    "ko": "팔마데마요르카",
+   "scope": "팔마 시내와 플라야데팔마. 마요르카섬 전체·소예르 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -1402,6 +1448,7 @@
    },
    "id": "es-seville",
    "ko": "세비야",
+   "scope": "세비야 시내. 코르도바·론다 제외",
    "season": {},
    "seasonUnverified": [
     "festival"
@@ -1443,6 +1490,7 @@
    },
    "id": "es-valencia",
    "ko": "발렌시아",
+   "scope": "발렌시아 시내와 알부페라. 알리칸테 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1485,6 +1533,7 @@
    },
    "id": "fi-helsinki",
    "ko": "헬싱키",
+   "scope": "헬싱키 시내와 수오멘린나. 포르보·라플란드 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -1527,6 +1576,7 @@
    },
    "id": "fr-nice",
    "ko": "니스",
+   "scope": "니스 시내. 모나코·에즈·칸 제외",
    "season": {},
    "seasonUnverified": [
     "festival"
@@ -1568,6 +1618,7 @@
    },
    "id": "fr-paris",
    "ko": "파리",
+   "scope": "파리 시내와 마른라발레의 디즈니랜드 파리; 생투앙 벼룩시장 포함",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1613,6 +1664,7 @@
    },
    "id": "gb-edinburgh",
    "ko": "에든버러",
+   "scope": "에든버러 시내. 하이랜드·세인트앤드루스 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -1656,6 +1708,7 @@
    },
    "id": "gb-london",
    "ko": "런던",
+   "scope": "런던 도시권과 리브즈던 스튜디오. 옥스퍼드·윈저 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1701,6 +1754,7 @@
    },
    "id": "ge-tbilisi",
    "ko": "트빌리시",
+   "scope": "트빌리시 시내. 므츠헤타·카즈베기·카헤티 제외",
    "season": {},
    "seasonUnverified": [
     "hiking"
@@ -1742,6 +1796,7 @@
    },
    "id": "gr-athens",
    "ko": "아테네",
+   "scope": "아테네 도심과 피레우스. 델포이·수니온·에게해 섬 제외",
    "season": {},
    "seasonUnverified": [
     "concert"
@@ -1783,6 +1838,7 @@
    },
    "id": "gr-heraklion",
    "ko": "이라클리오",
+   "scope": "이라클리오 시내와 크노소스. 크레타섬 전체·하니아 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -1822,6 +1878,7 @@
    },
    "id": "gr-rhodes",
    "ko": "로도스",
+   "scope": "로도스시와 인접 해변. 린도스·섬 전체 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -1861,6 +1918,7 @@
    },
    "id": "gr-thessaloniki",
    "ko": "테살로니키",
+   "scope": "테살로니키 시내. 할키디키·메테오라 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -1900,6 +1958,7 @@
    },
    "id": "hk-hong-kong",
    "ko": "홍콩",
+   "scope": "홍콩 특별행정구의 홍콩섬·구룡·란타우·사이쿵. 마카오 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -1944,6 +2003,7 @@
    },
    "id": "hu-budapest",
    "ko": "부다페스트",
+   "scope": "부다페스트 시내. 발라톤 호수 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -1986,6 +2046,7 @@
    },
    "id": "id-denpasar",
    "ko": "덴파사르",
+   "scope": "덴파사르시와 사누르. 우붓·쿠타·스미냑·누사두아 제외",
    "season": {},
    "seasonUnverified": [
     "festival"
@@ -2027,6 +2088,7 @@
    },
    "id": "id-jakarta",
    "ko": "자카르타",
+   "scope": "자카르타 시내. 보고르·반둥·천개의섬 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife"
@@ -2068,6 +2130,7 @@
    },
    "id": "ie-dublin",
    "ko": "더블린",
+   "scope": "더블린 시내와 하우스. 모허 절벽·골웨이 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -2110,6 +2173,7 @@
    },
    "id": "in-delhi",
    "ko": "델리",
+   "scope": "델리 시내(올드 델리, 뉴델리)",
    "season": {},
    "seasonUnverified": [
     "festival",
@@ -2152,6 +2216,7 @@
    },
    "id": "it-bologna",
    "ko": "볼로냐",
+   "scope": "볼로냐 시내. 모데나·파르마 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -2191,6 +2256,7 @@
    },
    "id": "it-florence",
    "ko": "피렌체",
+   "scope": "피렌체 시내. 피사·시에나·키안티 제외",
    "season": {},
    "seasonUnverified": [
     "festival"
@@ -2232,6 +2298,7 @@
    },
    "id": "it-milan",
    "ko": "밀라노",
+   "scope": "밀라노 시내. 코모 호수·세라발레 제외",
    "season": {},
    "seasonUnverified": [
     "sports",
@@ -2274,6 +2341,7 @@
    },
    "id": "it-rome",
    "ko": "로마",
+   "scope": "로마 시내와 바티칸. 티볼리 제외",
    "season": {},
    "seasonUnverified": [
     "sports",
@@ -2316,6 +2384,7 @@
    },
    "id": "it-venice",
    "ko": "베네치아",
+   "scope": "베네치아 본섬과 무라노·부라노. 베로나·돌로미티 제외",
    "season": {},
    "seasonUnverified": [
     "festival",
@@ -2358,6 +2427,7 @@
    },
    "id": "it-verona",
    "ko": "베로나",
+   "scope": "베로나 시내. 가르다호수·발폴리첼라 제외",
    "season": {},
    "seasonUnverified": [
     "concert"
@@ -2399,6 +2469,7 @@
    },
    "id": "jp-fukuoka",
    "ko": "후쿠오카",
+   "scope": "후쿠오카 시내와 다자이후. 유후인·벳푸·이토시마 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2442,6 +2513,7 @@
    },
    "id": "jp-kyoto",
    "ko": "교토",
+   "scope": "교토 시내(아라시야마·후시미 포함)와 가메오카의 축구 경기장",
    "season": {
     "festival": [
      5,
@@ -2493,6 +2565,7 @@
    },
    "id": "jp-osaka",
    "ko": "오사카",
+   "scope": "오사카 시내와 스이타의 엑스포시티. 교토·나라·고베 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2538,6 +2611,7 @@
    },
    "id": "jp-sapporo",
    "ko": "삿포로",
+   "scope": "삿포로 시내와 조잔케이·삿포로국제스키장. 오타루·니세코 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2581,6 +2655,7 @@
    },
    "id": "jp-tokyo",
    "ko": "도쿄",
+   "scope": "도쿄 도심(23구)과 우라야스의 도쿄 디즈니리조트",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2626,6 +2701,7 @@
    },
    "id": "kr-busan",
    "ko": "부산",
+   "scope": "부산 시내. 경주·거제 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -2670,6 +2746,7 @@
    },
    "id": "kr-seoul",
    "ko": "서울",
+   "scope": "서울 시내. 수원·에버랜드·DMZ 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -2716,6 +2793,7 @@
    },
    "id": "lt-vilnius",
    "ko": "빌뉴스",
+   "scope": "빌뉴스 시내. 트라카이 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -2755,6 +2833,7 @@
    },
    "id": "ma-marrakesh",
    "ko": "마라케시",
+   "scope": "마라케시 시내(메디나, 신시가지, 팔므레)",
    "season": {},
    "seasonUnverified": []
   },
@@ -2794,6 +2873,7 @@
    },
    "id": "mo-macau",
    "ko": "마카오",
+   "scope": "마카오반도·타이파·콜로안. 주하이·홍콩 제외",
    "season": {},
    "seasonUnverified": [
     "concert"
@@ -2835,6 +2915,7 @@
    },
    "id": "mx-cancun",
    "ko": "칸쿤",
+   "scope": "칸쿤 호텔존과 도심·칸쿤 출발 이슬라무헤레스 당일 체험. 툴룸·치첸이트사·코수멜 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2877,6 +2958,7 @@
    },
    "id": "mx-mexico-city",
    "ko": "멕시코시티",
+   "scope": "멕시코시티 시내(코요아칸, 소치밀코 포함). 테오티우아칸은 별도 목적지로 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2922,6 +3004,7 @@
    },
    "id": "my-johor-bahru",
    "ko": "조호르바루",
+   "scope": "조호르바루와 이스칸다르푸테리. 싱가포르·데사루 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -2964,6 +3047,7 @@
    },
    "id": "my-kuala-lumpur",
    "ko": "쿠알라룸푸르",
+   "scope": "쿠알라룸푸르와 바투 동굴·페탈링자야. 겐팅하일랜드·말라카 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -3007,6 +3091,7 @@
    },
    "id": "nl-amsterdam",
    "ko": "암스테르담",
+   "scope": "암스테르담 시내. 잔세스칸스·쾨켄호프 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -3049,6 +3134,7 @@
    },
    "id": "no-oslo",
    "ko": "오슬로",
+   "scope": "오슬로 시내와 노르드마르카. 서부 피오르드 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -3092,6 +3178,7 @@
    },
    "id": "nz-queenstown",
    "ko": "퀸스타운",
+   "scope": "퀸스타운과 와카티푸 분지(애로타운, 깁스턴, 코로넷 피크, 리마커블스), 글레노키",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -3136,6 +3223,7 @@
    },
    "id": "pe-lima",
    "ko": "리마",
+   "scope": "리마 시내. 파라카스·나스카·쿠스코 제외",
    "season": {},
    "seasonUnverified": [
     "water"
@@ -3177,6 +3265,7 @@
    },
    "id": "pl-krakow",
    "ko": "크라쿠프",
+   "scope": "크라쿠프 시내. 아우슈비츠·비엘리치카·자코파네 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife"
@@ -3218,6 +3307,7 @@
    },
    "id": "pl-warsaw",
    "ko": "바르샤바",
+   "scope": "바르샤바 시내. 크라쿠프·마주리 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -3260,6 +3350,7 @@
    },
    "id": "pt-lisbon",
    "ko": "리스본",
+   "scope": "리스본 시내(벨렝 포함). 신트라·카스카이스는 별도 목적지로 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -3304,6 +3395,7 @@
    },
    "id": "pt-porto",
    "ko": "포르투",
+   "scope": "포르투와 빌라노바드가이아. 도루밸리 제외",
    "season": {},
    "seasonUnverified": [
     "festival"
@@ -3345,6 +3437,7 @@
    },
    "id": "qa-doha",
    "ko": "도하",
+   "scope": "도하 시내와 루사일. 사막 숙박·알주바라 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -3384,6 +3477,7 @@
    },
    "id": "sa-mecca",
    "ko": "메카",
+   "scope": "메카 시내. 제다·타이프 제외. 입장 자격·허가 조건 확인 전 출시 사용 금지",
    "season": {},
    "seasonUnverified": []
   },
@@ -3423,6 +3517,7 @@
    },
    "id": "sa-medina",
    "ko": "메디나",
+   "scope": "메디나 시내. 알울라 제외. 종교 시설 접근 조건은 출시 전 확인",
    "season": {},
    "seasonUnverified": []
   },
@@ -3462,6 +3557,7 @@
    },
    "id": "sa-riyadh",
    "ko": "리야드",
+   "scope": "리야드와 디리야. 사막 절벽 투어·알울라 제외",
    "season": {},
    "seasonUnverified": [
     "festival"
@@ -3503,6 +3599,7 @@
    },
    "id": "se-stockholm",
    "ko": "스톡홀름",
+   "scope": "스톡홀름 시내와 근접 군도 당일 체험. 웁살라 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife"
@@ -3544,6 +3641,7 @@
    },
    "id": "sg-singapore",
    "ko": "싱가포르",
+   "scope": "싱가포르 전역(센토사 섬 포함)",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -3591,6 +3689,7 @@
    },
    "id": "th-bangkok",
    "ko": "방콕",
+   "scope": "방콕 시내",
    "season": {},
    "seasonUnverified": [
     "themepark",
@@ -3635,6 +3734,7 @@
    },
    "id": "th-pattaya-chonburi",
    "ko": "파타야-촌부리",
+   "scope": "파타야·좀티엔·나좀티엔과 파타야 출발 꼬란 당일 체험. 촌부리주 전체 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -3677,6 +3777,7 @@
    },
    "id": "th-phuket-island",
    "ko": "푸껫",
+   "scope": "푸껫 본섬과 본섬에서 당일로 다녀오는 섬 투어(팡아만, 피피 섬, 라차 섬)",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -3723,6 +3824,7 @@
    },
    "id": "tr-antalya",
    "ko": "안탈리아",
+   "scope": "안탈리아 시내·라라·콘얄트. 시데·알라니아·파묵칼레 제외",
    "season": {},
    "seasonUnverified": [
     "water"
@@ -3764,6 +3866,7 @@
    },
    "id": "tr-istanbul",
    "ko": "이스탄불",
+   "scope": "이스탄불 시내(유럽·아시아 양쪽)",
    "season": {},
    "seasonUnverified": [
     "festival",
@@ -3807,6 +3910,7 @@
    },
    "id": "tr-mugla",
    "ko": "무을라",
+   "scope": "무을라 중심도시 멘테셰. 보드룸·마르마리스·페티예·올루데니즈를 합산하지 않음",
    "season": {},
    "seasonUnverified": []
   },
@@ -3846,6 +3950,7 @@
    },
    "id": "tw-taipei",
    "ko": "타이베이",
+   "scope": "타이베이 시(양밍산, 베이터우 포함)",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -3892,6 +3997,7 @@
    },
    "id": "us-honolulu",
    "ko": "호놀룰루",
+   "scope": "오아후 섬 전체(와이키키, 노스쇼어 포함)",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -3936,6 +4042,7 @@
    },
    "id": "us-las-vegas",
    "ko": "라스베이거스",
+   "scope": "라스베이거스 스트립과 다운타운. 그랜드캐니언·후버댐 제외",
    "season": {},
    "seasonUnverified": [
     "sports",
@@ -3978,6 +4085,7 @@
    },
    "id": "us-los-angeles",
    "ko": "로스앤젤레스",
+   "scope": "로스앤젤레스 도시권의 할리우드·산타모니카·베벌리힐스·유니버설시티. 애너하임 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -4023,6 +4131,7 @@
    },
    "id": "us-miami",
    "ko": "마이애미",
+   "scope": "마이애미와 마이애미비치. 키웨스트·에버글레이즈 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -4067,6 +4176,7 @@
    },
    "id": "us-new-york",
    "ko": "뉴욕",
+   "scope": "뉴욕 시(맨해튼, 브루클린 등 5개 자치구)",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -4113,6 +4223,7 @@
    },
    "id": "us-orlando",
    "ko": "올랜도",
+   "scope": "올랜도 관광권의 레이크부에나비스타·키시미 포함. 케네디우주센터·탬파 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -4157,6 +4268,7 @@
    },
    "id": "us-san-francisco",
    "ko": "샌프란시스코",
+   "scope": "샌프란시스코 시내와 금문교·소살리토. 나파·요세미티 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -4200,6 +4312,7 @@
    },
    "id": "us-washington",
    "ko": "워싱턴",
+   "scope": "워싱턴 DC와 알링턴 국립묘지. 볼티모어 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -4242,6 +4355,7 @@
    },
    "id": "vn-hanoi",
    "ko": "하노이",
+   "scope": "하노이 시내. 하롱베이·닌빈·사파 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -4281,6 +4395,7 @@
    },
    "id": "vn-ho-chi-minh-city",
    "ko": "호찌민",
+   "scope": "호찌민 중심부와 쩌런. 꾸찌·메콩델타 제외",
    "season": {},
    "seasonUnverified": []
   },
@@ -4320,6 +4435,7 @@
    },
    "id": "vn-nha-trang",
    "ko": "냐짱",
+   "scope": "냐짱 시내와 냐짱만 당일 섬 체험·혼째. 달랏·깜라인 제외",
    "season": {},
    "seasonUnverified": [
     "wildlife",
@@ -4363,6 +4479,7 @@
    },
    "id": "za-cape-town",
    "ko": "케이프타운",
+   "scope": "케이프타운 시내와 케이프 반도(케이프 포인트, 볼더스 비치, 콘스탄시아). 스텔렌보스·가든루트·사파리 제외",
    "season": {},
    "seasonUnverified": [
     "hiking",
@@ -4430,5 +4547,5 @@
   "make_time",
   "choose"
  ],
- "version": "2026-10-17-159418c7"
+ "version": "2026-10-27-74830487"
 }

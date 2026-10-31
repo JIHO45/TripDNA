@@ -8,7 +8,7 @@ nonisolated struct CityInputVersion: Codable, Equatable, Sendable {
     let model: String
     let ranking: String
 
-    static let promptVersion = "city-prompt-v3"
+    static let promptVersion = "city-prompt-v4"
     static let rankingVersion = "city-rank-v3"
 }
 
@@ -45,6 +45,8 @@ nonisolated enum CityLLMRequestBuilder {
     - 도시에 대한 설명은 당신이 아는 일반적인 지식으로 씁니다. 날짜, 가격, 운영 시간, 행사 일정을 단정하지 마세요. 필요하면 "정확한 일정·가격·운영 시간은 확인이 필요해요"라고 쓰세요.
     - 표의 등급 이름, 점수, 세부 id, 순서, "탐색 후보" 같은 내부 용어를 문장에 쓰지 마세요.
     - 표의 "시즌 확인 필요" 도시는 caveat에 선택한 시기에 해당 경험이 가능한지 확인이 필요하다고 쓰세요.
+    - 도시 범위 밖 장소는 추천 이유로 쓰지 마세요. 범위 안의 근교·섬·보트 이동을 도심 안 경험처럼 설명하지 마세요. 범위 미확인인 경우 근교 장소를 임의로 추가하지 마세요.
+    - 세부 시즌에서 시즌 밖인 활동은 이번 여행의 이유로 쓰지 마세요. 미확인 활동을 언급하면 이용 가능 여부 확인이 필요하다고 쓰세요. 도시가 추천되었다고 모든 활동의 시즌이 확인된 것은 아닙니다.
     - 부 컨셉은 이유를 보강할 때만 쓰고, 맞지 않으면 억지로 언급하지 마세요.
     - 근거 없는 칭찬, 과장, "예산에 맞아요" 같은 단정은 쓰지 않습니다.
     - "이번 요청에서 뽑은 조건"이 있으면 후보 표의 "조건" 열이 코드가 자료로 판정한 결과입니다. 충족/불충족/확인 필요를 그대로 따르고, 확인 필요인 조건은 caveat에 확인이 필요하다고 쓰세요. 표에 없는 조건 충족을 만들어 내지 마세요.
@@ -129,7 +131,7 @@ nonisolated enum CityLLMRequestBuilder {
 
         lines.append("")
         lines.append("[후보 표 — 코드가 정한 순서. 등급은 이번 시기를 적용한 값]")
-        lines.append("순서 | id | 도시 | 나라 | 주 컨셉 등급 | 부 컨셉 등급 | 시즌 | 조건 | 표시")
+        lines.append("순서 | id | 도시 | 나라 | 주 컨셉 등급 | 부 컨셉 등급 | 시즌 | 조건 | 표시 | 도시 범위 | 세부 시즌")
         let rows = ranked.prefix(tableLimit).enumerated().map { index, item in
             row(position: "\(index + 1)", item, request: request, mark: "")
         }
@@ -166,7 +168,12 @@ nonisolated enum CityLLMRequestBuilder {
         } else {
             season = "-"
         }
-        return [position, item.city.id, item.city.ko, item.city.country, item.primaryGrade.nameKo, secondary, season, conditions, mark]
+        let month = request.month ?? request.startDate.map { Calendar.current.component(.month, from: $0) }
+        let unavailable = month.map { month in
+            item.city.season.filter { !$0.value.isEmpty && !$0.value.contains(month) }.keys.sorted()
+        } ?? []
+        let detail = "시즌 밖: \(unavailable.joined(separator: ",")); 미확인: \(item.city.seasonUnverified.sorted().joined(separator: ","))"
+        return [position, item.city.id, item.city.ko, item.city.country, item.primaryGrade.nameKo, secondary, season, conditions, mark, item.city.scope ?? "범위 미확인", detail]
             .joined(separator: " | ")
     }
 

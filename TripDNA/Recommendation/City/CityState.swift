@@ -60,6 +60,8 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
     var skippedCityIDs: [String] = []
     /// `lastRecord`의 "이렇게 이해했어요"를 한 번 접었는지. 다시 열면 접힌 채로 시작한다. 새 결과를 받으면 false로 돌린다.
     var understandingSeen = false
+    /// 실패한 추천의 ID. 화면을 떠나거나 앱을 다시 켜도 다음 추천받기가 이어 써서 무료 횟수를 잃지 않는다. 쓰면 비운다.
+    var retryUsageID: String?
     /// 도시 ID별 질문 기록. 오래된 것부터.
     var questions: [String: [CityQuestionEntry]] = [:]
 
@@ -74,6 +76,7 @@ nonisolated struct CityRecommendationState: Codable, Equatable, Sendable {
         originalRecord = try? c.decodeIfPresent(CityRecommendationRecord.self, forKey: .originalRecord)
         skippedCityIDs = try c.decodeIfPresent([String].self, forKey: .skippedCityIDs) ?? []
         understandingSeen = try c.decodeIfPresent(Bool.self, forKey: .understandingSeen) ?? false
+        retryUsageID = try c.decodeIfPresent(String.self, forKey: .retryUsageID)
         questions = (try? c.decodeIfPresent([String: [CityQuestionEntry]].self, forKey: .questions)) ?? [:]
     }
 

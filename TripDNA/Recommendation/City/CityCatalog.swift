@@ -42,6 +42,8 @@ nonisolated struct City: Codable, Equatable, Sendable, Identifiable {
     let season: [String: [Int]]
     /// 운영 월을 확인하지 못한 세부. 시기 조건 충족으로 치지 않는다.
     let seasonUnverified: [String]
+    /// 등급의 대상 범위. 이전 자료에는 없을 수 있다.
+    var scope: String? = nil
 }
 
 nonisolated struct CityCatalog: Codable, Equatable, Sendable {

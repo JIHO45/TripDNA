@@ -33,4 +33,11 @@ nonisolated enum CityLLMCredentials {
         let appCheck = try await AppCheck.appCheck().token(forcingRefresh: false)
         return ["Authorization": "Bearer \(idToken)", "X-Firebase-AppCheck": appCheck.token]
     }
+
+    /// 전체 삭제 때 익명 계정도 지운다. 오프라인 등으로 서버 삭제에 실패하면 기기에서만 로그아웃해
+    /// 다음 호출부터 새 익명 ID를 쓰게 한다. 기기 데이터 삭제는 이 결과와 상관없이 끝난 뒤다.
+    static func deleteAnonymousAccount() async {
+        guard FirebaseApp.app() != nil, let user = Auth.auth().currentUser else { return }
+        do { try await user.delete() } catch { try? Auth.auth().signOut() }
+    }
 }

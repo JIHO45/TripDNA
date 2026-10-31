@@ -110,8 +110,7 @@ struct WrappedYear: Equatable {
     var topConceptCaptionKo: String {
         guard let fingerprint else { return "" }
         if isSingleTrip, let place = singleTripPlace {
-            // 조사는 한국어에서만 붙인다.
-            let target = AppLanguage.isKorean ? place + KoreanParticle.roParticle(after: place) : place
+            let target = particled(place, .euroRo)
             if isInProgress { return String(localized: "You took one trip this year, to \(target)") }
             return String(localized: "You took one trip in \(Self.yearText(year)), to \(target)")
         }
@@ -188,15 +187,6 @@ struct WrappedYear: Equatable {
     static func year(of trip: Trip, calendar: Calendar = .current) -> Int {
         let end = trip.legs.map(\.endDate).max() ?? trip.createdAt
         return calendar.component(.year, from: end)
-    }
-}
-
-extension KoreanParticle {
-    /// "오사카로", "서울로", "부산으로". ㄹ 받침은 받침이 없는 것처럼 "로".
-    static func roParticle(after word: String) -> String {
-        guard let scalar = word.unicodeScalars.last?.value, (0xAC00...0xD7A3).contains(scalar) else { return "로" }  // l10n-ignore Korean particle, Korean path only
-        let final = (scalar - 0xAC00) % 28
-        return final == 0 || final == 8 ? "로" : "으로"  // l10n-ignore Korean particle, Korean path only
     }
 }
 

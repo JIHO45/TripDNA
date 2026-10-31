@@ -12,7 +12,12 @@ nonisolated struct CityInputVersion: Codable, Equatable, Sendable {
     static let rankingVersion = "city-rank-v3"
 
     /// 출력 언어가 영어이면 접미사를 붙여 한국어 결과와 구분한다. 한국어는 기존 값 그대로다.
-    static var currentPromptVersion: String { AppLanguage.isKorean ? promptVersion : promptVersion + "-en" }
+    static var currentPromptVersion: String { currentPromptVersion(currency: .korea) }
+
+    /// 원화·한국 출발이 아니면 비용 지시가 달라지므로 "-cur"를 더 붙여 기존 결과와 구분한다.
+    static func currentPromptVersion(currency: CityCostBasis) -> String {
+        (AppLanguage.isKorean ? promptVersion : promptVersion + "-en") + (currency.isLegacyKorea ? "" : "-cur")
+    }
 }
 
 /// 프롬프트는 한국어 그대로 보내고, 영어 사용자에게는 출력 언어 지시만 덧붙인다.
@@ -28,6 +33,27 @@ nonisolated enum CityLLMOutputLanguage {
         Quoted phrases must stay verbatim in the user's original language.
         """
     }
+}
+
+/// 비용을 낼 통화와 항공료의 출발지. 원화이고 출발지가 한국이면(예전 동작) 프롬프트를 바꾸지 않는다.
+nonisolated struct CityCostBasis: Equatable, Sendable {
+    var currency: String
+    /// 출발 공항(IATA). 없으면 사는 나라로 본다.
+    var airport: String?
+    var homeCountry: String?
+
+    static let korea = CityCostBasis(currency: BudgetCurrency.krw, airport: nil, homeCountry: nil)
+
+    private var originCountry: String? {
+        airport.flatMap { code in AirportCatalog.airports.first { $0.airports.contains { $0.code == code } }?.countryCode } ?? (airport == nil ? homeCountry : nil)
+    }
+
+    var isLegacyKorea: Bool {
+        currency == BudgetCurrency.krw && (airport == nil && homeCountry == nil || originCountry == "KR")
+    }
+
+    /// 프롬프트에 쓰는 출발지. 공항 코드가 있으면 코드, 없으면 사는 나라 코드, 둘 다 없으면 nil.
+    var origin: String? { airport ?? homeCountry }
 }
 
 nonisolated struct CityLLMRequest: Codable, Equatable, Sendable {
@@ -77,6 +103,14 @@ nonisolated enum CityLLMRequestBuilder {
     cards는 "후보 도시"에 적힌 id만, 같은 순서로 정확히 한 번씩 씁니다.
     """
 
+    /// 원화·한국 출발이면 `system` 그대로. 아니면 비용 통화와 항공료 출발지만 바꾼다.
+    static func costSystem(_ basis: CityCostBasis) -> String {
+        if basis.isLegacyKorea { return system }
+        return system
+            .replacingOccurrences(of: "원화 정수", with: "\(basis.currency) 정수(ISO 통화 코드 \(basis.currency), 그 통화의 금액)")
+            .replacingOccurrences(of: "항공료는 한국 출발의 대략값이며", with: "항공료는 사용자의 출발지(\(basis.origin ?? "알 수 없음"))에서 출발하는 대략값이며")
+    }
+
     struct Context: Sendable {
         var request: RecommendationRequest
         var tiers: WantedConceptTiers
@@ -86,6 +120,7 @@ nonisolated enum CityLLMRequestBuilder {
         var homeCountryExcluded: Bool
         var conditions: [CityCondition] = []
         var memories: [CityMemory] = []
+        var costBasis: CityCostBasis?
     }
 
     static func build(
@@ -96,6 +131,10 @@ nonisolated enum CityLLMRequestBuilder {
     ) -> CityLLMRequest {
         var lines: [String] = []
         let request = context.request
+        let basis = context.costBasis ?? CityCostBasis(currency: request.budgetCurrency)
+        let currency = request.budgetCurrency
+        // 원화 아니면 금액에 통화 코드를 붙인다. 원화는 예전 문구 그대로 "원".
+        let unit = currency == BudgetCurrency.krw ? "원" : " \(currency)"
 
         lines.append("[이번 요청]")
         lines.append("주 컨셉: \((request.primary?.label ?? "미정"))")
@@ -103,10 +142,11 @@ nonisolated enum CityLLMRequestBuilder {
         lines.append("시기: \(period(request))")
         lines.append("기간: \(request.nights.map { "\($0)박" } ?? "미정")")
         lines.append("인원: \(request.partySize)명")
-        lines.append("예산: \(request.budgetMaxKRW.map { "최대 \($0)원 (\(request.budgetBasis == .group ? "일행 전체" : "1인"), 항공료 \(request.budgetIncludesFlight ? "포함" : "제외"))" } ?? "미정")")
-        if let budget = request.budgetMaxKRW, let nights = request.nights, nights > 0 {
-            lines.append("하루 예산(예산÷박수, 단순 계산): 약 \(budget / nights)원")
+        lines.append("예산: \(request.budgetMax.map { "최대 \($0)\(unit) (\(request.budgetBasis == .group ? "일행 전체" : "1인"), 항공료 \(request.budgetIncludesFlight ? "포함" : "제외"))" } ?? "미정")")
+        if let budget = request.budgetMax, let nights = request.nights, nights > 0 {
+            lines.append("하루 예산(예산÷박수, 단순 계산): 약 \(budget / nights)\(unit)")
         }
+        if !basis.isLegacyKorea { lines.append("항공료 출발지: \(basis.origin ?? "미정") (공항 코드 또는 나라 코드)") }
         if context.homeCountryExcluded { lines.append("사는 나라의 도시는 이번 추천에서 제외했습니다.") }
 
         lines.append("")
@@ -161,16 +201,16 @@ nonisolated enum CityLLMRequestBuilder {
 
         let version = CityInputVersion(
             catalog: context.catalog.version,
-            prompt: CityInputVersion.currentPromptVersion,
+            prompt: CityInputVersion.currentPromptVersion(currency: basis),
             model: context.model,
             ranking: CityInputVersion.rankingVersion
         )
         return CityLLMRequest(
             version: version,
-            system: CityLLMOutputLanguage.apply(to: system, textFields: "understanding, reason, caveat, how"),
+            system: CityLLMOutputLanguage.apply(to: costSystem(basis), textFields: "understanding, reason, caveat, how"),
             user: lines.joined(separator: "\n"),
             cardIDs: pool.map(\.city.id),
-            requiresCost: request.budgetMaxKRW != nil
+            requiresCost: request.budgetMax != nil
         )
     }
 

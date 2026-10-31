@@ -16,12 +16,20 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
     var nights: Int?
     var budgetBasis: BudgetBasis = .perPerson
     var budgetIncludesFlight = true
-    /// 최대 금액(원). nil이면 미정.
-    var budgetMaxKRW: Int?
+    /// 최대 금액(`budgetCurrency` 단위). nil이면 미정. 저장 키는 예전 이름 `budgetMaxKRW`를 그대로 쓴다.
+    var budgetMax: Int?
+    /// `budgetMax`의 통화(ISO 코드). 이 필드가 없던 예전 저장 값은 원화다.
+    var budgetCurrency = BudgetCurrency.krw
     var wants = ""
     var avoids = ""
     var includeVisited = true
     var includeHomeCountry = false
+
+    private enum CodingKeys: String, CodingKey {
+        case primary, secondary, partySize, year, month, startDate, nights, budgetBasis, budgetIncludesFlight
+        case budgetMax = "budgetMaxKRW"
+        case budgetCurrency, wants, avoids, includeVisited, includeHomeCountry
+    }
 
     init() {}
 
@@ -37,7 +45,8 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
         nights = try c.decodeIfPresent(Int.self, forKey: .nights)
         budgetBasis = try c.decodeIfPresent(BudgetBasis.self, forKey: .budgetBasis) ?? .perPerson
         budgetIncludesFlight = try c.decodeIfPresent(Bool.self, forKey: .budgetIncludesFlight) ?? true
-        budgetMaxKRW = try c.decodeIfPresent(Int.self, forKey: .budgetMaxKRW)
+        budgetMax = try c.decodeIfPresent(Int.self, forKey: .budgetMax)
+        budgetCurrency = try c.decodeIfPresent(String.self, forKey: .budgetCurrency) ?? BudgetCurrency.krw
         wants = try c.decodeIfPresent(String.self, forKey: .wants) ?? ""
         avoids = try c.decodeIfPresent(String.self, forKey: .avoids) ?? ""
         includeVisited = try c.decodeIfPresent(Bool.self, forKey: .includeVisited) ?? true
@@ -52,10 +61,10 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
             parts.append(Calendar.current.shortMonthSymbols[month - 1])
         }
         if let nights { parts.append(String(localized: "\(nights) nights")) }
-        if let budgetMaxKRW {
+        if let budgetMax {
             parts.append(budgetBasis == .perPerson
-                ? String(localized: "Per person under \(shortKRW(budgetMaxKRW, koreanUnit: "만원"))") // l10n-ignore Korean amount unit
-                : String(localized: "Total under \(shortKRW(budgetMaxKRW, koreanUnit: "만원"))")) // l10n-ignore Korean amount unit
+                ? String(localized: "Per person under \(BudgetCurrency.format(budgetMax, currency: budgetCurrency, koreanUnit: "만원"))") // l10n-ignore Korean amount unit
+                : String(localized: "Total under \(BudgetCurrency.format(budgetMax, currency: budgetCurrency, koreanUnit: "만원"))")) // l10n-ignore Korean amount unit
         }
         return parts.joined(separator: " · ")
     }

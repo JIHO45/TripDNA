@@ -1,9 +1,8 @@
 import SwiftUI
 
-private func won(_ amount: Int) -> String { shortKRW(amount, koreanUnit: "만원") } // l10n-ignore Korean amount unit
-
-private func wonRange(_ low: Int, _ high: Int) -> String {
-    AppLanguage.isKorean ? "\(won(low))~\(won(high))" : "\(won(low))–\(won(high))"
+private func costRange(_ low: Int, _ high: Int, currency: String) -> String {
+    let money = { BudgetCurrency.format($0, currency: currency, koreanUnit: "만원") } // l10n-ignore Korean amount unit
+    return AppLanguage.isKorean ? "\(money(low))~\(money(high))" : "\(money(low))–\(money(high))"
 }
 
 /// 도시 추천 결과(시안 RecoResult ③④). 받는 중·실패·지난 결과 복원까지 한 곳에서 그린다.
@@ -340,7 +339,7 @@ struct CityRecommendationSection: View {
     private func exclusionBanner(_ notice: ExcludedCity) -> some View {
         HStack(spacing: DNASpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(notice.cityName) won't be recommended again")
+                Text("\(particled(notice.cityName, .eunNeun)) won't be recommended again")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Text("You can change this in Settings > Excluded from Recommendations")
@@ -468,7 +467,7 @@ private struct CityCardView: View {
                     .multilineTextAlignment(.leading)
                 if let cost = card.cost {
                     Divider()
-                    Text(request.nights.map { String(localized: "Estimated for \($0) nights: \(wonRange(cost.low, cost.high)) (estimate)") } ?? String(localized: "Estimated \(wonRange(cost.low, cost.high)) (estimate)"))
+                    Text(request.nights.map { String(localized: "Estimated for \($0) nights: \(costRange(cost.low, cost.high, currency: request.budgetCurrency)) (estimate)") } ?? String(localized: "Estimated \(costRange(cost.low, cost.high, currency: request.budgetCurrency)) (estimate)"))
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -651,7 +650,7 @@ struct CityDetailView: View {
                 caveatSection
                 if let cost = card.cost {
                     plainSection("Estimated Cost") {
-                        Text(wonRange(cost.low, cost.high))
+                        Text(costRange(cost.low, cost.high, currency: request?.budgetCurrency ?? BudgetCurrency.krw))
                             .dnaFont(.heroTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
                         Text("This is an estimate. It doesn't guarantee actual prices or that your budget is met, so check flight and hotel prices yourself before you go.")
@@ -895,10 +894,11 @@ struct CityConditionEditSheet: View {
     @State private var budget: Int?
     @State private var isCustom = false
 
-    /// 곱셈 오버플로를 막는 상한(10억 원).
-    private static let maxBudgetMan = 100_000
+    /// 곱셈 오버플로를 막는 상한(금액 10억).
+    private var currency: String { model.lastRecord?.input.budgetCurrency ?? BudgetCurrency.krw }
+    private var unit: Int { BudgetCurrency.customUnit(for: currency) }
 
-    private var man: Int? { Int(budgetText).flatMap { (1...Self.maxBudgetMan).contains($0) ? $0 : nil } }
+    private var man: Int? { Int(budgetText).flatMap { (1...1_000_000_000 / unit).contains($0) ? $0 : nil } }
     /// 지금 고른 예산이 적용할 수 있는 값인지. "직접 입력"은 올바른 금액이 있어야 한다.
     private var canApply: Bool { !isCustom || man != nil }
 
@@ -930,8 +930,8 @@ struct CityConditionEditSheet: View {
                             isCustom = false
                             budget = nil
                         }
-                        ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
-                            DNATagChip(title: String(localized: "Up to \(shortKRW(amount, koreanUnit: "만 원"))"), isSelected: !isCustom && budget == amount) { // l10n-ignore Korean amount unit
+                        ForEach(BudgetCurrency.presets(for: currency), id: \.self) { amount in
+                            DNATagChip(title: String(localized: "Up to \(BudgetCurrency.format(amount, currency: currency, koreanUnit: "만 원"))"), isSelected: !isCustom && budget == amount) { // l10n-ignore Korean amount unit
                                 isCustom = false
                                 budget = amount
                             }
@@ -943,7 +943,11 @@ struct CityConditionEditSheet: View {
                     HStack {
                         TextField("Amount", text: $budgetText)
                             .keyboardType(.numberPad)
-                        Text("× ₩10,000 or less").foregroundStyle(Color.dnaTextSecondary)
+                        if currency == BudgetCurrency.krw {
+                            Text("× ₩10,000 or less").foregroundStyle(Color.dnaTextSecondary)
+                        } else {
+                            Text(verbatim: currency).foregroundStyle(Color.dnaTextSecondary)
+                        }
                     }
                     .textFieldStyle(.roundedBorder)
                 }
@@ -952,7 +956,7 @@ struct CityConditionEditSheet: View {
                     .foregroundStyle(Color.dnaTextSecondary)
                 Button("View with These Conditions") {
                     guard canApply else { return }
-                    let amount = isCustom ? man.map { $0 * 10_000 } : budget
+                    let amount = isCustom ? man.map { $0 * unit } : budget
                     Task {
                         await model.applyBudget(amount, dependencies: dependencies)
                         dismiss()
@@ -977,11 +981,11 @@ struct CityConditionEditSheet: View {
         .background(Color.dnaSheet.ignoresSafeArea())
         .presentationDetents([.medium, .large])
         .onAppear {
-            let current = model.lastRecord?.input.budgetMaxKRW
+            let current = model.lastRecord?.input.budgetMax
             budget = current
-            if let current, !RecommendationRequest.budgetPresets.contains(current) {
+            if let current, !BudgetCurrency.presets(for: currency).contains(current) {
                 isCustom = true
-                budgetText = String(current / 10_000)
+                budgetText = String(current / unit)
             }
         }
     }

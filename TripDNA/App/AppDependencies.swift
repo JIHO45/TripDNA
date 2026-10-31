@@ -100,7 +100,7 @@ final class AppDependencies {
         try? await store.saveProfile(profile)
     }
 
-    /// 출발 공항 기본값. 추천·LLM에는 아직 연결하지 않고 프로필에만 남긴다.
+    /// 출발 공항 기본값. 추천 요청 때 읽어 LLM의 항공료 출발지로 보낸다.
     func setDepartureDefaults(airportCode: String?, prefersDirectFlights: Bool?) async throws {
         var profile = await loadOrCreateProfile()
         profile.departureAirportCode = airportCode

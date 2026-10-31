@@ -164,7 +164,12 @@ extension CityRecommendationRecord.Card {
 
 extension RecommendationRequest {
     /// 예산 선택 칩의 고정 금액. 입력 시트와 조건 수정 시트가 함께 쓴다.
-    static let budgetPresets = [500_000, 1_000_000, 1_500_000]
+    var budgetPresets: [Int] { BudgetCurrency.presets(for: budgetCurrency) }
+
+    /// 예산 금액 표기. 통화는 요청의 것을 쓴다.
+    func money(_ amount: Int, koreanUnit: String) -> String {
+        BudgetCurrency.format(amount, currency: budgetCurrency, koreanUnit: koreanUnit)
+    }
 
     /// "이렇게 이해했어요"의 조건 칩. 시기는 항상 보이고(미정이면 "시기 미정"), 기간·예산은 모르면 뺀다.
     var conditionChips: [String] {
@@ -195,8 +200,8 @@ extension RecommendationRequest {
     }
 
     var budgetText: String? {
-        guard let budgetMaxKRW else { return nil }
-        let amount = shortKRW(budgetMaxKRW, koreanUnit: "만 원") // l10n-ignore Korean amount unit
+        guard let budgetMax else { return nil }
+        let amount = money(budgetMax, koreanUnit: "만 원") // l10n-ignore Korean amount unit
         let text = budgetBasis == .perPerson
             ? String(localized: "\(amount) max per person")
             : String(localized: "\(amount) max total")

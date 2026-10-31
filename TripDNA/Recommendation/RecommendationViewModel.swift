@@ -282,7 +282,7 @@ final class RecommendationViewModel {
         switch recommendation.slot {
         case .bestMatch:
             if let anchor = anchorTripTitle(recommendation.rankingAnchorTripID), !quotedTags.isEmpty {
-                return String(localized: "Similar to the \(quotedTags) you picked on \(anchor)")
+                return String(localized: "Similar to the \(particled(quotedTags, .waGwa)) you picked on \(anchor)")
             }
             if !quotedTags.isEmpty {
                 return String(localized: "The best match for your \(quotedTags) taste")
@@ -293,7 +293,7 @@ final class RecommendationViewModel {
             return String(localized: "The best match for your current fingerprint")
         case .freshStretch:
             if !quotedTags.isEmpty {
-                return String(localized: "A half step outside your usual taste. \(quotedTags) stays the same")
+                return String(localized: "A half step outside your usual taste. \(particled(quotedTags, .eunNeun)) stays the same")
             }
             return String(localized: "A half step outside your usual taste")
         case .underratedFit:

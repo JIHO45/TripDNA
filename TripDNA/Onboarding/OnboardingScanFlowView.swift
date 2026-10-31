@@ -248,7 +248,7 @@ struct OnboardingCandidatesView: View {
                     cityTarget = candidate.id
                 }
             } else if let other = viewModel.mergeSuggestion(for: candidate.id) {
-                suggestionRow(text: String(localized: "\(other.title) is close in date. Was it one trip?"), action: String(localized: "Merge with \(other.title)")) {
+                suggestionRow(text: String(localized: "\(particled(other.title, .waGwa)) is close in date. Was it one trip?"), action: String(localized: "Merge with \(particled(other.title, .waGwa))")) {
                     viewModel.merge(candidate.id, with: other.id)
                 }
             }

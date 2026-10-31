@@ -36,7 +36,7 @@ struct RecommendationRequestTests {
         var request = RecommendationRequest()
         request.setPrimary(.food)
         request.partySize = 2
-        request.budgetMaxKRW = 1_000_000
+        request.budgetMax = 1_000_000
         request.budgetBasis = .group
         request.wants = "비행 5시간 이내"
         let decoded = try JSONDecoder().decode(RecommendationRequest.self, from: JSONEncoder().encode(request))

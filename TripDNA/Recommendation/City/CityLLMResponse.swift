@@ -10,7 +10,7 @@ nonisolated struct CityLLMResponse: Codable, Equatable, Sendable {
         let id: String
         let reason: String
         let caveat: String
-        /// 예산이 있을 때만 필수. 원화 총비용 추정 범위.
+        /// 예산이 있을 때만 필수. 요청 통화(budgetCurrency)의 총비용 추정 범위.
         let cost: CostRange?
 
         init(id: String, reason: String, caveat: String, cost: CostRange?) {

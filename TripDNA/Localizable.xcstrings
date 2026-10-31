@@ -222,7 +222,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@와 날짜가 가까워요. 한 여행이었나요?"
+            "value": "%@ 날짜가 가까워요. 한 여행이었나요?"
           }
         }
       }
@@ -282,7 +282,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@은(는) 앞으로 추천에서 빠져요. 저장 목록에서 언제든 되돌릴 수 있어요."
+            "value": "%@ 앞으로 추천에서 빠져요. 저장 목록에서 언제든 되돌릴 수 있어요."
           }
         }
       }
@@ -292,7 +292,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@은(는) 다시 추천하지 않아요"
+            "value": "%@ 다시 추천하지 않아요"
           }
         }
       }
@@ -1550,7 +1550,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "익숙한 취향에서 반 발짝 바깥이에요. %@는 그대로예요"
+            "value": "익숙한 취향에서 반 발짝 바깥이에요. %@ 그대로예요"
           }
         }
       }
@@ -2422,7 +2422,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "예산을 %@로 바꿨어요"
+            "value": "예산을 %@ 바꿨어요"
           }
         }
       }
@@ -2450,7 +2450,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "예산을 %1$@로 바꿔서 %2$lld곳이 늘었어요"
+            "value": "예산을 %1$@ 바꿔서 %2$lld곳이 늘었어요"
           }
         }
       }
@@ -2478,7 +2478,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "예산을 %1$@로 바꿔서 %2$lld곳이 빠졌어요"
+            "value": "예산을 %1$@ 바꿔서 %2$lld곳이 빠졌어요"
           }
         }
       }
@@ -5582,7 +5582,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@와 합치기"
+            "value": "%@ 합치기"
           }
         }
       }
@@ -8114,7 +8114,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%2$@에서 골랐던 %1$@와 닮았어요"
+            "value": "%2$@에서 골랐던 %1$@ 닮았어요"
           }
         }
       }
@@ -10474,7 +10474,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 달 무료 %1$@을 다 썼어요. %2$@에 다시 채워져요."
+            "value": "이번 달 무료 %1$@ 다 썼어요. %2$@에 다시 채워져요."
           }
         }
       }

@@ -238,7 +238,7 @@ enum UIDemoSeed {
             }
         )
         let cut = CityRecommendationService.select(
-            pool: pool, response: response, budget: request.budgetMaxKRW, seed: 1
+            pool: pool, response: response, budget: request.budgetMax, seed: 1
         ).cutIDs
         return .init(
             id: UUID().uuidString, derivedFrom: nil, createdAt: now,
@@ -265,7 +265,7 @@ enum UIDemoSeed {
         request.month = 11
         request.year = Calendar.current.component(.year, from: .now)
         request.nights = 3
-        request.budgetMaxKRW = budget
+        request.budgetMax = budget
         request.wants = String(localized: "Japan, within a 5-hour flight")
         return request
     }

@@ -6,6 +6,72 @@ nonisolated enum AppLanguage {
     static var isKorean: Bool { Bundle.main.preferredLocalizations.first?.hasPrefix("ko") == true }
 }
 
+/// 한국어 조사 선택. 마지막 글자의 받침으로 고른다.
+nonisolated enum KoreanParticle {
+    case eunNeun, iGa, eulReul, waGwa, euroRo
+
+    /// 단어 뒤에 조사를 붙인다. 받침을 알 수 없으면(라틴 문자 등) "은(는)"처럼 겸용형.
+    static func attach(_ word: String, _ particle: KoreanParticle) -> String {
+        word + (particle.form(hasFinal: finalState(of: word)))
+    }
+
+    /// 한국어 UI에서만 조사를 붙이고, 영어에서는 단어를 그대로 돌려준다.
+    /// 번역문에는 조사를 쓰지 않고 이 함수를 거친 값을 `%@`에 넣는다.
+    static func particled(_ word: String, _ particle: KoreanParticle) -> String {
+        AppLanguage.isKorean ? attach(word, particle) : word
+    }
+
+    private enum Final { case none, rieul, other, unknown }
+
+    private static func finalState(of word: String) -> Final {
+        // 끝의 공백·구두점·괄호·따옴표는 건너뛰고 앞 글자를 본다.
+        let skip = CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters).union(.symbols)
+        guard let scalar = word.unicodeScalars.last(where: { !skip.contains($0) }) else { return .unknown }
+        if (0xAC00...0xD7A3).contains(scalar.value) {
+            switch (scalar.value - 0xAC00) % 28 {
+            case 0: return .none
+            case 8: return .rieul
+            default: return .other
+            }
+        }
+        // 숫자는 한국어 읽기(영일이삼사오육칠팔구) 기준.
+        if let digit = Int(String(scalar)) {
+            switch digit {
+            case 2, 4, 5, 9: return .none
+            case 1, 7, 8: return .rieul
+            default: return .other
+            }
+        }
+        return .unknown
+    }
+
+    private func form(hasFinal state: Final) -> String {
+        // l10n-ignore-begin
+        switch (self, state) {
+        case (.eunNeun, .none): "는"
+        case (.eunNeun, .rieul), (.eunNeun, .other): "은"
+        case (.eunNeun, .unknown): "은(는)"
+        case (.iGa, .none): "가"
+        case (.iGa, .rieul), (.iGa, .other): "이"
+        case (.iGa, .unknown): "이(가)"
+        case (.eulReul, .none): "를"
+        case (.eulReul, .rieul), (.eulReul, .other): "을"
+        case (.eulReul, .unknown): "을(를)"
+        case (.waGwa, .none): "와"
+        case (.waGwa, .rieul), (.waGwa, .other): "과"
+        case (.waGwa, .unknown): "와(과)"
+        case (.euroRo, .none), (.euroRo, .rieul): "로"
+        case (.euroRo, .other): "으로"
+        case (.euroRo, .unknown): "(으)로"
+        }
+        // l10n-ignore-end
+    }
+}
+
+func particled(_ word: String, _ particle: KoreanParticle) -> String {
+    KoreanParticle.particled(word, particle)
+}
+
 extension TasteAxis {
     var label: String {
         switch self {

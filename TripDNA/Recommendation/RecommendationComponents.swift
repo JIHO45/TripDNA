@@ -78,7 +78,7 @@ struct RecommendationDislikeSheet: View {
                 Text("Mind telling us why?")
                     .font(.title3.bold())
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("\(countryName) won't appear in your recommendations anymore. You can undo this anytime from your saved list.")
+                Text("\(particled(countryName, .eunNeun)) won't appear in your recommendations anymore. You can undo this anytime from your saved list.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }

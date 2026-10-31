@@ -85,7 +85,7 @@ struct DemoRecoSeedTests {
             catalog: try #require(CityCatalog.load()), client: nil,
             log: CityRecommendationLog(directory: FileManager.default.temporaryDirectory.appendingPathComponent("demo-reco-test"))
         )
-        let recut = try #require(service.recut(record, budgetMaxKRW: 2_000_000))
+        let recut = try #require(service.recut(record, budgetMax: 2_000_000))
         #expect(!recut.cards.isEmpty)
         #expect(recut.budgetCutCityIDs.isEmpty)
         if scenario == .recoZero { #expect(record.cards.isEmpty) }

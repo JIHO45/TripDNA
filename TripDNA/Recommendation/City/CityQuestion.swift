@@ -156,7 +156,10 @@ nonisolated struct CityQuestionService: Sendable {
         }
         lines += ["", "[추천 카드]", "이유: \(card.reason)"]
         if !card.caveat.isEmpty { lines.append("유의점: \(card.caveat)") }
-        if let cost = card.cost { lines.append("예상 비용(추정, 원): \(cost.low)~\(cost.high)") }
+        if let cost = card.cost {
+            let currency = request?.budgetCurrency ?? BudgetCurrency.krw
+            lines.append("예상 비용(추정, \(currency == BudgetCurrency.krw ? "원" : currency)): \(cost.low)~\(cost.high)")
+        }
         lines += ["", "[추천 조건]", conditionSummary]
         if let request {
             if let primary = request.primary { lines.append("주 컨셉: \(primary.label)") }

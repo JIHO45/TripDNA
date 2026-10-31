@@ -11,7 +11,7 @@ final class RecommendationExposure {
     init(record: CityRecommendationRecord) {
         id = record.id
         context = [
-            "schemaVersion": "2",
+            "schemaVersion": "3",
             "source": "city",
             "resultID": record.id,
             "derivedFrom": record.derivedFrom ?? "none",
@@ -21,7 +21,9 @@ final class RecommendationExposure {
             "model": record.version.model,
             "primaryConcept": record.input.primary?.rawValue ?? "unspecified",
             "secondaryConcepts": record.input.secondary.map(\.rawValue).joined(separator: ","),
-            "budgetMaxKRW": record.input.budgetMaxKRW.map(String.init) ?? "unspecified",
+            // 금액은 통화와 함께 읽어야 의미가 있다(v3부터 budgetMaxKRW 대신).
+            "budgetMax": record.input.budgetMax.map(String.init) ?? "unspecified",
+            "budgetCurrency": record.input.budgetCurrency,
             "includeVisited": String(record.input.includeVisited),
             "excludedCountryCodes": record.excludedCountries.sorted().joined(separator: ","),
             "excludedCityCount": String(record.excludedCityIDs?.count ?? 0),

@@ -408,7 +408,7 @@ struct CityRecommendationServiceTests {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = Self.request()
-        request.budgetMaxKRW = 2_000_000
+        request.budgetMax = 2_000_000
         // 순위 1·2번째 도시는 하한이 예산을 넘는다.
         let service = try Self.service(client: Self.fake(lows: [3_000_000, 2_500_000]), dir: dir)
         let record = try await service.recommend(
@@ -424,7 +424,7 @@ struct CityRecommendationServiceTests {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = Self.request()
-        request.budgetMaxKRW = 500_000
+        request.budgetMax = 500_000
         let service = try Self.service(client: Self.fake(lows: Array(repeating: 9_000_000, count: 8)), dir: dir)
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
@@ -438,7 +438,7 @@ struct CityRecommendationServiceTests {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = Self.request()
-        request.budgetMaxKRW = 2_000_000
+        request.budgetMax = 2_000_000
         // 순위 1·2번째 하한 3,000,000·2,500,000, 나머지 1,000,000.
         let service = try Self.service(client: Self.fake(lows: [3_000_000, 2_500_000]), dir: dir)
         let record = try await service.recommend(
@@ -447,12 +447,12 @@ struct CityRecommendationServiceTests {
         #expect(record.budgetCutCityIDs.count == 2)
         // 클라이언트가 없는 서비스로도 다시 계산된다 = LLM을 부르지 않는다.
         let offline = try Self.service(client: nil, dir: dir)
-        let loosened = try #require(offline.recut(record, budgetMaxKRW: 4_000_000))
+        let loosened = try #require(offline.recut(record, budgetMax: 4_000_000))
         #expect(loosened.budgetCutCityIDs.isEmpty)
         #expect(loosened.derivedFrom == record.id)
-        #expect(loosened.input.budgetMaxKRW == 4_000_000)
+        #expect(loosened.input.budgetMax == 4_000_000)
         #expect(loosened.cards.map(\.cityID).prefix(2) == record.poolCityIDs.prefix(2))
-        let tightened = try #require(offline.recut(loosened, budgetMaxKRW: 100_000))
+        let tightened = try #require(offline.recut(loosened, budgetMax: 100_000))
         #expect(tightened.cards.isEmpty)
         #expect(tightened.error == "noneWithinBudget")
         #expect(tightened.budgetCutCityIDs.count == 8)
@@ -466,7 +466,7 @@ struct CityRecommendationServiceTests {
         let record = try await service.recommend(
             request: Self.request(), tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 5
         )
-        #expect(service.recut(record, budgetMaxKRW: 1_000_000) == nil)
+        #expect(service.recut(record, budgetMax: 1_000_000) == nil)
     }
 
     @Test func failedResponseIsStillLoggedWithError() async throws {
@@ -673,13 +673,13 @@ struct CityMemoryAndTwoStageTests {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = CityRecommendationServiceTests.request()
-        request.budgetMaxKRW = 2_000_000
+        request.budgetMax = 2_000_000
         let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 2
         )
         #expect(record.understanding != nil)
-        let derived = try #require(service.recut(record, budgetMaxKRW: 1_500_000))
+        let derived = try #require(service.recut(record, budgetMax: 1_500_000))
         #expect(derived.understanding == nil)
         #expect(derived.derivedFrom == record.id)
     }
@@ -740,7 +740,7 @@ struct CityStateTests {
 
         // 예산만 바꿔 다시 계산해도 제외한 도시는 돌아오지 않는다.
         let service = try CityRecommendationServiceTests.service(client: nil, dir: dir)
-        let derived = try #require(service.recut(record, budgetMaxKRW: nil))
+        let derived = try #require(service.recut(record, budgetMax: nil))
         #expect(!derived.poolCityIDs.contains(first))
     }
 
@@ -829,7 +829,7 @@ struct CityStateTests {
         defer { try? FileManager.default.removeItem(at: dir) }
         let service = try CityRecommendationServiceTests.service(client: CityRecommendationServiceTests.fake(), dir: dir)
         var request = CityRecommendationServiceTests.request()
-        request.budgetMaxKRW = budget
+        request.budgetMax = budget
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
             homeCountryExcluded: false, seed: 7
@@ -887,7 +887,7 @@ struct CityStateTests {
             client: CityRecommendationServiceTests.fake(lows: [3_000_000, 2_500_000]), dir: dir
         )
         var request = CityRecommendationServiceTests.request()
-        request.budgetMaxKRW = 4_000_000
+        request.budgetMax = 4_000_000
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
             homeCountryExcluded: false, seed: 7
@@ -906,11 +906,11 @@ struct CityStateTests {
         #expect(model.skippedCityIDs == [skipped])
         // 되돌리면 이전 예산과 처음 보이던 카드로 돌아오고, 안내는 사라진다. 넘긴 도시는 그대로다.
         await model.revertBudget(dependencies: dependencies)
-        #expect(model.lastRecord?.input.budgetMaxKRW == 4_000_000)
+        #expect(model.lastRecord?.input.budgetMax == 4_000_000)
         #expect(model.visibleCards(try #require(model.lastRecord)).map(\.cityID) == original)
         #expect(model.budgetChange == nil)
         #expect(model.skippedCityIDs == [skipped])
-        #expect(try await dependencies.store.cityState().lastRecord?.input.budgetMaxKRW == 4_000_000)
+        #expect(try await dependencies.store.cityState().lastRecord?.input.budgetMax == 4_000_000)
 
         // 영향이 없는 경우
         await model.applyBudget(5_000_000, dependencies: dependencies)
@@ -932,7 +932,7 @@ struct CityStateTests {
             client: CityRecommendationServiceTests.fake(lows: [3_000_000, 2_500_000]), dir: dir
         )
         var request = CityRecommendationServiceTests.request()
-        request.budgetMaxKRW = 4_000_000
+        request.budgetMax = 4_000_000
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
             homeCountryExcluded: false, seed: 7
@@ -981,7 +981,7 @@ struct CityStateTests {
             client: CityRecommendationServiceTests.fake(lows: [3_000_000, 2_500_000]), dir: dir
         )
         var request = CityRecommendationServiceTests.request()
-        request.budgetMaxKRW = 2_000_000
+        request.budgetMax = 2_000_000
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], excludedCities: [],
             homeCountryExcluded: false, seed: 7
@@ -990,7 +990,7 @@ struct CityStateTests {
         let model = CityRecommendationViewModel()
         await model.restore(dependencies: dependencies)
         await model.applyBudget(nil, dependencies: dependencies)
-        #expect(model.lastRecord?.input.budgetMaxKRW == nil)
+        #expect(model.lastRecord?.input.budgetMax == nil)
         #expect(model.lastRecord?.budgetCutCityIDs.isEmpty == true)
         #expect(model.budgetChange?.message.hasPrefix("예산을 미정으로 바꿔서") == true)
         #expect(model.canEditBudget)
@@ -1100,7 +1100,7 @@ struct CityStateTests {
         request.year = 2026
         request.month = 11
         request.nights = 3
-        request.budgetMaxKRW = 1_000_000
+        request.budgetMax = 1_000_000
         #expect(request.summaryText == "미식 · 11월 · 3박 · 1인 100만원 이하")
     }
 
@@ -1108,7 +1108,7 @@ struct CityStateTests {
     @Test func unsetNightsStayUnknownInSummaryAndLLMRequest() throws {
         var request = RecommendationRequest()
         request.setPrimary(.food)
-        request.budgetMaxKRW = 1_000_000
+        request.budgetMax = 1_000_000
         #expect(request.nights == nil)
         #expect(request.summaryText == "미식 · 1인 100만원 이하")
 
@@ -1249,7 +1249,7 @@ struct CityStateTests {
             record, count: 100, shown: Set(record.cards.map(\.cityID)), removedCities: [], removedCountries: []
         )
         #expect(!filled.isEmpty)
-        let recut = try #require(service.recut(record, budgetMaxKRW: 5_000_000))
+        let recut = try #require(service.recut(record, budgetMax: 5_000_000))
         #expect((record.cards + filled + recut.cards).allSatisfy { pool.contains($0.cityID) })
     }
 }
@@ -1259,7 +1259,7 @@ struct CityConditionTextTests {
         var request = RecommendationRequest()
         request.month = 11
         request.nights = 3
-        request.budgetMaxKRW = 1_000_000
+        request.budgetMax = 1_000_000
         #expect(request.conditionChips == ["11월", "3박 4일", "1인 100만 원 이하"])
     }
 
@@ -1273,7 +1273,7 @@ struct CityConditionTextTests {
         request.nights = 0
         request.budgetBasis = .group
         request.budgetIncludesFlight = false
-        request.budgetMaxKRW = 2_000_000
+        request.budgetMax = 2_000_000
         #expect(request.conditionChips == ["12월 5일", "당일", "전체 200만 원 이하 (항공 제외)"])
     }
 

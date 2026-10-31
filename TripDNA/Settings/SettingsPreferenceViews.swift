@@ -308,7 +308,7 @@ struct HomeCountrySettingsView: View {
 
 // MARK: - 출발 공항 기본값
 
-enum AirportCatalog {
+nonisolated enum AirportCatalog {
     /// 작은 정적 목록. 나라가 없으면 목록이 비어 있고, 사는 나라를 먼저 보여준다.
     static let airports: [(countryCode: String, airports: [(code: String, name: String)])] = [
         ("KR", [("ICN", String(localized: "Incheon")), ("GMP", String(localized: "Gimpo")), ("PUS", String(localized: "Gimhae (Busan)")), ("CJU", String(localized: "Jeju"))]),

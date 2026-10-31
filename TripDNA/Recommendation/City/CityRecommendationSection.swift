@@ -54,7 +54,7 @@ final class CityRecommendationViewModel {
     private(set) var understandingExpanded = true
 
     /// 마지막 결과에 비용 범위가 있어 예산만 바꿔 다시 계산할 수 있는지.
-    var canEditBudget: Bool { (originalRecord ?? lastRecord)?.input.budgetMaxKRW != nil }
+    var canEditBudget: Bool { (originalRecord ?? lastRecord)?.input.budgetMax != nil }
 
     var isConfigured: Bool { CityLLMConfiguration.makeClient() != nil }
 
@@ -101,9 +101,9 @@ final class CityRecommendationViewModel {
 
         var message: String {
             if let budget {
-                if removed > 0 { return String(localized: "Budget set to \(budget), so \(removed) cities were removed") }
-                if added > 0 { return String(localized: "Budget set to \(budget), so \(added) cities were added") }
-                return String(localized: "Budget set to \(budget)")
+                if removed > 0 { return String(localized: "Budget set to \(particled(budget, .euroRo)), so \(removed) cities were removed") }
+                if added > 0 { return String(localized: "Budget set to \(particled(budget, .euroRo)), so \(added) cities were added") }
+                return String(localized: "Budget set to \(particled(budget, .euroRo))")
             }
             if removed > 0 { return String(localized: "Budget set to undecided, so \(removed) cities were removed") }
             if added > 0 { return String(localized: "Budget set to undecided, so \(added) cities were added") }
@@ -112,13 +112,13 @@ final class CityRecommendationViewModel {
     }
 
     /// 예산만 바꿔 컷을 다시 계산한다. LLM을 부르지 않는다. 넘긴 도시는 그대로 두고, 바뀐 만큼을 안내로 남긴다.
-    func updateBudget(_ budgetMaxKRW: Int?, catalog: CityCatalog? = CityCatalog.load()) {
+    func updateBudget(_ budgetMax: Int?, catalog: CityCatalog? = CityCatalog.load()) {
         guard let before = lastRecord else { return }
-        let previous = before.input.budgetMaxKRW
+        let previous = before.input.budgetMax
         let shown = Set(visibleCards(before).map(\.cityID))
-        guard recut(budgetMaxKRW, catalog: catalog), let now = lastRecord else { return }
+        guard recut(budgetMax, catalog: catalog), let now = lastRecord else { return }
         // 처음 예산으로 돌아오면 원본을 다시 보여주므로 바뀐 안내가 없다.
-        guard previous != budgetMaxKRW, now.derivedFrom != nil else { budgetChange = nil; return }
+        guard previous != budgetMax, now.derivedFrom != nil else { budgetChange = nil; return }
         let after = Set(visibleCards(now).map(\.cityID))
         budgetChange = BudgetChange(
             previous: previous, budget: now.input.budgetText,
@@ -127,15 +127,15 @@ final class CityRecommendationViewModel {
     }
 
     /// 항상 처음 받은 원본에서 다시 계산한다. 원본의 예산과 같으면 계산 없이 원본을 그대로 쓴다.
-    private func recut(_ budgetMaxKRW: Int?, catalog: CityCatalog?) -> Bool {
+    private func recut(_ budgetMax: Int?, catalog: CityCatalog?) -> Bool {
         guard let base = originalRecord ?? lastRecord else { return false }
         let result: CityRecommendationRecord
-        if budgetMaxKRW == base.input.budgetMaxKRW {
+        if budgetMax == base.input.budgetMax {
             result = base
         } else {
             guard let catalog,
                   let derived = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
-                    .recut(base, budgetMaxKRW: budgetMaxKRW) else { return false }
+                    .recut(base, budgetMax: budgetMax) else { return false }
             result = derived
         }
         originalRecord = result.derivedFrom == nil ? nil : base
@@ -146,8 +146,8 @@ final class CityRecommendationViewModel {
         return true
     }
 
-    func applyBudget(_ budgetMaxKRW: Int?, dependencies: AppDependencies) async {
-        updateBudget(budgetMaxKRW)
+    func applyBudget(_ budgetMax: Int?, dependencies: AppDependencies) async {
+        updateBudget(budgetMax)
         await saveRecuts(dependencies)
     }
 
@@ -218,6 +218,7 @@ final class CityRecommendationViewModel {
         let memories = CityMemoryConsent.state == .granted
             ? CityMemory.recent(from: await dependencies.allTrips())
             : []
+        let departureAirport = (try? await dependencies.store.loadProfile())?.departureAirportCode
         let usageID = cityState.retryUsageID ?? UUID().uuidString
         let isRetry = cityState.retryUsageID != nil
         if isRetry { _ = try? await dependencies.store.updateCityState { $0.retryUsageID = nil } }
@@ -227,7 +228,8 @@ final class CityRecommendationViewModel {
         do {
             let record = try await service.recommend(
                 request: request, tiers: tiers, excludedCountries: excludedCountries, excludedCities: excludedCities,
-                homeCountryExcluded: homeExcluded, homeCountry: dependencies.homeCountryCode, memories: memories
+                homeCountryExcluded: homeExcluded, homeCountry: dependencies.homeCountryCode,
+                departureAirport: departureAirport, memories: memories
             )
             guard !Task.isCancelled else { return }
             lastRecord = record

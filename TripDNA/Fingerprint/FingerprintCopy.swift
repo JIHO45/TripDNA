@@ -1,18 +1,10 @@
 import Foundation
 
-/// 한국어 조사 선택. 받침 유무만 본다.
-enum KoreanParticle {
-    static func hasFinalConsonant(_ word: String) -> Bool {
-        guard let scalar = word.unicodeScalars.last?.value, (0xAC00...0xD7A3).contains(scalar) else {
-            return true
-        }
-        return (scalar - 0xAC00) % 28 != 0
-    }
-
-    /// "미식과", "도시와"
+extension KoreanParticle {
+    /// "미식과 도시"
     static func andJoined(_ first: String, _ second: String) -> String {
         guard AppLanguage.isKorean else { return "\(first) & \(second)" }
-        return first + (hasFinalConsonant(first) ? "과 " : "와 ") + second  // l10n-ignore Korean particle, Korean path only
+        return "\(attach(first, .waGwa)) \(second)"
     }
 }
 

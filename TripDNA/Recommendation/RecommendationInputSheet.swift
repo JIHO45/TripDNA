@@ -23,12 +23,14 @@ struct RecommendationInputSheet: View {
         _request = State(initialValue: initial)
         _expanded = State(initialValue: initial.isReady ? .wants : .concept)
         _exactDates = State(initialValue: initial.startDate != nil)
-        let custom = initial.budgetMaxKRW.map { !Self.presetBudgets.contains($0) } ?? false
+        let custom = initial.budgetMax.map { !initial.budgetPresets.contains($0) } ?? false
         _customBudget = State(initialValue: custom)
-        _customBudgetText = State(initialValue: custom ? initial.budgetMaxKRW.map { String($0 / 10_000) } ?? "" : "")
+        _customBudgetText = State(initialValue: custom ? initial.budgetMax.map { String($0 / BudgetCurrency.customUnit(for: initial.budgetCurrency)) } ?? "" : "")
     }
 
-    private static var presetBudgets: [Int] { RecommendationRequest.budgetPresets }
+    /// 사는 나라로 정한 통화. 요청에 저장해 LLM·컷·표시가 같은 통화를 쓴다.
+    private var currency: String { BudgetCurrency.resolve(homeCountryCode: dependencies.homeCountryCode) }
+    private var unit: Int { BudgetCurrency.customUnit(for: currency) }
 
     private let calendar = Calendar.current
     private var thisYear: Int { calendar.component(.year, from: .now) }
@@ -92,6 +94,15 @@ struct RecommendationInputSheet: View {
             .padding(.bottom, DNASpacing.md)
         }
         .background(Color.dnaSheet.ignoresSafeArea())
+        .onAppear {
+            // 예전 통화로 저장한 금액은 사는 나라 통화와 맞지 않으면 미정으로 돌려 통화를 섞지 않는다.
+            if request.budgetMax != nil, request.budgetCurrency != currency {
+                request.budgetMax = nil
+                customBudget = false
+                customBudgetText = ""
+            }
+            request.budgetCurrency = currency
+        }
     }
 
     private func submit() {
@@ -295,22 +306,22 @@ struct RecommendationInputSheet: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    DNATagChip(title: String(localized: "TBD"), isSelected: request.budgetMaxKRW == nil && !customBudget) {
+                    DNATagChip(title: String(localized: "TBD"), isSelected: request.budgetMax == nil && !customBudget) {
                         customBudget = false
-                        request.budgetMaxKRW = nil
+                        request.budgetMax = nil
                     }
-                    ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
+                    ForEach(BudgetCurrency.presets(for: currency), id: \.self) { amount in
                         DNATagChip(
-                            title: String(localized: "Up to \(shortKRW(amount, koreanUnit: "만 원"))"), // l10n-ignore Korean amount unit
-                            isSelected: !customBudget && request.budgetMaxKRW == amount
+                            title: String(localized: "Up to \(BudgetCurrency.format(amount, currency: currency, koreanUnit: "만 원"))"), // l10n-ignore Korean amount unit
+                            isSelected: !customBudget && request.budgetMax == amount
                         ) {
                             customBudget = false
-                            request.budgetMaxKRW = amount
+                            request.budgetMax = amount
                         }
                     }
                     DNATagChip(title: String(localized: "Custom"), isSelected: customBudget) {
                         customBudget = true
-                        request.budgetMaxKRW = Int(customBudgetText).map { $0 * 10_000 }
+                        request.budgetMax = Int(customBudgetText).map { $0 * unit }
                     }
                 }
             }
@@ -319,9 +330,13 @@ struct RecommendationInputSheet: View {
                     TextField("Amount", text: $customBudgetText)
                         .keyboardType(.numberPad)
                         .onChange(of: customBudgetText) { _, text in
-                            request.budgetMaxKRW = Int(text).map { $0 * 10_000 }
+                            request.budgetMax = Int(text).map { $0 * unit }
                         }
-                    Text("× ₩10K or less").foregroundStyle(Color.dnaTextSecondary)
+                    if currency == BudgetCurrency.krw {
+                        Text("× ₩10K or less").foregroundStyle(Color.dnaTextSecondary)
+                    } else {
+                        Text(verbatim: currency).foregroundStyle(Color.dnaTextSecondary)
+                    }
                 }
                 .dnaFont(.body)
                 .padding(DNASpacing.sm)
@@ -334,10 +349,10 @@ struct RecommendationInputSheet: View {
     }
 
     private var budgetSummary: String {
-        guard let amount = request.budgetMaxKRW else { return String(localized: "TBD") }
+        guard let amount = request.budgetMax else { return String(localized: "TBD") }
         let basis = request.budgetBasis == .perPerson ? String(localized: "Per person") : String(localized: "Whole group")
         let flight = request.budgetIncludesFlight ? String(localized: "Flights included") : String(localized: "Flights excluded")
-        let amountText = shortKRW(amount, koreanUnit: "만 원") // l10n-ignore Korean amount unit
+        let amountText = BudgetCurrency.format(amount, currency: request.budgetCurrency, koreanUnit: "만 원") // l10n-ignore Korean amount unit
         return String(localized: "\(basis) · \(flight) · \(amountText)")
     }
 

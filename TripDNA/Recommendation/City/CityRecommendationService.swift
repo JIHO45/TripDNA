@@ -122,6 +122,7 @@ nonisolated struct CityRecommendationService: Sendable {
         excludedCities: Set<String> = [],
         homeCountryExcluded: Bool,
         homeCountry: String? = nil,
+        departureAirport: String? = nil,
         memories: [CityMemory] = [],
         seed: UInt64 = UInt64.random(in: .min ... .max),
         now: Date = Date()
@@ -167,7 +168,8 @@ nonisolated struct CityRecommendationService: Sendable {
             context: .init(
                 request: request, tiers: tiers, catalog: catalog, model: model,
                 excludedCountries: excludedCountries, homeCountryExcluded: homeCountryExcluded,
-                conditions: conditions, memories: memories
+                conditions: conditions, memories: memories,
+                costBasis: CityCostBasis(currency: request.budgetCurrency, airport: departureAirport, homeCountry: homeCountry)
             ),
             ranked: ranked, excludedRanked: excludedRanked, pool: pool
         )
@@ -208,7 +210,7 @@ nonisolated struct CityRecommendationService: Sendable {
 
         var selection = Selection(cards: [], cutIDs: [])
         if let parsed {
-            selection = Self.select(pool: pool, response: parsed, budget: request.budgetMaxKRW, seed: seed)
+            selection = Self.select(pool: pool, response: parsed, budget: request.budgetMax, seed: seed)
         }
         let record = CityRecommendationRecord(
             id: UUID().uuidString, derivedFrom: nil, createdAt: now, version: llmRequest.version, seed: seed,
@@ -279,17 +281,17 @@ nonisolated struct CityRecommendationService: Sendable {
         let candidates = pool.filter {
             !shown.contains($0.city.id) && !removedCities.contains($0.city.id) && !removedCountries.contains($0.city.country)
         }
-        let selection = Self.select(pool: candidates, response: response, budget: record.input.budgetMaxKRW, seed: record.seed)
+        let selection = Self.select(pool: candidates, response: response, budget: record.input.budgetMax, seed: record.seed)
         return Array(selection.cards.prefix(count))
     }
 
     /// 예산만 바꿔 컷을 다시 계산한다. 이미 받은 응답을 쓰므로 LLM을 부르지 않고 횟수도 쓰지 않는다.
     /// 원래 추천에 예산이 없어 비용 범위가 없으면 nil.
-    func recut(_ record: CityRecommendationRecord, budgetMaxKRW: Int?, now: Date = Date()) -> CityRecommendationRecord? {
+    func recut(_ record: CityRecommendationRecord, budgetMax: Int?, now: Date = Date()) -> CityRecommendationRecord? {
         guard let (pool, response) = replay(record), response.cards.allSatisfy({ $0.cost != nil }) else { return nil }
         var request = record.input
-        request.budgetMaxKRW = budgetMaxKRW
-        let selection = Self.select(pool: pool, response: response, budget: budgetMaxKRW, seed: record.seed)
+        request.budgetMax = budgetMax
+        let selection = Self.select(pool: pool, response: response, budget: budgetMax, seed: record.seed)
         let derived = CityRecommendationRecord(
             id: UUID().uuidString, derivedFrom: record.id, createdAt: now, version: record.version, seed: record.seed,
             input: request, tiers: record.tiers, excludedCountries: record.excludedCountries,

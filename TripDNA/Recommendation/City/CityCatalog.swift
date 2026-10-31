@@ -71,6 +71,16 @@ nonisolated struct CityCatalog: Codable, Equatable, Sendable {
         concepts[Self.conceptID(for: concept)] ?? []
     }
 
+    /// 여행 구간에 적힌 도시 이름(한국어·영어, 대소문자 무시)과 나라가 맞는 도시 id. 목록에 없는 이름은 버린다.
+    func cityIDs(visitedIn trips: [Trip]) -> Set<String> {
+        let visited = Set(trips.flatMap(\.legs).flatMap { leg in
+            leg.cities.map { "\(leg.countryCode)|\($0.trimmingCharacters(in: .whitespaces).lowercased())" }
+        })
+        return Set(cities.filter {
+            visited.contains("\($0.country)|\($0.ko.lowercased())") || visited.contains("\($0.country)|\($0.en.lowercased())")
+        }.map(\.id))
+    }
+
     static func load(bundle: Bundle = .main) -> CityCatalog? {
         guard let url = bundle.url(forResource: "cities", withExtension: "json"),
               let data = try? Data(contentsOf: url) else { return nil }

@@ -694,6 +694,42 @@ struct CityStateTests {
         #expect(!derived.poolCityIDs.contains(first))
     }
 
+    @Test func visitedCitiesMatchByNameAndCountryOnly() throws {
+        let cat = CityRankerTests.catalog([
+            City(id: "jp-osaka", ko: "오사카", en: "Osaka", country: "JP", grades: [:], season: [:], seasonUnverified: []),
+            City(id: "jp-kyoto", ko: "교토", en: "Kyoto", country: "JP", grades: [:], season: [:], seasonUnverified: []),
+            City(id: "jp-tokyo", ko: "도쿄", en: "Tokyo", country: "JP", grades: [:], season: [:], seasonUnverified: [])
+        ])
+        let day = Date(timeIntervalSince1970: 0)
+        let trip = try Trip(legs: [
+            TripLeg(countryCode: "JP", cities: ["오사카", " kyoto "], startDate: day, endDate: day),
+            TripLeg(countryCode: "KR", cities: ["Tokyo"], startDate: day, endDate: day)
+        ], companion: .alone, purpose: .leisure)
+        // 같은 나라의 다른 도시(도쿄)는 빼지 않고, 나라가 다른 같은 이름도 맞추지 않는다.
+        #expect(cat.cityIDs(visitedIn: [trip]) == ["jp-osaka", "jp-kyoto"])
+    }
+
+    @Test @MainActor func cityImpressionsAreLocalOncePerResultAndKeepPosition() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let record = try await Self.record(dir: dir)
+        let card = try #require(record.cards.last)
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let store = try #require(dependencies.store as? SwiftDataAppStore)
+        let exposure = RecommendationExposure(record: record)
+        #expect(try await store.events().filter { $0.type == .recommendationImpression }.isEmpty)
+        await exposure.record(card, screen: "cards", position: 2, dependencies: dependencies)
+        await exposure.record(card, screen: "cards", position: 2, dependencies: dependencies)
+        let events = try await store.events().filter { $0.type == .recommendationImpression }
+        #expect(events.count == 1)
+        #expect(events.first?.payload["resultID"] == record.id)
+        #expect(events.first?.payload["cityID"] == card.cityID)
+        #expect(events.first?.payload["position"] == "2")
+        #expect(events.first?.payload["catalogVersion"] == record.version.catalog)
+        try await store.deleteAllUserData()
+        #expect(try await store.events().isEmpty)
+    }
+
     @Test func rankerSkipsExcludedCities() throws {
         let cat = CityRankerTests.catalog([
             CityRankerTests.city("a", grades: ["dining": .choose]),

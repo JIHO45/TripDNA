@@ -32,6 +32,15 @@ final class CityRecommendationViewModel {
     /// 마지막으로 요청한 조건. 실패했을 때 다시 시도에 쓴다.
     private(set) var lastRequest: RecommendationRequest?
     private var task: Task<Void, Never>?
+    @ObservationIgnored private var exposure: RecommendationExposure?
+
+    /// 카드가 절반 이상 보였을 때 부른다. 결과가 바뀌면 새 노출 묶음을 연다.
+    func recordExposure(_ card: CityRecommendationRecord.Card, screen: String, position: Int, dependencies: AppDependencies) {
+        guard case .done(let record) = state else { return }
+        if exposure?.id != record.id { exposure = RecommendationExposure(record: record) }
+        guard let exposure else { return }
+        Task { await exposure.record(card, screen: screen, position: position, dependencies: dependencies) }
+    }
 
     /// "이렇게 이해했어요"를 펼쳐 보일지. 새 결과는 펼쳐서 시작하고, 접은 적 있는 결과를 복원하면 접힌 채로 시작한다.
     private(set) var understandingExpanded = true
@@ -181,17 +190,17 @@ final class CityRecommendationViewModel {
         state = .loading
         let tiers = (try? await dependencies.store.loadWantedTiers()) ?? WantedConceptTiers()
         var excludedCountries = Set<String>()
-        if !request.includeVisited {
-            excludedCountries.formUnion(await dependencies.allTrips().flatMap { $0.legs.map(\.countryCode) })
-        }
         excludedCountries.formUnion((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
         let homeExcluded = dependencies.homeCountryCode != nil && !request.includeHomeCountry
         if homeExcluded, let home = dependencies.homeCountryCode { excludedCountries.insert(home) }
         // 제외 목록을 읽지 못하면 제외한 도시가 다시 나올 수 있으므로 추천을 받지 않는다.
-        guard let excludedCities = try? await dependencies.store.cityState().excludedCityIDs else {
+        guard let storedExcludedCities = try? await dependencies.store.cityState().excludedCityIDs else {
             state = .failed("제외한 도시를 읽지 못했어요. 다시 시도해 주세요.")
             return
         }
+        // 다녀온 곳은 도시 단위로 뺀다. 나라에 다녀왔다고 그 나라의 다른 도시까지 빼지 않는다.
+        let visitedCities = request.includeVisited ? [] : catalog.cityIDs(visitedIn: await dependencies.allTrips())
+        let excludedCities = storedExcludedCities.union(visitedCities)
 
         let memories = CityMemoryConsent.state == .granted
             ? CityMemory.recent(from: await dependencies.allTrips())

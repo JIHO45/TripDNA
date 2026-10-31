@@ -297,7 +297,7 @@ struct CityRecommendationSection: View {
             Text("꼭 지킬 조건을 아직 확인하지 못해 위 추천과 섞지 않았어요.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
-            ForEach(cards, id: \.cityID) { card in
+            ForEach(Array(cards.enumerated()), id: \.element.cityID) { index, card in
                 HStack(spacing: 0) {
                 NavigationLink {
                     CityDetailView(card: card, conditionSummary: request.summaryText, request: request, savedAt: nil)
@@ -323,6 +323,9 @@ struct CityRecommendationSection: View {
                 CityCardMenu(card: card, model: model)
                 }
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+                .onScrollVisibilityChange(threshold: 0.5) { visible in
+                    if visible { model.recordExposure(card, screen: "check", position: index + 1, dependencies: dependencies) }
+                }
             }
         }
     }
@@ -373,9 +376,12 @@ private struct CityCardCarousel: View {
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DNASpacing.sm) {
-                    ForEach(cards, id: \.cityID) { card in
+                    ForEach(Array(cards.enumerated()), id: \.element.cityID) { index, card in
                         CityCardView(card: card, model: model, request: request)
                             .containerRelativeFrame(.horizontal) { width, _ in width }
+                            .onScrollVisibilityChange(threshold: 0.5) { visible in
+                                if visible { model.recordExposure(card, screen: "cards", position: index + 1, dependencies: dependencies) }
+                            }
                             .id(card.cityID)
                     }
                 }
@@ -973,18 +979,20 @@ struct CityConditionEditSheet: View {
                 Text("예산 (최대 금액)")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                DNAFlowLayout(spacing: 8) {
-                    DNATagChip(title: "미정", isSelected: budget == nil && !isCustom) {
-                        isCustom = false
-                        budget = nil
-                    }
-                    ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
-                        DNATagChip(title: "\(amount / 10_000)만 원 이하", isSelected: !isCustom && budget == amount) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        DNATagChip(title: "미정", isSelected: budget == nil && !isCustom) {
                             isCustom = false
-                            budget = amount
+                            budget = nil
                         }
+                        ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
+                            DNATagChip(title: "\(amount / 10_000)만 원 이하", isSelected: !isCustom && budget == amount) {
+                                isCustom = false
+                                budget = amount
+                            }
+                        }
+                        DNATagChip(title: "직접 입력", isSelected: isCustom) { isCustom = true }
                     }
-                    DNATagChip(title: "직접 입력", isSelected: isCustom) { isCustom = true }
                 }
                 if isCustom {
                     HStack {

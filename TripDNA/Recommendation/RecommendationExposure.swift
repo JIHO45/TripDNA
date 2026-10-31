@@ -1,67 +1,49 @@
-import CryptoKit
 import Foundation
 
-/// A displayed set's frozen inputs. Constructing it does not record an exposure.
+/// 받은 도시 추천 결과 하나의 노출 기록. 만들기만 해서는 노출이 아니고, 카드가 절반 이상 보일 때 `record`한다.
+/// 결과마다 도시당 한 번, 기기에만 남긴다(docs/evaluation/metrics.md). 요청 문장·메모는 넣지 않는다.
 final class RecommendationExposure {
-    let id = UUID().uuidString
-    private let source: String
-    private let cards: [Recommendation]
+    /// 노출을 묶는 결과 id. 예산만 바꿔 다시 계산한 결과는 새 id다.
+    let id: String
     private let context: [String: String]
     private var recorded: Set<String> = []
 
-    init(source: String, cards: [Recommendation], vector: UserTasteVector,
-         interests: Set<String>, excludedCountries: Set<String>,
-         homeCountry: String?, budget: String? = nil) {
-        self.source = source
-        self.cards = cards
+    init(record: CityRecommendationRecord) {
+        id = record.id
         context = [
-            "schemaVersion": "1",
-            "modelVersion": RecommendationService.modelVersion,
-            "countryDataVersion": Self.countryDataVersion,
-            "source": source,
-            "orderedCards": Self.json(cards),
-            "tasteAxes": Self.json(vector.axes),
-            "axisConfidence": Self.json(vector.confidence),
-            "acceptedAxes": Self.json((vector.acceptedAxes ?? []).map(\.rawValue).sorted()),
-            "ledgerVersion": String(vector.ledgerVersion),
-            "interestTagIDs": Self.json(interests.sorted()),
-            "excludedCountryCodes": Self.json(excludedCountries.sorted()),
-            "homeCountryCode": homeCountry ?? "unspecified",
-            "budget": budget ?? "unspecified",
-            "travelDates": "not_collected",
-            "duration": "not_collected",
-            "companion": "not_collected",
-            "visibilityRule": "at_least_half_visible_once_per_set"
+            "schemaVersion": "2",
+            "source": "city",
+            "resultID": record.id,
+            "derivedFrom": record.derivedFrom ?? "none",
+            "catalogVersion": record.version.catalog,
+            "promptVersion": record.version.prompt,
+            "rankingVersion": record.version.ranking,
+            "model": record.version.model,
+            "primaryConcept": record.input.primary?.rawValue ?? "unspecified",
+            "secondaryConcepts": record.input.secondary.map(\.rawValue).joined(separator: ","),
+            "budgetMaxKRW": record.input.budgetMaxKRW.map(String.init) ?? "unspecified",
+            "includeVisited": String(record.input.includeVisited),
+            "excludedCountryCodes": record.excludedCountries.sorted().joined(separator: ","),
+            "excludedCityCount": String(record.excludedCityIDs?.count ?? 0),
+            "homeCountryCode": record.homeCountryAtRequest ?? "unspecified",
+            "visibilityRule": "at_least_half_visible_once_per_result"
         ]
     }
 
-    func record(_ card: Recommendation, dependencies: AppDependencies) async {
-        guard let index = cards.firstIndex(where: { $0.id == card.id }),
-              recorded.insert(card.id).inserted else { return }
+    /// `screen`은 카드가 놓인 곳(cards: 추천 카드, check: 추가 확인 필요), `position`은 그 안의 1부터 시작하는 순서.
+    func record(_ card: CityRecommendationRecord.Card, screen: String, position: Int, dependencies: AppDependencies) async {
+        guard recorded.insert(card.cityID).inserted else { return }
         var payload = context
-        payload["exposureSetID"] = id
-        payload["countryCode"] = card.countryCode
-        payload["slot"] = card.slot.rawValue
-        payload["position"] = String(index + 1)
+        payload["cityID"] = card.cityID
+        payload["countryCode"] = card.country
+        payload["screen"] = screen
+        payload["position"] = String(position)
+        payload["isExploration"] = String(card.isExploration)
         do {
-            // Bypass AnalyticsSink: this history stays on this device.
+            // AnalyticsSink를 거치지 않는다: 이 기록은 기기에만 남는다.
             try await dependencies.store.append(AnalyticsEvent(type: .recommendationImpression, payload: payload))
-            await dependencies.recordFirstRecommendationIfNeeded(source: source)
         } catch {
-            recorded.remove(card.id)
+            recorded.remove(card.cityID)
         }
     }
-
-    private static func json<T: Encodable>(_ value: T) -> String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        guard let data = try? encoder.encode(value), let text = String(data: data, encoding: .utf8) else { return "null" }
-        return text
-    }
-
-    private static let countryDataVersion: String = {
-        guard let url = Bundle.main.url(forResource: "countries", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else { return "unavailable" }
-        return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-    }()
 }

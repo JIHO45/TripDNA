@@ -285,23 +285,25 @@ struct RecommendationInputSheet: View {
                 request.budgetIncludesFlight = $0
             }
 
-            DNAFlowLayout(spacing: 8) {
-                DNATagChip(title: "미정", isSelected: request.budgetMaxKRW == nil && !customBudget) {
-                    customBudget = false
-                    request.budgetMaxKRW = nil
-                }
-                ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
-                    DNATagChip(
-                        title: "\(amount / 10_000)만 원 이하",
-                        isSelected: !customBudget && request.budgetMaxKRW == amount
-                    ) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    DNATagChip(title: "미정", isSelected: request.budgetMaxKRW == nil && !customBudget) {
                         customBudget = false
-                        request.budgetMaxKRW = amount
+                        request.budgetMaxKRW = nil
                     }
-                }
-                DNATagChip(title: "직접 입력", isSelected: customBudget) {
-                    customBudget = true
-                    request.budgetMaxKRW = Int(customBudgetText).map { $0 * 10_000 }
+                    ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
+                        DNATagChip(
+                            title: "\(amount / 10_000)만 원 이하",
+                            isSelected: !customBudget && request.budgetMaxKRW == amount
+                        ) {
+                            customBudget = false
+                            request.budgetMaxKRW = amount
+                        }
+                    }
+                    DNATagChip(title: "직접 입력", isSelected: customBudget) {
+                        customBudget = true
+                        request.budgetMaxKRW = Int(customBudgetText).map { $0 * 10_000 }
+                    }
                 }
             }
             if customBudget {
@@ -336,9 +338,15 @@ struct RecommendationInputSheet: View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             field("특히 원하는 점", text: $request.wants, placeholder: "예: 비행 5시간 이내")
             field("피하고 싶은 점", text: $request.avoids, placeholder: "예: 너무 붐비는 곳, 우기")
-            Toggle("다녀온 도시도 포함", isOn: $request.includeVisited)
-                .dnaFont(.body)
-                .tint(Color.dnaAction)
+            Toggle(isOn: $request.includeVisited) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("다녀온 도시도 포함").dnaFont(.body)
+                    Text("끄면 기록에서 확인되는 방문 도시를 제외해요")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextSecondary)
+                }
+            }
+            .tint(Color.dnaAction)
             if dependencies.canIncludeHomeCountry {
                 Toggle(isOn: $request.includeHomeCountry) {
                     VStack(alignment: .leading, spacing: 2) {

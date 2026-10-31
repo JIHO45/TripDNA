@@ -440,14 +440,15 @@ struct TripRegistrationView: View {
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextTertiary)
                     }
+                    // 시안: 펼친 단계는 큰 질문 제목, 접힌 단계는 회색 이름 + 오른쪽 굵은 값(추천 입력 시트와 같음).
                     Text(title)
-                        .dnaFont(.cardTitle)
-                        .foregroundStyle(Color.dnaTextPrimary)
+                        .dnaFont(isOpen ? .stepTitle : .body)
+                        .foregroundStyle(isOpen ? Color.dnaTextPrimary : Color.dnaTextSecondary)
                     Spacer(minLength: DNASpacing.xs)
                     if !isOpen {
                         Text(summary ?? "미정")
-                            .dnaFont(.caption)
-                            .foregroundStyle(summary == nil ? Color.dnaTextTertiary : Color.dnaTextSecondary)
+                            .dnaFont(.cardTitle)
+                            .foregroundStyle(summary == nil ? Color.dnaTextTertiary : Color.dnaTextPrimary)
                             .lineLimit(1)
                     }
                     Image(systemName: isOpen ? "chevron.up" : "chevron.down")

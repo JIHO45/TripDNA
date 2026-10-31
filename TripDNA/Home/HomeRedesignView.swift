@@ -9,6 +9,7 @@ struct HomeRedesignView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var viewModel = HomeViewModel()
     @State private var showingProfile = false
     @State private var showingRegistration = false
@@ -150,7 +151,7 @@ struct HomeRedesignView: View {
                 Spacer()
             }
             .padding(12)
-            HStack(alignment: .center, spacing: DNASpacing.sm) {
+            bottomBarLayout {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(HomeViewModel.placeName(trip))
                         .dnaFont(.heroTitle)
@@ -159,7 +160,7 @@ struct HomeRedesignView: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
-                Spacer(minLength: 0)
+                if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 0) }
                 NavigationLink {
                     DailyPhotoView(trip: trip)
                 } label: {
@@ -178,11 +179,19 @@ struct HomeRedesignView: View {
                 }
                 .buttonStyle(.dnaDark)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
             .dnaGlass(in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             .padding(10)
         }
         .clipShape(RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
+    }
+
+    /// 여행 카드 아래 막대. 큰 글자에서는 버튼 라벨이 줄바꿈되지 않게 제목과 버튼을 세로로 쌓는다.
+    private var bottomBarLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DNASpacing.sm))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: DNASpacing.sm))
     }
 
     private func upcomingCard(_ trip: Trip, days: Int) -> some View {
@@ -206,7 +215,7 @@ struct HomeRedesignView: View {
                 Spacer()
             }
             .padding(12)
-            HStack(alignment: .center, spacing: DNASpacing.sm) {
+            bottomBarLayout {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(HomeViewModel.placeName(trip))
                         .dnaFont(.heroTitle)
@@ -215,7 +224,7 @@ struct HomeRedesignView: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
-                Spacer(minLength: 0)
+                if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 0) }
                 NavigationLink {
                     TripDetailView(tripID: trip.id)
                 } label: {
@@ -223,6 +232,7 @@ struct HomeRedesignView: View {
                 }
                 .buttonStyle(.dnaDark)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
             .background(Color.dnaCanvas, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             .padding(10)
@@ -287,20 +297,27 @@ struct HomeRedesignView: View {
     private var wantedChoiceCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             // 컨셉 10개를 보여줘 무엇을 고르는지 알리고, 어느 칩을 눌러도 "원하는 여행"에서 칸을 고른다. 미리 고르지 않는다.
-            DNAFlowLayout(spacing: 8) {
-                ForEach(TripConcept.displayOrder, id: \.self) { concept in
-                    NavigationLink {
-                        WantedTripsSettingsView()
-                    } label: {
-                        Text(concept.labelKo)
-                            .dnaFont(.caption)
-                            .foregroundStyle(Color.dnaTextPrimary)
-                            .padding(.horizontal, 14)
-                            .frame(minHeight: 36)
-                            .background(Color.dnaRaised, in: Capsule())
-                            .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
+            let half = (TripConcept.displayOrder.count + 1) / 2
+            ScrollView(.horizontal, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach([Array(TripConcept.displayOrder.prefix(half)), Array(TripConcept.displayOrder.dropFirst(half))], id: \.self) { row in
+                        HStack(spacing: 8) {
+                            ForEach(row, id: \.self) { concept in
+                                NavigationLink {
+                                    WantedTripsSettingsView()
+                                } label: {
+                                    Text(concept.labelKo)
+                                        .dnaFont(.caption)
+                                        .foregroundStyle(Color.dnaTextPrimary)
+                                        .padding(.horizontal, 14)
+                                        .frame(minHeight: 36)
+                                        .background(Color.dnaRaised, in: Capsule())
+                                        .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
             VStack(alignment: .leading, spacing: 4) {

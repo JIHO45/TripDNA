@@ -129,29 +129,6 @@ struct TasteEvidenceTests {
         #expect(try await service.generateThreeSlots(vector: vector(), interestTagIDs: [], visitedCountryCodes: []).isEmpty)
     }
 
-    @Test @MainActor func impressionsAreLocalDeduplicatedAndKeepDisplayOrder() async throws {
-        let sink = CapturingSink()
-        let dependencies = AppDependencies(persistence: .inMemory, analyticsSink: sink)
-        let first = card("JP", slot: .bestMatch)
-        let second = card("PT", slot: .freshStretch)
-        let exposure = RecommendationExposure(source: "test", cards: [first, second], vector: vector(),
-            interests: ["food"], excludedCountries: ["KR"], homeCountry: "KR", budget: "low")
-        let store = try #require(dependencies.store as? SwiftDataAppStore)
-        #expect(try await store.events().filter { $0.type == .recommendationImpression }.isEmpty)
-        // The second card can become visible first; position is still its display order.
-        await exposure.record(second, dependencies: dependencies)
-        await exposure.record(second, dependencies: dependencies)
-        let events = try await store.events().filter { $0.type == .recommendationImpression }
-        #expect(events.count == 1)
-        #expect(events.first?.payload["position"] == "2")
-        #expect(events.first?.payload["budget"] == "low")
-        #expect(events.first?.payload["modelVersion"] == RecommendationService.modelVersion)
-        #expect(events.first?.payload["countryDataVersion"]?.count == 64)
-        #expect(!sink.events.contains { $0.type == .recommendationImpression })
-        try await store.deleteAllUserData()
-        #expect(try await store.events().isEmpty)
-    }
-
     private func vector() -> UserTasteVector {
         UserTasteVector(userID: "u", axes: .zero,
             confidence: TasteAxes(natureUrban: 0.7, energyLevel: 0.7, planningStyle: 0.7,
@@ -163,16 +140,4 @@ struct TasteEvidenceTests {
             tasteCore: TasteAxes(natureUrban: nature, energyLevel: 0, planningStyle: 0, socialMode: 0, noveltyAppetite: 0),
             matchingAxes: [.natureUrban], interestTags: [:], constraints: .init(cost: 0.5, climate: 0.5), popularity: 0.5)
     }
-
-    private func card(_ code: String, slot: RecommendationSlot) -> Recommendation {
-        Recommendation(countryCode: code, slot: slot, matchScore: 0.6, explanationTagIDs: [],
-            rankingAnchorTripID: nil, fitBadges: [], notices: [])
-    }
-}
-
-private final class CapturingSink: AnalyticsSink, @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage: [AnalyticsEvent] = []
-    var events: [AnalyticsEvent] { lock.withLock { storage } }
-    func send(_ event: AnalyticsEvent) { lock.withLock { storage.append(event) } }
 }

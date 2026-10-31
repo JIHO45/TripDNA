@@ -42,8 +42,8 @@ struct WrappedStoryView: View {
         .sheet(isPresented: $showingShare) {
             ShareCardSheet(
                 kind: .wrapped,
-                title: "공유 미리보기",
-                disclosure: "포함: 여행 수, 가장 많이 떠난 컨셉 · 빠짐: 날짜, 도시, 동행, 사진",
+                title: String(localized: "Share Preview"),
+                disclosure: String(localized: "Included: trip count, most-taken concept · Left out: dates, cities, companions, photos"),
                 allowsDestinationNames: true
             ) { showsDestinationNames in
                 WrappedShareCardView(wrapped: wrapped, showsDestinationNames: showsDestinationNames)
@@ -98,14 +98,14 @@ struct WrappedStoryView: View {
                     .frame(width: 44, height: 44)
                     .contentShape(Circle())
             }
-            .accessibilityLabel("닫기")
+            .accessibilityLabel("Close")
         }
     }
 
     private var yearLabel: String {
-        guard wrapped.isInProgress else { return "\(wrapped.year)년" }
-        let parts = Calendar.current.dateComponents([.month, .day], from: Date())
-        return "\(wrapped.year)년 · \(parts.month ?? 12)월 \(parts.day ?? 1)일까지"
+        let year = WrappedYear.yearText(wrapped.year)
+        guard wrapped.isInProgress else { return year }
+        return String(localized: "\(year) · through \(Date().formatted(.dateTime.month().day()))")
     }
 
     // MARK: 카드
@@ -142,8 +142,8 @@ struct WrappedStoryView: View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
             Spacer().frame(height: 80)
             kicker(wrapped.periodKo)
-            bigText("\(wrapped.tripCount)번\n떠났어요")
-            Text("나라 \(wrapped.countryCount)곳 · 도시 \(wrapped.cityCount)곳")
+            bigText(String(localized: "You took\n\(wrapped.tripCount) trips"))
+            Text("\(wrapped.countryCount) countries · \(wrapped.cityCount) cities")
                 .dnaFont(size: 17, weight: .bold)
                 .opacity(0.9)
                 .padding(.top, 8)
@@ -154,12 +154,12 @@ struct WrappedStoryView: View {
                         TripPhotoImage(storagePath: row.coverPath ?? "")
                             .frame(height: 64)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        Text("\(row.month)월").dnaFont(size: 11).opacity(0.7)
+                        Text(WrappedYear.monthLabel(row.month)).dnaFont(size: 11).opacity(0.7)
                     }
                     .frame(maxWidth: .infinity)
                 }
             }
-            footnote("확인된 방문지만 셌어요 · 출장은 여행 수에 넣지 않았어요")
+            footnote(String(localized: "Only confirmed visits are counted · Business trips are not included in trip totals"))
         }
     }
 
@@ -167,10 +167,10 @@ struct WrappedStoryView: View {
     private var topTrip: some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
             Spacer()
-            kicker("\(wrapped.yearWordKo)의 1위 여행")
+            kicker(String(localized: "\(wrapped.yearWordKo)'s top trip").capitalizingFirst)
             bigText(wrapped.topTrip?.place ?? "", size: 44)
             Text(wrapped.topTrip?.detail ?? "").dnaFont(size: 15, weight: .bold).opacity(0.9)
-            footnote("여행 탭 랭킹에서 \(wrapped.yearWordKo) 여행 중 가장 위에 둔 여행이에요").padding(.top, DNASpacing.sm)
+            footnote(String(localized: "The trip you placed at the top of your Trips tab ranking for \(wrapped.yearWordKo)")).padding(.top, DNASpacing.sm)
         }
     }
 
@@ -186,7 +186,7 @@ struct WrappedStoryView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(fingerprint.entries.prefix(4), id: \.concept) { entry in
                         HStack(spacing: 10) {
-                            Text(entry.concept.labelKo)
+                            Text(entry.concept.label)
                                 .dnaFont(size: 13, weight: .bold)
                                 .frame(width: 64, alignment: .leading)
                             ForEach(0..<min(entry.count, 6), id: \.self) { _ in
@@ -200,8 +200,8 @@ struct WrappedStoryView: View {
                 .accessibilityHidden(true)
             }
             footnote(wrapped.isSingleTrip
-                ? "\(wrapped.yearWordKo) 여행이 한 번이라 순위나 비교 없이 보여드려요"
-                : "여행마다 고른 주 컨셉을 센 거예요 · 성격 진단이 아니에요")
+                ? String(localized: "With just one trip for \(wrapped.yearWordKo), there are no rankings or comparisons")
+                : String(localized: "Counted from the main concept you chose for each trip · Not a personality test"))
         }
     }
 
@@ -209,7 +209,7 @@ struct WrappedStoryView: View {
     private var concepts: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             Spacer().frame(height: 8)
-            Text("\(wrapped.yearWordKo)의 여행들").dnaFont(size: 30, weight: .heavy)
+            Text(String(localized: "\(wrapped.yearWordKo)'s trips").capitalizingFirst).dnaFont(size: 30, weight: .heavy)
             // ponytail: 여덟 번째 이후 여행은 줄이지 않고 자른다. 스크롤을 넣으려면 탭 이동과 제스처를 나눠야 한다.
             VStack(spacing: 10) {
                     ForEach(wrapped.rows.prefix(8)) { row in
@@ -218,11 +218,11 @@ struct WrappedStoryView: View {
                                 .frame(width: 48, height: 64)
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(row.month)월").dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+                                Text(WrappedYear.monthLabel(row.month)).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
                                 Text(row.place).dnaFont(.sectionTitle)
                             }
                             Spacer(minLength: 0)
-                            Text(row.concept?.labelKo ?? "고르지 않음")
+                            Text(row.concept?.label ?? String(localized: "Not chosen"))
                                 .dnaFont(.caption)
                                 .padding(.horizontal, 10)
                                 .frame(minHeight: 28)
@@ -233,7 +233,7 @@ struct WrappedStoryView: View {
                         .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                     }
             }
-            Text("컨셉을 안 고른 여행은 \"고르지 않음\"으로 보여요")
+            Text("Trips without a concept show as \"Not chosen\"")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
@@ -243,7 +243,7 @@ struct WrappedStoryView: View {
     private var photos: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             Spacer().frame(height: 8)
-            Text(wrapped.photos.isEmpty ? "\(wrapped.yearWordKo) 남긴 한 장이\n아직 없어요" : "하루 한 장으로\n남긴 \(wrapped.photos.count)개의 순간")
+            Text(wrapped.photos.isEmpty ? String(localized: "No daily photo yet\nfor \(wrapped.yearWordKo)") : String(localized: "\(wrapped.photos.count) moments saved\nas daily photos"))
                 .dnaFont(size: 30, weight: .heavy)
             if !wrapped.photos.isEmpty {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
@@ -256,7 +256,7 @@ struct WrappedStoryView: View {
                 }
             }
             Spacer()
-            footnote("이 사진들은 이 화면에서만 보여요. 공유 카드에는 들어가지 않아요.")
+            footnote(String(localized: "These photos only appear on this screen. They aren't included in the share card."))
         }
     }
 
@@ -264,16 +264,16 @@ struct WrappedStoryView: View {
     private var finish: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             Spacer().frame(height: 40)
-            Text("\(wrapped.periodKo)의\n여행 기록")
+            Text(wrapped.isInProgress ? String(localized: "Your travel record\nso far this year") : String(localized: "Your travel record\nfor \(wrapped.periodKo)"))
                 .dnaFont(size: 30, weight: .heavy)
             VStack(alignment: .leading, spacing: 10) {
-                summaryLine("여행", "\(wrapped.tripCount)번")
-                summaryLine("나라", "\(wrapped.countryCount)곳")
+                summaryLine(String(localized: "Trips"), String(localized: "\(wrapped.tripCount) total"))
+                summaryLine(String(localized: "Countries"), String(localized: "\(wrapped.countryCount) visited"))
                 if let fingerprint = wrapped.fingerprint, !wrapped.isSingleTrip {
-                    summaryLine(fingerprint.isTie ? "같이 많이" : "가장 많이 떠난 여행", fingerprint.topCountedKo ?? fingerprint.top.map(\.labelKo).joined(separator: " · "))
+                    summaryLine(fingerprint.isTie ? String(localized: "Tied for most") : String(localized: "Most-taken trip type"), fingerprint.topCountedKo ?? fingerprint.top.map(\.label).joined(separator: " · "))
                 }
                 if let topTrip = wrapped.topTrip {
-                    summaryLine("1위 여행", topTrip.place)
+                    summaryLine(String(localized: "Top trip"), topTrip.place)
                 }
             }
             .padding(18)
@@ -283,14 +283,14 @@ struct WrappedStoryView: View {
             Button {
                 showingShare = true
             } label: {
-                Text("공유 카드 만들기")
+                Text("Create Share Card")
                     .dnaFont(.button)
                     .foregroundStyle(Color.dnaInk)
                     .frame(maxWidth: .infinity, minHeight: 54)
                     .background(Color.white, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
             .accessibilityIdentifier("wrapped.sharePreview")
-            Button("처음부터 보기") {
+            Button("Start Over") {
                 withAnimation(.easeOut(duration: 0.3)) { index = 0 }
             }
             .dnaFont(.button)

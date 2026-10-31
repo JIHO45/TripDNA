@@ -102,7 +102,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
 
     /// 한도 소진 안내. 다시 채워지는 시각은 기기 시간대로 보여준다(예: 한국이면 12월 1일 오전 9:00).
     static func quotaMessage(_ what: String, resetAt: Date) -> String {
-        "이번 달 무료 \(what)을 다 썼어요. \(resetAt.formatted(.dateTime.month().day().hour().minute()))에 다시 채워져요."
+        String(localized: "You've used up this month's free \(what). It refills on \(resetAt.formatted(.dateTime.month().day().hour().minute())).")
     }
 }
 

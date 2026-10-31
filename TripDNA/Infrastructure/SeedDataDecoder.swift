@@ -43,6 +43,7 @@ nonisolated struct SeedDataDecoder {
             return TagDefinition(
                 id: id,
                 labelKo: seed.labelKo,
+                labelEn: seed.labelEn,
                 group: seed.group,
                 routing: Set(seed.routing),
                 axisSignature: signature,
@@ -88,6 +89,7 @@ private struct CountryTasteCoreSeed: Decodable {
 
 private struct TagSeed: Decodable {
     let labelKo: String
+    let labelEn: String
     let group: TagGroup
     let routing: [TagRouting]
     let axisSignature: [String: Double]?
@@ -97,6 +99,7 @@ private struct TagSeed: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case labelKo
+        case labelEn
         case group
         case routing
         case axisSignature

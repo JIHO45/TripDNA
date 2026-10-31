@@ -76,9 +76,9 @@ final class RankingViewModel {
             baselineAxes = result.vector.axes
             savedOrder = order
             RankingReorderFlag.mark()
-            saveMessage = "이 순서로 저장했어요."
+            saveMessage = String(localized: "Order saved.")
         } else {
-            saveMessage = "저장하지 못했어요. 다시 시도해주세요."
+            saveMessage = String(localized: "Couldn’t save. Please try again.")
         }
     }
 }

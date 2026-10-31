@@ -11,7 +11,8 @@ enum KoreanParticle {
 
     /// "미식과", "도시와"
     static func andJoined(_ first: String, _ second: String) -> String {
-        first + (hasFinalConsonant(first) ? "과 " : "와 ") + second
+        guard AppLanguage.isKorean else { return "\(first) & \(second)" }
+        return first + (hasFinalConsonant(first) ? "과 " : "와 ") + second  // l10n-ignore Korean particle, Korean path only
     }
 }
 
@@ -19,14 +20,14 @@ enum KoreanParticle {
 /// (docs/screens/home-and-fingerprint.md "취향 지문").
 extension ConceptFingerprint {
     /// 셋 이상 동점이면 이름 대신 "N가지". 이름은 함께 보이는 막대 목록에 이미 나온다.
-    var topCountedKo: String? { top.count >= 3 ? "\(top.count)가지" : nil }
+    var topCountedKo: String? { top.count >= 3 ? String(localized: "\(top.count) types") : nil }
 
     /// 1위 컨셉 이름. 동점이면 둘은 "X와 Y", 셋 이상은 "N가지".
     var topNamesKo: String {
         if let topCountedKo { return topCountedKo }
-        let names = top.map(\.labelKo)
+        let names = top.map(\.label)
         if names.count == 2 { return KoreanParticle.andJoined(names[0], names[1]) }
-        return names.joined(separator: "·")
+        return names.joined(separator: AppLanguage.isKorean ? "·" : ", ")
     }
 
     var isTie: Bool { top.count > 1 }
@@ -34,15 +35,15 @@ extension ConceptFingerprint {
 
     /// 홈 지문 카드: "6번 중 3번이 미식 여행이었어요".
     var homeHeadlineKo: String {
-        if isSingleTrip { return "첫 기록은 \(topNamesKo) 여행이에요" }
-        if isTie { return "\(topNamesKo) 여행을 \(topCount)번씩 떠났어요" }
-        return "\(total)번 중 \(topCount)번이 \(topNamesKo) 여행이었어요"
+        if isSingleTrip { return String(localized: "Your first trip is \(topNamesKo)") }
+        if isTie { return String(localized: "Took \(topCount) trips each: \(topNamesKo)") }
+        return String(localized: "\(topCount) of \(total) trips were \(topNamesKo)")
     }
 
     /// 지문 상세: "가장 많이 떠난 건 미식 여행이에요".
     var detailHeadlineKo: String {
-        if isSingleTrip { return "첫 기록은 \(topNamesKo) 여행이에요" }
-        if isTie { return "\(topNamesKo) 여행을 \(topCount)번씩 떠났어요" }
-        return "가장 많이 떠난 건 \(topNamesKo) 여행이에요"
+        if isSingleTrip { return String(localized: "Your first trip is \(topNamesKo)") }
+        if isTie { return String(localized: "Took \(topCount) trips each: \(topNamesKo)") }
+        return String(localized: "Your top trip type is \(topNamesKo)")
     }
 }

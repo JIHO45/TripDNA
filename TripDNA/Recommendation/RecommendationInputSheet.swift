@@ -37,7 +37,7 @@ struct RecommendationInputSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("새 여행 추천")
+                Text("New Trip Recommendation")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
@@ -48,7 +48,7 @@ struct RecommendationInputSheet: View {
                         .frame(width: 40, height: 40)
                         .background(Color.dnaRaised, in: Circle())
                 }
-                .accessibilityLabel("닫기")
+                .accessibilityLabel("Close")
             }
             .padding(.horizontal, DNASpacing.md)
             .padding(.vertical, DNASpacing.xs)
@@ -56,14 +56,14 @@ struct RecommendationInputSheet: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: DNASpacing.xs) {
-                        stepCard(.concept, label: "여행 컨셉", value: conceptSummary, title: "어떤 여행인가요?", subtitle: "가장 하고 싶은 것 하나") { conceptBody }
+                        stepCard(.concept, label: String(localized: "Trip Concept"), value: conceptSummary, title: String(localized: "What kind of trip?"), subtitle: String(localized: "Pick the one you want most")) { conceptBody }
                             .overlay(
                                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                                     .strokeBorder(Color.dnaAction, lineWidth: highlightConcept ? 2 : 0)
                             )
-                        stepCard(.when, label: "언제 · 얼마나", value: whenSummary, title: "언제, 얼마나?", subtitle: nil, accessory: AnyView(exactDatesToggle)) { whenBody }
-                        stepCard(.budget, label: "예산", value: budgetSummary, title: "예산은 얼마까지?", subtitle: "최대 금액이에요") { budgetBody }
-                        stepCard(.wants, label: "이번 여행에서는", value: wantsSummary, title: "이번 여행에서는", subtitle: nil) { wantsBody }
+                        stepCard(.when, label: String(localized: "When · How Long"), value: whenSummary, title: String(localized: "When and for how long?"), subtitle: nil, accessory: AnyView(exactDatesToggle)) { whenBody }
+                        stepCard(.budget, label: String(localized: "Budget"), value: budgetSummary, title: String(localized: "What's your budget?"), subtitle: String(localized: "This is the maximum")) { budgetBody }
+                        stepCard(.wants, label: String(localized: "For this trip"), value: wantsSummary, title: String(localized: "For this trip"), subtitle: nil) { wantsBody }
                         // 시안 규칙: 하단에는 버튼만 둔다. 전송 안내는 카드 아래에 둔다.
                         Text(CityRecommendationSection.sendNotice)
                             .dnaFont(.caption)
@@ -82,10 +82,10 @@ struct RecommendationInputSheet: View {
             }
 
             Button(action: submit) {
-                Label("추천 받기", systemImage: "sparkles")
+                Label("Get Recommendations", systemImage: "sparkles")
             }
             .buttonStyle(.dnaPrimary(isDisabled: !request.isReady))
-            .accessibilityHint(request.isReady ? "" : "먼저 여행 컨셉을 골라 주세요")
+            .accessibilityHint(request.isReady ? "" : "Choose a trip concept first")
             .accessibilityIdentifier("recommendationInput.submit")
             .padding(.horizontal, DNASpacing.gutter)
             .padding(.top, DNASpacing.xs)
@@ -158,20 +158,20 @@ struct RecommendationInputSheet: View {
             TripConceptPicker(
                 primary: request.primary,
                 secondary: request.secondary,
-                secondaryTitle: "함께 하고 싶은 것 · 선택",
+                secondaryTitle: String(localized: "Also want to do · Optional"),
                 onPrimary: { concept in
                     request.setPrimary(concept)
                     highlightConcept = false
                 },
                 onSecondary: { request.toggleSecondary($0) }
             )
-            DNAStepper(label: "몇 명이서", valueText: "\(request.partySize)명", value: $request.partySize, range: 1...20)
+            DNAStepper(label: String(localized: "Travelers"), valueText: String(localized: "\(request.partySize) people"), value: $request.partySize, range: 1...20)
         }
     }
 
     private var conceptSummary: String {
-        guard let primary = request.primary else { return "선택해 주세요" }
-        return ([primary] + request.secondary).joinedLabelKo() + " · \(request.partySize)명"
+        guard let primary = request.primary else { return String(localized: "Choose one") }
+        return ([primary] + request.secondary).joinedLabel() + " · " + String(localized: "\(request.partySize) people")
     }
 
     // MARK: ③ 언제 · 얼마나
@@ -180,7 +180,7 @@ struct RecommendationInputSheet: View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             if exactDates {
                 DatePicker(
-                    "시작일",
+                    "Start Date",
                     selection: Binding(
                         get: { request.startDate ?? .now },
                         set: { request.setStartDate($0) }
@@ -193,7 +193,7 @@ struct RecommendationInputSheet: View {
                 monthGrid
             }
             // -1은 미정이다. 미정 → 당일 → 1박 순서로 움직인다.
-            DNAStepper(label: "얼마나", valueText: nightsText, value: Binding(
+            DNAStepper(label: String(localized: "How long"), valueText: nightsText, value: Binding(
                 get: { request.nights ?? -1 },
                 set: { request.nights = $0 < 0 ? nil : $0 }
             ), range: -1...60)
@@ -201,7 +201,7 @@ struct RecommendationInputSheet: View {
     }
 
     private var exactDatesToggle: some View {
-        Button(exactDates ? "월로 고르기" : "날짜 지정") {
+        Button(exactDates ? String(localized: "Pick by Month") : String(localized: "Set Exact Dates")) {
             exactDates.toggle()
             if !exactDates { request.startDate = nil }
         }
@@ -215,12 +215,12 @@ struct RecommendationInputSheet: View {
         VStack(spacing: DNASpacing.xs) {
             HStack {
                 yearButton("chevron.left", enabled: shownYear > thisYear) { shownYear -= 1 }
-                    .accessibilityLabel("이전 해")
+                    .accessibilityLabel("Previous Year")
                 Spacer()
-                Text("\(String(shownYear))년").dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
+                Text(yearText(shownYear)).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
                 yearButton("chevron.right", enabled: shownYear < thisYear + 1) { shownYear += 1 }
-                    .accessibilityLabel("다음 해")
+                    .accessibilityLabel("Next Year")
             }
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DNASpacing.xs), count: 4), spacing: DNASpacing.xs) {
@@ -228,7 +228,7 @@ struct RecommendationInputSheet: View {
                     let past = shownYear == thisYear && month < thisMonth
                     let selected = request.year == shownYear && request.month == month
                     Button { request.toggleMonth(shownYear, month) } label: {
-                        Text("\(month)월")
+                        Text(monthText(month))
                             .dnaFont(.cardTitle)
                             .frame(maxWidth: .infinity, minHeight: 48)
                             .foregroundStyle(past ? Color.dnaTextTertiary : (selected ? Color.dnaSelectedForeground : Color.dnaTextPrimary))
@@ -257,9 +257,17 @@ struct RecommendationInputSheet: View {
         .disabled(!enabled)
     }
 
+    private func monthText(_ month: Int) -> String {
+        Calendar.current.shortMonthSymbols[month - 1]
+    }
+
+    private func yearText(_ year: Int) -> String {
+        Calendar.current.date(from: DateComponents(year: year))?.formatted(.dateTime.year()) ?? String(year)
+    }
+
     private var nightsText: String {
-        guard let nights = request.nights else { return "미정" }
-        return nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일"
+        guard let nights = request.nights else { return String(localized: "TBD") }
+        return nights == 0 ? String(localized: "Same day") : String(localized: "\(nights)N \(nights + 1)D")
     }
 
     private var whenSummary: String {
@@ -267,10 +275,10 @@ struct RecommendationInputSheet: View {
         if let date = request.startDate {
             parts.append(date.formatted(.dateTime.month().day()))
         } else if let month = request.month {
-            parts.append("\(month)월")
+            parts.append(monthText(month))
         }
         if request.nights != nil { parts.append(nightsText) }
-        return parts.isEmpty ? "미정" : parts.joined(separator: " · ")
+        return parts.isEmpty ? String(localized: "TBD") : parts.joined(separator: " · ")
     }
 
     // MARK: ④ 예산
@@ -278,29 +286,29 @@ struct RecommendationInputSheet: View {
     private var budgetBody: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             DNASegmentedControl(
-                items: [("1인", RecommendationRequest.BudgetBasis.perPerson), ("일행 전체", .group)],
+                items: [(String(localized: "Per person"), RecommendationRequest.BudgetBasis.perPerson), (String(localized: "Whole group"), .group)],
                 selection: request.budgetBasis
             ) { request.budgetBasis = $0 }
-            DNASegmentedControl(items: [("항공 포함", true), ("항공 제외", false)], selection: request.budgetIncludesFlight) {
+            DNASegmentedControl(items: [(String(localized: "Flights included"), true), (String(localized: "Flights excluded"), false)], selection: request.budgetIncludesFlight) {
                 request.budgetIncludesFlight = $0
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    DNATagChip(title: "미정", isSelected: request.budgetMaxKRW == nil && !customBudget) {
+                    DNATagChip(title: String(localized: "TBD"), isSelected: request.budgetMaxKRW == nil && !customBudget) {
                         customBudget = false
                         request.budgetMaxKRW = nil
                     }
                     ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
                         DNATagChip(
-                            title: "\(amount / 10_000)만 원 이하",
+                            title: String(localized: "Up to \(shortKRW(amount, koreanUnit: "만 원"))"), // l10n-ignore Korean amount unit
                             isSelected: !customBudget && request.budgetMaxKRW == amount
                         ) {
                             customBudget = false
                             request.budgetMaxKRW = amount
                         }
                     }
-                    DNATagChip(title: "직접 입력", isSelected: customBudget) {
+                    DNATagChip(title: String(localized: "Custom"), isSelected: customBudget) {
                         customBudget = true
                         request.budgetMaxKRW = Int(customBudgetText).map { $0 * 10_000 }
                     }
@@ -308,40 +316,41 @@ struct RecommendationInputSheet: View {
             }
             if customBudget {
                 HStack {
-                    TextField("금액", text: $customBudgetText)
+                    TextField("Amount", text: $customBudgetText)
                         .keyboardType(.numberPad)
                         .onChange(of: customBudgetText) { _, text in
                             request.budgetMaxKRW = Int(text).map { $0 * 10_000 }
                         }
-                    Text("만 원 이하").foregroundStyle(Color.dnaTextSecondary)
+                    Text("× ₩10K or less").foregroundStyle(Color.dnaTextSecondary)
                 }
                 .dnaFont(.body)
                 .padding(DNASpacing.sm)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
-            Text("예상 비용이 예산을 넘는 도시는 빼요. 비용은 추정이에요.")
+            Text("Cities with estimated costs over your budget are left out. Costs are estimates.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
     }
 
     private var budgetSummary: String {
-        guard let amount = request.budgetMaxKRW else { return "미정" }
-        let basis = request.budgetBasis == .perPerson ? "1인" : "일행 전체"
-        let flight = request.budgetIncludesFlight ? "항공 포함" : "항공 제외"
-        return "\(basis)·\(flight) · \(amount / 10_000)만 원"
+        guard let amount = request.budgetMaxKRW else { return String(localized: "TBD") }
+        let basis = request.budgetBasis == .perPerson ? String(localized: "Per person") : String(localized: "Whole group")
+        let flight = request.budgetIncludesFlight ? String(localized: "Flights included") : String(localized: "Flights excluded")
+        let amountText = shortKRW(amount, koreanUnit: "만 원") // l10n-ignore Korean amount unit
+        return String(localized: "\(basis) · \(flight) · \(amountText)")
     }
 
     // MARK: ⑤ 원하는 점
 
     private var wantsBody: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
-            field("특히 원하는 점", text: $request.wants, placeholder: "예: 비행 5시간 이내")
-            field("피하고 싶은 점", text: $request.avoids, placeholder: "예: 너무 붐비는 곳, 우기")
+            field(String(localized: "Must-haves"), text: $request.wants, placeholder: String(localized: "e.g. Flight under 5 hours"))
+            field(String(localized: "Things to avoid"), text: $request.avoids, placeholder: String(localized: "e.g. Crowded places, rainy season"))
             Toggle(isOn: $request.includeVisited) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("다녀온 도시도 포함").dnaFont(.body)
-                    Text("끄면 기록에서 확인되는 방문 도시를 제외해요")
+                    Text("Include Visited Cities").dnaFont(.body)
+                    Text("When off, cities found in your records are excluded")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -350,9 +359,9 @@ struct RecommendationInputSheet: View {
             if dependencies.canIncludeHomeCountry {
                 Toggle(isOn: $request.includeHomeCountry) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("사는 나라도 포함").dnaFont(.body)
+                        Text("Include Home Country").dnaFont(.body)
                         if let code = dependencies.homeCountryCode {
-                            Text("끄면 \(CountryCatalog.name(for: code)) 도시는 추천하지 않아요")
+                            Text("When off, cities in \(CountryCatalog.name(for: code)) aren't recommended")
                                 .dnaFont(.caption)
                                 .foregroundStyle(Color.dnaTextSecondary)
                         }
@@ -366,7 +375,7 @@ struct RecommendationInputSheet: View {
     }
 
     private var wantsSummary: String {
-        request.wants.isEmpty && request.avoids.isEmpty ? "없음" : "입력함"
+        request.wants.isEmpty && request.avoids.isEmpty ? String(localized: "None") : String(localized: "Filled In")
     }
 
     private func field(_ label: String, text: Binding<String>, placeholder: String) -> some View {

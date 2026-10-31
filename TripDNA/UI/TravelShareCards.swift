@@ -11,13 +11,13 @@ struct TripShareSummary {
 
     init(trip: Trip) {
         year = trip.legs.first.map { Calendar.current.component(.year, from: $0.startDate) } ?? 0
-        conceptKo = trip.concepts?.primary.labelKo
+        conceptKo = trip.concepts?.primary.label
         durationKo = trip.durationKo
         rank = trip.rankPosition
         countriesKo = ShareText.list(trip.legs.map { CountryCatalog.name(for: $0.countryCode) })
     }
 
-    var titleKo: String { conceptKo.map { "\($0) 여행" } ?? "나의 여행" }
+    var titleKo: String { conceptKo.map { String(localized: "\($0) trip") } ?? String(localized: "My trip") }
 }
 
 /// 공유 이미지에 넣는 설치 경로. Info.plist의 `TripDNAShareURL`이 비어 있으면 그리지 않는다(없는 주소를 만들지 않는다).
@@ -46,7 +46,7 @@ struct ShareInstallBadge: View {
                     .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("내 여행 지문 만들기")
+                Text("Make Your Travel Fingerprint")
                     .font(.system(size: 12, weight: .heavy))
                 Text(displayText)
                     .font(.system(size: 11))
@@ -130,7 +130,7 @@ struct FingerprintShareCard: View {
 
     var body: some View {
         TravelShareCardFrame(
-            background: Color(hex: 0x222222), kicker: "내 여행 지문 · 여행 \(fingerprint.total)번", installURL: installURL
+            background: Color(hex: 0x222222), kicker: String(localized: "My travel fingerprint · \(fingerprint.total) trips"), installURL: installURL
         ) {
             Text(headline)
                 .font(.system(size: 40, weight: .heavy))
@@ -139,7 +139,7 @@ struct FingerprintShareCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 ForEach(fingerprint.entries.prefix(5), id: \.concept) { entry in
                     HStack(spacing: 6) {
-                        Text(ShareText.keepTogether(entry.concept.labelKo))
+                        Text(ShareText.keepTogether(entry.concept.label))
                             .font(.system(size: 16, weight: .bold))
                             .frame(width: 88, alignment: .leading)
                             .lineLimit(1)
@@ -158,14 +158,14 @@ struct FingerprintShareCard: View {
 
     private var topNames: String {
         if let counted = fingerprint.topCountedKo { return counted }
-        let names = fingerprint.top.map { ShareText.keepTogether($0.labelKo) }
+        let names = fingerprint.top.map { ShareText.keepTogether($0.label) }
         return names.count == 2 ? KoreanParticle.andJoined(names[0], names[1]) : names.joined(separator: ", ")
     }
 
     private var headline: String {
-        if fingerprint.isSingleTrip { return "첫 기록은\n\(topNames) 여행" }
-        if fingerprint.isTie { return "\(topNames) 여행을\n\(fingerprint.topCount)번씩 떠났어요" }
-        return "가장 많이 떠난 건\n\(topNames) 여행"
+        if fingerprint.isSingleTrip { return String(localized: "Your first trip:\n\(topNames)") }
+        if fingerprint.isTie { return String(localized: "Took \(fingerprint.topCount) trips each:\n\(topNames)") }
+        return String(localized: "Most traveled:\n\(topNames)")
     }
 }
 
@@ -176,7 +176,7 @@ struct TripShareCard: View {
 
     var body: some View {
         TravelShareCardFrame(
-            background: Color(hex: 0x0F7B73), kicker: summary.year > 0 ? "\(String(summary.year))년의 여행" : "나의 여행",
+            background: Color(hex: 0x0F7B73), kicker: summary.year > 0 ? String(localized: "My trip in \(WrappedYear.yearText(summary.year))") : String(localized: "My trip"),
             installURL: installURL
         ) {
             Text("\(ShareText.keepTogether(summary.titleKo))\n\(summary.durationKo)")
@@ -184,11 +184,11 @@ struct TripShareCard: View {
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
             if let rank = summary.rank {
-                Text("내 랭킹 \(rank)위")
+                Text("Ranked #\(rank)")
                     .font(.system(size: 22, weight: .bold))
                     .opacity(0.9)
             }
-            Text(showsDestinationNames ? summary.countriesKo : "나라 이름 숨김")
+            Text(showsDestinationNames ? summary.countriesKo : String(localized: "Country names hidden"))
                 .font(.system(size: showsDestinationNames ? 24 : 15, weight: showsDestinationNames ? .heavy : .medium))
                 .multilineTextAlignment(.center)
                 .opacity(showsDestinationNames ? 1 : 0.8)

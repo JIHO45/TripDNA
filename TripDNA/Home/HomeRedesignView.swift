@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - 홈
 
 /// 위에서부터: 헤더 → 상황에 맞는 카드 하나 → 할 일 → 내 여행 지문 → Wrapped 배너.
-/// 기록이 없으면 "원하는 여행"과 "다녀온 여행 남기기"로 시작한다. 없는 개인화 문구는 채우지 않는다.
+/// 기록이 없으면 "원하는 여행"과 "Add a Past Trip"로 시작한다. 없는 개인화 문구는 채우지 않는다.
 struct HomeRedesignView: View {
     @Binding var selection: MainTab
     @Environment(AppDependencies.self) private var dependencies
@@ -59,8 +59,8 @@ struct HomeRedesignView: View {
             if let fingerprint = viewModel.fingerprint {
                 ShareCardSheet(
                     kind: .fingerprint,
-                    title: "공유 미리보기",
-                    disclosure: "포함: 여행 수, 컨셉별 횟수 · 빠짐: 날짜, 도시, 동행, 사진"
+                    title: String(localized: "Share Preview"),
+                    disclosure: String(localized: "Includes: trip count, count per concept · Excludes: dates, cities, companions, photos")
                 ) { _ in
                     FingerprintShareCard(fingerprint: fingerprint)
                 }
@@ -100,7 +100,7 @@ struct HomeRedesignView: View {
                     .background(Color.dnaCanvas, in: Circle())
                     .overlay(Circle().strokeBorder(Color.dnaDivider, lineWidth: 1))
             }
-            .accessibilityLabel("프로필과 설정")
+            .accessibilityLabel("Profile and settings")
             .accessibilityIdentifier("home.profile")
         }
     }
@@ -135,7 +135,12 @@ struct HomeRedesignView: View {
         .clipped()
     }
 
-    private func photoBadge(_ text: String, dot: Bool) -> some View {
+    private func departureDateText(_ trip: Trip) -> String {
+        guard let start = trip.legs.first?.startDate else { return "" }
+        return start.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private func photoBadge(_ text: LocalizedStringKey, dot: Bool) -> some View {
         HStack(spacing: 6) {
             if dot { Circle().fill(Color.dnaAction).frame(width: 7, height: 7) }
             Text(text).dnaFont(.caption).foregroundStyle(Color.dnaTextPrimary)
@@ -149,7 +154,7 @@ struct HomeRedesignView: View {
         ZStack(alignment: .bottom) {
             heroPhoto(trip, height: 340)
             VStack {
-                HStack { photoBadge("여행 중", dot: true); Spacer() }
+                HStack { photoBadge("Traveling", dot: true); Spacer() }
                 Spacer()
             }
             .padding(12)
@@ -166,7 +171,7 @@ struct HomeRedesignView: View {
                 NavigationLink {
                     DailyPhotoView(trip: trip)
                 } label: {
-                    Text("오늘의 한 장")
+                    Text("Today's Photo")
                         .dnaFont(.button)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
@@ -177,7 +182,7 @@ struct HomeRedesignView: View {
                 NavigationLink {
                     TripDetailView(tripID: trip.id)
                 } label: {
-                    Text("여행 보기")
+                    Text("View Trip")
                 }
                 .buttonStyle(.dnaDark)
             }
@@ -202,7 +207,7 @@ struct HomeRedesignView: View {
                 .overlay(Color.dnaData.opacity(0.12))
             VStack {
                 HStack(alignment: .top) {
-                    photoBadge("다가오는 여행", dot: false)
+                    photoBadge("Upcoming trip", dot: false)
                     Spacer()
                     VStack(spacing: 0) {
                         Text("D-").dnaFont(size: 11, weight: .semibold)
@@ -222,7 +227,7 @@ struct HomeRedesignView: View {
                     Text(HomeViewModel.placeName(trip))
                         .dnaFont(.heroTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
-                    Text("\(trip.shortDateRangeKo.components(separatedBy: " – ").first ?? "") 출발 · \(trip.durationKo)")
+                    Text("Departs \(departureDateText(trip)) · \(trip.durationKo)")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -230,7 +235,7 @@ struct HomeRedesignView: View {
                 NavigationLink {
                     TripDetailView(tripID: trip.id)
                 } label: {
-                    Text("여행 보기")
+                    Text("View Trip")
                 }
                 .buttonStyle(.dnaDark)
             }
@@ -252,7 +257,7 @@ struct HomeRedesignView: View {
                             .font(.system(size: 10))
                             .foregroundStyle(Color.dnaAction)
                             .accessibilityHidden(true)
-                        Text(concept.labelKo)
+                        Text(concept.label)
                     }
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextPrimary)
@@ -261,17 +266,17 @@ struct HomeRedesignView: View {
                         .background(Color.dnaRaised, in: Capsule())
                         .overlay(Capsule().strokeBorder(Color.dnaDivider, lineWidth: 1))
                 }
-                Text("+ 이번엔?")
+                Text("+ This time?")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .padding(.horizontal, 14)
                     .frame(minHeight: 36)
                     .overlay(Capsule().strokeBorder(Color.dnaDivider, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
             }
-            Text("다음 여행지를 찾아볼까요?")
+            Text("Ready to find your next destination?")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("이번 여행에서 하고 싶은 걸 하나만 고르면 맞는 도시를 골라드려요.")
+            Text("Pick just one thing you want to do on this trip and we'll find cities that fit.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -279,7 +284,7 @@ struct HomeRedesignView: View {
                 router.recommendationInputRequested = true
                 selection = .recommendation
             } label: {
-                Text("추천 받기")
+                Text("Get Recommendations")
             }
             .buttonStyle(.dnaPrimary)
             .accessibilityIdentifier("home.recommend")
@@ -308,7 +313,7 @@ struct HomeRedesignView: View {
                                 NavigationLink {
                                     WantedTripsSettingsView()
                                 } label: {
-                                    Text(concept.labelKo)
+                                    Text(concept.label)
                                         .dnaFont(.caption)
                                         .foregroundStyle(Color.dnaTextPrimary)
                                         .padding(.horizontal, 14)
@@ -323,10 +328,10 @@ struct HomeRedesignView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text("원하는 여행부터 골라주세요")
+                Text("Start by choosing the trips you want")
                     .dnaFont(.heroTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("가장 원해요 · 좋아요 · 있으면 좋아요로 골라요. 안 고른 건 \"모르겠거나 원하지 않아요\"로 둬요.")
+                Text("Sort them into Most wanted · Like · Nice to have. Anything you leave out stays in \"Not sure or don't want.\"")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -335,7 +340,7 @@ struct HomeRedesignView: View {
                 NavigationLink {
                     WantedTripsSettingsView()
                 } label: {
-                    Text("원하는 여행 고르기")
+                    Text("Choose Wanted Trips")
                         .dnaFont(.button)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, minHeight: 48)
@@ -345,7 +350,7 @@ struct HomeRedesignView: View {
                 Button {
                     dismissedWantedCard = true
                 } label: {
-                    Text("나중에").frame(minHeight: 48)
+                    Text("Later").frame(minHeight: 48)
                 }
                 .buttonStyle(.dnaSecondary(onSheet: true, fullWidth: false))
             }
@@ -359,32 +364,32 @@ struct HomeRedesignView: View {
 
     private var recordSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("다녀온 여행 남기기")
+            Text("Add a Past Trip")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             HStack(spacing: 8) {
                 Button {
                     showingPhotoScan = true
                 } label: {
-                    recordTile(icon: "photo.on.rectangle", title: "사진첩에서 찾기", subtitle: nil, dark: true)
+                    recordTile(icon: "photo.on.rectangle", title: "Find in Photos", subtitle: nil, dark: true)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("home.scanPhotos")
                 Button {
                     showingRegistration = true
                 } label: {
-                    recordTile(icon: "plus", title: "직접 등록", subtitle: nil, dark: false)
+                    recordTile(icon: "plus", title: "Add Manually", subtitle: nil, dark: false)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("home.registerTrip")
             }
-            Text("사진과 위치는 기기 안에서만 분석해요.")
+            Text("Photos and locations are analyzed on your device only.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
     }
 
-    private func recordTile(icon: String, title: String, subtitle: String?, dark: Bool) -> some View {
+    private func recordTile(icon: String, title: LocalizedStringKey, subtitle: String?, dark: Bool) -> some View {
         VStack(alignment: .leading) {
             Image(systemName: icon).dnaFont(size: 20, weight: .semibold)
             Spacer(minLength: 0)
@@ -407,10 +412,10 @@ struct HomeRedesignView: View {
         if let trip = viewModel.todoTrip {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(trip.placeTitleKo) 여행이 끝났어요")
+                    Text("Your trip to \(trip.placeTitleKo) has ended")
                         .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
-                    Text("좋았던 점과 아쉬웠던 점을 남기면 다음 추천에 써요")
+                    Text("Share what you liked and didn't, and we'll use it for your next recommendations")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -419,7 +424,7 @@ struct HomeRedesignView: View {
                     Button {
                         router.evaluationRequest = EvaluationRequest(tripID: trip.id)
                     } label: {
-                        Text("평가하기")
+                        Text("Rate Trip")
                             .dnaFont(.button)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 18)
@@ -430,7 +435,7 @@ struct HomeRedesignView: View {
                     Button {
                         Task { await viewModel.skipEvaluation(trip, dependencies: dependencies, userID: session.userID) }
                     } label: {
-                        Text("건너뛰기")
+                        Text("Skip")
                             .padding(.horizontal, DNASpacing.sm)
                     }
                     .buttonStyle(.dnaGhost)
@@ -453,7 +458,7 @@ struct HomeRedesignView: View {
                         FingerprintDetailView()
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("내 여행 지문")
+                            Text("My Travel Fingerprint")
                                 .dnaFont(.caption)
                                 .foregroundStyle(Color.dnaTextSecondary)
                             Text(fingerprint.homeHeadlineKo)
@@ -475,7 +480,7 @@ struct HomeRedesignView: View {
                             .foregroundStyle(Color.dnaTextPrimary)
                             .frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel("지문 공유")
+                    .accessibilityLabel("Share fingerprint")
                     .accessibilityIdentifier("home.fingerprintShare")
                 }
                 NavigationLink {
@@ -491,7 +496,7 @@ struct HomeRedesignView: View {
             .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
         } else {
             VStack(alignment: .leading, spacing: 10) {
-                Text("내 여행 지문")
+                Text("My Travel Fingerprint")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 HStack(spacing: 12) {
@@ -503,7 +508,7 @@ struct HomeRedesignView: View {
                         }
                     }
                     .accessibilityHidden(true)
-                    Text("여행을 남기면 한 칸씩 채워져요")
+                    Text("Each trip you add fills in another box")
                         .dnaFont(size: 13)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -518,7 +523,7 @@ struct HomeRedesignView: View {
                 NavigationLink {
                     FingerprintDetailView()
                 } label: {
-                    Text("지문 자세히 보기").dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
+                    Text("View Fingerprint Details").dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
                 }
             }
         }
@@ -531,16 +536,16 @@ struct HomeRedesignView: View {
         switch viewModel.banner {
         case .open(let year):
             NavigationLink { WrappedView(year: year) } label: {
-                bannerLabel(kicker: "Wrapped", title: "\(year) Wrapped가 열렸어요", subtitle: nil, showsChevron: true)
+                bannerLabel(kicker: "Wrapped", title: "\(String(year)) Wrapped is open", subtitle: nil, showsChevron: true)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("home.wrapped")
         case .pastAvailable(let year):
             NavigationLink { WrappedView(year: year) } label: {
                 bannerLabel(
-                    kicker: "지난 Wrapped",
-                    title: "\(year) Wrapped 다시 보기",
-                    subtitle: "올해 Wrapped는 12월 15일에 열려요",
+                    kicker: "Past Wrapped",
+                    title: "View \(String(year)) Wrapped Again",
+                    subtitle: "This year's Wrapped opens on December 15",
                     showsChevron: true,
                     dark: true
                 )
@@ -548,12 +553,12 @@ struct HomeRedesignView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("home.wrapped")
         case .notYet:
-            bannerLabel(kicker: "Wrapped", title: "12월 15일에 올해 Wrapped가 열려요", subtitle: nil, showsChevron: false)
+            bannerLabel(kicker: "Wrapped", title: "This year's Wrapped opens December 15", subtitle: nil, showsChevron: false)
                 .accessibilityIdentifier("home.wrapped")
         }
     }
 
-    private func bannerLabel(kicker: String, title: String, subtitle: String?, showsChevron: Bool, dark: Bool = false) -> some View {
+    private func bannerLabel(kicker: LocalizedStringKey, title: LocalizedStringKey, subtitle: LocalizedStringKey?, showsChevron: Bool, dark: Bool = false) -> some View {
         HStack(spacing: 12) {
             HStack(spacing: -8) {
                 ForEach([Color.dnaData, Color.dnaDataMuted, Color.dnaDataFaint], id: \.self) { color in
@@ -617,7 +622,7 @@ struct HomeRecommendationCarousel: View {
         ZStack(alignment: .bottomLeading) {
             LinearGradient(colors: [Color(hex: 0x0F7B73), Color(hex: 0x0A4F4A)], startPoint: .topLeading, endPoint: .bottomTrailing)
             VStack(alignment: .leading, spacing: 4) {
-                Text("저장한 추천")
+                Text("Saved Recommendation")
                     .dnaFont(.caption)
                     .opacity(0.9)
                 Text(city.card.cityName)
@@ -629,7 +634,7 @@ struct HomeRecommendationCarousel: View {
             HStack {
                 Spacer()
                 Button { onOpen(city) } label: {
-                    Text("자세히")
+                    Text("Details")
                         .dnaFont(.button)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .padding(.horizontal, 16)

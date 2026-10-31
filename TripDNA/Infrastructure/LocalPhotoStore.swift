@@ -68,8 +68,8 @@ enum LocalPhotoStoreError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidImageData: "사진을 읽지 못했어요."
-        case .encodingFailed: "사진을 저장하지 못했어요."
+        case .invalidImageData: String(localized: "Couldn't read the photo.")
+        case .encodingFailed: String(localized: "Couldn't save the photo.")
         }
     }
 }

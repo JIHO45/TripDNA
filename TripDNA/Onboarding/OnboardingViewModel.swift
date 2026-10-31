@@ -131,13 +131,9 @@ enum OnboardingFormat {
 
     /// 예: "2026년 4월 7–9일", 달이 다르면 "2026년 4월 28일–5월 2일".
     static func dateRangeText(start: Date, end: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy년 M월 d일"
-        let first = formatter.string(from: start)
-        guard !Calendar.current.isDate(start, inSameDayAs: end) else { return first }
-        let sameMonth = Calendar.current.isDate(start, equalTo: end, toGranularity: .month)
-        formatter.dateFormat = sameMonth ? "d일" : "M월 d일"
-        return "\(first)–\(formatter.string(from: end))"
+        let formatter = DateIntervalFormatter()
+        formatter.dateTemplate = "yMMMd"
+        return formatter.string(from: start, to: max(start, end))
     }
 }
 
@@ -339,14 +335,14 @@ final class OnboardingViewModel {
     func startPhotoScan() {
         errorMessage = nil
         scanWasDenied = false
-        scanStatusText = "사진 위치 확인 중"
+        scanStatusText = String(localized: "Checking photo locations")
         stage = .photoScanning
         scanTask?.cancel()
         scanTask = Task { [weak self] in
             guard let self else { return }
             do {
                 self.candidates = try await PhotoTripScanner.scan(excluding: self.homeCountryCode ?? "") {
-                    self.scanStatusText = "여행별로 묶는 중"
+                    self.scanStatusText = String(localized: "Grouping by trip")
                 }
                 try Task.checkCancellation()
                 self.isPhotoAccessLimited = PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited
@@ -446,7 +442,7 @@ final class OnboardingViewModel {
             candidates = candidates.filter { $0.state == .pending }
             beginConcepts()
         } catch {
-            errorMessage = "여행을 기록하지 못했어요. 다시 시도해 주세요."
+            errorMessage = String(localized: "Couldn't record the trip. Please try again.")
         }
     }
 
@@ -502,7 +498,7 @@ final class OnboardingViewModel {
                     recordedTrips[index].concepts = concepts
                 }
             } catch {
-                errorMessage = "컨셉을 저장하지 못했어요. 여행 탭에서 다시 고를 수 있어요."
+                errorMessage = String(localized: "Couldn't save concepts. You can pick them again in the Trips tab.")
             }
         }
         conceptIndex += 1
@@ -619,7 +615,7 @@ enum PhotoTripScanError: LocalizedError {
     case accessDenied
 
     var errorDescription: String? {
-        "사진 접근을 허용해야 위치가 있는 여행 사진을 찾을 수 있어요. 설정에서 사진 접근을 허용하거나 직접 등록해 주세요."
+        String(localized: "Allow photo access to find trip photos with locations. Allow access in Settings or add trips manually.")
     }
 }
 
@@ -690,7 +686,7 @@ private enum PhotoTripScanner {
 enum TagCatalog {
     nonisolated(unsafe) static var definitions: [String: TagDefinition] = [:]
 
-    nonisolated static func labelKo(for id: String) -> String {
-        definitions[id]?.labelKo ?? id
+    nonisolated static func label(for id: String) -> String {
+        definitions[id]?.label ?? id
     }
 }

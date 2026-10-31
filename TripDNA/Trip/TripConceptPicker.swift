@@ -27,7 +27,7 @@ struct TripConceptPicker: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                     Spacer()
-                    Text("최대 2개 · \(secondary.count)/2")
+                    Text("Up to 2 · \(secondary.count)/2")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextTertiary)
                 }
@@ -42,7 +42,7 @@ struct TripConceptPicker: View {
     private func tile(_ concept: TripConcept) -> some View {
         let isSelected = primary == concept
         return Button { onPrimary(concept) } label: {
-            Text(concept.labelKo)
+            Text(concept.label)
                 .dnaFont(.cardTitle)
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .dnaOption(isSelected: isSelected, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
@@ -57,7 +57,7 @@ struct TripConceptPicker: View {
                 ForEach(concepts, id: \.self) { concept in
                     let selected = secondary.contains(concept)
                     let locked = !selected && secondary.count >= 2
-                    DNATagChip(title: concept.labelKo, isSelected: selected) { onSecondary(concept) }
+                    DNATagChip(title: concept.label, isSelected: selected) { onSecondary(concept) }
                         .disabled(locked)
                         .opacity(locked ? 0.4 : 1)
                 }
@@ -95,11 +95,11 @@ struct TripConceptEditSheet: View {
                 .padding(DNASpacing.gutter)
             }
             .background(Color.dnaSheet)
-            .navigationTitle("여행 컨셉")
+            .navigationTitle("Trip Concepts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("완료") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
             }
         }
@@ -109,5 +109,5 @@ struct TripConceptEditSheet: View {
 
 extension [TripConcept] {
     /// "도시 + 미식"처럼 주 컨셉을 앞세워 이어 붙인 한 줄.
-    func joinedLabelKo() -> String { map(\.labelKo).joined(separator: " + ") }
+    func joinedLabel() -> String { map(\.label).joined(separator: " + ") }
 }

@@ -418,8 +418,8 @@ struct DNASegmentedProgressBar: View {
         }
         .frame(height: 4)
         .accessibilityElement()
-        .accessibilityLabel("진행률")
-        .accessibilityValue("\(Int((max(0, min(1, progress)) * 100).rounded()))퍼센트")
+        .accessibilityLabel("Progress")
+        .accessibilityValue("\(Int((max(0, min(1, progress)) * 100).rounded())) percent")
     }
 }
 
@@ -428,7 +428,7 @@ struct DNASkipButton: View {
     let title: String
     let action: () -> Void
 
-    init(_ title: String = "건너뛰기", action: @escaping () -> Void) {
+    init(_ title: String = String(localized: "Skip"), action: @escaping () -> Void) {
         self.title = title
         self.action = action
     }
@@ -465,7 +465,7 @@ struct DNAStepTopBar: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("뒤로")
+                    .accessibilityLabel("Back")
                 }
                 Spacer(minLength: 0)
                 if let counterText {
@@ -582,7 +582,10 @@ struct DNASatisfactionEmojiRow: View {
     var onSelect: ((Int) -> Void)?
 
     private let emojis = ["😞", "😕", "😐", "😊", "🤩"]
-    private let spokenLabels = ["별로였어요", "아쉬웠어요", "보통이었어요", "좋았어요", "최고였어요"]
+    private let spokenLabels = [
+        String(localized: "Not good"), String(localized: "Disappointing"), String(localized: "It was average"),
+        String(localized: "Good"), String(localized: "The best")
+    ]
 
     var body: some View {
         HStack(spacing: 0) {
@@ -617,7 +620,7 @@ struct DNASatisfactionEmojiRow: View {
                         .animation(.spring(duration: 0.25), value: satisfaction)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("만족도 \(value)점, \(spokenLabels[value - 1])")
+                .accessibilityLabel("Satisfaction \(value) of 5, \(spokenLabels[value - 1])")
                 .accessibilityAddTraits(satisfaction == value ? .isSelected : [])
                 .frame(maxWidth: .infinity)
             }
@@ -833,7 +836,7 @@ struct SlotChip: View {
     let slot: RecommendationSlot
 
     var body: some View {
-        Text(slot.subtitleKo)
+        Text(slot.subtitle)
             .font(.caption.weight(.bold))
             .foregroundStyle(slot.accentColor)
             .padding(.horizontal, 10)
@@ -917,7 +920,7 @@ struct FingerprintRadarView: View {
 
                 ForEach(Array(axisOrder.enumerated()), id: \.offset) { index, axis in
                     let labelPoint = vertex(index: index, radius: radius + 20, center: center)
-                    Text(axis.shortLabelKo)
+                    Text(axis.shortLabel)
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(labelColor(for: axis))
                         .position(labelPoint)
@@ -926,8 +929,8 @@ struct FingerprintRadarView: View {
         }
         .frame(height: 220)
         .accessibilityElement()
-        .accessibilityLabel("취향 지문")
-        .accessibilityValue(axes.spokenSummaryKo(confidence: confidence))
+        .accessibilityLabel("Taste fingerprint")
+        .accessibilityValue(axes.spokenSummary(confidence: confidence))
     }
 
     private func angle(for index: Int) -> CGFloat {
@@ -974,7 +977,7 @@ struct ScoreBadge: View {
     let score: Double
 
     var body: some View {
-        Text("취향 매치 \(Int((score * 100).rounded()))%")
+        Text("Taste match \(Int((score * 100).rounded()))%")
             .dnaFont(.caption)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -1006,7 +1009,7 @@ struct StatusPill: View {
     let status: TripStatus
 
     var body: some View {
-        Text(status.labelKo)
+        Text(status.label)
             .dnaFont(.caption)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -1026,7 +1029,7 @@ struct StatusPill: View {
 
 struct LoadingView: View {
     var body: some View {
-        ProgressView("불러오는 중…")
+        ProgressView("Loading…")
             .tint(Color.dnaData)
             .foregroundStyle(Color.dnaTextSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1086,7 +1089,7 @@ extension Trip {
 nonisolated enum PlaceTitle {
     static func compact(_ names: [String], separator: String) -> String {
         guard names.count > 4 else { return names.joined(separator: separator) }
-        return names.prefix(3).joined(separator: separator) + " 외 \(names.count - 3)곳"
+        return names.prefix(3).joined(separator: separator) + " " + String(localized: "& \(names.count - 3) more")
     }
 }
 
@@ -1098,18 +1101,17 @@ extension Trip {
         let calendar = Calendar.current
         let start = calendar.dateComponents([.month, .day], from: first)
         let end = calendar.dateComponents([.month, .day], from: last)
-        let from = "\(start.month ?? 0)월 \(start.day ?? 0)일"
+        let from = first.formatted(.dateTime.month().day())
         if start.month == end.month, first != last {
-            return "\(from) – \(end.day ?? 0)일"
+            return String(localized: "\(from) – \(end.day ?? 0)")
         }
-        return first == last ? from : "\(from) – \(end.month ?? 0)월 \(end.day ?? 0)일"
+        return first == last ? from : "\(from) – \(last.formatted(.dateTime.month().day()))"
     }
 
     /// "2025년 12월" (시작일 기준).
     var yearMonthKo: String {
         guard let first = legs.first?.startDate else { return "" }
-        let parts = Calendar.current.dateComponents([.year, .month], from: first)
-        return "\(parts.year ?? 0)년 \(parts.month ?? 0)월"
+        return first.formatted(.dateTime.year().month(.wide))
     }
 
     /// 시작일까지 남은 날. 이미 시작했으면 nil.
@@ -1131,16 +1133,14 @@ extension Trip {
 enum CountryCatalog {
     static var profiles: [String: CountryProfile] = [:]
 
-    /// 시드 프로필의 한국어 이름을 우선하고, 없으면 Locale 한글 지역명으로 폴백한다.
+    /// 시드 프로필의 앱 언어 이름을 우선하고, 없으면 Locale 지역명으로 폴백한다.
     /// 거주 국가처럼 30개 목적지 밖 ISO 코드도 풀네임으로 보여주기 위함이다.
     static func name(for code: String) -> String {
         let normalized = code.uppercased()
-        if let nameKo = profiles[normalized]?.nameKo {
-            return nameKo
+        if let displayName = profiles[normalized]?.displayName {
+            return displayName
         }
-        return Locale(identifier: "ko_KR").localizedString(forRegionCode: normalized)
-            ?? Locale.current.localizedString(forRegionCode: normalized)
-            ?? normalized
+        return Locale.current.localizedString(forRegionCode: normalized) ?? normalized
     }
 }
 
@@ -1169,7 +1169,7 @@ struct CountrySelectionList: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Color.dnaTextSecondary)
 
-                TextField("국가 검색", text: $query)
+                TextField("Search countries", text: $query)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .submitLabel(.search)
@@ -1257,7 +1257,7 @@ enum PreviewSample {
         matchScore: 0.82,
         explanationTagIDs: ["food", "culture"],
         rankingAnchorTripID: nil,
-        fitBadges: ["취향 일치", "관심사 매치"],
+        fitBadges: [String(localized: "Matches your taste"), String(localized: "Matches your interests")],
         notices: []
     )
 }
@@ -1291,14 +1291,14 @@ extension View {
 }
 
 #Preview("FitBadgesRow") {
-    FitBadgesRow(badges: ["취향 일치", "관심사 매치"])
+    FitBadgesRow(badges: [String(localized: "Matches your taste"), String(localized: "Matches your interests")])
         .padding()
         .background(Color.dnaCanvas)
 }
 
 #Preview("SectionCard") {
-    SectionCard(title: "섹션 카드") {
-        Text("내용이 여기에 들어가요.")
+    SectionCard(title: String(localized: "Section Card")) {
+        Text("Content goes here.")
             .dnaFont(.body)
             .foregroundStyle(Color.dnaTextSecondary)
     }
@@ -1323,7 +1323,7 @@ extension View {
 }
 
 #Preview("EmptyStateView") {
-    EmptyStateView(title: "아직 데이터가 없어요", message: "여행을 등록하면 여기에 표시돼요.")
+    EmptyStateView(title: String(localized: "No data yet"), message: String(localized: "Register a trip and it will show up here."))
         .background(AppCanvas())
 }
 

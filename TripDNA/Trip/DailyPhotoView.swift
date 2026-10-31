@@ -60,7 +60,7 @@ struct DailyPhotoView: View {
         .toolbar {
             if stage == .pick || stage == .preview {
                 ToolbarItem(placement: .topBarTrailing) {
-                    DNASkipButton(isToday ? "오늘은 건너뛰기" : "나중에 하기") { dismiss() }
+                    DNASkipButton(isToday ? String(localized: "Skip Today") : String(localized: "Do It Later")) { dismiss() }
                 }
             }
         }
@@ -130,7 +130,7 @@ struct DailyPhotoView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                     .padding(.horizontal, DNASpacing.lg)
             }
-            Text("3:4 · 이 비율로 여행 상세와 회고에 보여요")
+            Text("3:4 · Shown at this ratio in trip details and your recap")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             Spacer(minLength: 0)
@@ -142,19 +142,19 @@ struct DailyPhotoView: View {
     private var reactionStage: some View {
         VStack(spacing: DNASpacing.lg) {
             Spacer()
-            Text(isToday ? "오늘은 어땠나요?" : "그날은 어땠나요?")
+            Text(isToday ? String(localized: "How was today?") : String(localized: "How was that day?"))
                 .font(.title2.bold())
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("사진은 저장됐어요. 반응은 기록용이고 취향 지문에는 반영되지 않아요.")
+            Text("Your photo is saved. Reactions are just for your records and don’t affect your taste fingerprint.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DNASpacing.lg)
 
             HStack(spacing: DNASpacing.sm) {
-                reactionButton(title: "좋았어", value: .good)
-                reactionButton(title: "그럭저럭", value: .neutral)
-                reactionButton(title: "별로", value: .bad)
+                reactionButton(title: String(localized: "Great"), value: .good)
+                reactionButton(title: String(localized: "So-so"), value: .neutral)
+                reactionButton(title: String(localized: "Not great"), value: .bad)
             }
             .padding(.horizontal, DNASpacing.lg)
 
@@ -188,7 +188,7 @@ struct DailyPhotoView: View {
         case .preview:
             DNABottomCTA {
                 if saveFailed {
-                    Text("사진을 남기지 못했어요. 다시 시도해 주세요.")
+                    Text("Couldn’t save your photo. Please try again.")
                         .font(.footnote)
                         .foregroundStyle(Color.dnaAction)
                         .frame(maxWidth: .infinity)
@@ -199,13 +199,13 @@ struct DailyPhotoView: View {
                     if isSaving {
                         ProgressView().tint(.white)
                     } else {
-                        Text(saveFailed ? "다시 시도" : "이 사진으로 남기기")
+                        Text(saveFailed ? String(localized: "Try Again") : String(localized: "Keep This Photo"))
                     }
                 }
                 .buttonStyle(.dnaPrimary(isDisabled: isSaving))
                 .disabled(isSaving)
 
-                Button("다른 사진 고르기") {
+                Button("Choose a Different Photo") {
                     discardSelectedFile()
                     saveFailed = false
                     makeCroppedImage = nil
@@ -218,7 +218,7 @@ struct DailyPhotoView: View {
             }
         case .reaction:
             DNABottomCTA {
-                Button("건너뛰기") {
+                Button("Skip") {
                     Task { await finish(with: nil) }
                 }
                 .buttonStyle(.dnaGhost)
@@ -232,10 +232,10 @@ struct DailyPhotoView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Text("\(trip.titleKo) · \(resolvedDayIndex)일차")
+            Text("\(trip.titleKo) · Day \(resolvedDayIndex)")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaData)
-            Text(isToday ? "오늘을 한 장으로 남긴다면?" : "\(resolvedDayIndex)일차를 한 장으로 남긴다면?")
+            Text(isToday ? String(localized: "If you could keep today in one photo?") : String(localized: "If you could keep day \(resolvedDayIndex) in one photo?"))
                 .font(.title3.bold())
                 .foregroundStyle(Color.dnaTextPrimary)
                 .multilineTextAlignment(.center)
@@ -254,7 +254,7 @@ struct DailyPhotoView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(Color.dnaData)
             }
-            Text(isToday ? "오늘의 한 장을 남겼어요" : "\(resolvedDayIndex)일차 사진을 남겼어요")
+            Text(isToday ? String(localized: "Today’s photo is saved") : String(localized: "Photo for day \(resolvedDayIndex) is saved"))
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
         }
@@ -269,22 +269,22 @@ struct DailyPhotoView: View {
     /// UI-7C: 첫 확정 직후 1회만 노출하는 자동 후보 동의.
     private var autoFallbackConsentSheet: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
-            Text("놓친 날은 그날 사진으로\n골라둘까요?")
+            Text("Pick photos for missed\ndays automatically?")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("여행 중에 앱을 열면, 한 장이 비어 있는 날을 그날 찍은 사진 한 장으로 채워둬요. 나중에 직접 바꿀 수 있어요.")
+            Text("When you open the app during your trip, we’ll fill any empty day with a photo taken that day. You can change it later.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
-            DNATrustPanel(text: "원본 사진은 사진첩에 그대로 있어요. 앱은 위치 정보를 지운 줄인 사본만 보관하고, iCloud 백업이 켜져 있으면 이 사본도 내 iCloud에 백업돼요.")
+            DNATrustPanel(text: String(localized: "Your original photos stay in your photo library. The app keeps only a smaller copy with location data removed, and if iCloud backup is on, that copy is backed up to your iCloud too."))
             Spacer(minLength: 0)
-            Button("골라두기") {
+            Button("Pick for Me") {
                 AppStorageLocation.defaults.set(true, forKey: AutoPhotoFallbackService.consentKey)
                 showConsentSheet = false
                 withAnimation { stage = .reaction }
             }
             .buttonStyle(.dnaPrimary)
 
-            Button("직접 고른 사진만") {
+            Button("Only Photos I Choose") {
                 AppStorageLocation.defaults.set(false, forKey: AutoPhotoFallbackService.consentKey)
                 showConsentSheet = false
                 withAnimation { stage = .reaction }

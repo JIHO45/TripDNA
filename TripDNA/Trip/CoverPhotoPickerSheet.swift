@@ -12,7 +12,7 @@ struct CoverPhotoPickerSheet: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 if !photos.isEmpty {
-                    Text("하루 한 장에서 고르기")
+                    Text("Choose from One Photo a Day")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -39,10 +39,10 @@ struct CoverPhotoPickerSheet: View {
                     }
                     .padding(.horizontal, -DNASpacing.lg)
                 } else {
-                    Text("사진첩에서 고르기")
+                    Text("Choose from Photo Library")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
-                    AnyPhotoLibraryPickerButton(title: "사진 선택") { path in
+                    AnyPhotoLibraryPickerButton(title: String(localized: "Choose Photo")) { path in
                         onPick(path)
                         dismiss()
                     }

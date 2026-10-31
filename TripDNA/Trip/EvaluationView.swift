@@ -33,7 +33,7 @@ struct EvaluationView: View {
             TripConceptEditSheet(
                 primary: $viewModel.primaryConcept,
                 secondary: $viewModel.secondaryConcepts,
-                secondaryTitle: "함께 한 것"
+                secondaryTitle: String(localized: "Also Did")
             )
         }
         .sheet(isPresented: $showingCoverPicker) {
@@ -47,7 +47,7 @@ struct EvaluationView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let trip = viewModel.trip {
-                ShareCardSheet(kind: .trip, title: "공유 미리보기", disclosure: "포함: 여행 컨셉, 기간, 내 랭킹 · 빠짐: 날짜, 도시, 동행, 사진", allowsDestinationNames: true) { showsDestinationNames in
+                ShareCardSheet(kind: .trip, title: String(localized: "Share Preview"), disclosure: String(localized: "Included: trip concepts, duration, my ranking · Not included: dates, cities, companions, photos"), allowsDestinationNames: true) { showsDestinationNames in
                     TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: showsDestinationNames)
                 }
             }
@@ -64,7 +64,7 @@ struct EvaluationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                        Text("\(cityName(review)), 어땠나요?")
+                        Text("How was \(cityName(review))?")
                             .dnaFont(.screenTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
                         if let range = dateRange(for: review) {
@@ -73,7 +73,7 @@ struct EvaluationView: View {
                                 .foregroundStyle(Color.dnaTextSecondary)
                         }
                     }
-                    Text("별점과 메모는 모두 선택이에요. 비워 두면 방문 기록만 남아요.")
+                    Text("Ratings and notes are optional. Leave them blank and only the visit is recorded.")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
 
@@ -89,14 +89,14 @@ struct EvaluationView: View {
                                     .frame(minWidth: 44, minHeight: 44)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("별 \(star)개")
+                            .accessibilityLabel("\(star) stars")
                             .accessibilityAddTraits(review.rating == star ? .isSelected : [])
                         }
                     }
                     .sensoryFeedback(.selection, trigger: review.rating)
 
-                    memoField("좋았던 점", text: memoBinding(index, \.liked))
-                    memoField("아쉬웠던 점", text: memoBinding(index, \.disliked))
+                    memoField(String(localized: "What you liked"), text: memoBinding(index, \.liked))
+                    memoField(String(localized: "What fell short"), text: memoBinding(index, \.disliked))
 
                     if viewModel.isLeisure {
                         conceptRow
@@ -113,11 +113,11 @@ struct EvaluationView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             DNABottomCTA {
-                Text("메모를 적으면 다음 추천에 도움이 돼요")
+                Text("Notes help improve your next recommendations")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                 HStack(spacing: DNASpacing.xs) {
-                    Button("건너뛰기") {
+                    Button("Skip") {
                         viewModel.clearCurrentCity()
                         if viewModel.isLastStep {
                             Task { await viewModel.submit(dependencies: dependencies, session: session) }
@@ -135,13 +135,13 @@ struct EvaluationView: View {
                             if viewModel.isSubmitting {
                                 ProgressView().tint(.white)
                             } else {
-                                Text(viewModel.isRevising ? "수정 완료" : "평가 완료")
+                                Text(viewModel.isRevising ? String(localized: "Finish Editing") : String(localized: "Finish Rating"))
                             }
                         }
                         .buttonStyle(.dnaPrimary(isDisabled: viewModel.isSubmitting))
                         .disabled(viewModel.isSubmitting)
                     } else {
-                        Button("다음 도시") { viewModel.advance() }
+                        Button("Next City") { viewModel.advance() }
                             .buttonStyle(.dnaPrimary)
                     }
                 }
@@ -158,19 +158,19 @@ struct EvaluationView: View {
                         .foregroundStyle(Color.dnaTextPrimary)
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("이전 도시")
+                .accessibilityLabel("Previous City")
             }
             VStack(alignment: .leading, spacing: 0) {
-                Text("\(viewModel.headerTitle) 평가")
+                Text("\(viewModel.headerTitle) Rating")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                     .lineLimit(1)
-                Text("도시 \(index + 1) / \(total)")
+                Text("City \(index + 1) of \(total)")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             Spacer(minLength: 0)
-            Button("나중에") { dismiss() }
+            Button("Later") { dismiss() }
                 .dnaFont(.button)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .frame(minHeight: 44)
@@ -182,11 +182,11 @@ struct EvaluationView: View {
     private var conceptRow: some View {
         Button { showingConceptSheet = true } label: {
             HStack {
-                Text("여행 컨셉")
+                Text("Trip Concepts")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                 Spacer()
-                Text(viewModel.conceptsLabelKo ?? "고르기")
+                Text(viewModel.conceptsLabelKo ?? String(localized: "Choose"))
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Image(systemName: "chevron.right")
@@ -205,7 +205,7 @@ struct EvaluationView: View {
             Text(title)
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
-            TextField("자유롭게 적어주세요", text: text, axis: .vertical)
+            TextField("Write freely", text: text, axis: .vertical)
                 .dnaFont(.body)
                 .lineLimit(3...8)
                 .padding(DNASpacing.md)
@@ -230,7 +230,7 @@ struct EvaluationView: View {
             $0.countryCode == review.countryCode && ($0.cities.contains(review.city ?? "") || review.city == nil)
         }) else { return nil }
         let formatter = DateFormatter()
-        formatter.dateFormat = "M월 d일"
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return "\(formatter.string(from: leg.startDate)) – \(formatter.string(from: leg.endDate))"
     }
 
@@ -239,7 +239,7 @@ struct EvaluationView: View {
     private var processingStep: some View {
         VStack(spacing: DNASpacing.md) {
             ProgressView().tint(Color.dnaTextSecondary)
-            Text("저장하는 중")
+            Text("Saving")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
         }
@@ -253,10 +253,10 @@ struct EvaluationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.lg) {
                     VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                        Text("\(viewModel.headerTitle) 평가")
+                        Text("\(viewModel.headerTitle) Rating")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
-                        Text(viewModel.isRevising ? "이렇게 고쳤어요" : "이렇게 기록했어요")
+                        Text(viewModel.isRevising ? String(localized: "Here’s what you changed") : String(localized: "Here’s what you recorded"))
                             .dnaFont(.screenTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
                     }
@@ -268,24 +268,24 @@ struct EvaluationView: View {
                     }
 
                     if hasMemo {
-                        Text("다음에 추천받을 때 이 메모를 참고해요. 무엇을 참고했는지는 결과 화면에서 보여드려요.")
+                        Text("We’ll use these notes the next time you get recommendations. The results screen shows what we used.")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
 
                     VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                        Text("선택")
+                        Text("Options")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextTertiary)
-                        optionRow("대표 사진 고르기", systemImage: "photo") { showingCoverPicker = true }
-                        optionRow("공유 카드 만들기", systemImage: "square.and.arrow.up") { showingShare = true }
+                        optionRow(String(localized: "Choose Cover Photo"), systemImage: "photo") { showingCoverPicker = true }
+                        optionRow(String(localized: "Create Share Card"), systemImage: "square.and.arrow.up") { showingShare = true }
                     }
                 }
                 .padding(.horizontal, DNASpacing.gutter)
                 .padding(.vertical, DNASpacing.lg)
             }
             DNABottomCTA {
-                Button("완료") { dismiss() }
+                Button("Done") { dismiss() }
                     .buttonStyle(.dnaPrimary)
             }
         }
@@ -301,12 +301,12 @@ struct EvaluationView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                 if let match {
                     if memoCount > 0 {
-                        Text("좋았던 점 · 아쉬웠던 점 메모 \(memoCount)개")
+                        Text("\(memoCount) notes on likes and dislikes")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                 } else {
-                    Text("방문 기록만 남겼어요. 나중에 평가할 수 있어요.")
+                    Text("Only the visit was recorded. You can rate it later.")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -315,7 +315,7 @@ struct EvaluationView: View {
             if let rating = match?.rating {
                 Text("★ \(rating)").dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
             } else if match == nil {
-                Text("건너뜀").dnaFont(.caption).foregroundStyle(Color.dnaTextTertiary)
+                Text("Skipped").dnaFont(.caption).foregroundStyle(Color.dnaTextTertiary)
             }
         }
         .padding(DNASpacing.md)

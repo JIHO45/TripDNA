@@ -75,10 +75,10 @@ struct RecommendationDislikeSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                Text("이유를 알려주실래요?")
+                Text("Mind telling us why?")
                     .font(.title3.bold())
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("\(countryName)은(는) 앞으로 추천에서 빠져요. 저장 목록에서 언제든 되돌릴 수 있어요.")
+                Text("\(countryName) won't appear in your recommendations anymore. You can undo this anytime from your saved list.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -90,7 +90,7 @@ struct RecommendationDislikeSheet: View {
                         onSelect(reason)
                         dismiss()
                     } label: {
-                        Text(reason.labelKo)
+                        Text(reason.label)
                     }
                     .buttonStyle(.dnaSecondary)
                 }
@@ -100,7 +100,7 @@ struct RecommendationDislikeSheet: View {
                 onSelect(nil)
                 dismiss()
             } label: {
-                Text("건너뛰고 숨기기")
+                Text("Skip and Hide")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.dnaGhost)
@@ -141,7 +141,7 @@ struct RecommendationTagPill: View {
     let tagID: String
 
     var body: some View {
-        Text("'\(TagCatalog.labelKo(for: tagID))'")
+        Text("'\(TagCatalog.label(for: tagID))'")
             .font(.caption.weight(.medium))
             .foregroundStyle(Color.dnaTextPrimary)
             .padding(.horizontal, 10)
@@ -163,12 +163,12 @@ struct RecommendationTagPill: View {
 }
 
 #Preview("RecommendationDislikeSheet") {
-    RecommendationDislikeSheet(countryName: "일본") { _ in }
+    RecommendationDislikeSheet(countryName: "Japan") { _ in }
         .preferredColorScheme(.dark)
 }
 
 #Preview("RecommendationToast") {
-    RecommendationToast(message: "저장했어요")
+    RecommendationToast(message: "Saved")
         .padding()
         .background(AppCanvas())
         .preferredColorScheme(.dark)

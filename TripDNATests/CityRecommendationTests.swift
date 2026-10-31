@@ -499,7 +499,7 @@ struct CityRecommendationServiceTests {
 }
 
 extension CityGrade {
-    static var allNames: [String] { [CityGrade.ifThere, .makeTime, .choose].map(\.nameKo) }
+    static var allNames: [String] { [CityGrade.ifThere, .makeTime, .choose].map(\.name) }
 }
 
 struct CityConditionTests {

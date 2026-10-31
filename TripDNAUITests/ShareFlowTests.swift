@@ -3,10 +3,10 @@ import XCTest
 final class ShareFlowTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
-    @MainActor private func launch() -> XCUIApplication {
+    @MainActor private func launch(_ scenario: String = "upcoming") -> XCUIApplication {
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTesting", "-uiDemo"]
+        app.launchArguments = ["-uiTesting", "-uiDemo", scenario, "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["홈"].waitForExistence(timeout: 20))
         return app
@@ -23,7 +23,7 @@ final class ShareFlowTests: XCTestCase {
     @MainActor func testTripSharing() throws {
         let app = launch()
         app.tabBars.buttons["여행"].tap()
-        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "일본")).firstMatch
+        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "교토")).firstMatch
         reveal(trip, in: app)
         trip.tap()
         let share = app.buttons["trip.sharePreview"]
@@ -33,7 +33,7 @@ final class ShareFlowTests: XCTestCase {
     }
 
     @MainActor func testWrappedSharing() throws {
-        let app = launch()
+        let app = launch("wrappedPast")
         let wrapped = app.buttons["home.wrapped"]
         reveal(wrapped, in: app)
         wrapped.tap()

@@ -1,6 +1,7 @@
 {
   "food": {
     "labelKo": "미식",
+    "labelEn": "Food",
     "group": "interest",
     "routing": [
       "taste",
@@ -14,6 +15,7 @@
   },
   "culture": {
     "labelKo": "문화/예술",
+    "labelEn": "Culture & Arts",
     "group": "interest",
     "routing": [
       "interest"
@@ -26,6 +28,7 @@
   },
   "history": {
     "labelKo": "역사/유적",
+    "labelEn": "History & Heritage",
     "group": "interest",
     "routing": [
       "interest"
@@ -38,6 +41,7 @@
   },
   "outdoor": {
     "labelKo": "자연/트레킹",
+    "labelEn": "Nature & Trekking",
     "group": "interest",
     "routing": [
       "taste",
@@ -53,6 +57,7 @@
   },
   "beach": {
     "labelKo": "해변/휴양",
+    "labelEn": "Beach & Relaxation",
     "group": "interest",
     "routing": [
       "taste",
@@ -69,6 +74,7 @@
   },
   "nightlife": {
     "labelKo": "밤문화",
+    "labelEn": "Nightlife",
     "group": "interest",
     "routing": [
       "taste",
@@ -84,6 +90,7 @@
   },
   "shopping": {
     "labelKo": "쇼핑",
+    "labelEn": "Shopping",
     "group": "interest",
     "routing": [
       "taste",
@@ -99,6 +106,7 @@
   },
   "wellness": {
     "labelKo": "휴식/웰니스",
+    "labelEn": "Rest & Wellness",
     "group": "interest",
     "routing": [
       "taste",
@@ -114,6 +122,7 @@
   },
   "sportsAndEvents": {
     "labelKo": "스포츠/페스티벌 직관",
+    "labelEn": "Live Sports & Festivals",
     "group": "interest",
     "routing": [
       "taste",
@@ -129,6 +138,7 @@
   },
   "energyLow": {
     "labelKo": "고요한 평화",
+    "labelEn": "Quiet Calm",
     "group": "polarity",
     "routing": [
       "taste"
@@ -143,6 +153,7 @@
   },
   "energyHigh": {
     "labelKo": "에너지 넘치는 자극",
+    "labelEn": "Thrilling Energy",
     "group": "polarity",
     "routing": [
       "taste"
@@ -157,6 +168,7 @@
   },
   "planningLow": {
     "labelKo": "무계획의 묘미",
+    "labelEn": "Joy of No Plans",
     "group": "polarity",
     "routing": [
       "taste"
@@ -171,6 +183,7 @@
   },
   "planningHigh": {
     "labelKo": "알찬 계획과 실행",
+    "labelEn": "Well-Planned & Done",
     "group": "polarity",
     "routing": [
       "taste"
@@ -185,6 +198,7 @@
   },
   "socialLow": {
     "labelKo": "혼자만의 여유",
+    "labelEn": "Time to Myself",
     "group": "polarity",
     "routing": [
       "taste"
@@ -199,6 +213,7 @@
   },
   "socialHigh": {
     "labelKo": "함께하는 즐거움",
+    "labelEn": "Joy of Being Together",
     "group": "polarity",
     "routing": [
       "taste"
@@ -213,6 +228,7 @@
   },
   "noveltyLow": {
     "labelKo": "편안한 익숙함",
+    "labelEn": "Comfortably Familiar",
     "group": "polarity",
     "routing": [
       "taste"
@@ -227,6 +243,7 @@
   },
   "noveltyHigh": {
     "labelKo": "낯선 새로움 · 숨은 명소 탐험",
+    "labelEn": "Unfamiliar & Hidden Gems",
     "group": "polarity",
     "routing": [
       "taste"
@@ -241,6 +258,7 @@
   },
   "natureUrbanNature": {
     "labelKo": "대자연의 감동",
+    "labelEn": "Wonders of Nature",
     "group": "polarity",
     "routing": [
       "taste"
@@ -255,6 +273,7 @@
   },
   "natureUrbanCity": {
     "labelKo": "도시의 매력",
+    "labelEn": "Charm of the City",
     "group": "polarity",
     "routing": [
       "taste"
@@ -269,6 +288,7 @@
   },
   "negCrowded": {
     "labelKo": "너무 북적였어요",
+    "labelEn": "Too crowded",
     "group": "negative",
     "routing": [
       "taste"
@@ -284,6 +304,7 @@
   },
   "negBoring": {
     "labelKo": "너무 심심했어요",
+    "labelEn": "Too boring",
     "group": "negative",
     "routing": [
       "taste"
@@ -298,6 +319,7 @@
   },
   "negPacked": {
     "labelKo": "일정이 너무 빡셌어요",
+    "labelEn": "Schedule was too packed",
     "group": "negative",
     "routing": [
       "taste"
@@ -312,6 +334,7 @@
   },
   "negPlanDisrupted": {
     "labelKo": "계획대로 안 돼서 힘들었어요",
+    "labelEn": "Plans fell apart",
     "group": "negative",
     "routing": [
       "taste"
@@ -326,6 +349,7 @@
   },
   "negWeather": {
     "labelKo": "날씨가 아쉬웠어요",
+    "labelEn": "Disappointing weather",
     "group": "negative",
     "routing": [
       "constraint"
@@ -338,6 +362,7 @@
   },
   "negExpensive": {
     "labelKo": "예상보다 비쌌어요",
+    "labelEn": "Pricier than expected",
     "group": "negative",
     "routing": [
       "constraint"
@@ -350,6 +375,7 @@
   },
   "negTransit": {
     "labelKo": "이동이 힘들었어요",
+    "labelEn": "Getting around was hard",
     "group": "negative",
     "routing": [
       "constraint"
@@ -362,6 +388,7 @@
   },
   "negRipoffUnfriendly": {
     "labelKo": "바가지/불친절",
+    "labelEn": "Rip-offs or unfriendly",
     "group": "negative",
     "routing": [
       "quality"
@@ -374,6 +401,7 @@
   },
   "negHygiene": {
     "labelKo": "위생이 아쉬웠어요",
+    "labelEn": "Poor hygiene",
     "group": "negative",
     "routing": [
       "quality"
@@ -386,6 +414,7 @@
   },
   "negInfra": {
     "labelKo": "인프라가 부족해 불편했어요",
+    "labelEn": "Lacking infrastructure",
     "group": "negative",
     "routing": [
       "quality"

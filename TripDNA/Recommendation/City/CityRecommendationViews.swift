@@ -1,6 +1,10 @@
 import SwiftUI
 
-private func won(_ amount: Int) -> String { "\(amount / 10_000)만원" }
+private func won(_ amount: Int) -> String { shortKRW(amount, koreanUnit: "만원") } // l10n-ignore Korean amount unit
+
+private func wonRange(_ low: Int, _ high: Int) -> String {
+    AppLanguage.isKorean ? "\(won(low))~\(won(high))" : "\(won(low))–\(won(high))"
+}
 
 /// 도시 추천 결과(시안 RecoResult ③④). 받는 중·실패·지난 결과 복원까지 한 곳에서 그린다.
 struct CityRecommendationSection: View {
@@ -19,7 +23,7 @@ struct CityRecommendationSection: View {
     }
 
     /// 안내 문구는 임시다. 문구와 시점은 사용자가 정한다(docs/data/storage-and-privacy.md).
-    static let sendNotice = "추천을 받으면 입력한 여행 조건과 문장이 AI 서버로 전송돼요."
+    static var sendNotice: String { String(localized: "When you get recommendations, your trip conditions and text are sent to an AI server.") }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
@@ -52,10 +56,10 @@ struct CityRecommendationSection: View {
     private var loadingView: some View {
         VStack(spacing: DNASpacing.md) {
             ProgressView().tint(Color.dnaData)
-            Text("도시를 고르고 이유를 쓰고 있어요")
+            Text("Picking cities and writing the reasons")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Button("취소") { model.cancel() }
+            Button("Cancel") { model.cancel() }
                 .buttonStyle(.dnaGhost)
         }
         .frame(maxWidth: .infinity)
@@ -70,14 +74,14 @@ struct CityRecommendationSection: View {
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextPrimary)
             if model.lastRecord != nil {
-                Text("지난 결과를 아래에 그대로 보여줘요.")
+                Text("Your previous results are shown below.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
-            Button("다시 시도", action: retry)
+            Button("Try Again", action: retry)
                 .buttonStyle(.dnaSecondary)
             #if DEBUG
-            Button("개발용 키 입력") { showingKeyEntry = true }
+            Button("Enter Dev Key") { showingKeyEntry = true }
                 .buttonStyle(.dnaGhost)
             #endif
         }
@@ -95,12 +99,12 @@ struct CityRecommendationSection: View {
         let check = cards.filter(\.needsCheck)
 
         if isPrevious {
-            Text("\(record.createdAt.formatted(.dateTime.month().day()))에 받은 결과")
+            Text("Results from \(record.createdAt.formatted(.dateTime.month().day()))")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
         if record.derivedFrom != nil {
-            Text("설명과 유의점은 처음 입력한 예산 기준으로 쓰였어요. 새 예산으로 다시 쓰려면 추천을 다시 받아 주세요.")
+            Text("The descriptions and cautions were written for your original budget. To rewrite them for the new budget, get recommendations again.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaWarning)
         }
@@ -114,7 +118,7 @@ struct CityRecommendationSection: View {
                 CityCardCarousel(cards: main, model: model, request: record.input)
             }
             if !record.budgetCutCityIDs.isEmpty {
-                Text("예상 비용이 예산을 넘는 \(record.budgetCutCityIDs.count)곳은 뺐어요.")
+                Text("\(record.budgetCutCityIDs.count) cities with estimated costs over your budget were left out.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -127,7 +131,7 @@ struct CityRecommendationSection: View {
             Text(change.message + " ·")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
-            Button("되돌리기") { Task { await model.revertBudget(dependencies: dependencies) } }
+            Button("Undo") { Task { await model.revertBudget(dependencies: dependencies) } }
                 .dnaFont(.caption)
                 .frame(minHeight: 44)
         }
@@ -137,11 +141,14 @@ struct CityRecommendationSection: View {
     private func emptyCard(_ record: CityRecommendationRecord) -> some View {
         let cut = record.budgetCutCityIDs.count
         let (title, reason): (String, String) = if record.cards.isEmpty, cut > 0 {
-            ("예산에 맞는 도시를 찾지 못했어요", "예상 비용이 예산을 넘는 \(cut)곳을 뺐더니 남은 도시가 없어요. 예산이나 기간을 조정해 보세요.")
+            (String(localized: "Couldn't find a city within your budget"),
+             String(localized: "After removing \(cut) cities with estimated costs over your budget, none are left. Try adjusting your budget or trip length."))
         } else if record.cards.isEmpty {
-            ("조건에 맞는 도시를 찾지 못했어요", "이번 조건으로는 보여드릴 도시를 받지 못했어요. 조건을 바꿔 다시 받아 보세요.")
+            (String(localized: "Couldn't find a city that matches your conditions"),
+             String(localized: "No cities came back for these conditions. Change them and try again."))
         } else {
-            ("보여드릴 도시가 남지 않았어요", "받은 \(record.cards.count)곳을 모두 넘기거나 다시 추천하지 않기로 뺐어요. 새 여행 추천으로 다시 받아 보세요.")
+            (String(localized: "No cities left to show"),
+             String(localized: "You skipped or excluded all \(record.cards.count) cities. Get new ones with a new trip recommendation."))
         }
         return VStack(spacing: DNASpacing.sm) {
             Image(systemName: "magnifyingglass")
@@ -157,9 +164,9 @@ struct CityRecommendationSection: View {
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
-            Button("조건 수정", action: editConditions)
+            Button("Edit Conditions", action: editConditions)
                 .buttonStyle(.dnaPrimary)
-            Button("새 여행 추천") { newRequest(nil) }
+            Button("New Trip Recommendation") { newRequest(nil) }
                 .buttonStyle(.dnaSecondary)
         }
         .padding(DNASpacing.md)
@@ -175,7 +182,7 @@ struct CityRecommendationSection: View {
         if model.understandingExpanded {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 HStack {
-                    Text("이렇게 이해했어요")
+                    Text("Here's what I understood")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                     Spacer(minLength: 0)
@@ -187,7 +194,7 @@ struct CityRecommendationSection: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel("이해한 내용 접기")
+                    .accessibilityLabel("Collapse summary")
                 }
                 .padding(.trailing, -DNASpacing.xs)
                 if let understanding = record.understanding {
@@ -195,7 +202,7 @@ struct CityRecommendationSection: View {
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextPrimary)
                 } else if let primary = record.input.primary {
-                    Text(primary.labelKo)
+                    Text(primary.label)
                         .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                 }
@@ -210,18 +217,18 @@ struct CityRecommendationSection: View {
                                 .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.chip, style: .continuous))
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("\(chip.contains("원 이하") ? "예산 " : "")\(chip), 바꾸기")
+                        .accessibilityLabel(chip == record.input.budgetText ? String(localized: "Budget \(chip), change") : String(localized: "\(chip), change"))
                     }
                 }
                 if let home = excludedHomeName(record) {
                     Divider()
                     HStack(spacing: DNASpacing.xs) {
                         Image(systemName: "minus.circle").foregroundStyle(Color.dnaTextSecondary)
-                        Text("\(home)(사는 나라)은 뺐어요")
+                        Text("\(home) (your home country) was left out")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextPrimary)
                         Spacer(minLength: 0)
-                        Button("포함하기") {
+                        Button("Include") {
                             var request = record.input
                             request.includeHomeCountry = true
                             newRequest(request)
@@ -229,23 +236,23 @@ struct CityRecommendationSection: View {
                         .dnaFont(.button)
                         .foregroundStyle(Color.dnaActionText)
                         .frame(minHeight: 44)
-                        .accessibilityHint("조건을 채운 새 추천 화면이 열려요. 다시 추천을 받아야 해요")
+                        .accessibilityHint("Opens a new recommendation screen with your conditions filled in. You need to get recommendations again")
                     }
                 }
                 if !required.isEmpty {
-                    Text("꼭 지킬 조건: \(required.joined(separator: ", "))")
+                    Text("Must-have conditions: \(required.joined(separator: ", "))")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 // 예산 수정은 저장된 응답을 다시 거를 뿐이라 횟수를 쓰지 않는다. 예산 없이 받은 결과는 수정할 수 없어 말하지 않는다.
                 if model.canEditBudget {
-                    Text("예산은 바꿔도 추천 횟수를 쓰지 않아요")
+                    Text("Changing the budget doesn't use up a recommendation")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 if !record.memoriesUsed.isEmpty {
                     VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                        Text("지난 여행에서 참고").dnaFont(.caption)
+                        Text("From your past trips").dnaFont(.caption)
                         ForEach(record.memoriesUsed, id: \.id) { use in Text("· \(use.how)").dnaFont(.caption) }
                     }
                     .foregroundStyle(Color.dnaTextSecondary)
@@ -271,7 +278,7 @@ struct CityRecommendationSection: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                     if let home = excludedHomeName(record) {
-                        Text("\(home) 제외")
+                        Text("\(home) excluded")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -284,17 +291,17 @@ struct CityRecommendationSection: View {
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("이해한 내용 펼치기: \(collapsed)\(excludedHomeName(record).map { ", \($0) 제외" } ?? "")")
+            .accessibilityLabel(String(localized: "Expand summary: \(collapsed)") + (excludedHomeName(record).map { String(localized: ", \($0) excluded") } ?? ""))
         }
     }
 
     /// "추가 확인 필요" 묶음. 기본 추천과 섞지 않고 확인할 조건 이름을 적는다.
     private func checkGroup(_ cards: [CityRecommendationRecord.Card], request: RecommendationRequest) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text("추가 확인 필요 \(cards.count)곳")
+            Text("\(cards.count) cities need a check")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("꼭 지킬 조건을 아직 확인하지 못해 위 추천과 섞지 않았어요.")
+            Text("We couldn't confirm your must-have conditions yet, so these are kept apart from the recommendations above.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             ForEach(Array(cards.enumerated()), id: \.element.cityID) { index, card in
@@ -308,7 +315,7 @@ struct CityRecommendationSection: View {
                                 .dnaFont(.cardTitle)
                                 .foregroundStyle(Color.dnaTextPrimary)
                             if case .needsCheck(let names) = card.badge {
-                                Text("확인 필요: \(names.joined(separator: ", "))")
+                                Text("Needs checking: \(names.joined(separator: ", "))")
                                     .dnaFont(.caption)
                                     .foregroundStyle(Color.dnaTextSecondary)
                             }
@@ -333,15 +340,15 @@ struct CityRecommendationSection: View {
     private func exclusionBanner(_ notice: ExcludedCity) -> some View {
         HStack(spacing: DNASpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(notice.cityName)은(는) 다시 추천하지 않아요")
+                Text("\(notice.cityName) won't be recommended again")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("설정 > 추천에서 제외한 곳에서 바꿀 수 있어요")
+                Text("You can change this in Settings > Excluded from Recommendations")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             Spacer(minLength: 0)
-            Button("되돌리기") { Task { await model.undoExclusion(dependencies: dependencies) } }
+            Button("Undo") { Task { await model.undoExclusion(dependencies: dependencies) } }
                 .dnaFont(.button)
                 .foregroundStyle(Color.dnaActionText)
                 .frame(minHeight: 44)
@@ -365,13 +372,13 @@ private struct CityCardCarousel: View {
     var body: some View {
         VStack(spacing: DNASpacing.sm) {
             HStack {
-                Text("추천 도시 \(cards.count)곳")
+                Text("\(cards.count) Recommended Cities")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer(minLength: 0)
                 if cards.count > 1 {
-                    arrow("chevron.left", label: "이전 도시", target: index - 1)
-                    arrow("chevron.right", label: "다음 도시", target: index + 1)
+                    arrow("chevron.left", label: "Previous city", target: index - 1)
+                    arrow("chevron.right", label: "Next city", target: index + 1)
                 }
             }
             ScrollView(.horizontal, showsIndicators: false) {
@@ -405,7 +412,7 @@ private struct CityCardCarousel: View {
         }
     }
 
-    private func arrow(_ symbol: String, label: String, target: Int) -> some View {
+    private func arrow(_ symbol: String, label: LocalizedStringKey, target: Int) -> some View {
         Button {
             guard cards.indices.contains(target) else { return }
             withAnimation { page = cards[target].cityID }
@@ -449,7 +456,7 @@ private struct CityCardView: View {
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
                 CityTitleBlock(card: card)
                 if card.isExploration {
-                    Text("다른 장점이 있는 후보")
+                    Text("Candidate with other strengths")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaData)
                 }
@@ -461,12 +468,12 @@ private struct CityCardView: View {
                     .multilineTextAlignment(.leading)
                 if let cost = card.cost {
                     Divider()
-                    Text("예상 \(request.nights.map { "\($0)박 " } ?? "")\(won(cost.low))~\(won(cost.high)) (추정)")
+                    Text(request.nights.map { String(localized: "Estimated for \($0) nights: \(wonRange(cost.low, cost.high)) (estimate)") } ?? String(localized: "Estimated \(wonRange(cost.low, cost.high)) (estimate)"))
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 if card.seasonCheckNeeded {
-                    Text("선택한 시기에 가능한지 확인이 필요해요")
+                    Text("Check that this works for your chosen dates")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaWarning)
                 }
@@ -490,7 +497,7 @@ private struct CityCardView: View {
                     .frame(width: 44, height: 44)
                     .dnaGlass(in: Circle())
             }
-            .accessibilityLabel(isSaved ? "저장 해제" : "저장")
+            .accessibilityLabel(isSaved ? String(localized: "Remove from saved") : String(localized: "Save"))
             CityCardMenu(card: card, model: model, glass: true)
         }
     }
@@ -506,14 +513,14 @@ private struct CityCardMenu: View {
 
     var body: some View {
         Menu {
-            Button("이번 결과에서 넘기기", systemImage: "arrow.right") {
+            Button("Skip for This Result", systemImage: "arrow.right") {
                 Task { await model.skip(card.cityID, dependencies: dependencies) }
             }
-            Button("다시 추천하지 않기", systemImage: "hand.raised", role: .destructive) {
+            Button("Never Recommend Again", systemImage: "hand.raised", role: .destructive) {
                 Task { await model.exclude(card, dependencies: dependencies) }
             }
             if let record = model.lastRecord, let url = CityErrorReport.mailURL(card: card, record: record) {
-                Button("틀린 내용 알리기", systemImage: "exclamationmark.bubble") {
+                Button("Report an Error", systemImage: "exclamationmark.bubble") {
                     openURL(url)
                     Task { await dependencies.track(.errorReportOpened) }
                 }
@@ -525,7 +532,7 @@ private struct CityCardMenu: View {
                 icon
             }
         }
-        .accessibilityLabel("더 보기")
+        .accessibilityLabel("More")
     }
 
     private var icon: some View {
@@ -542,20 +549,17 @@ enum CityErrorReport {
 
     static func mailURL(card: CityRecommendationRecord.Card, record: CityRecommendationRecord,
                         appVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?") -> URL? {
-        let body = """
-        어떤 내용이 틀렸거나 맞지 않았나요?
-
-
-        ---
-        도시: \(card.cityName) (\(card.cityID))
-        결과: \(record.id) · \(record.createdAt.formatted(.iso8601))
-        버전: \(record.version.prompt) · \(record.version.ranking) · \(record.version.catalog) · \(record.version.model) · 앱 \(appVersion)
-        """
+        let body = [
+            String(localized: "What was wrong or didn't match?"), "", "", "---",
+            String(localized: "City: \(card.cityName) (\(card.cityID))"),
+            String(localized: "Result: \(record.id) · \(record.createdAt.formatted(.iso8601))"),
+            String(localized: "Version: \(record.version.prompt) · \(record.version.ranking) · \(record.version.catalog) · \(record.version.model) · app \(appVersion)"),
+        ].joined(separator: "\n")
         var components = URLComponents()
         components.scheme = "mailto"
         components.path = address
         components.queryItems = [
-            URLQueryItem(name: "subject", value: "[TripDNA] 추천 내용 알림: \(card.cityName)"),
+            URLQueryItem(name: "subject", value: String(localized: "[TripDNA] Recommendation feedback: \(card.cityName)")),
             URLQueryItem(name: "body", value: body),
         ]
         return components.url
@@ -586,7 +590,7 @@ private struct CityBadgeView: View {
         VStack(alignment: .leading, spacing: DNASpacing.xxs) {
             switch card.badge {
             case .requiredMet(let scope):
-                Label("필수조건 충족 · \(scope.joined(separator: ", "))", systemImage: "checkmark.circle")
+                Label("Requirements met · \(scope.joined(separator: ", "))", systemImage: "checkmark.circle")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaData)
                     .padding(.horizontal, DNASpacing.xs)
@@ -597,7 +601,7 @@ private struct CityBadgeView: View {
             }
             // 선호 조건의 미확인은 필수 조건의 배지와 따로 안내한다.
             if !card.unconfirmedPreferences.isEmpty {
-                Text("확인 필요: \(card.unconfirmedPreferences.joined(separator: ", "))")
+                Text("Needs checking: \(card.unconfirmedPreferences.joined(separator: ", "))")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -639,18 +643,18 @@ struct CityDetailView: View {
                 CityBadgeView(card: card)
                 basis
                 if cityExcluded || countryExcluded { exclusionRow }
-                plainSection("이번 여행에 맞는 이유") {
+                plainSection("Why It Fits This Trip") {
                     Text(card.reason)
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextPrimary)
                 }
                 caveatSection
                 if let cost = card.cost {
-                    plainSection("예상 비용") {
-                        Text("\(won(cost.low))~\(won(cost.high))")
+                    plainSection("Estimated Cost") {
+                        Text(wonRange(cost.low, cost.high))
                             .dnaFont(.heroTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
-                        Text("추정이에요. 실제 가격이나 예산 충족을 보장하지 않으니 항공·숙박 가격은 출발 전에 직접 확인해 주세요.")
+                        Text("This is an estimate. It doesn't guarantee actual prices or that your budget is met, so check flight and hotel prices yourself before you go.")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
@@ -674,7 +678,7 @@ struct CityDetailView: View {
                         .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
                 }
                 .padding(DNASpacing.gutter)
-                .accessibilityLabel("이 도시에 대해 묻기")
+                .accessibilityLabel("Ask about this city")
         }
         .sheet(isPresented: $showingQuestions) {
             CityQuestionSheet(
@@ -693,7 +697,7 @@ struct CityDetailView: View {
                 Button { Task { await toggleSave() } } label: {
                     Image(systemName: isSaved ? "bookmark.fill" : "bookmark")
                 }
-                .accessibilityLabel(isSaved ? "저장 해제" : "저장")
+                .accessibilityLabel(isSaved ? String(localized: "Remove from saved") : String(localized: "Save"))
             }
         }
         .safeAreaInset(edge: .bottom) { bottomBar }
@@ -714,10 +718,10 @@ struct CityDetailView: View {
             NavigationLink {
                 TripRegistrationView(prefilledCountryCode: card.country, prefilledCity: card.cityName)
             } label: {
-                Text("이곳으로 여행 등록")
+                Text("Register a Trip Here")
             }
             .buttonStyle(.dnaPrimary)
-            Text("날짜·동행은 자동으로 정하지 않아요")
+            Text("Dates and companions aren't set automatically")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             if let errorMessage {
@@ -734,18 +738,18 @@ struct CityDetailView: View {
     private var exclusionRow: some View {
         HStack(spacing: DNASpacing.sm) {
             VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                Text(cityExcluded ? "추천에서 제외 중" : "추천에서 제외한 나라예요")
+                Text(cityExcluded ? String(localized: "Excluded from recommendations") : String(localized: "This country is excluded from recommendations"))
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextPrimary)
                 if countryExcluded {
-                    Text("나라 제외는 설정 > 추천에서 제외한 곳에서 풀 수 있어요")
+                    Text("You can undo a country exclusion in Settings > Excluded from Recommendations")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
             }
             Spacer(minLength: 0)
             if cityExcluded {
-                Button("제외 풀기") { Task { await releaseExclusion() } }
+                Button("Remove Exclusion") { Task { await releaseExclusion() } }
                     .dnaFont(.button)
                     .foregroundStyle(Color.dnaActionText)
                     .frame(minHeight: 44)
@@ -768,18 +772,18 @@ struct CityDetailView: View {
     @ViewBuilder
     private var basis: some View {
         if let savedAt {
-            Text("\(savedAt.formatted(.dateTime.year().month().day())) 저장 당시 조건(\(summary)) 기준이에요. 지금 조건과 다를 수 있어요.")
+            Text("Based on the conditions when you saved this on \(savedAt.formatted(.dateTime.year().month().day())) (\(summary)). They may differ from your current conditions.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaWarning)
         } else if !summary.isEmpty {
-            Text("조건: \(summary)")
+            Text("Conditions: \(summary)")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
     }
 
     /// 카드 없이 제목과 본문을 잇는 섹션.
-    private func plainSection<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
+    private func plainSection<C: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.titleGap) {
             Text(title).dnaFont(.sectionTitle).foregroundStyle(Color.dnaTextPrimary)
             content()
@@ -791,16 +795,16 @@ struct CityDetailView: View {
 
     private var notes: [String] {
         var result = [card.caveat].filter { !$0.isEmpty }
-        if card.seasonCheckNeeded { result.append("선택한 시기에 가능한지 확인이 필요해요") }
-        if case .needsCheck(let names) = card.badge { result.append("확인 필요(꼭 지킬 조건): \(names.joined(separator: ", "))") }
-        result += card.unconfirmedPreferences.map { "확인 필요: \($0)" }
+        if card.seasonCheckNeeded { result.append(String(localized: "Check that this works for your chosen dates")) }
+        if case .needsCheck(let names) = card.badge { result.append(String(localized: "Needs checking (must-have): \(names.joined(separator: ", "))")) }
+        result += card.unconfirmedPreferences.map { String(localized: "Needs checking: \($0)") }
         return result
     }
 
     @ViewBuilder
     private var caveatSection: some View {
         if !notes.isEmpty {
-            plainSection("안 맞을 수 있는 점 · 확인할 것") {
+            plainSection("Things That May Not Fit · To Check") {
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     ForEach(notes, id: \.self) { note in
                         Text(note)
@@ -839,30 +843,30 @@ struct CityConsentSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
-            Button("취소") { model.cancelConsent() }
+            Button("Cancel") { model.cancelConsent() }
                 .buttonStyle(.dnaGhost)
-            Text("추천을 위해 이 정보를 보내요")
+            Text("We send this info to make recommendations")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
-                    Text("도시 추천과 도시 질문의 답은 외부 AI 모델이 써요. 그래서 아래 정보를 중계 서버를 거쳐 AI 모델로 보내요.")
+                    Text("An external AI model writes city recommendations and answers to city questions, so the info below is sent to it through a relay server.")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
-                    group("항상 보내는 것", CityMemoryConsent.alwaysSent)
-                    group("동의할 때만 보내는 것", CityMemoryConsent.sentIfGranted)
-                    group("보내지 않는 것", CityMemoryConsent.neverSent)
-                    group("받는 곳", CityMemoryConsent.recipients)
-                    Text("평가를 빼도 추천받을 수 있어요. 나중에 설정 > 권한과 보내는 정보에서 바꿀 수 있어요. 취소하면 아무것도 보내지 않아요.")
+                    group("Always Sent", CityMemoryConsent.alwaysSent)
+                    group("Sent Only If You Agree", CityMemoryConsent.sentIfGranted)
+                    group("Never Sent", CityMemoryConsent.neverSent)
+                    group("Recipients", CityMemoryConsent.recipients)
+                    Text("You can get recommendations without sharing reviews. You can change this later in Settings > Permissions and Data Sent. If you cancel, nothing is sent.")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
-                    Link("개인정보 처리방침 보기", destination: SettingsRootView.privacyPolicyURL)
+                    Link("View Privacy Policy", destination: SettingsRootView.privacyPolicyURL)
                         .dnaFont(.caption)
                 }
             }
-            Button("동의하고 추천 받기") { model.answerConsent(true, dependencies: dependencies) }
+            Button("Agree and Get Recommendations") { model.answerConsent(true, dependencies: dependencies) }
                 .buttonStyle(.dnaPrimary)
-            Button("평가는 빼고 추천 받기") { model.answerConsent(false, dependencies: dependencies) }
+            Button("Get Recommendations Without Reviews") { model.answerConsent(false, dependencies: dependencies) }
                 .buttonStyle(.dnaSecondary(onSheet: true))
         }
         .padding(DNASpacing.gutter)
@@ -871,7 +875,7 @@ struct CityConsentSheet: View {
         .interactiveDismissDisabled()
     }
 
-    private func group(_ title: String, _ text: String) -> some View {
+    private func group(_ title: LocalizedStringKey, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xxs) {
             Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
             Text(text).dnaFont(.body).foregroundStyle(Color.dnaTextPrimary)
@@ -903,7 +907,7 @@ struct CityConditionEditSheet: View {
         ScrollView {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             HStack {
-                Text("조건 수정")
+                Text("Edit Conditions")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
@@ -914,39 +918,39 @@ struct CityConditionEditSheet: View {
                         .frame(width: 40, height: 40)
                         .background(Color.dnaRaised, in: Circle())
                 }
-                .accessibilityLabel("닫기")
+                .accessibilityLabel("Close")
             }
             if model.canEditBudget {
-                Text("예산 (최대 금액)")
+                Text("Budget (Max Amount)")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        DNATagChip(title: "미정", isSelected: budget == nil && !isCustom) {
+                        DNATagChip(title: String(localized: "Undecided"), isSelected: budget == nil && !isCustom) {
                             isCustom = false
                             budget = nil
                         }
                         ForEach(RecommendationRequest.budgetPresets, id: \.self) { amount in
-                            DNATagChip(title: "\(amount / 10_000)만 원 이하", isSelected: !isCustom && budget == amount) {
+                            DNATagChip(title: String(localized: "Up to \(shortKRW(amount, koreanUnit: "만 원"))"), isSelected: !isCustom && budget == amount) { // l10n-ignore Korean amount unit
                                 isCustom = false
                                 budget = amount
                             }
                         }
-                        DNATagChip(title: "직접 입력", isSelected: isCustom) { isCustom = true }
+                        DNATagChip(title: String(localized: "Custom"), isSelected: isCustom) { isCustom = true }
                     }
                 }
                 if isCustom {
                     HStack {
-                        TextField("금액", text: $budgetText)
+                        TextField("Amount", text: $budgetText)
                             .keyboardType(.numberPad)
-                        Text("만 원 이하").foregroundStyle(Color.dnaTextSecondary)
+                        Text("× ₩10,000 or less").foregroundStyle(Color.dnaTextSecondary)
                     }
                     .textFieldStyle(.roundedBorder)
                 }
-                Text("새로 추천받지 않고 받은 도시만 다시 걸러요. 추천 횟수를 쓰지 않아요.")
+                Text("This only re-filters the cities you already got, without new recommendations. It doesn't use up a recommendation.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
-                Button("이 조건으로 다시 보기") {
+                Button("View with These Conditions") {
                     guard canApply else { return }
                     let amount = isCustom ? man.map { $0 * 10_000 } : budget
                     Task {
@@ -957,14 +961,14 @@ struct CityConditionEditSheet: View {
                 .buttonStyle(.dnaPrimary(isDisabled: !canApply))
                 .disabled(!canApply)
             } else {
-                Text("이번 결과는 예산 없이 받아서 예산으로 다시 거를 수 없어요.")
+                Text("This result was received without a budget, so it can't be re-filtered by budget.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
-            Text("시기·기간이나 컨셉을 바꾸려면 새 여행 추천으로 다시 받아 주세요.")
+            Text("To change the timing, length, or concept, get recommendations again with a new trip recommendation.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
-            Button("새 여행 추천") { dismiss(); onNewRequest() }
+            Button("New Trip Recommendation") { dismiss(); onNewRequest() }
                 .buttonStyle(.dnaSecondary(onSheet: true))
         }
         .padding(DNASpacing.gutter)

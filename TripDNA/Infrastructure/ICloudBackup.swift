@@ -410,19 +410,19 @@ final class ICloudBackup {
     }
 
     static func status(for error: Error) -> Status {
-        if error is CancellationError { return .failed("백업을 멈췄어요.") }
-        if case BackupError.newerVersion = error { return .failed("새 버전 앱에서 만든 백업이에요. 앱을 업데이트해 주세요.") }
-        if case BackupError.notFound = error { return .failed("iCloud에서 백업을 찾지 못했어요.") }
-        guard let error = error as? CKError else { return .failed("백업하지 못했어요. 잠시 후 다시 시도해 주세요.") }
+        if error is CancellationError { return .failed(String(localized: "Backup stopped.")) }
+        if case BackupError.newerVersion = error { return .failed(String(localized: "This backup was made by a newer version of the app. Please update the app.")) }
+        if case BackupError.notFound = error { return .failed(String(localized: "Couldn't find the backup in iCloud.")) }
+        guard let error = error as? CKError else { return .failed(String(localized: "Couldn't back up. Please try again in a moment.")) }
         switch error.code {
         case .notAuthenticated:
             return .noAccount
         case .quotaExceeded:
-            return .failed("iCloud 저장 공간이 부족해서 백업하지 못했어요.")
+            return .failed(String(localized: "Couldn't back up because iCloud storage is full."))
         case .networkUnavailable, .networkFailure:
-            return .failed("인터넷에 연결되지 않아 백업하지 못했어요.")
+            return .failed(String(localized: "Couldn't back up because you're not connected to the internet."))
         default:
-            return .failed("백업하지 못했어요. 잠시 후 다시 시도해 주세요.")
+            return .failed(String(localized: "Couldn't back up. Please try again in a moment."))
         }
     }
 }

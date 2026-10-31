@@ -168,7 +168,7 @@ extension RecommendationRequest {
 
     /// "이렇게 이해했어요"의 조건 칩. 시기는 항상 보이고(미정이면 "시기 미정"), 기간·예산은 모르면 뺀다.
     var conditionChips: [String] {
-        var chips = [periodText ?? "시기 미정"]
+        var chips = [periodText ?? String(localized: "Dates not set")]
         if let lengthText { chips.append(lengthText) }
         if let budgetText { chips.append(budgetText) }
         return chips
@@ -177,29 +177,36 @@ extension RecommendationRequest {
     /// 접힌 한 줄. 예: "미식 · 11월 3박 4일 · 필수: 비행 5시간 이내". 모르는 부분은 뺀다.
     func collapsedLine(required: [String]) -> String {
         var parts: [String] = []
-        if let primary { parts.append(primary.labelKo) }
+        if let primary { parts.append(primary.label) }
         let when = [periodText, lengthText].compactMap { $0 }.joined(separator: " ")
         if !when.isEmpty { parts.append(when) }
-        if !required.isEmpty { parts.append("필수: \(required.joined(separator: ", "))") }
+        if !required.isEmpty { parts.append(String(localized: "Required: \(required.joined(separator: ", "))")) }
         return parts.joined(separator: " · ")
     }
 
     private var periodText: String? {
-        if let startDate {
-            let parts = Calendar.current.dateComponents([.month, .day], from: startDate)
-            if let m = parts.month, let d = parts.day { return "\(m)월 \(d)일" }
-        }
-        return month.map { "\($0)월" }
+        if let startDate { return startDate.formatted(.dateTime.month().day()) }
+        return month.flatMap { Calendar.current.monthSymbols.indices.contains($0 - 1) ? Calendar.current.monthSymbols[$0 - 1] : nil }
     }
 
     private var lengthText: String? {
         guard let nights else { return nil }
-        return nights == 0 ? "당일" : "\(nights)박 \(nights + 1)일"
+        return nights == 0 ? String(localized: "Day trip") : String(localized: "\(nights) nights, \(nights + 1) days")
     }
 
     var budgetText: String? {
         guard let budgetMaxKRW else { return nil }
-        let text = "\(budgetBasis == .perPerson ? "1인" : "전체") \(budgetMaxKRW / 10_000)만 원 이하"
-        return budgetIncludesFlight ? text : text + " (항공 제외)"
+        let amount = shortKRW(budgetMaxKRW, koreanUnit: "만 원") // l10n-ignore Korean amount unit
+        let text = budgetBasis == .perPerson
+            ? String(localized: "\(amount) max per person")
+            : String(localized: "\(amount) max total")
+        return budgetIncludesFlight ? text : text + String(localized: " (excl. flights)")
     }
+}
+
+/// 짧은 원화 표기. 한국어는 "100만 원"(단위 표기는 호출처가 정한다), 그 밖은 "₩500K"·"₩1.5M".
+func shortKRW(_ amount: Int, koreanUnit: String) -> String {
+    if AppLanguage.isKorean { return "\(amount / 10_000)\(koreanUnit)" }
+    if amount >= 1_000_000 { return "₩\((Double(amount) / 1_000_000).formatted())M" }
+    return "₩\(amount / 1_000)K"
 }

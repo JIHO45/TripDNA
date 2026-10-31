@@ -32,8 +32,8 @@ enum EvaluationNotificationService {
               let fireDate = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: nextDay),
               fireDate > Date() else { return }
         let content = UNMutableNotificationContent()
-        content.title = "여행은 어떠셨나요?"
-        content.body = "도시별 별점과 메모로 이번 여행을 기록해 보세요."
+        content.title = String(localized: "How was your trip?")
+        content.body = String(localized: "Record this trip with ratings and notes for each city.")
         content.sound = .default
         content.userInfo = ["tripID": trip.id]
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)

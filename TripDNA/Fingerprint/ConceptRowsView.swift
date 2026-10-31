@@ -10,7 +10,7 @@ struct ConceptBlockRows: View {
         Grid(alignment: .leading, horizontalSpacing: DNASpacing.sm, verticalSpacing: 10) {
             ForEach(Array(fingerprint.entries.prefix(maxRows).enumerated()), id: \.element.concept) { rank, entry in
                 GridRow {
-                    Text(entry.concept.labelKo)
+                    Text(entry.concept.label)
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .lineLimit(1)
@@ -23,7 +23,7 @@ struct ConceptBlockRows: View {
                     }
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(entry.concept.labelKo) \(entry.count)번")
+                .accessibilityLabel("\(entry.concept.label), in \(entry.count) trips")
             }
         }
     }

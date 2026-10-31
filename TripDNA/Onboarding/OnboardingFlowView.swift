@@ -63,10 +63,10 @@ struct OnboardingHookView: View {
                 Text("TripDNA")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
-                Text("다녀온 여행으로\n다음 여행지를 골라요")
+                Text("Pick your next destination\nfrom the trips you've taken")
                     .dnaFont(.screenTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("지난 여행과 원하는 여행을 알려주면, 그걸 바탕으로 추천해요. 기록이 없어도 취향부터 시작할 수 있어요.")
+                Text("Tell us about past trips and the trips you want, and we'll recommend from there. No records? You can start with your tastes.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -75,9 +75,9 @@ struct OnboardingHookView: View {
             .padding(.horizontal, DNASpacing.gutter)
             .padding(.top, DNASpacing.lg)
             DNABottomCTA {
-                Button("시작하기") { viewModel.stage = .homeCountry }
+                Button("Get Started") { viewModel.stage = .homeCountry }
                     .buttonStyle(.dnaPrimary)
-                Text("로그인 없이 시작해요")
+                Text("No sign-in needed")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -133,15 +133,15 @@ struct OnboardingHomeCountryView: View {
         VStack(spacing: 0) {
             DNAStepTopBar(
                 progress: viewModel.progress,
-                trailingTitle: "나중에",
+                trailingTitle: String(localized: "Later"),
                 onBack: { viewModel.goBack() },
                 onTrailing: { confirm(nil) }
             )
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                Text("어느 나라에\n살고 계세요?")
+                Text("Which country\ndo you live in?")
                     .dnaFont(.screenTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("출발 공항 후보를 채우고, 이 나라 도시는 추천에서 기본으로 빼요. 추천할 때 넣을 수도 있어요.")
+                Text("We'll fill in departure airport options and leave this country's cities out of recommendations by default. You can include them when you ask for recommendations.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -158,7 +158,7 @@ struct OnboardingHomeCountryView: View {
                                 .dnaFont(.sectionTitle)
                                 .foregroundStyle(Color.dnaTextPrimary)
                             if selectedCode == deviceRegion {
-                                Text("기기 지역 설정에서 가져왔어요")
+                                Text("From your device's region settings")
                                     .dnaFont(.caption)
                                     .foregroundStyle(Color.dnaTextSecondary)
                             }
@@ -177,10 +177,10 @@ struct OnboardingHomeCountryView: View {
                 Button {
                     isSearching = true
                 } label: {
-                    Label("다른 나라 검색", systemImage: "magnifyingglass")
+                    Label("Search Other Countries", systemImage: "magnifyingglass")
                 }
                 .buttonStyle(.dnaSecondary)
-                Text("설정에서 언제든 바꿀 수 있어요. 정하지 않으면 아무 나라도 빼지 않아요.")
+                Text("You can change this anytime in Settings. If you skip it, no country is left out.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -191,7 +191,7 @@ struct OnboardingHomeCountryView: View {
             Spacer(minLength: 0)
 
             DNABottomCTA {
-                Button("계속하기") { confirm(selectedCode) }
+                Button("Continue") { confirm(selectedCode) }
                     .buttonStyle(.dnaPrimary(isDisabled: selectedCode.isEmpty || isConfirming))
                     .disabled(selectedCode.isEmpty || isConfirming)
             }
@@ -203,7 +203,7 @@ struct OnboardingHomeCountryView: View {
                     .background(AppCanvas())
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("완료") { isSearching = false }
+                            Button("Done") { isSearching = false }
                         }
                     }
             }
@@ -229,10 +229,10 @@ struct OnboardingEntryModeView: View {
         VStack(spacing: 0) {
             DNAStepTopBar(progress: viewModel.progress, onBack: { viewModel.goBack() })
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                Text("지난 여행을\n어떻게 불러올까요?")
+                Text("How should we\nbring in your past trips?")
                     .dnaFont(.screenTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("지금 다 넣지 않아도 돼요. 나중에 언제든 추가할 수 있어요.")
+                Text("You don't have to add everything now. You can add more anytime.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -243,18 +243,18 @@ struct OnboardingEntryModeView: View {
             VStack(spacing: DNASpacing.sm) {
                 EntryModeRow(
                     systemImage: "photo.on.rectangle.angled",
-                    title: "사진첩에서 찾기",
-                    subtitle: "사진의 위치·날짜로 후보를 찾고, 맞는지 직접 확인해요"
+                    title: String(localized: "Find in Photo Library"),
+                    subtitle: String(localized: "We find candidates from photo location and date, and you confirm which are right")
                 ) { viewModel.selectEntryMode(.photoScan) }
                 EntryModeRow(
                     systemImage: "pencil.line",
-                    title: "직접 등록",
-                    subtitle: "도시와 시기를 골라 넣어요 · 여행 등록과 같은 화면"
+                    title: String(localized: "Add Manually"),
+                    subtitle: String(localized: "Pick cities and dates · Same screen as trip registration")
                 ) { viewModel.selectEntryMode(.manual) }
                 EntryModeRow(
                     systemImage: "heart",
-                    title: "여행 기록 없이 취향부터",
-                    subtitle: "원하는 여행만 골라서 시작해요"
+                    title: String(localized: "Start with Tastes, No Trip History"),
+                    subtitle: String(localized: "Start with just the trips you want")
                 ) { viewModel.selectEntryMode(.preferencesOnly) }
             }
             .padding(.horizontal, DNASpacing.gutter)

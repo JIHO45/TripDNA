@@ -22,23 +22,23 @@ struct RootView: View {
         .tint(Color.dnaTextPrimary)
         .overlay {
             if isRestoring {
-                ProgressView("iCloud에서 되살리는 중")
+                ProgressView("Restoring from iCloud")
                     .padding(DNASpacing.lg)
                     .background(Color.dnaSheet, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             }
         }
-        .alert("iCloud에 백업이 있어요", isPresented: Binding(
+        .alert("There's a backup in iCloud", isPresented: Binding(
             get: { restoreOffer != nil }, set: { if !$0 { restoreOffer = nil } }
         ), presenting: restoreOffer) { _ in
-            Button("되살리기") { Task { await restoreFromBackup() } }
-            Button("새로 시작", role: .cancel) {}
+            Button("Restore") { Task { await restoreFromBackup() } }
+            Button("Start Fresh", role: .cancel) {}
         } message: { manifest in
-            Text("\(manifest.createdAt.formatted(date: .abbreviated, time: .shortened)) 백업 · 여행 \(manifest.tripCount)개. 이 기기로 되살릴까요? 새로 시작해도 설정의 iCloud 백업에서 나중에 되살릴 수 있어요.")
+            Text("Backup from \(manifest.createdAt.formatted(date: .abbreviated, time: .shortened)) · \(manifest.tripCount) trips. Restore it on this device? Even if you start fresh, you can restore it later from iCloud backup in Settings.")
         }
-        .alert("되살리지 못했어요", isPresented: $restoreFailed) {
-            Button("확인", role: .cancel) {}
+        .alert("Couldn't restore", isPresented: $restoreFailed) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text("설정의 iCloud 백업에서 다시 시도할 수 있어요.")
+            Text("You can try again from iCloud backup in Settings.")
         }
         .task {
             await dependencies.restore(session: session)

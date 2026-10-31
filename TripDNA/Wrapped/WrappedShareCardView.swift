@@ -9,19 +9,19 @@ struct WrappedShareCardView: View {
 
     var body: some View {
         TravelShareCardFrame(background: Color.dnaAction, kicker: wrapped.periodKo, installURL: installURL) {
-            Text(wrapped.isSingleTrip ? "한 번 떠났어요" : "\(wrapped.tripCount)번 떠났어요")
+            Text(wrapped.isSingleTrip ? String(localized: "You took one trip") : String(localized: "You took \(wrapped.tripCount) trips"))
                 .font(.system(size: 46, weight: .heavy))
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 18) {
-                line("나라", showsDestinationNames ? ShareText.list(wrapped.countryNames) : "\(wrapped.countryCount)곳")
+                line(String(localized: "Countries"), showsDestinationNames ? ShareText.list(wrapped.countryNames) : String(localized: "\(wrapped.countryCount) visited"))
                 // 한 번뿐인 해에는 "가장 많이"를 말하지 않는다.
                 if let fingerprint = wrapped.fingerprint, !wrapped.isSingleTrip {
-                    line(fingerprint.isTie ? "같이 많이" : "가장 많이", fingerprint.topCountedKo ?? ShareText.list(fingerprint.top.map(\.labelKo)))
+                    line(fingerprint.isTie ? String(localized: "Tied for most") : String(localized: "Most often"), fingerprint.topCountedKo ?? ShareText.list(fingerprint.top.map(\.label)))
                 }
                 if let topTrip = wrapped.topTrip {
                     let value = [showsDestinationNames ? topTrip.countriesKo : nil, topTrip.conceptKo.map(ShareText.keepTogether)]
                         .compactMap { $0 }.joined(separator: ", ")
-                    line("1위 여행", value.isEmpty ? "나라 이름 숨김" : value)
+                    line(String(localized: "Top trip"), value.isEmpty ? String(localized: "Country names hidden") : value)
                 }
             }
         }

@@ -293,7 +293,7 @@ final class AppDependencies {
             )
             return SwiftDataAppStore(container: container, countries: countries, tags: tags)
         } catch {
-            assertionFailure("SwiftData 저장소를 열지 못했습니다: \(error)")
+            assertionFailure("SwiftData 저장소를 열지 못했습니다: \(error)") // l10n-ignore debug-only assertion
             return InMemoryAppStore(countries: countries, tags: tags)
         }
     }

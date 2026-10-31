@@ -21,8 +21,8 @@ final class FingerprintDetailViewModel {
     /// "다녀온 여행 6번 · 출장 1번은 빼고 셌어요"
     var scopeLineKo: String {
         guard let fingerprint else { return "" }
-        var line = "다녀온 여행 \(fingerprint.total)번"
-        if obligationCount > 0 { line += " · 출장 \(obligationCount)번은 빼고 셌어요" }
+        var line = String(localized: "\(fingerprint.total) completed trips")
+        if obligationCount > 0 { line += " · " + String(localized: "\(obligationCount) business trips not counted") }
         return line
     }
 }
@@ -52,7 +52,7 @@ struct FingerprintDetailView: View {
                     showingMismatch = true
                 } label: {
                     HStack {
-                        Text("내 취향과 달라요")
+                        Text("Doesn't match my taste")
                         Image(systemName: "chevron.right").dnaFont(size: 12, weight: .semibold)
                     }
                     .dnaFont(.button)
@@ -65,14 +65,14 @@ struct FingerprintDetailView: View {
             .padding(.vertical, DNASpacing.md)
         }
         .dnaBackground()
-        .navigationTitle("내 여행 지문")
+        .navigationTitle("My Travel Fingerprint")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             if viewModel.fingerprint != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingShare = true } label: { Image(systemName: "square.and.arrow.up") }
-                        .accessibilityLabel("지문 공유")
+                        .accessibilityLabel("Share fingerprint")
                         .accessibilityIdentifier("fingerprint.sharePreview")
                 }
             }
@@ -81,8 +81,8 @@ struct FingerprintDetailView: View {
             if let fingerprint = viewModel.fingerprint {
                 ShareCardSheet(
                     kind: .fingerprint,
-                    title: "공유 미리보기",
-                    disclosure: "포함: 여행 수, 컨셉별 횟수 · 빠짐: 날짜, 도시, 동행, 사진"
+                    title: String(localized: "Share Preview"),
+                    disclosure: String(localized: "Included: trip count, count per concept · Left out: dates, cities, companions, photos")
                 ) { _ in
                     FingerprintShareCard(fingerprint: fingerprint)
                 }
@@ -111,13 +111,13 @@ struct FingerprintDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                Text("여행마다 고른 주 컨셉")
+                Text("Main concept chosen for each trip")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 ForEach(Array(fingerprint.entries.enumerated()), id: \.element.concept) { rank, entry in
                     conceptRow(entry, rank: rank, ids: fingerprint.tripIDs[entry.concept] ?? [])
                 }
-                Text("칸을 누르면 그 여행으로 가요")
+                Text("Tap a block to open that trip")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -131,11 +131,11 @@ struct FingerprintDetailView: View {
     private func conceptRow(_ entry: ConceptFingerprint.Entry, rank: Int, ids: [String]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(entry.concept.labelKo)
+                Text(entry.concept.label)
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
-                Text("\(entry.count)번")
+                Text("in \(entry.count) trips")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                     .monospacedDigit()
@@ -148,7 +148,7 @@ struct FingerprintDetailView: View {
                         } label: {
                             block(for: trip, rank: rank)
                         }
-                        .accessibilityLabel("\(trip.placeTitleKo) 여행 보기")
+                        .accessibilityLabel("View \(trip.placeTitleKo) trip")
                     }
                 }
             }
@@ -168,13 +168,13 @@ struct FingerprintDetailView: View {
 
     private var emptyCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            Text("아직 지문이 비어 있어요")
+            Text("Your fingerprint is empty")
                 .dnaFont(.screenTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("다녀온 여행을 등록하면 여행마다 한 칸씩 쌓여요.")
+            Text("Register trips you've taken and each one adds a block.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
-            Button("여행 등록하기") { showingRegistration = true }
+            Button("Register a Trip") { showingRegistration = true }
                 .buttonStyle(.dnaPrimary)
                 .padding(.top, DNASpacing.xs)
                 .accessibilityIdentifier("fingerprint.register")
@@ -189,18 +189,18 @@ struct FingerprintDetailView: View {
     private var wantedCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             HStack {
-                Text("원한다고 한 것")
+                Text("What you said you want")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
-                NavigationLink("수정") { WantedTripsSettingsView() }
+                NavigationLink("Edit") { WantedTripsSettingsView() }
                     .dnaFont(.button)
                     .foregroundStyle(Color.dnaActionText)
                     .accessibilityIdentifier("fingerprint.editWanted")
             }
             let rows = [1, 2, 3].filter { !(viewModel.tiers?.concepts(in: $0).isEmpty ?? true) }
             if rows.isEmpty {
-                Text("아직 고르지 않았어요")
+                Text("Nothing chosen yet")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             } else {
@@ -210,7 +210,7 @@ struct FingerprintDetailView: View {
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 92, alignment: .leading)
-                        Text((viewModel.tiers?.concepts(in: tier) ?? []).map(\.labelKo).joined(separator: ", "))
+                        Text((viewModel.tiers?.concepts(in: tier) ?? []).map(\.label).joined(separator: ", "))
                             .dnaFont(.cardTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
                     }
@@ -234,23 +234,23 @@ private struct MismatchSheet: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("어떤 게 다른가요?")
+                    Text("What's different?")
                         .dnaFont(.screenTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
-                    Text("지문은 여행마다 고른 컨셉을 센 거예요. 고치고 싶은 곳으로 안내할게요.")
+                    Text("Your fingerprint counts the concept chosen for each trip. We'll take you to where you can fix it.")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 Button(action: onOpenTrips) {
-                    route("여행의 컨셉이 틀렸어요", "여행 목록에서 컨셉 고치기")
+                    route(String(localized: "A trip's concept is wrong"), String(localized: "Fix concepts in the trip list"))
                 }
                 .buttonStyle(.plain)
                 NavigationLink { WantedTripsSettingsView() } label: {
-                    route("원하는 여행이 바뀌었어요", "원하는 여행 수정")
+                    route(String(localized: "The trips I want have changed"), String(localized: "Edit wanted trips"))
                 }
                 .buttonStyle(.plain)
                 NavigationLink { MemorySettingsView() } label: {
-                    route("추천이 기억하는 내용이 달라요", "기억하는 취향 보기")
+                    route(String(localized: "What recommendations remember is off"), String(localized: "See remembered tastes"))
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -259,7 +259,7 @@ private struct MismatchSheet: View {
             .background(Color.dnaCanvas.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
             }
         }
         .presentationDetents([.large])

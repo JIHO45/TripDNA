@@ -37,10 +37,10 @@ struct AffiliateActivitySection: View {
                                 .background(Color.dnaData.opacity(0.12), in: Circle())
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(link.city) · \(link.category.labelKo)")
+                                Text("\(link.city) · \(link.category.label)")
                                     .dnaFont(.cardTitle)
                                     .foregroundStyle(Color.dnaTextPrimary)
-                                Text("\(link.providerName) 웹에서 보기")
+                                Text("View on \(link.providerName) web")
                                     .dnaFont(.caption)
                                     .foregroundStyle(Color.dnaTextSecondary)
                             }
@@ -57,7 +57,7 @@ struct AffiliateActivitySection: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityHint("외부 예약 웹 페이지를 앱 안의 브라우저로 엽니다")
+                    .accessibilityHint("Opens the external booking page in an in-app browser")
                 }
             }
         }
@@ -71,7 +71,7 @@ struct AffiliateActivitySection: View {
     private var disclosure: some View {
         if links.first?.isAffiliateActive == true {
             Label {
-                Text("이 링크로 예약하면 TripDNA가 수수료를 제공받습니다.")
+                Text("If you book through this link, TripDNA receives a commission.")
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
                 Image(systemName: "info.circle.fill")
@@ -80,7 +80,7 @@ struct AffiliateActivitySection: View {
             .foregroundStyle(Color.dnaTextPrimary)
         } else {
             Label {
-                Text("현재는 제휴 연결 전 테스트 링크예요. 예약 수수료는 발생하지 않습니다.")
+                Text("This is a test link before partner setup. No booking commission applies.")
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
                 Image(systemName: "hammer.fill")

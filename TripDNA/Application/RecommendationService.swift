@@ -286,8 +286,7 @@ nonisolated struct RecommendationService {
     ) -> [String] {
         let size = tieGroupSize(ordered, tieEpsilon: tieEpsilon, by: score)
         guard size >= configuration.tieDisclosureGroupSize else { return [] }
-        return ["지금 지문으로는 이 나라를 포함해 \(size)곳이 거의 같은 점수예요. "
-                + "여행 기록이 쌓이면 순위가 더 뚜렷해져요."]
+        return [String(localized: "With your current fingerprint, \(size) countries including this one score almost the same. Rankings get clearer as your trip records grow.")]
     }
 
     private func makeRecommendation(
@@ -425,9 +424,9 @@ nonisolated struct RecommendationService {
 
     private func costBadge(for cost: Double) -> String {
         switch cost {
-        case ..<0.34: "물가 낮은 편"
-        case ..<0.67: "물가 보통"
-        default: "물가 높은 편"
+        case ..<0.34: String(localized: "Lower cost of living")
+        case ..<0.67: String(localized: "Average cost of living")
+        default: String(localized: "Higher cost of living")
         }
     }
 }

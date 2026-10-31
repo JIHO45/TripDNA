@@ -42,7 +42,7 @@ final class EvaluationViewModel {
     /// 시트와 요약에 쓰는 컨셉 한 줄. 주 컨셉이 앞이다.
     var conceptsLabelKo: String? {
         guard let primaryConcept else { return nil }
-        return ([primaryConcept] + secondaryConcepts).joinedLabelKo()
+        return ([primaryConcept] + secondaryConcepts).joinedLabel()
     }
 
     var flowSteps: [EvaluationStep] {
@@ -165,7 +165,7 @@ final class EvaluationViewModel {
             EvaluationNotificationService.cancel(for: trip.id)
             step = .result
         } catch {
-            errorMessage = "평가를 저장하지 못했어요. 입력값을 확인해주세요."
+            errorMessage = String(localized: "Couldn’t save your evaluation. Please check what you entered.")
             step = flowSteps.last ?? .cityReview(0)
         }
     }

@@ -94,14 +94,20 @@ final class CityRecommendationViewModel {
     struct BudgetChange: Equatable {
         let previous: Int?
         /// 조사까지 붙인 바꾼 예산 문구. 예: "1인 100만 원 이하로", "미정으로".
-        let phrase: String
+        /// 바꾼 예산 문구(`budgetText`). 미정으로 바꿨으면 nil.
+        let budget: String?
         let removed: Int
         let added: Int
 
         var message: String {
-            if removed > 0 { return "예산을 \(phrase) 바꿔서 \(removed)곳이 빠졌어요" }
-            if added > 0 { return "예산을 \(phrase) 바꿔서 \(added)곳이 늘었어요" }
-            return "예산을 \(phrase) 바꿨어요"
+            if let budget {
+                if removed > 0 { return String(localized: "Budget set to \(budget), so \(removed) cities were removed") }
+                if added > 0 { return String(localized: "Budget set to \(budget), so \(added) cities were added") }
+                return String(localized: "Budget set to \(budget)")
+            }
+            if removed > 0 { return String(localized: "Budget set to undecided, so \(removed) cities were removed") }
+            if added > 0 { return String(localized: "Budget set to undecided, so \(added) cities were added") }
+            return String(localized: "Budget set to undecided")
         }
     }
 
@@ -115,7 +121,7 @@ final class CityRecommendationViewModel {
         guard previous != budgetMaxKRW, now.derivedFrom != nil else { budgetChange = nil; return }
         let after = Set(visibleCards(now).map(\.cityID))
         budgetChange = BudgetChange(
-            previous: previous, phrase: now.input.budgetText.map { $0 + "로" } ?? "미정으로",
+            previous: previous, budget: now.input.budgetText,
             removed: shown.subtracting(after).count, added: after.subtracting(shown).count
         )
     }
@@ -191,7 +197,7 @@ final class CityRecommendationViewModel {
 
     private func run(request: RecommendationRequest, dependencies: AppDependencies) async {
         guard let catalog = CityCatalog.load() else {
-            state = .failed("도시 자료를 읽지 못했어요.")
+            state = .failed(String(localized: "Couldn't load the city data."))
             return
         }
         state = .loading
@@ -202,7 +208,7 @@ final class CityRecommendationViewModel {
         if homeExcluded, let home = dependencies.homeCountryCode { excludedCountries.insert(home) }
         // 제외 목록을 읽지 못하면 제외한 도시가 다시 나올 수 있으므로 추천을 받지 않는다.
         guard let cityState = try? await dependencies.store.cityState() else {
-            state = .failed("제외한 도시를 읽지 못했어요. 다시 시도해 주세요.")
+            state = .failed(String(localized: "Couldn't load your excluded cities. Please try again."))
             return
         }
         // 다녀온 곳은 도시 단위로 뺀다. 나라에 다녀왔다고 그 나라의 다른 도시까지 빼지 않는다.
@@ -247,13 +253,13 @@ final class CityRecommendationViewModel {
             guard !Task.isCancelled else { return }
             switch error {
             case CityRecommendationError.notConfigured:
-                state = .failed("LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
+                state = .failed(String(localized: "The AI connection isn't set up yet. A proxy URL (CityLLMProxyURL) or a development key is required."))
             case CityRecommendationError.noCandidates:
-                state = .failed("조건에 맞는 도시를 찾지 못했어요.")
+                state = .failed(String(localized: "Couldn't find a city that matches your conditions."))
             case CityRecommendationError.quotaExceeded(let resetAt):
-                state = .failed(CityLLMProxyClient.quotaMessage("추천", resetAt: resetAt))
+                state = .failed(CityLLMProxyClient.quotaMessage(String(localized: "recommendations"), resetAt: resetAt))
             default:
-                state = .failed("추천을 받지 못했어요. 다시 시도해 주세요. (\(error))")
+                state = .failed(String(localized: "Couldn't get recommendations. Please try again. (\(String(describing: error)))"))
                 await dependencies.track(.cityRecommendationFailed)
             }
         }
@@ -289,7 +295,7 @@ final class CityRecommendationViewModel {
         }
     }
 
-    static let saveFailure = "저장하지 못했어요. 다시 시도해 주세요."
+    static var saveFailure: String { String(localized: "Couldn't save. Please try again.") }
 
     func toggleSave(_ card: CityRecommendationRecord.Card, dependencies: AppDependencies) async {
         let request = lastRecord?.input
@@ -359,10 +365,10 @@ struct DevKeyForm: View {
     var body: some View {
         Form {
             Section {
-                SecureField("Anthropic API 키", text: $key)
+                SecureField("Anthropic API Key", text: $key)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                Button("저장") {
+                Button("Save") {
                     DevAPIKeyStore.save(key)
                     key = ""
                     saved = DevAPIKeyStore.read() != nil
@@ -370,18 +376,18 @@ struct DevKeyForm: View {
                 }
                 .disabled(key.isEmpty)
                 if saved {
-                    Button("저장된 키 지우기", role: .destructive) {
+                    Button("Delete Saved Key", role: .destructive) {
                         DevAPIKeyStore.save("")
                         saved = false
                     }
                 }
             } header: {
-                Text(saved ? "저장된 키가 있어요" : "저장된 키가 없어요")
+                Text(saved ? "A key is saved" : "No key saved")
             } footer: {
-                Text("이 기기의 Keychain에만 저장돼요. 디버그 빌드에서만 쓰여요.")
+                Text("Stored only in this device's Keychain. Used in debug builds only.")
             }
         }
-        .navigationTitle("개발용 API 키")
+        .navigationTitle("Development API Key")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

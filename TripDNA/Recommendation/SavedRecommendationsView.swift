@@ -14,9 +14,9 @@ struct SavedRecommendationsView: View {
             if cities.isEmpty && viewModel.savedFeedback.isEmpty && viewModel.dislikedFeedback.isEmpty {
                 EmptyStateView(
                     systemImage: "bookmark",
-                    title: "저장한 도시가 없어요",
-                    message: "마음에 드는 도시 카드를 북마크로 저장하면\n여기에 모여요.",
-                    actionTitle: "추천 보러 가기",
+                    title: String(localized: "No saved cities"),
+                    message: String(localized: "Bookmark city cards you like\nand they'll show up here."),
+                    actionTitle: String(localized: "See Recommendations"),
                     action: { dismiss() }
                 )
             } else {
@@ -32,7 +32,7 @@ struct SavedRecommendationsView: View {
                             cityCard(city)
                         }
                         if !viewModel.savedFeedback.isEmpty || !viewModel.dislikedFeedback.isEmpty {
-                            Text("이전 기록(나라)")
+                            Text("Earlier Records (Countries)")
                                 .dnaFont(.sectionTitle)
                                 .foregroundStyle(Color.dnaTextPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -52,7 +52,7 @@ struct SavedRecommendationsView: View {
         .dnaBackground()
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .navigationTitle("저장한 도시")
+        .navigationTitle("Saved Cities")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             cities = (try? await dependencies.store.cityState().saved) ?? []
@@ -88,7 +88,7 @@ struct SavedRecommendationsView: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                     if !item.summary.isEmpty {
-                        Text("저장 당시 조건: \(item.summary)")
+                        Text("Conditions when saved: \(item.summary)")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
@@ -107,7 +107,7 @@ struct SavedRecommendationsView: View {
                     }
                 }
             } label: {
-                Label("저장 해제", systemImage: "bookmark.slash")
+                Label("Remove Save", systemImage: "bookmark.slash")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity)
@@ -123,9 +123,9 @@ struct SavedRecommendationsView: View {
     }
 
     private var dislikedSection: some View {
-        SectionCard(title: "관심 없다고 한 나라") {
+        SectionCard(title: String(localized: "Countries You Skipped")) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("되돌리면 다시 추천 후보에 들어가요.")
+                Text("Undo to put them back in your recommendations.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .padding(.bottom, DNASpacing.xs)
@@ -137,13 +137,13 @@ struct SavedRecommendationsView: View {
                             .dnaFont(.body)
                             .foregroundStyle(Color.dnaTextPrimary)
                         Spacer(minLength: 0)
-                        Button("되돌리기") {
+                        Button("Undo") {
                             Task { await viewModel.revokeDislike(feedback, dependencies: dependencies) }
                         }
                         .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .buttonStyle(.plain)
-                        .accessibilityLabel("\(CountryCatalog.name(for: feedback.countryCode)) 되돌리기")
+                        .accessibilityLabel("Undo \(CountryCatalog.name(for: feedback.countryCode))")
                     }
                     .frame(minHeight: 44)
                 }
@@ -163,7 +163,7 @@ struct SavedRecommendationsView: View {
                         .foregroundStyle(Color.dnaTextPrimary)
                     SlotChip(slot: feedback.slot)
                     if isExcluded(feedback) {
-                        Text("추천에서 제외 중")
+                        Text("Excluded from recommendations")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaUnverifiedText)
                             .padding(.horizontal, DNASpacing.xs)
@@ -188,7 +188,7 @@ struct SavedRecommendationsView: View {
                 NavigationLink {
                     TripRegistrationView(prefilledCountryCode: feedback.countryCode)
                 } label: {
-                    Label("여행으로 등록", systemImage: "airplane")
+                    Label("Register as Trip", systemImage: "airplane")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaData)
                         .frame(maxWidth: .infinity)
@@ -202,7 +202,7 @@ struct SavedRecommendationsView: View {
                     Button {
                         Task { await viewModel.revokeDislike(feedback, dependencies: dependencies) }
                     } label: {
-                        Label("제외 풀기", systemImage: "arrow.uturn.backward")
+                        Label("Include Again", systemImage: "arrow.uturn.backward")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaActionText)
                             .frame(maxWidth: .infinity)
@@ -215,7 +215,7 @@ struct SavedRecommendationsView: View {
                 Button {
                     Task { await viewModel.unsave(feedback, dependencies: dependencies) }
                 } label: {
-                    Label("저장 해제", systemImage: "bookmark.slash")
+                    Label("Remove Save", systemImage: "bookmark.slash")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .frame(maxWidth: .infinity)
@@ -245,7 +245,7 @@ struct SavedRecommendationsView: View {
     private func savedDateText(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd"
-        return "\(formatter.string(from: date)) 저장"
+        return String(localized: "Saved \(formatter.string(from: date))")
     }
 }
 

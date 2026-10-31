@@ -37,18 +37,18 @@ nonisolated enum ActivityCategory: String, CaseIterable, Sendable {
         self.init(rawValue: tagID)
     }
 
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .highlights: "인기 액티비티"
-        case .food: "푸드 투어"
-        case .culture: "문화·예술 체험"
-        case .history: "역사 투어"
-        case .outdoor: "자연·아웃도어"
-        case .beach: "해변·휴양"
-        case .nightlife: "나이트라이프"
-        case .shopping: "쇼핑"
-        case .wellness: "웰니스"
-        case .sportsAndEvents: "스포츠·이벤트"
+        case .highlights: String(localized: "Popular Activities")
+        case .food: String(localized: "Food Tours")
+        case .culture: String(localized: "Arts & Culture")
+        case .history: String(localized: "History Tours")
+        case .outdoor: String(localized: "Outdoors & Nature")
+        case .beach: String(localized: "Beach & Relaxation")
+        case .nightlife: String(localized: "Nightlife")
+        case .shopping: String(localized: "Shopping")
+        case .wellness: String(localized: "Wellness")
+        case .sportsAndEvents: String(localized: "Sports & Events")
         }
     }
 

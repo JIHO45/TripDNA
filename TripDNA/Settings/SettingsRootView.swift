@@ -25,40 +25,40 @@ struct SettingsRootView: View {
                 }
                 .listRowBackground(Color.dnaSurface1)
 
-                Section("구독") {
-                    LabeledContent("TripDNA 구독") {
-                        Text("준비 중").foregroundStyle(Color.dnaTextSecondary)
+                Section("Subscription") {
+                    LabeledContent("TripDNA Subscription") {
+                        Text("Coming soon").foregroundStyle(Color.dnaTextSecondary)
                     }
                     .foregroundStyle(Color.dnaTextPrimary)
                 }
                 .listRowBackground(Color.dnaSurface1)
 
-                Section("취향과 추천") {
-                    link("원하는 여행", detail: wantedSummary) { WantedTripsSettingsView() }
-                    link("기억하는 취향", detail: memoryCount) { MemorySettingsView() }
-                    link("추천에서 제외한 곳", detail: excludedCount) { ExclusionsSettingsView() }
-                    link("저장한 도시", detail: savedCount) { SavedRecommendationsView(viewModel: RecommendationViewModel()) }
-                    link("출발 공항 기본값", detail: airportSummary) { DepartureAirportSettingsView() }
+                Section("Tastes & Recommendations") {
+                    link("Wanted Trips", detail: wantedSummary) { WantedTripsSettingsView() }
+                    link("Remembered Tastes", detail: memoryCount) { MemorySettingsView() }
+                    link("Excluded from Recommendations", detail: excludedCount) { ExclusionsSettingsView() }
+                    link("Saved Cities", detail: savedCount) { SavedRecommendationsView(viewModel: RecommendationViewModel()) }
+                    link("Default Departure Airport", detail: airportSummary) { DepartureAirportSettingsView() }
                     link(
-                        "사는 나라",
-                        detail: dependencies.homeCountryCode.map { CountryCatalog.name(for: $0) } ?? "정하지 않음"
+                        "Home Country",
+                        detail: dependencies.homeCountryCode.map { CountryCatalog.name(for: $0) } ?? String(localized: "Not set")
                     ) { HomeCountrySettingsView() }
                 }
                 .listRowBackground(Color.dnaSurface1)
 
-                Section("데이터와 권한") {
-                    link("권한과 보내는 정보") { PermissionsSettingsView() }
+                Section("Data & Permissions") {
+                    link("Permissions and shared info") { PermissionsSettingsView() }
                     NavigationLink {
                         DataDeletionSettingsView(onFinished: { dismiss() })
                     } label: {
-                        Text("데이터 삭제").foregroundStyle(Color.dnaError)
+                        Text("Delete data").foregroundStyle(Color.dnaError)
                     }
                 }
                 .listRowBackground(Color.dnaSurface1)
 
                 #if DEBUG
-                Section("개발용") {
-                    link("LLM API 키") { DevKeyForm() }
+                Section("Development") {
+                    link("LLM API Key") { DevKeyForm() }
                 }
                 .listRowBackground(Color.dnaSurface1)
                 #endif
@@ -66,26 +66,26 @@ struct SettingsRootView: View {
                 Section {
                     // Notion에 게시한 방침(2026-10-31). 원본은 Notion 페이지, 사본은 docs/privacy-policy.md.
                     Link(destination: Self.privacyPolicyURL) {
-                        LabeledContent("개인정보 처리방침") {
+                        LabeledContent("Privacy Policy") {
                             Image(systemName: "arrow.up.right").foregroundStyle(Color.dnaTextSecondary)
                         }
                         .foregroundStyle(Color.dnaTextPrimary)
                     }
                     // 약관 주소가 정해지기 전까지 이동하지 않는 자리표시자다.
-                    Text("이용약관").foregroundStyle(Color.dnaTextPrimary)
-                    LabeledContent("버전", value: Self.versionText)
+                    Text("Terms of Use").foregroundStyle(Color.dnaTextPrimary)
+                    LabeledContent("Version", value: Self.versionText)
                         .foregroundStyle(Color.dnaTextPrimary)
                 } footer: {
-                    Text("이용약관은 준비 중이에요.")
+                    Text("Terms of Use are coming soon.")
                 }
                 .listRowBackground(Color.dnaSurface1)
             }
             .settingsListStyle()
-            .navigationTitle("설정")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("닫기") { dismiss() }
+                    Button("Close") { dismiss() }
                 }
             }
             .task {
@@ -98,7 +98,7 @@ struct SettingsRootView: View {
     static let privacyPolicyURL = URL(string: "https://woolly-devourer-5d2.notion.site/TripDNA-Privacy-Policy-4093ed084bab809a99c9ffcf15daf337")!
 
     private func link<Destination: View>(
-        _ title: String,
+        _ title: LocalizedStringKey,
         detail: String? = nil,
         @ViewBuilder destination: @escaping () -> Destination
     ) -> some View {
@@ -115,13 +115,13 @@ struct SettingsRootView: View {
     private func loadSummaries() async {
         let tiers = try? await dependencies.store.loadWantedTiers()
         if let tiers {
-            wantedSummary = tiers.tier1.isEmpty ? nil : "가장 원해요 \(tiers.tier1.count)개"
-            memoryCount = (tiers.avoidNote ?? "").isEmpty ? nil : "1개"
+            wantedSummary = tiers.tier1.isEmpty ? nil : String(localized: "\(tiers.tier1.count) most wanted")
+            memoryCount = (tiers.avoidNote ?? "").isEmpty ? nil : String(localized: "1 item")
         }
         let cityState = (try? await dependencies.store.cityState()) ?? CityRecommendationState()
         let excluded = ((try? await dependencies.recommendationService.activeDislikes())?.count ?? 0) + cityState.excluded.count
-        excludedCount = excluded > 0 ? "\(excluded)곳" : nil
-        savedCount = cityState.saved.isEmpty ? nil : "\(cityState.saved.count)곳"
+        excludedCount = excluded > 0 ? String(localized: "\(excluded) places") : nil
+        savedCount = cityState.saved.isEmpty ? nil : String(localized: "\(cityState.saved.count) places")
     }
 
     private func loadAirportSummary() async {
@@ -169,7 +169,7 @@ private struct SettingsToastModifier: ViewModifier {
                             .dnaFont(.body)
                             .foregroundStyle(Color.dnaSelectedForeground)
                         if let undo = current.undo {
-                            Button(current.undoTitle ?? "되돌리기") {
+                            Button(current.undoTitle ?? String(localized: "Undo")) {
                                 toast = nil
                                 Task { await undo() }
                             }

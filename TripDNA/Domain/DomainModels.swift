@@ -594,6 +594,8 @@ nonisolated struct CountryProfile: Identifiable, Codable, Equatable, Sendable {
     let countryCode: String
     let name: String
     let nameKo: String
+    /// 앱 언어에 맞는 국가 이름(시드 이름만 사용한다).
+    var displayName: String { AppLanguage.isKorean ? nameKo : name }
     let status: CountryStatus
     let tasteCore: TasteAxes
     let matchingAxes: Set<TasteAxis>
@@ -618,6 +620,8 @@ nonisolated enum TagRouting: String, Codable, Sendable {
 nonisolated struct TagDefinition: Identifiable, Codable, Equatable, Sendable {
     let id: String
     let labelKo: String
+    let labelEn: String
+    var label: String { AppLanguage.isKorean ? labelKo : labelEn }
     let group: TagGroup
     let routing: Set<TagRouting>
     let axisSignature: [TasteAxis: Double]?

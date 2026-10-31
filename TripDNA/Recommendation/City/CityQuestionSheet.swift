@@ -28,7 +28,7 @@ final class CityQuestionModel {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isLoading else { return }
         guard let catalog = CityCatalog.load() else {
-            status = .failed(question: text, message: "도시 자료를 읽지 못했어요.")
+            status = .failed(question: text, message: String(localized: "Couldn't load the city data."))
             return
         }
         status = .loading(question: text)
@@ -46,11 +46,11 @@ final class CityQuestionModel {
                     status = .notSaved
                 }
             } catch CityQuestionError.notConfigured {
-                status = .failed(question: text, message: "LLM 연결이 아직 준비되지 않았어요. 프록시 주소(CityLLMProxyURL) 또는 개발용 키가 필요해요.")
+                status = .failed(question: text, message: String(localized: "The AI connection isn't set up yet. A proxy URL (CityLLMProxyURL) or a development key is required."))
             } catch CityLLMError.quotaExceeded(let resetAt) {
-                status = .failed(question: text, message: CityLLMProxyClient.quotaMessage("질문", resetAt: resetAt))
+                status = .failed(question: text, message: CityLLMProxyClient.quotaMessage(String(localized: "questions"), resetAt: resetAt))
             } catch {
-                status = .failed(question: text, message: "답을 확인하지 못했어요. 다시 시도해 주세요.")
+                status = .failed(question: text, message: String(localized: "Couldn't get an answer. Please try again."))
             }
         }
     }
@@ -78,7 +78,7 @@ struct CityQuestionSheet: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: DNASpacing.lg) {
                         if model.entries.isEmpty && model.status == .idle {
-                            Text("아직 물어본 게 없어요. 날씨, 이동, 동행에게 맞는지처럼 궁금한 걸 물어보세요.")
+                            Text("Nothing asked yet. Ask about things like weather, getting around, or whether it suits your travel companions.")
                                 .dnaFont(.body)
                                 .foregroundStyle(Color.dnaTextSecondary)
                         }
@@ -101,11 +101,11 @@ struct CityQuestionSheet: View {
             }
             .safeAreaInset(edge: .bottom) { inputBar }
             .dnaBackground()
-            .navigationTitle("\(card.cityName)에 대해 묻기")
+            .navigationTitle("Ask About \(card.cityName)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("닫기") { dismiss() }
+                    Button("Close") { dismiss() }
                 }
             }
         }
@@ -120,11 +120,11 @@ struct CityQuestionSheet: View {
             Text(conditionLine)
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
-            Text("각 질문은 이전 대화 없이 답해요")
+            Text("Each question is answered without earlier conversation")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             HStack(spacing: DNASpacing.sm) {
-                TextField("이 도시에 대해 물어보세요", text: $model.draft, axis: .vertical)
+                TextField("Ask about this city", text: $model.draft, axis: .vertical)
                     .lineLimit(1...3)
                     .padding(.horizontal, DNASpacing.md)
                     .frame(minHeight: 44)
@@ -139,7 +139,7 @@ struct CityQuestionSheet: View {
                         .background(Color.dnaSelectedBackground, in: Circle())
                 }
                 .disabled(model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isLoading)
-                .accessibilityLabel("질문 보내기")
+                .accessibilityLabel("Send question")
             }
         }
         .padding(.horizontal, DNASpacing.lg)
@@ -149,8 +149,12 @@ struct CityQuestionSheet: View {
     }
 
     private var conditionLine: String {
-        let basis = isSavedBasis ? "저장할 때의 조건" : "이 추천의 조건"
-        return summary.isEmpty ? "\(basis) 기준으로 답해요" : "\(basis) 기준으로 답해요: \(summary)"
+        switch (isSavedBasis, summary.isEmpty) {
+        case (true, true): String(localized: "Answering based on the conditions when you saved this")
+        case (true, false): String(localized: "Answering based on the conditions when you saved this: \(summary)")
+        case (false, true): String(localized: "Answering based on this recommendation's conditions")
+        case (false, false): String(localized: "Answering based on this recommendation's conditions: \(summary)")
+        }
     }
 
     private func send(_ text: String) {
@@ -165,20 +169,20 @@ struct CityQuestionSheet: View {
         case .loading(let question):
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 questionBubble(question)
-                ProgressView("확인하고 있어요")
-                Text("시트를 닫아도 답이 오면 여기에 남아요")
+                ProgressView("Checking…")
+                Text("Even if you close this sheet, the answer will stay here")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
         case .notSaved:
-            Text("답을 기기에 저장하지 못했어요. 상세 화면을 나가면 이 답은 사라져요.")
+            Text("Couldn't save the answer to this device. It will disappear when you leave the details screen.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaError)
         case .failed(let question, let message):
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 questionBubble(question)
                 Text(message).dnaFont(.body).foregroundStyle(Color.dnaError)
-                Button("다시 시도") { send(question) }.buttonStyle(.dnaSecondary)
+                Button("Try Again") { send(question) }.buttonStyle(.dnaSecondary)
             }
         }
     }
@@ -188,7 +192,7 @@ struct CityQuestionSheet: View {
             questionBubble(entry.question)
             Text(entry.conditionSummary.isEmpty
                  ? entry.askedAt.formatted(.dateTime.year().month().day())
-                 : "\(entry.askedAt.formatted(.dateTime.year().month().day())) · \(entry.conditionSummary) 기준")
+                 : String(localized: "\(entry.askedAt.formatted(.dateTime.year().month().day())) · \(entry.conditionSummary) basis"))
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             answerView(entry.answer)
@@ -206,19 +210,19 @@ struct CityQuestionSheet: View {
 
     @ViewBuilder
     private func answerView(_ answer: CityAnswer) -> some View {
-        answerPart("자료 근거", answer.evidence)
-        answerPart("조언", answer.advice)
-        answerPart("확인하지 못한 것", answer.unconfirmed)
+        answerPart(String(localized: "Evidence"), answer.evidence)
+        answerPart(String(localized: "Advice"), answer.advice)
+        answerPart(String(localized: "Couldn't confirm"), answer.unconfirmed)
         if !answer.sources.isEmpty {
             VStack(alignment: .leading, spacing: DNASpacing.xxs) {
                 // 출처는 답 전체에 대한 것이다. 문장별로 어느 출처인지 연결하지 않으므로 본문에 번호를 달지 않는다.
-                Text("검색에서 확인한 출처")
+                Text("Sources found in search")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                 ForEach(Array(answer.sources.enumerated()), id: \.offset) { index, source in
-                    let published = source.published.map { "게시일 \($0)" } ?? "게시일 미확인"
+                    let published = source.published.map { String(localized: "Published \($0)") } ?? String(localized: "Publication date unknown")
                     Link(destination: source.url) {
-                        Text("[\(index + 1)] \(source.title) · \(published) · \(source.retrievedAt.formatted(.dateTime.month().day())) 조회")
+                        Text(String(localized: "[\(index + 1)] \(source.title) · \(published) · retrieved \(source.retrievedAt.formatted(.dateTime.month().day()))"))
                             .dnaFont(.caption)
                             .multilineTextAlignment(.leading)
                     }

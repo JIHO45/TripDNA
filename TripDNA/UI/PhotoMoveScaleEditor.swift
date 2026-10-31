@@ -51,7 +51,7 @@ struct PhotoMoveScaleEditor: View {
                     .strokeBorder(Color.dnaDivider, lineWidth: 1)
             )
             .overlay(alignment: .bottom) {
-                Text("손가락으로 옮기고 확대해 맞춰 주세요")
+                Text("Drag and pinch to fit")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.white.opacity(0.85))
                     .padding(.horizontal, 10)

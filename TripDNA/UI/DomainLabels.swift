@@ -1,70 +1,75 @@
 import Foundation
 import SwiftUI
 
+/// 데이터 이름과 LLM 출력 언어를 한국어/영어 중 무엇으로 할지 정하는 유일한 기준.
+nonisolated enum AppLanguage {
+    static var isKorean: Bool { Bundle.main.preferredLocalizations.first?.hasPrefix("ko") == true }
+}
+
 extension TasteAxis {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .natureUrban: "자연 ↔ 도시"
-        case .energyLevel: "휴식 ↔ 활동"
-        case .planningStyle: "즉흥 ↔ 계획"
-        case .socialMode: "혼자 ↔ 함께"
-        case .noveltyAppetite: "익숙함 ↔ 새로움"
+        case .natureUrban: String(localized: "Nature ↔ City")
+        case .energyLevel: String(localized: "Rest ↔ Activity")
+        case .planningStyle: String(localized: "Spontaneous ↔ Planned")
+        case .socialMode: String(localized: "Solo ↔ Together")
+        case .noveltyAppetite: String(localized: "Familiar ↔ Novel")
         }
     }
 
-    var shortLabelKo: String {
+    var shortLabel: String {
         switch self {
-        case .natureUrban: "자연/도시"
-        case .energyLevel: "에너지"
-        case .planningStyle: "계획성"
-        case .socialMode: "사교성"
-        case .noveltyAppetite: "새로움"
+        case .natureUrban: String(localized: "Nature/City")
+        case .energyLevel: String(localized: "Energy")
+        case .planningStyle: String(localized: "Planning")
+        case .socialMode: String(localized: "Social")
+        case .noveltyAppetite: String(localized: "Novelty")
         }
     }
 
     /// 음수 쪽, 양수 쪽 극 이름.
-    var polesKo: (negative: String, positive: String) {
-        let parts = labelKo.components(separatedBy: " ↔ ")
+    var poles: (negative: String, positive: String) {
+        let parts = label.components(separatedBy: " ↔ ")
         return (parts.first ?? "", parts.last ?? "")
     }
 }
 
 extension TasteAxes {
     /// 지문 시각화를 VoiceOver로 읽을 때 쓰는 축별 요약.
-    func spokenSummaryKo(confidence: AxisConfidence? = nil) -> String {
+    func spokenSummary(confidence: AxisConfidence? = nil) -> String {
         TasteAxis.allCases.map { axis in
             let value = self[axis]
-            let poles = axis.polesKo
+            let poles = axis.poles
             let pole = value < 0 ? poles.negative : poles.positive
             var phrase: String
             switch abs(value) {
-            case ..<0.15: phrase = "균형"
-            case ..<0.5: phrase = "약간 \(pole) 쪽"
-            default: phrase = "\(pole) 쪽"
+            case ..<0.15: phrase = String(localized: "Balanced")
+            case ..<0.5: phrase = String(localized: "Slightly toward \(pole)")
+            default: phrase = String(localized: "Toward \(pole)")
             }
             if let confidence, confidence[axis] < 0.4 {
-                phrase += ", 아직 흐림"
+                phrase += String(localized: ", still faint")
             }
-            return "\(axis.labelKo): \(phrase)"
+            return "\(axis.label): \(phrase)"
         }
         .joined(separator: ". ")
     }
 }
 
 extension RecommendationSlot {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .bestMatch: "베스트 매치"
-        case .freshStretch: "새로운 도전"
-        case .underratedFit: "숨은 인생지"
+        case .bestMatch: String(localized: "Best Match")
+        case .freshStretch: String(localized: "Fresh Stretch")
+        case .underratedFit: String(localized: "Hidden Gem")
         }
     }
 
-    var subtitleKo: String {
+    var subtitle: String {
         switch self {
-        case .bestMatch: "가장 잘 맞아요"
-        case .freshStretch: "지금까지와 다르지만 넓혀볼 만해요"
-        case .underratedFit: "아직 덜 떠올렸을 수 있지만, 취향엔 잘 맞아요"
+        case .bestMatch: String(localized: "Fits you best")
+        case .freshStretch: String(localized: "Different from before, but worth stretching to")
+        case .underratedFit: String(localized: "You may not have thought of it yet, but it suits your taste")
         }
     }
 
@@ -79,47 +84,47 @@ extension RecommendationSlot {
 }
 
 extension FeedbackReason {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .tooExpensive: "예산이 부담돼요"
-        case .tooFar: "너무 멀어요"
-        case .safety: "안전이 걱정돼요"
-        case .notMyTaste: "제 취향이 아니에요"
+        case .tooExpensive: String(localized: "The budget is a stretch")
+        case .tooFar: String(localized: "Too far")
+        case .safety: String(localized: "I'm worried about safety")
+        case .notMyTaste: String(localized: "Not my taste")
         }
     }
 }
 
 extension TripStatus {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .planned: "예정"
-        case .active: "여행 중"
-        case .ended: "평가 대기"
-        case .evaluated: "완료"
-        case .skippedEvaluation: "평가 생략"
+        case .planned: String(localized: "Planned")
+        case .active: String(localized: "Traveling")
+        case .ended: String(localized: "Awaiting Review")
+        case .evaluated: String(localized: "Completed")
+        case .skippedEvaluation: String(localized: "Review Skipped")
         }
     }
 }
 
 extension Companion {
     /// 입력하지 않은 동행은 UI에 아무것도 보이지 않는다.
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .alone: "혼자"
-        case .couple: "연인"
-        case .family: "가족"
-        case .friends: "친구"
-        case .colleagues: "동료"
+        case .alone: String(localized: "Solo")
+        case .couple: String(localized: "Partner")
+        case .family: String(localized: "Family")
+        case .friends: String(localized: "Friends")
+        case .colleagues: String(localized: "Colleagues")
         case .unknown: ""
         }
     }
 }
 
 extension TripPurpose {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .leisure: "여가"
-        case .obligation: "의무(출장 등)"
+        case .leisure: String(localized: "Leisure")
+        case .obligation: String(localized: "Obligation (e.g. business)")
         }
     }
 }
@@ -127,50 +132,50 @@ extension TripPurpose {
 extension TripConcept {
     /// 화면에 보이는 짧은 이름(2026-10-24 디자인 결정). `data/experience-categories.json`의 `label_ko`는
     /// 자료용 이름이라 다를 수 있다. `event`만 그 파일에 없다.
-    nonisolated var labelKo: String {
+    nonisolated var label: String {
         switch self {
-        case .cityExploration: "도시"
-        case .natureScenery: "자연"
-        case .food: "미식"
-        case .relaxation: "휴양"
-        case .cultureHistory: "문화·역사"
-        case .activities: "액티비티"
-        case .shopping: "쇼핑"
-        case .nightlife: "나이트라이프"
-        case .meetingPeople: "교류"
-        case .event: "이벤트"
+        case .cityExploration: String(localized: "City")
+        case .natureScenery: String(localized: "Nature")
+        case .food: String(localized: "Food")
+        case .relaxation: String(localized: "Relaxation")
+        case .cultureHistory: String(localized: "Culture & History")
+        case .activities: String(localized: "Activities")
+        case .shopping: String(localized: "Shopping")
+        case .nightlife: String(localized: "Nightlife")
+        case .meetingPeople: String(localized: "Socializing")
+        case .event: String(localized: "Events")
         }
     }
 }
 
 extension DayReaction {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .good: "좋았어요"
-        case .neutral: "그저 그랬어요"
-        case .bad: "아쉬웠어요"
+        case .good: String(localized: "Loved it")
+        case .neutral: String(localized: "It was okay")
+        case .bad: String(localized: "Could've been better")
         }
     }
 }
 
 extension ComparisonResult {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .better: "더 좋았어요"
-        case .worse: "더 아쉬웠어요"
-        case .skipped: "비교 생략"
+        case .better: String(localized: "Better")
+        case .worse: String(localized: "Worse")
+        case .skipped: String(localized: "Skip comparison")
         }
     }
 }
 
 extension OnboardingStatus {
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .pending: "대기"
-        case .photoScan: "사진첩 스캔"
-        case .manual: "직접 입력"
-        case .quiz: "취향 퀴즈"
-        case .done: "완료"
+        case .pending: String(localized: "Pending")
+        case .photoScan: String(localized: "Photo Scan")
+        case .manual: String(localized: "Manual Entry")
+        case .quiz: String(localized: "Taste Quiz")
+        case .done: String(localized: "Done")
         }
     }
 }

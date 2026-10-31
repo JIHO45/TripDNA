@@ -4,10 +4,10 @@ extension WantedConceptTiers {
     /// 화면에 보이는 칸 이름. 내부 값은 1~3과 nil("모르겠거나 원하지 않아요").
     static func screenName(of tier: Int?) -> String {
         switch tier {
-        case 1: "가장 원해요"
-        case 2: "좋아요"
-        case 3: "있으면 좋아요"
-        default: "모르겠거나 원하지 않아요"
+        case 1: String(localized: "Want Most")
+        case 2: String(localized: "Like It")
+        case 3: String(localized: "Nice to Have")
+        default: String(localized: "Not Sure or Don't Want")
         }
     }
 
@@ -93,17 +93,17 @@ struct OnboardingConceptsView: View {
         VStack(spacing: 0) {
             DNAStepTopBar(
                 progress: viewModel.progress,
-                trailingTitle: "이 여행 건너뛰기",
+                trailingTitle: String(localized: "Skip This Trip"),
                 onTrailing: { advance(save: false) }
             )
             if let trip = viewModel.currentConceptTrip {
                 ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                        Text("여행 \(viewModel.conceptIndex + 1) / \(viewModel.conceptQueue.count) · \(trip.title) · \(trip.period)")
+                        Text("Trip \(viewModel.conceptIndex + 1) of \(viewModel.conceptQueue.count) · \(trip.title) · \(trip.period)")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
-                        OnboardingHeader(title: "어떤 여행이었나요?", subtitle: "가장 큰 것 하나 · 나중에 고칠 수 있어요")
+                        OnboardingHeader(title: String(localized: "What kind of trip was it?"), subtitle: String(localized: "Pick the biggest one · You can change it later"))
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DNASpacing.xs) {
                             ForEach(TripConcept.displayOrder, id: \.self) { concept in
                                 tile(concept)
@@ -130,10 +130,10 @@ struct OnboardingConceptsView: View {
             }
             DNABottomCTA {
                 let isLast = viewModel.conceptIndex + 1 >= viewModel.conceptQueue.count
-                Button(isLast ? "다음" : "다음 여행") { advance(save: true) }
+                Button(isLast ? String(localized: "Next") : String(localized: "Next Trip")) { advance(save: true) }
                     .buttonStyle(.dnaPrimary(isDisabled: primary == nil || isSaving))
                     .disabled(primary == nil || isSaving)
-                Button("나머지는 나중에") { viewModel.skipRemainingConcepts() }
+                Button("Do the Rest Later") { viewModel.skipRemainingConcepts() }
                     .buttonStyle(.dnaGhost)
             }
         }
@@ -147,7 +147,7 @@ struct OnboardingConceptsView: View {
         return Button {
             viewModel.selectConceptPrimary(concept)
         } label: {
-            Text(concept.labelKo)
+            Text(concept.label)
                 .dnaFont(.cardTitle)
                 .frame(maxWidth: .infinity, minHeight: 56)
                 .dnaOption(isSelected: isSelected, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
@@ -162,11 +162,11 @@ struct OnboardingConceptsView: View {
         let rows = [Array(options.prefix(half)), Array(options.dropFirst(half))]
         return VStack(alignment: .leading, spacing: DNASpacing.xs) {
             HStack {
-                Text("함께 한 것 · 선택")
+                Text("Also Included · Optional")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
-                Text("최대 2개 · \(secondary.count)/2")
+                Text("Up to 2 · \(secondary.count)/2")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -180,7 +180,7 @@ struct OnboardingConceptsView: View {
                                 Button {
                                     viewModel.toggleConceptSecondary(concept)
                                 } label: {
-                                    OnboardingChip(title: concept.labelKo, isSelected: selected)
+                                    OnboardingChip(title: concept.label, isSelected: selected)
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(locked)
@@ -217,7 +217,7 @@ struct ConceptTierBox: View {
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             if tier == nil {
-                Text("안 고른 것도 여기 있어요 · 이 칸 때문에 추천에서 빠지지는 않아요. 꼭 피하고 싶은 건 아래에 적어 주세요")
+                Text("Unplaced ones are here too · This box won't remove them from recommendations. Write anything you really want to avoid below")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -234,7 +234,7 @@ struct ConceptTierBox: View {
                                 }
                             }
                         } label: {
-                            OnboardingChip(title: concept.labelKo, showsChevron: true, tone: tier == 1 ? .strong : (tier == nil ? nil : .raised))
+                            OnboardingChip(title: concept.label, showsChevron: true, tone: tier == 1 ? .strong : (tier == nil ? nil : .raised))
                         }
                     }
                 }
@@ -262,13 +262,13 @@ struct OnboardingTiersView: View {
         VStack(spacing: 0) {
             DNAStepTopBar(
                 progress: viewModel.progress,
-                trailingTitle: "건너뛰기",
+                trailingTitle: String(localized: "Skip"),
                 onBack: { viewModel.goBack() },
                 onTrailing: { finish(skipped: true) }
             )
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
-                    OnboardingHeader(title: "평소에 어떤 여행을\n원하세요?", subtitle: "칩을 눌러 칸을 골라요")
+                    OnboardingHeader(title: String(localized: "What kind of trips\ndo you usually want?"), subtitle: String(localized: "Tap a chip to choose a box"))
                     reference
                     ForEach([1, 2, 3], id: \.self) { tier in
                         box(tier: tier)
@@ -278,7 +278,7 @@ struct OnboardingTiersView: View {
                         showsAvoidNote = true
                     } label: {
                         let hasNote = !(viewModel.tiers.avoidNote ?? "").isEmpty
-                        Text(hasNote ? "피하고 싶은 것: \(viewModel.tiers.avoidNote ?? "") ›" : "피하고 싶은 게 있다면 적기 ›")
+                        Text(hasNote ? String(localized: "Avoid: \(viewModel.tiers.avoidNote ?? "") ›") : String(localized: "Add something to avoid ›"))
                             .dnaFont(.button)
                             .underline()
                             .foregroundStyle(Color.dnaTextPrimary)
@@ -291,7 +291,7 @@ struct OnboardingTiersView: View {
                 .padding(.bottom, DNASpacing.xl)
             }
             DNABottomCTA {
-                Button("다음") { finish(skipped: false) }
+                Button("Next") { finish(skipped: false) }
                     .buttonStyle(.dnaPrimary)
             }
         }
@@ -309,7 +309,7 @@ struct OnboardingTiersView: View {
     private var reference: some View {
         let top = viewModel.pastConceptReference.prefix(2)
         if !top.isEmpty {
-            Text("지난 여행 참고 · " + top.map { "\($0.concept.labelKo) \($0.count)번" }.joined(separator: " · "))
+            Text("Past trips for reference · \(top.map { String(localized: "\($0.concept.label) \($0.count) times") }.joined(separator: " · "))")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaData)
                 .padding(DNASpacing.sm)
@@ -335,17 +335,17 @@ private struct AvoidNoteSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
-            Text("피하고 싶은 게 있나요?")
+            Text("Anything you want to avoid?")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("자유롭게 적어 주세요. 비워 둬도 괜찮아요.")
+            Text("Write freely. It's fine to leave this blank.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
-            TextField("예: 긴 이동, 사람 많은 곳", text: $text, axis: .vertical)
+            TextField("e.g., long transfers, crowded places", text: $text, axis: .vertical)
                 .lineLimit(3...6)
                 .padding(DNASpacing.md)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
-            Button("완료") { dismiss() }
+            Button("Done") { dismiss() }
                 .buttonStyle(.dnaPrimary)
             Spacer(minLength: 0)
         }
@@ -368,11 +368,11 @@ struct OnboardingSummaryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
                     OnboardingHeader(
-                        title: "이렇게 기억해 둘게요",
-                        subtitle: "여행은 여행 탭에서, 원하는 여행은 설정에서 고칠 수 있어요."
+                        title: String(localized: "Here's what we'll remember"),
+                        subtitle: String(localized: "Edit trips in the Trips tab and wanted trips in Settings.")
                     )
                     if !viewModel.recordedTrips.isEmpty {
-                        card(title: "다녀온 여행 \(viewModel.recordedTrips.count)개", onEdit: { viewModel.editTripConcepts() }) {
+                        card(title: String(localized: "\(viewModel.recordedTrips.count) trips taken"), onEdit: { viewModel.editTripConcepts() }) {
                             ForEach(viewModel.recordedTrips) { trip in
                                 HStack(alignment: .firstTextBaseline) {
                                     Text(trip.title)
@@ -386,7 +386,7 @@ struct OnboardingSummaryView: View {
                         }
                     }
                     if viewModel.hasTierAnswers {
-                        card(title: "원하는 여행", onEdit: { viewModel.goBack() }) {
+                        card(title: String(localized: "Trips you want"), onEdit: { viewModel.goBack() }) {
                             ForEach([1, 2, 3], id: \.self) { tier in
                                 let concepts = viewModel.tiers.concepts(in: tier)
                                 if !concepts.isEmpty {
@@ -394,20 +394,22 @@ struct OnboardingSummaryView: View {
                                         Text(WantedConceptTiers.screenName(of: tier))
                                             .dnaFont(.cardTitle)
                                             .foregroundStyle(Color.dnaTextPrimary)
-                                        Text(concepts.map(\.labelKo).joined(separator: ", "))
+                                        Text(concepts.map(\.label).joined(separator: ", "))
                                             .dnaFont(.body)
                                             .foregroundStyle(Color.dnaTextSecondary)
                                     }
                                 }
                             }
                             if let note = viewModel.tiers.avoidNote {
-                                Text("피하고 싶은 것 · \(note)")
+                                Text("Avoid · \(note)")
                                     .dnaFont(.body)
                                     .foregroundStyle(Color.dnaTextSecondary)
                             }
                         }
                     }
-                    Text((viewModel.hasTierAnswers ? "평소 취향은 기억했어요. " : "") + "이번 여행의 컨셉만 고르면 추천받을 수 있어요.")
+                    Text(viewModel.hasTierAnswers
+                         ? String(localized: "We remembered your usual tastes. Just pick this trip's concept to get recommendations.")
+                         : String(localized: "Just pick this trip's concept to get recommendations."))
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -416,11 +418,11 @@ struct OnboardingSummaryView: View {
                 .padding(.bottom, DNASpacing.xl)
             }
             DNABottomCTA {
-                Button("첫 추천 받으러 가기") {
+                Button("Get My First Recommendation") {
                     viewModel.finish(dependencies: dependencies, session: session, router: router, openRecommendation: true)
                 }
                 .buttonStyle(.dnaPrimary)
-                Button("홈으로") {
+                Button("Go Home") {
                     viewModel.finish(dependencies: dependencies, session: session, router: router, openRecommendation: false)
                 }
                 .buttonStyle(.dnaGhost)
@@ -429,8 +431,8 @@ struct OnboardingSummaryView: View {
     }
 
     private func conceptText(_ concepts: TripConcepts?) -> String {
-        guard let concepts else { return "컨셉 없음" }
-        return ([concepts.primary] + concepts.secondary).map(\.labelKo).joined(separator: " + ")
+        guard let concepts else { return String(localized: "No concept") }
+        return ([concepts.primary] + concepts.secondary).map(\.label).joined(separator: " + ")
     }
 
     private func card<Content: View>(title: String, onEdit: (() -> Void)? = nil, @ViewBuilder content: () -> Content) -> some View {
@@ -441,7 +443,7 @@ struct OnboardingSummaryView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer(minLength: 0)
                 if let onEdit {
-                    Button("수정", action: onEdit)
+                    Button("Edit", action: onEdit)
                         .dnaFont(.caption)
                         .underline()
                         .foregroundStyle(Color.dnaTextPrimary)

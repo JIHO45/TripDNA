@@ -36,19 +36,19 @@ struct TripLegDraft: Identifiable {
 enum Scenario: Equatable {
     case planned, current, past
 
-    var titleKo: String {
+    var title: String {
         switch self {
-        case .planned: "갈 예정인 여행"
-        case .current: "지금 여행 중"
-        case .past: "다녀온 여행"
+        case .planned: String(localized: "Planning to Go")
+        case .current: String(localized: "On a Trip Now")
+        case .past: String(localized: "Already Went")
         }
     }
 
-    var subtitleKo: String {
+    var subtitle: String {
         switch self {
-        case .planned: "정해진 만큼만 적어도 돼요"
-        case .current: "오늘부터 기록을 시작해요"
-        case .past: "다녀온 여행을 직접 등록해요"
+        case .planned: String(localized: "Fill in only what you know")
+        case .current: String(localized: "Start recording from today")
+        case .past: String(localized: "Add a trip you already took")
         }
     }
 }
@@ -148,24 +148,23 @@ final class TripRegistrationViewModel {
 
     /// 부 컨셉 제목. 다녀온 여행은 "함께 한 것", 아니면 "함께 하고 싶은 것".
     var secondaryTitle: String {
-        (scenario == .past || (scenario == nil && isPastTrip)) ? "함께 한 것" : "함께 하고 싶은 것"
+        (scenario == .past || (scenario == nil && isPastTrip)) ? String(localized: "Also Did") : String(localized: "Also Want to Do")
     }
 
     var conceptSummary: String? {
-        primaryConcept.map { ([$0] + secondaryConcepts).joinedLabelKo() }
+        primaryConcept.map { ([$0] + secondaryConcepts).joinedLabel() }
     }
 
     /// "11월 14일 – 17일 · 3박 4일". 구간이 여럿이면 첫 구간만 보여준다.
     var whenSummary: String? {
         guard let leg = legs.first else { return nil }
-        let calendar = Calendar.current
-        let start = calendar.dateComponents([.month, .day], from: leg.startDate)
-        let end = calendar.dateComponents([.month, .day], from: leg.endDate)
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         let span = nights(of: leg)
         let range = span == 0
-            ? "\(start.month ?? 0)월 \(start.day ?? 0)일"
-            : "\(start.month ?? 0)월 \(start.day ?? 0)일 – \(end.month ?? 0)월 \(end.day ?? 0)일"
-        return span == 0 ? range : "\(range) · \(span)박 \(span + 1)일"
+            ? formatter.string(from: leg.startDate)
+            : "\(formatter.string(from: leg.startDate)) – \(formatter.string(from: leg.endDate))"
+        return span == 0 ? range : "\(range) · " + String(localized: "\(span) nights, \(span + 1) days")
     }
 
     /// 의무 여행은 컨셉 없이 방문만 남긴다.
@@ -194,7 +193,7 @@ final class TripRegistrationViewModel {
         return lastEnd < Calendar.current.startOfDay(for: Date())
     }
 
-    var primaryCTATitle: String { isEditing ? "변경 저장" : "여행 등록" }
+    var primaryCTATitle: String { isEditing ? String(localized: "Save Changes") : String(localized: "Add Trip") }
 
     func addLeg() {
         var newLeg = TripLegDraft()
@@ -282,9 +281,9 @@ final class TripRegistrationViewModel {
             }
         } catch let error as DomainValidationError
             where error == .invalidBestLeg || error == .invalidTagAttribution || error == .invalidCityReview {
-            errorMessage = "평가에 쓰인 나라가 빠져 있어요. 평가된 여행은 그 나라를 남겨 주세요."
+            errorMessage = String(localized: "A country used in an evaluation is missing. Keep that country in a rated trip.")
         } catch {
-            errorMessage = "여행 정보를 확인해주세요. 국가와 날짜가 올바른지 확인이 필요해요."
+            errorMessage = String(localized: "Please check the trip details. Make sure the country and dates are correct.")
         }
     }
 
@@ -325,20 +324,20 @@ struct TripRegistrationView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
                 if !viewModel.isEditing {
-                    card(.scenario, "⓪", "어떤 여행을 남길까요?", viewModel.scenario?.titleKo, scenarioBody)
+                    card(.scenario, "⓪", String(localized: "What kind of trip are you adding?"), viewModel.scenario?.title, scenarioBody)
                 }
-                card(.kind, "①", "어떤 여행", kindSummary, kindBody)
-                card(.where_, "②", "어디로", whereSummary, whereBody)
+                card(.kind, "①", String(localized: "Trip Type"), kindSummary, kindBody)
+                card(.where_, "②", String(localized: "Where To"), whereSummary, whereBody)
                 if viewModel.purpose == .leisure {
-                    card(.concept, "③", "여행 컨셉", viewModel.conceptSummary, conceptBody)
+                    card(.concept, "③", String(localized: "Trip Concepts"), viewModel.conceptSummary, conceptBody)
                 } else {
-                    Text("출장은 여행 컨셉 없이 방문 기록만 남겨요. 내 여행 지문에는 세지 않아요.")
+                    Text("Business trips keep only a visit record, with no trip concept. They don’t count toward your travel fingerprint.")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .padding(DNASpacing.md)
                 }
-                card(.companion, "", "누구와 · 선택", viewModel.companion == .unknown ? nil : viewModel.companion.labelKo, companionBody)
-                card(.when, "④", "언제 · 얼마나", viewModel.whenSummary, whenBody)
+                card(.companion, "", String(localized: "Who With · Optional"), viewModel.companion == .unknown ? nil : viewModel.companion.label, companionBody)
+                card(.when, "④", String(localized: "When · How Long"), viewModel.whenSummary, whenBody)
                 if let message = viewModel.errorMessage {
                     Text(message)
                         .dnaFont(.caption)
@@ -373,11 +372,11 @@ struct TripRegistrationView: View {
         .tint(Color.dnaTextPrimary)
         .disabled(viewModel.isSubmitting)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationTitle(viewModel.isEditing ? "여행 수정" : "여행 등록")
+        .navigationTitle(viewModel.isEditing ? String(localized: "Edit Trip") : String(localized: "Add Trip"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("취소") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .tint(Color.dnaTextSecondary)
             }
         }
@@ -404,16 +403,16 @@ struct TripRegistrationView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.hidden)
         }
-        .alert("겹치는 여행이 있어요", isPresented: $viewModel.duplicateWarning) {
-            Button(viewModel.isEditing ? "계속 저장" : "계속 등록", role: .destructive) {
+        .alert("Overlapping Trip", isPresented: $viewModel.duplicateWarning) {
+            Button(viewModel.isEditing ? String(localized: "Save Anyway") : String(localized: "Add Anyway"), role: .destructive) {
                 Task { await viewModel.submit(dependencies, ignoreDuplicate: true) }
             }
-            Button("취소", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text(
                 viewModel.isEditing
-                    ? "같은 국가·기간의 다른 여행이 있어요. 그래도 저장할까요?"
-                    : "같은 국가·기간의 여행이 이미 있어요. 그래도 등록할까요?"
+                    ? String(localized: "Another trip with the same country and dates exists. Save anyway?")
+                    : String(localized: "A trip with the same country and dates already exists. Add anyway?")
             )
         }
         .onChange(of: viewModel.didSave) {
@@ -446,7 +445,7 @@ struct TripRegistrationView: View {
                         .foregroundStyle(isOpen ? Color.dnaTextPrimary : Color.dnaTextSecondary)
                     Spacer(minLength: DNASpacing.xs)
                     if !isOpen {
-                        Text(summary ?? "미정")
+                        Text(summary ?? String(localized: "TBD"))
                             .dnaFont(.cardTitle)
                             .foregroundStyle(summary == nil ? Color.dnaTextTertiary : Color.dnaTextPrimary)
                             .lineLimit(1)
@@ -498,7 +497,7 @@ struct TripRegistrationView: View {
     private var scenarioBody: some View {
         VStack(spacing: DNASpacing.xs) {
             ForEach([Scenario.planned, .current, .past], id: \.self) { scenario in
-                optionRow(scenario.titleKo, scenario.subtitleKo, isSelected: viewModel.scenario == scenario) {
+                optionRow(scenario.title, scenario.subtitle, isSelected: viewModel.scenario == scenario) {
                     viewModel.select(scenario)
                     withAnimation { openStep = .kind }
                 }
@@ -510,16 +509,16 @@ struct TripRegistrationView: View {
     // MARK: - ① 어떤 여행
 
     private var kindSummary: String {
-        viewModel.purpose == .leisure ? "여가 여행" : "출장 · 가족 방문"
+        viewModel.purpose == .leisure ? String(localized: "Leisure Trip") : String(localized: "Business · Family Visit")
     }
 
     private var kindBody: some View {
         VStack(spacing: DNASpacing.xs) {
-            optionRow("여가 여행", "컨셉을 붙여 지문에 쌓여요", isSelected: viewModel.purpose == .leisure) {
+            optionRow(String(localized: "Leisure Trip"), String(localized: "Adds a concept and builds your fingerprint"), isSelected: viewModel.purpose == .leisure) {
                 viewModel.purpose = .leisure
                 withAnimation { openStep = .where_ }
             }
-            optionRow("출장 · 가족 방문", "방문 기록만 남겨요", isSelected: viewModel.purpose == .obligation) {
+            optionRow(String(localized: "Business · Family Visit"), String(localized: "Only a visit record is kept"), isSelected: viewModel.purpose == .obligation) {
                 viewModel.purpose = .obligation
                 withAnimation { openStep = .where_ }
             }
@@ -532,7 +531,7 @@ struct TripRegistrationView: View {
     private var whereSummary: String? {
         guard let first = viewModel.legs.first, first.countryCode.count == 2 else { return nil }
         let name = first.cities.first ?? countryDisplayName(first.countryCode)
-        return viewModel.legs.count > 1 ? "\(name) 외 \(viewModel.legs.count - 1)곳" : name
+        return viewModel.legs.count > 1 ? String(localized: "\(name) +\(viewModel.legs.count - 1) more") : name
     }
 
     private var whereBody: some View {
@@ -543,14 +542,14 @@ struct TripRegistrationView: View {
             Button {
                 viewModel.addLeg()
             } label: {
-                Label("다음 여행지 추가", systemImage: "plus")
+                Label("Add Another Destination", systemImage: "plus")
                     .dnaFont(.button)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            Text("목록에 없는 도시도 적을 수 있어요.")
+            Text("You can also enter cities that aren’t on the list.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.bottom, DNASpacing.sm)
@@ -567,7 +566,7 @@ struct TripRegistrationView: View {
                     countryPickerTarget = CountryPickerTarget(legID: leg.id)
                 } label: {
                     HStack {
-                        Text(leg.countryCode.isEmpty ? "나라 선택 · 필수" : countryDisplayName(leg.countryCode))
+                        Text(leg.countryCode.isEmpty ? String(localized: "Choose Country · Required") : countryDisplayName(leg.countryCode))
                             .dnaFont(.cardTitle)
                             .foregroundStyle(leg.countryCode.isEmpty ? Color.dnaTextSecondary : Color.dnaTextPrimary)
                         Spacer(minLength: 0)
@@ -590,11 +589,11 @@ struct TripRegistrationView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("여행지 \(index + 1) 삭제")
+                    .accessibilityLabel("Remove destination \(index + 1)")
                 }
             }
             if let binding = legBinding(id: leg.id) {
-                TextField("도시 (예: 교토, 오사카)", text: binding.cityText)
+                TextField("City (e.g., Kyoto, Osaka)", text: binding.cityText)
                     .dnaFont(.body)
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
@@ -603,7 +602,7 @@ struct TripRegistrationView: View {
                     .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
             if !leg.countryCode.isEmpty, CountryCatalog.profiles[leg.countryCode.uppercased()] == nil {
-                Text("이 나라의 추천 분석은 준비 중이에요. 등록은 그대로 할 수 있어요.")
+                Text("Recommendation analysis for this country is coming soon. You can still add your trip.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -644,14 +643,14 @@ struct TripRegistrationView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DNASpacing.xs) {
                     ForEach(options, id: \.self) { companion in
-                        DNATagChip(title: companion.labelKo, isSelected: viewModel.companion == companion) {
+                        DNATagChip(title: companion.label, isSelected: viewModel.companion == companion) {
                             // 같은 항목을 다시 누르면 입력하지 않은 상태로 돌아간다.
                             viewModel.companion = viewModel.companion == companion ? .unknown : companion
                         }
                     }
                 }
             }
-            Text("비워 두면 동행은 기록하지 않아요.")
+            Text("If left blank, no companion is recorded.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.bottom, DNASpacing.sm)
@@ -665,12 +664,12 @@ struct TripRegistrationView: View {
             ForEach(Array(viewModel.legs.enumerated()), id: \.element.id) { index, leg in
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
                     if viewModel.legs.count > 1 {
-                        Text("여행지 \(index + 1)")
+                        Text("Destination \(index + 1)")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                     DatePicker(
-                        "시작일",
+                        "Start Date",
                         selection: Binding(
                             get: { leg.startDate },
                             set: { viewModel.setStart($0, legIndex: index) }
@@ -679,8 +678,8 @@ struct TripRegistrationView: View {
                     )
                     .dnaFont(.body)
                     DNAStepper(
-                        label: "얼마나",
-                        valueText: viewModel.nights(of: leg) == 0 ? "당일" : "\(viewModel.nights(of: leg))박 \(viewModel.nights(of: leg) + 1)일",
+                        label: String(localized: "How Long"),
+                        valueText: viewModel.nights(of: leg) == 0 ? String(localized: "Same day") : String(localized: "\(viewModel.nights(of: leg)) nights, \(viewModel.nights(of: leg) + 1) days"),
                         value: Binding(
                             get: { viewModel.nights(of: leg) },
                             set: { viewModel.setNights($0, legIndex: index) }
@@ -692,7 +691,7 @@ struct TripRegistrationView: View {
                 .padding(DNASpacing.sm)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
-            Text("날짜는 나중에 여행 정보 수정에서 바꿀 수 있어요.")
+            Text("You can change the dates later in Edit Trip Info.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.bottom, DNASpacing.sm)
@@ -702,7 +701,7 @@ struct TripRegistrationView: View {
     private func countryDisplayName(_ code: String) -> String {
         let normalized = code.uppercased()
         if let profile = CountryCatalog.profiles[normalized] {
-            return profile.nameKo
+            return profile.displayName
         }
         return Locale.current.localizedString(forRegionCode: normalized) ?? normalized
     }
@@ -726,7 +725,7 @@ private struct CountryPickerSheet: View {
                 .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("완료") { dismiss() }
+                        Button("Done") { dismiss() }
                             .tint(Color.dnaTextPrimary)
                     }
                 }
@@ -748,16 +747,16 @@ private struct NotificationPrimingSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                Text("\(placeTitle) 여행을 등록했어요")
+                Text("\(placeTitle) trip added")
                     .dnaFont(.heroTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("여행 중과 여행이 끝난 뒤에 알려드릴까요?")
+                Text("Want reminders during and after your trip?")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                Label("여행 중 하루 한 장 남기기", systemImage: "camera")
-                Label("여행이 끝나면 평가 요청", systemImage: "star")
+                Label("Keep one photo a day during your trip", systemImage: "camera")
+                Label("Ask for a rating when the trip ends", systemImage: "star")
             }
             .dnaFont(.body)
             .foregroundStyle(Color.dnaTextPrimary)
@@ -768,7 +767,7 @@ private struct NotificationPrimingSheet: View {
             if let errorMessage {
                 Text(errorMessage).dnaFont(.caption).foregroundStyle(Color.dnaError)
             }
-            Button("알림 받기") {
+            Button("Turn On Notifications") {
                 Task {
                     isRequesting = true
                     defer { isRequesting = false }
@@ -777,16 +776,16 @@ private struct NotificationPrimingSheet: View {
                         if try await EvaluationNotificationService.enable(for: all) {
                             onClose()
                         } else {
-                            errorMessage = "알림을 사용하려면 설정에서 허용해 주세요."
+                            errorMessage = String(localized: "To use notifications, please allow them in Settings.")
                         }
                     } catch {
-                        errorMessage = "알림을 예약하지 못했어요. 다시 시도해 주세요."
+                        errorMessage = String(localized: "Couldn’t schedule notifications. Please try again.")
                     }
                 }
             }
             .buttonStyle(.dnaPrimary)
             .disabled(isRequesting)
-            Button("나중에") { onClose() }
+            Button("Later") { onClose() }
                 .buttonStyle(.dnaGhost)
                 .frame(maxWidth: .infinity)
         }

@@ -11,15 +11,15 @@ struct OnboardingPhotoPrimingView: View {
         VStack(spacing: 0) {
             DNAStepTopBar(progress: viewModel.progress, onBack: { viewModel.goBack() })
             VStack(alignment: .leading, spacing: DNASpacing.lg) {
-                Text("다녀온 곳을\n사진으로 찾아볼게요")
+                Text("We'll find the places\nyou've been in your photos")
                     .dnaFont(.screenTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
-                    checkLine("위치와 날짜는 이 기기 안에서만 읽어요")
-                    checkLine("사진 원본은 어디에도 보내지 않아요")
-                    checkLine("찾은 여행은 후보로만 보여주고, 확인한 것만 기록해요")
+                    checkLine(String(localized: "Location and date are read only on this device"))
+                    checkLine(String(localized: "Original photos are never sent anywhere"))
+                    checkLine(String(localized: "Trips we find are shown only as suggestions, and only the ones you confirm are recorded"))
                 }
-                Text(viewModel.isFromHome ? "허용하지 않아도 직접 등록할 수 있어요." : "허용하지 않아도 직접 등록하거나 취향부터 시작할 수 있어요.")
+                Text(viewModel.isFromHome ? String(localized: "You can still add trips manually without allowing access.") : String(localized: "You can still add trips manually or start with your tastes without allowing access."))
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -28,9 +28,9 @@ struct OnboardingPhotoPrimingView: View {
             .padding(.top, DNASpacing.lg)
             Spacer(minLength: 0)
             DNABottomCTA {
-                Button("사진 접근 허용하기") { viewModel.startPhotoScan() }
+                Button("Allow Photo Access") { viewModel.startPhotoScan() }
                     .buttonStyle(.dnaPrimary)
-                Button("직접 등록으로 바꾸기") { viewModel.selectEntryMode(.manual) }
+                Button("Switch to Manual Entry") { viewModel.selectEntryMode(.manual) }
                     .buttonStyle(.dnaGhost)
             }
         }
@@ -64,7 +64,7 @@ struct OnboardingPhotoScanningView: View {
                 .animation(.easeInOut(duration: 0.3), value: viewModel.scanStatusText)
             Spacer()
             DNABottomCTA {
-                Button("취소") { viewModel.cancelPhotoScan() }
+                Button("Cancel") { viewModel.cancelPhotoScan() }
                     .buttonStyle(.dnaGhost)
             }
         }
@@ -81,14 +81,14 @@ struct OnboardingNoCandidatesView: View {
         VStack(spacing: 0) {
             DNAStepTopBar(progress: viewModel.progress, onBack: { viewModel.goBack() })
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                Text(viewModel.scanWasDenied ? "사진 접근을\n허용하지 않았어요" : "확인할 수 있는\n여행 후보가 없어요")
+                Text(viewModel.scanWasDenied ? String(localized: "Photo access\nwasn't allowed") : String(localized: "No trip suggestions\nto confirm"))
                     .dnaFont(.screenTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Text(viewModel.scanWasDenied
-                     ? "괜찮아요. 다른 방법으로 계속할 수 있어요."
+                     ? String(localized: "That's okay. You can continue another way.")
                      : viewModel.isFromHome
-                     ? "위치 정보가 있는 여행 사진을 찾지 못했어요. 직접 여행을 등록할 수 있어요."
-                     : "위치 정보가 있는 여행 사진을 찾지 못했어요. 직접 여행을 등록하거나, 취향부터 먼저 정할 수 있어요.")
+                     ? String(localized: "We couldn't find any trip photos with location info. You can add a trip manually.")
+                     : String(localized: "We couldn't find any trip photos with location info. You can add a trip manually or set your tastes first."))
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -98,7 +98,7 @@ struct OnboardingNoCandidatesView: View {
 
             if viewModel.isPhotoAccessLimited {
                 LimitedPhotoAccessBanner(
-                    message: "지금은 직접 고른 사진만 볼 수 있어요. 모든 사진을 허용하면 사진첩 전체에서 여행을 찾아드려요.",
+                    message: String(localized: "For now, we can only see the photos you picked. Allow all photos and we'll find trips across your whole library."),
                     onSelectMore: { viewModel.presentLimitedPhotoPicker() }
                 )
                 .padding(.horizontal, DNASpacing.gutter)
@@ -106,14 +106,14 @@ struct OnboardingNoCandidatesView: View {
             }
             Spacer(minLength: 0)
             DNABottomCTA {
-                Button("직접 등록") { viewModel.selectEntryMode(.manual) }
+                Button("Add Manually") { viewModel.selectEntryMode(.manual) }
                     .buttonStyle(.dnaPrimary)
                 if !viewModel.isFromHome {
-                    Button("여행 기록 없이 취향부터") { viewModel.selectEntryMode(.preferencesOnly) }
+                    Button("Start with Tastes, No Trip History") { viewModel.selectEntryMode(.preferencesOnly) }
                         .buttonStyle(.dnaSecondary)
                 }
                 if viewModel.scanWasDenied, let url = URL(string: UIApplication.openSettingsURLString) {
-                    Link("허용할 사진 바꾸기 (iOS 설정)", destination: url)
+                    Link("Change Selected Photos (iOS Settings)", destination: url)
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -140,16 +140,16 @@ struct OnboardingCandidatesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.md) {
                     VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                        Text("기록할 여행을 골라요")
+                        Text("Pick trips to record")
                             .dnaFont(.screenTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
-                        Text("후보 \(viewModel.candidates.count)개 중 \(viewModel.recordedCandidateCount)개 기록함 · 고른 것만 기록해요")
+                        Text("\(viewModel.recordedCandidateCount) of \(viewModel.candidates.count) candidates recorded · Only your picks are recorded")
                             .dnaFont(.body)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                     if viewModel.isPhotoAccessLimited {
                         LimitedPhotoAccessBanner(
-                            message: "선택한 사진에서만 여행을 찾았어요. 모든 사진을 허용하면 더 많은 여행을 찾을 수 있어요.",
+                            message: String(localized: "We only found trips in the photos you selected. Allow all photos to find more trips."),
                             onSelectMore: { viewModel.presentLimitedPhotoPicker() }
                         )
                     }
@@ -157,11 +157,11 @@ struct OnboardingCandidatesView: View {
                         switch candidate.state {
                         case .pending: pendingCard(candidate)
                         case .recorded:
-                            collapsedRow(candidate.title, status: "기록함", recorded: true, action: "취소") {
+                            collapsedRow(candidate.title, status: String(localized: "Recorded"), recorded: true, action: String(localized: "Cancel")) {
                                 viewModel.setState(.pending, for: candidate.id)
                             }
                         case .removed:
-                            collapsedRow(candidate.title, status: "뺐어요", recorded: false, action: "되돌리기") {
+                            collapsedRow(candidate.title, status: String(localized: "Removed"), recorded: false, action: String(localized: "Undo")) {
                                 viewModel.setState(.pending, for: candidate.id)
                             }
                         }
@@ -176,12 +176,12 @@ struct OnboardingCandidatesView: View {
             }
             DNABottomCTA {
                 let count = viewModel.recordedCandidateCount
-                Button(count > 0 ? "\(count)개 기록하고 계속하기" : "기록하고 계속하기") {
+                Button(count > 0 ? String(localized: "Record \(count) and Continue") : String(localized: "Record and Continue")) {
                     Task { await viewModel.commitCandidates(dependencies) }
                 }
                 .buttonStyle(.dnaPrimary(isDisabled: count == 0 || viewModel.isWorking))
                 .disabled(count == 0 || viewModel.isWorking)
-                Button("나머지는 나중에") {
+                Button("Do the Rest Later") {
                     Task { await viewModel.commitCandidates(dependencies) }
                 }
                 .buttonStyle(.dnaGhost)
@@ -191,15 +191,15 @@ struct OnboardingCandidatesView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { viewModel.refreshPhotoAccessAfterReturning() }
         }
-        .alert("도시 고르기", isPresented: Binding(get: { cityTarget != nil }, set: { if !$0 { cityTarget = nil } })) {
-            TextField("도시 이름", text: $cityText)
-            Button("확인") {
+        .alert("Choose City", isPresented: Binding(get: { cityTarget != nil }, set: { if !$0 { cityTarget = nil } })) {
+            TextField("City name", text: $cityText)
+            Button("OK") {
                 if let cityTarget { viewModel.setCity(cityText, for: cityTarget) }
                 cityTarget = nil
             }
-            Button("취소", role: .cancel) { cityTarget = nil }
+            Button("Cancel", role: .cancel) { cityTarget = nil }
         } message: {
-            Text("사진 위치가 흐려서 도시를 알 수 없어요. 아는 도시를 적어 주세요.")
+            Text("We can't tell the city from the photo location. Enter a city you know.")
         }
     }
 
@@ -234,29 +234,29 @@ struct OnboardingCandidatesView: View {
             }
             HStack(spacing: DNASpacing.xs) {
                 Text(candidate.legs.map { OnboardingFormat.flagEmoji(for: $0.countryCode) }.joined())
-                Text(candidate.isCityUnknown ? "\(candidate.title) · 도시 모름" : candidate.title)
+                Text(candidate.isCityUnknown ? String(localized: "\(candidate.title) · City unknown") : candidate.title)
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
             }
-            Text("\(OnboardingFormat.dateRangeText(start: candidate.startDate, end: candidate.endDate)) · 사진 \(candidate.photoAssetIDs.count)장")
+            Text("\(OnboardingFormat.dateRangeText(start: candidate.startDate, end: candidate.endDate)) · \(candidate.photoAssetIDs.count) photos")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
 
             if candidate.isCityUnknown {
-                suggestionRow(text: "사진 위치가 흐려서 도시를 모르겠어요.", action: "도시 고르기") {
+                suggestionRow(text: String(localized: "We can't tell the city because the photo location is unclear."), action: String(localized: "Choose City")) {
                     cityText = ""
                     cityTarget = candidate.id
                 }
             } else if let other = viewModel.mergeSuggestion(for: candidate.id) {
-                suggestionRow(text: "\(other.title)와 날짜가 가까워요. 한 여행이었나요?", action: "\(other.title)와 합치기") {
+                suggestionRow(text: String(localized: "\(other.title) is close in date. Was it one trip?"), action: String(localized: "Merge with \(other.title)")) {
                     viewModel.merge(candidate.id, with: other.id)
                 }
             }
 
             HStack(spacing: DNASpacing.sm) {
-                Button("빼기") { viewModel.setState(.removed, for: candidate.id) }
+                Button("Remove") { viewModel.setState(.removed, for: candidate.id) }
                     .buttonStyle(.dnaSecondary(onSheet: true))
-                Button(candidate.isCityUnknown ? "나라만 기록하기" : "기록하기") {
+                Button(candidate.isCityUnknown ? String(localized: "Record Country Only") : String(localized: "Record")) {
                     viewModel.setState(.recorded, for: candidate.id)
                 }
                 .buttonStyle(.dnaDark(fullWidth: true))
@@ -301,9 +301,9 @@ private struct LimitedPhotoAccessBanner: View {
             }
             HStack(spacing: DNASpacing.md) {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
-                    Link("모든 사진 허용하기", destination: url)
+                    Link("Allow All Photos", destination: url)
                 }
-                Button("사진 더 고르기", action: onSelectMore)
+                Button("Select More Photos", action: onSelectMore)
             }
             .font(.footnote.weight(.semibold))
             .foregroundStyle(Color.dnaUnverifiedText)

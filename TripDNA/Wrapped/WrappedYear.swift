@@ -78,28 +78,44 @@ struct WrappedYear: Equatable {
         return result
     }
 
-    var periodKo: String { isInProgress ? "올해 지금까지" : "\(year)년" }
+    var periodKo: String { isInProgress ? String(localized: "So far this year") : Self.yearText(year) }
+
+    /// "2025년" / "2025". 로케일에 맞는 연도 표기.
+    static func yearText(_ year: Int) -> String {
+        Calendar.current.date(from: DateComponents(year: year))?.formatted(.dateTime.year()) ?? String(year)
+    }
+
+    /// "1월" / "Jan". 로케일에 맞는 짧은 월 이름.
+    static func monthLabel(_ month: Int) -> String {
+        let symbols = Calendar.current.shortMonthSymbols
+        return symbols.indices.contains(month - 1) ? symbols[month - 1] : ""
+    }
 
     /// 진행 중인 해는 "올해", 지난 해는 "2025년". 지난 해 화면에서 "올해"라고 말하지 않는다.
-    var yearWordKo: String { isInProgress ? "올해" : "\(year)년" }
+    var yearWordKo: String { isInProgress ? String(localized: "this year") : Self.yearText(year) }
 
-    var topConceptEyebrowKo: String { isSingleTrip ? "\(yearWordKo)의 여행" : "\(yearWordKo) 가장 많이 떠난 여행" }
+    var topConceptEyebrowKo: String {
+        (isSingleTrip ? String(localized: "\(yearWordKo)'s trip") : String(localized: "Most-taken trip type of \(yearWordKo)")).capitalizingFirst
+    }
 
     /// ③의 큰 글씨. 동점이면 함께 둔다.
     var topConceptBigKo: String {
         guard let fingerprint else { return "" }
-        let names = fingerprint.top.map(\.labelKo).joined(separator: " · ")
+        let names = fingerprint.top.map(\.label).joined(separator: " · ")
         // 한 번뿐이면 "미식 여행"처럼 여행 단어까지 큰 제목에 둔다.
-        return isSingleTrip ? "\(names)\n여행" : names
+        return isSingleTrip ? String(localized: "\(names)\ntrip") : names
     }
 
     /// ③의 설명. 한 번뿐이면 "가장 많이" 같은 말을 쓰지 않는다.
     var topConceptCaptionKo: String {
         guard let fingerprint else { return "" }
         if isSingleTrip, let place = singleTripPlace {
-            return "\(isInProgress ? "올해는" : "\(year)년에는") \(place)\(KoreanParticle.roParticle(after: place)) 한 번 떠났어요"
+            // 조사는 한국어에서만 붙인다.
+            let target = AppLanguage.isKorean ? place + KoreanParticle.roParticle(after: place) : place
+            if isInProgress { return String(localized: "You took one trip this year, to \(target)") }
+            return String(localized: "You took one trip in \(Self.yearText(year)), to \(target)")
         }
-        if fingerprint.isTie { return "\(fingerprint.total)번 중 \(fingerprint.topCount)번씩" }
+        if fingerprint.isTie { return String(localized: "\(fingerprint.topCount) of \(fingerprint.total) each") }
         return fingerprint.homeHeadlineKo
     }
 
@@ -132,10 +148,10 @@ struct WrappedYear: Equatable {
         if rankingReordered, annual.count >= 2,
            let id = ranking?.tripIDsOrdered.first(where: ids.contains),
            let trip = annual.first(where: { $0.id == id }) {
-            var parts = [trip.legs.first.map { "\(calendar.component(.month, from: $0.startDate))월" } ?? "", trip.durationKo]
-            if let concept = trip.concepts?.primary { parts.append("\(concept.labelKo) 여행") }
+            var parts = [trip.legs.first.map { monthLabel(calendar.component(.month, from: $0.startDate)) } ?? "", trip.durationKo]
+            if let concept = trip.concepts?.primary { parts.append(String(localized: "\(concept.label) trip")) }
             topTrip = TopTrip(place: trip.placeTitleKo, detail: parts.filter { !$0.isEmpty }.joined(separator: " · "),
-                              countriesKo: ShareText.list(trip.legs.map { CountryCatalog.name(for: $0.countryCode) }), conceptKo: trip.concepts?.primary.labelKo, coverPath: cover(of: trip))
+                              countriesKo: ShareText.list(trip.legs.map { CountryCatalog.name(for: $0.countryCode) }), conceptKo: trip.concepts?.primary.label, coverPath: cover(of: trip))
         }
 
         return WrappedYear(
@@ -178,9 +194,9 @@ struct WrappedYear: Equatable {
 extension KoreanParticle {
     /// "오사카로", "서울로", "부산으로". ㄹ 받침은 받침이 없는 것처럼 "로".
     static func roParticle(after word: String) -> String {
-        guard let scalar = word.unicodeScalars.last?.value, (0xAC00...0xD7A3).contains(scalar) else { return "로" }
+        guard let scalar = word.unicodeScalars.last?.value, (0xAC00...0xD7A3).contains(scalar) else { return "로" }  // l10n-ignore Korean particle, Korean path only
         let final = (scalar - 0xAC00) % 28
-        return final == 0 || final == 8 ? "로" : "으로"
+        return final == 0 || final == 8 ? "로" : "으로"  // l10n-ignore Korean particle, Korean path only
     }
 }
 
@@ -188,6 +204,11 @@ extension Trip {
     /// "4박 5일", 하루짜리는 "당일".
     var durationKo: String {
         let days = legs.reduce(0) { $0 + $1.days }
-        return days <= 1 ? "당일" : "\(days - 1)박 \(days)일"
+        return days <= 1 ? String(localized: "Day trip") : String(localized: "\(days - 1) nights, \(days) days")
     }
+}
+
+extension String {
+    /// 첫 글자만 대문자로. 한국어에는 영향이 없다.
+    var capitalizingFirst: String { prefix(1).uppercased() + dropFirst() }
 }

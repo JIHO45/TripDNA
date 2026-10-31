@@ -26,14 +26,14 @@ struct DailyPhotoLibraryPicker: View {
     private var filtersToSingleDay: Bool { day != nil }
 
     private var dayLabel: String {
-        guard let day else { return "사진" }
-        if lastDay != nil { return "여행 기간에" }
-        if Calendar.current.isDateInToday(day) { return "오늘" }
-        if Calendar.current.isDateInYesterday(day) { return "어제" }
+        guard let day else { return String(localized: "on this device") }
+        if lastDay != nil { return String(localized: "during your trip") }
+        if Calendar.current.isDateInToday(day) { return String(localized: "today") }
+        if Calendar.current.isDateInYesterday(day) { return String(localized: "yesterday") }
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "M월 d일"
-        return formatter.string(from: day)
+        formatter.locale = Locale.current
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        return String(localized: "on \(formatter.string(from: day))")
     }
 
     var body: some View {
@@ -64,14 +64,14 @@ struct DailyPhotoLibraryPicker: View {
 
     private var primingLayout: some View {
         VStack(spacing: 0) {
-            DNATrustPanel(text: "\(dayLabel) 찍은 사진에서 한 장만 고를 수 있도록 사진 접근이 필요해요. 사진은 기기 안에서만 처리돼요.")
+            DNATrustPanel(text: String(localized: "Photo access is needed so you can pick one photo taken \(dayLabel). Photos are processed only on your device."))
                 .padding(.horizontal, DNASpacing.lg)
             Spacer(minLength: DNASpacing.lg)
             DNABottomCTA {
                 Button {
                     Task { await requestAccess() }
                 } label: {
-                    Text("사진 접근 허용")
+                    Text("Allow Photo Access")
                 }
                 .buttonStyle(.dnaPrimary)
             }
@@ -111,14 +111,14 @@ struct DailyPhotoLibraryPicker: View {
 
     private var deniedCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            Label("사진 접근이 꺼져 있어요", systemImage: "photo.badge.exclamationmark")
+            Label("Photo access is off", systemImage: "photo.badge.exclamationmark")
                 .dnaFont(.cardTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("설정에서 허용하면 \(dayLabel) 찍은 사진을 고를 수 있어요. 지금은 건너뛰어도 괜찮아요.")
+            Text("Allow access in Settings to pick a photo taken \(dayLabel). It's fine to skip for now.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             if let url = URL(string: UIApplication.openSettingsURLString) {
-                Link("설정 열기", destination: url)
+                Link("Open Settings", destination: url)
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaData)
             }
@@ -144,7 +144,7 @@ struct DailyPhotoLibraryPicker: View {
             emptyTodayCard
         } else {
             if filtersToSingleDay {
-                Text("\(dayLabel) 찍은 사진")
+                Text("Photos taken \(dayLabel)")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -166,7 +166,7 @@ struct DailyPhotoLibraryPicker: View {
             }
 
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
-                Label("사진첩에서 더 보기", systemImage: "photo.on.rectangle")
+                Label("See More in Photos", systemImage: "photo.on.rectangle")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaData)
             }
@@ -176,14 +176,14 @@ struct DailyPhotoLibraryPicker: View {
 
     private var emptyTodayCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            Text(filtersToSingleDay ? "\(dayLabel) 찍은 사진이 없어요" : "고를 수 있는 사진이 없어요")
+            Text(filtersToSingleDay ? String(localized: "No photos taken \(dayLabel)") : String(localized: "No photos to choose from"))
                 .dnaFont(.cardTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("건너뛰거나, 사진첩에서 다른 사진을 고를 수 있어요.")
+            Text("Skip, or pick a different photo from your library.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
             PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
-                Text("사진첩에서 고르기")
+                Text("Choose from Library")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                     .frame(maxWidth: .infinity)
@@ -265,7 +265,7 @@ struct DailyPhotoLibraryPicker: View {
             let path = try LocalPhotoStore.saveImageData(data)
             onSelect(path)
         } catch {
-            errorMessage = "사진을 불러오지 못했어요. 다시 시도해 주세요."
+            errorMessage = String(localized: "Couldn't load the photo. Please try again.")
         }
     }
 
@@ -281,13 +281,13 @@ struct DailyPhotoLibraryPicker: View {
 
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
-                errorMessage = "사진을 불러오지 못했어요. 다시 시도해 주세요."
+                errorMessage = String(localized: "Couldn't load the photo. Please try again.")
                 return
             }
             let path = try LocalPhotoStore.saveImageData(data)
             onSelect(path)
         } catch {
-            errorMessage = "사진을 불러오지 못했어요. 다시 시도해 주세요."
+            errorMessage = String(localized: "Couldn't load the photo. Please try again.")
         }
     }
 
@@ -390,7 +390,7 @@ struct AnyPhotoLibraryPickerButton: View {
                 if isImporting {
                     ProgressView().tint(Color.dnaTextSecondary)
                 }
-                Text(isImporting ? "불러오는 중…" : title)
+                Text(isImporting ? String(localized: "Loading…") : title)
                     .dnaFont(.cardTitle)
             }
             .foregroundStyle(Color.dnaTextPrimary)

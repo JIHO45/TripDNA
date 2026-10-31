@@ -113,7 +113,7 @@ nonisolated enum CityQuestionParser {
         }
         var unconfirmed = clean(parts.unconfirmed)
         if failed && sources.isEmpty {
-            unconfirmed += (unconfirmed.isEmpty ? "" : "\n") + "검색이 실패해 최신 정보를 확인하지 못했어요. 없다는 뜻은 아니에요."
+            unconfirmed += (unconfirmed.isEmpty ? "" : "\n") + String(localized: "Search failed, so we couldn't check the latest info. That doesn't mean there isn't any.")
         }
         let evidence = clean(parts.evidence), advice = clean(parts.advice)
         guard !(evidence.isEmpty && advice.isEmpty && unconfirmed.isEmpty) else { throw CityQuestionError.unreadable }
@@ -132,6 +132,7 @@ nonisolated struct CityQuestionService: Sendable {
     let catalog: CityCatalog
     let client: (any CitySearchClient)?
 
+    // l10n-ignore-begin
     static let system = """
     당신은 여행 도시 추천 앱의 질문 답변자입니다. 사용자가 받은 도시 한 곳에 대한 질문에 한국어로 답하세요.
     - 이 도시가 사용자 조건에 맞는지, 왜 맞는지, 조건과 비교하는 질문은 입력에 준 자료와 조건만으로 답하고 검색하지 마세요.
@@ -147,7 +148,7 @@ nonisolated struct CityQuestionService: Sendable {
         var lines = ["[도시]", "\(card.cityName) (\(card.country))"]
         if let city = catalog.cities.first(where: { $0.id == card.cityID }) {
             let strong = city.grades.filter { $0.value >= .makeTime }.sorted { $0.key < $1.key }
-                .map { "\($0.key)=\($0.value.nameKo)" }
+                .map { "\($0.key)=\($0.value.name)" }
             lines += ["자료의 강점 세부(내부 id, 문장에 쓰지 말 것): \(strong.isEmpty ? "없음" : strong.joined(separator: ", "))"]
             if !city.seasonUnverified.isEmpty {
                 lines.append("운영 월을 확인하지 못한 세부: \(city.seasonUnverified.joined(separator: ", "))")
@@ -158,8 +159,8 @@ nonisolated struct CityQuestionService: Sendable {
         if let cost = card.cost { lines.append("예상 비용(추정, 원): \(cost.low)~\(cost.high)") }
         lines += ["", "[추천 조건]", conditionSummary]
         if let request {
-            if let primary = request.primary { lines.append("주 컨셉: \(primary.labelKo)") }
-            if !request.secondary.isEmpty { lines.append("함께: \(request.secondary.map(\.labelKo).joined(separator: ", "))") }
+            if let primary = request.primary { lines.append("주 컨셉: \(primary.label)") }
+            if !request.secondary.isEmpty { lines.append("함께: \(request.secondary.map(\.label).joined(separator: ", "))") }
             lines.append("인원 \(request.partySize)명")
             if !request.wants.isEmpty { lines.append("원하는 것: \(request.wants)") }
             if !request.avoids.isEmpty { lines.append("피하고 싶은 것: \(request.avoids)") }
@@ -167,6 +168,7 @@ nonisolated struct CityQuestionService: Sendable {
         lines += ["", "[질문]", question]
         return lines.joined(separator: "\n")
     }
+    // l10n-ignore-end
 
     func ask(
         _ question: String, card: CityRecommendationRecord.Card, request: RecommendationRequest?,
@@ -174,7 +176,7 @@ nonisolated struct CityQuestionService: Sendable {
     ) async throws -> CityAnswer {
         guard let client else { throw CityQuestionError.notConfigured }
         let reply = try await client.completeWithSearch(
-            system: Self.system, user: user(question: question, card: card, request: request, conditionSummary: conditionSummary),
+            system: CityLLMOutputLanguage.apply(to: Self.system, textFields: "evidence, advice, unconfirmed"), user: user(question: question, card: card, request: request, conditionSummary: conditionSummary),
             maxUses: Self.maxSearches
         )
         return try CityQuestionParser.parse(reply, now: now)

@@ -47,11 +47,15 @@ nonisolated struct RecommendationRequest: Codable, Equatable, Sendable {
     /// 저장한 도시와 결과 화면에 쓰는 한 줄 조건 요약. 예: "미식 · 11월 · 3박 · 1인 100만원 이하".
     var summaryText: String {
         var parts: [String] = []
-        if let primary { parts.append(primary.labelKo) }
-        if let month = month ?? startDate.map({ Calendar.current.component(.month, from: $0) }) { parts.append("\(month)월") }
-        if let nights { parts.append("\(nights)박") }
+        if let primary { parts.append(primary.label) }
+        if let month = month ?? startDate.map({ Calendar.current.component(.month, from: $0) }) {
+            parts.append(Calendar.current.shortMonthSymbols[month - 1])
+        }
+        if let nights { parts.append(String(localized: "\(nights) nights")) }
         if let budgetMaxKRW {
-            parts.append("\(budgetBasis == .perPerson ? "1인" : "전체") \(budgetMaxKRW / 10_000)만원 이하")
+            parts.append(budgetBasis == .perPerson
+                ? String(localized: "Per person under \(shortKRW(budgetMaxKRW, koreanUnit: "만원"))") // l10n-ignore Korean amount unit
+                : String(localized: "Total under \(shortKRW(budgetMaxKRW, koreanUnit: "만원"))")) // l10n-ignore Korean amount unit
         }
         return parts.joined(separator: " · ")
     }

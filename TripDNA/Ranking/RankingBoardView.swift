@@ -16,9 +16,9 @@ struct RankingBoardView: View {
             } else if viewModel.order.isEmpty {
                 EmptyStateView(
                     systemImage: "list.number",
-                    title: "아직 순서를 매길 여행이 없어요",
-                    message: "평가를 마친 여행이 생기면 순서를 매길 수 있어요.",
-                    actionTitle: embedded ? nil : "내 여행 보기",
+                    title: String(localized: "No trips to rank yet"),
+                    message: String(localized: "Once you finish rating a trip, you can rank it."),
+                    actionTitle: embedded ? nil : String(localized: "View My Trips"),
                     action: { router.selectedTab = .trips }
                 )
             } else {
@@ -34,7 +34,7 @@ struct RankingBoardView: View {
     private var boardContent: some View {
         VStack(spacing: 0) {
             if viewModel.hasUnsavedChanges {
-                Text("미리보기예요. 저장해야 순서가 바뀌어요.")
+                Text("This is a preview. Save to apply the new order.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaUnverifiedText)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -54,7 +54,7 @@ struct RankingBoardView: View {
                     }
                     if viewModel.hasUnsavedChanges {
                         HStack(spacing: DNASpacing.xs) {
-                            Button("취소") { viewModel.revertDraft() }
+                            Button("Cancel") { viewModel.revertDraft() }
                                 .buttonStyle(.dnaSecondary)
                                 .disabled(viewModel.isSaving)
                             Button {
@@ -63,7 +63,7 @@ struct RankingBoardView: View {
                                 if viewModel.isSaving {
                                     ProgressView().tint(.white)
                                 } else {
-                                    Text("이 순서로 저장")
+                                    Text("Save This Order")
                                 }
                             }
                             .buttonStyle(.dnaPrimary(isDisabled: viewModel.isSaving))
@@ -94,7 +94,7 @@ struct RankingBoardView: View {
                     )
                 }
             } header: {
-                Text("끌어서 순서를 바꿔보세요")
+                Text("Drag to reorder")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }

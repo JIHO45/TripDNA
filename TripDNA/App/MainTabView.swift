@@ -17,19 +17,19 @@ struct MainTabView: View {
             NavigationStack {
                 HomeRedesignView(selection: $router.selectedTab)
             }
-            .tabItem { Label("홈", systemImage: "house.fill") }
+            .tabItem { Label("Home", systemImage: "house.fill") }
             .tag(MainTab.home)
 
             NavigationStack {
                 RecommendationView()
             }
-            .tabItem { Label("추천", systemImage: "sparkles") }
+            .tabItem { Label("Recommendations", systemImage: "sparkles") }
             .tag(MainTab.recommendation)
 
             NavigationStack {
                 TripListView()
             }
-            .tabItem { Label("여행", systemImage: "suitcase.fill") }
+            .tabItem { Label("Trips", systemImage: "suitcase.fill") }
             .tag(MainTab.trips)
         }
         .tint(Color.dnaActionText)

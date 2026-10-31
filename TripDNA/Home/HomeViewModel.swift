@@ -84,15 +84,15 @@ final class HomeViewModel {
     var header: (status: String, title: String) {
         switch topCard {
         case .active(let id):
-            guard let trip = trip(id: id) else { return ("여행 중", "") }
-            return ("여행 중", "\(Self.placeName(trip))에서 \(dayIndex(of: trip))일째")
+            guard let trip = trip(id: id) else { return (String(localized: "Traveling"), "") }
+            return (String(localized: "Traveling"), String(localized: "Day \(dayIndex(of: trip)) in \(Self.placeName(trip))"))
         case .upcoming(let id, let days):
             let place = trip(id: id).map(Self.placeName) ?? ""
-            return ("다가오는 여행", "\(place)까지 \(days)일")
+            return (String(localized: "Upcoming trip"), String(localized: "\(days) days until \(place)"))
         case .recommendations, .invitation:
-            return ("다음 여행 준비 중", "어디로 떠나볼까요?")
+            return (String(localized: "Planning your next trip"), String(localized: "Where to next?"))
         case .firstUse:
-            return ("TripDNA에 오신 걸 환영해요", "어떤 여행을 원하세요?")
+            return (String(localized: "Welcome to TripDNA"), String(localized: "What kind of trip do you want?"))
         }
     }
 

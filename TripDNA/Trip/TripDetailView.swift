@@ -34,9 +34,9 @@ struct TripDetailView: View {
             } else {
                 EmptyStateView(
                     systemImage: "questionmark.folder",
-                    title: "여행을 찾을 수 없어요",
-                    message: "삭제되었거나 존재하지 않는 여행이에요.",
-                    actionTitle: "돌아가기",
+                    title: String(localized: "Trip not found"),
+                    message: String(localized: "It may have been deleted or doesn’t exist."),
+                    actionTitle: String(localized: "Go Back"),
                     action: { dismiss() }
                 )
             }
@@ -51,7 +51,7 @@ struct TripDetailView: View {
                         Button { showingShare = true } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
-                        .accessibilityLabel("공유")
+                        .accessibilityLabel("Share")
                         .accessibilityIdentifier("trip.sharePreview")
                     }
                 }
@@ -61,16 +61,16 @@ struct TripDetailView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button("여행 정보 수정") { showingEdit = true }
+                        Button("Edit Trip Info") { showingEdit = true }
                         if trip.status == .evaluated || trip.status == .skippedEvaluation {
-                            Button("평가 고치기") { showingEvaluation = true }
-                            Button("평가 삭제", role: .destructive) { confirmingEvaluationDeletion = true }
+                            Button("Edit Evaluation") { showingEvaluation = true }
+                            Button("Delete Evaluation", role: .destructive) { confirmingEvaluationDeletion = true }
                         }
-                        Button("여행 삭제", role: .destructive) { confirmingTripDeletion = true }
+                        Button("Delete Trip", role: .destructive) { confirmingTripDeletion = true }
                     } label: {
                         Image(systemName: "ellipsis")
                     }
-                    .accessibilityLabel("여행 관리")
+                    .accessibilityLabel("Manage Trip")
                 }
             }
         }
@@ -85,7 +85,7 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let trip = viewModel.trip {
-                ShareCardSheet(kind: .trip, title: "공유 미리보기", disclosure: "포함: 여행 컨셉, 기간, 내 랭킹 · 빠짐: 날짜, 도시, 동행, 사진", allowsDestinationNames: true) { showsDestinationNames in
+                ShareCardSheet(kind: .trip, title: String(localized: "Share Preview"), disclosure: String(localized: "Included: trip concepts, duration, my ranking · Not included: dates, cities, companions, photos"), allowsDestinationNames: true) { showsDestinationNames in
                     TripShareCard(summary: TripShareSummary(trip: trip), showsDestinationNames: showsDestinationNames)
                 }
             }
@@ -103,7 +103,7 @@ struct TripDetailView: View {
             TripConceptEditSheet(
                 primary: $editPrimary,
                 secondary: $editSecondary,
-                secondaryTitle: viewModel.trip.map(isPast) == false ? "함께 하고 싶은 것" : "함께 한 것"
+                secondaryTitle: viewModel.trip.map(isPast) == false ? String(localized: "Also Want to Do") : String(localized: "Also Did")
             )
         }
         .fullScreenCover(isPresented: $showingEvaluation, onDismiss: {
@@ -116,16 +116,16 @@ struct TripDetailView: View {
                 DailyPhotoView(trip: trip, dayIndex: edit.dayIndex)
             }
         }
-        .confirmationDialog("여행을 끝낼까요?", isPresented: $confirmingEnd, titleVisibility: .visible) {
-            Button("여행 끝내기", role: .destructive) {
+        .confirmationDialog("End this trip?", isPresented: $confirmingEnd, titleVisibility: .visible) {
+            Button("End Trip", role: .destructive) {
                 Task { await viewModel.end(dependencies: dependencies) }
             }
-            Button("계속 여행하기", role: .cancel) {}
+            Button("Keep Traveling", role: .cancel) {}
         } message: {
-            Text("끝내면 도시별 평가를 남길 수 있어요.")
+            Text("Once it ends, you can rate each city.")
         }
-        .confirmationDialog("이 여행을 삭제할까요?", isPresented: $confirmingTripDeletion, titleVisibility: .visible) {
-            Button("여행과 사진 삭제", role: .destructive) {
+        .confirmationDialog("Delete this trip?", isPresented: $confirmingTripDeletion, titleVisibility: .visible) {
+            Button("Delete Trip and Photos", role: .destructive) {
                 Task {
                     do {
                         try await dependencies.deleteTrip(tripID: tripID, userID: session.userID)
@@ -134,10 +134,10 @@ struct TripDetailView: View {
                 }
             }
         } message: {
-            Text("여행, 평가, 이 여행에 저장한 사진과 랭킹 기록이 삭제돼요.")
+            Text("This deletes the trip, its evaluation, and the photos and ranking records saved for it.")
         }
-        .confirmationDialog("평가를 삭제할까요?", isPresented: $confirmingEvaluationDeletion, titleVisibility: .visible) {
-            Button("평가 삭제", role: .destructive) {
+        .confirmationDialog("Delete the evaluation?", isPresented: $confirmingEvaluationDeletion, titleVisibility: .visible) {
+            Button("Delete Evaluation", role: .destructive) {
                 Task {
                     do {
                         try await dependencies.deleteEvaluation(tripID: tripID, userID: session.userID)
@@ -146,15 +146,15 @@ struct TripDetailView: View {
                 }
             }
         } message: {
-            Text("여행과 사진은 남고, 평가는 지문과 랭킹에서 제외돼요.")
+            Text("Your trip and photos stay. The evaluation is removed from your fingerprint and ranking.")
         }
-        .alert("삭제하지 못했어요", isPresented: Binding(
+        .alert("Couldn’t Delete", isPresented: Binding(
             get: { deletionError != nil },
             set: { if !$0 { deletionError = nil } }
         )) {
-            Button("확인", role: .cancel) { deletionError = nil }
+            Button("OK", role: .cancel) { deletionError = nil }
         } message: {
-            Text(deletionError ?? "다시 시도해 주세요.")
+            Text(deletionError ?? String(localized: "Please try again."))
         }
     }
 
@@ -193,7 +193,7 @@ struct TripDetailView: View {
                         activitiesSection(trip)
                     }
                     if trip.purpose == .obligation {
-                        Text("출장은 여행 컨셉 없이 방문 기록만 남겨요. 내 여행 지문에는 세지 않아요.")
+                        Text("Business trips keep only a visit record, with no trip concept. They don’t count toward your travel fingerprint.")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
@@ -221,13 +221,13 @@ struct TripDetailView: View {
             }
             if trip.status == .active {
                 LinearGradient(colors: [.clear, .black.opacity(0.45)], startPoint: .center, endPoint: .bottom)
-                Text("여행 중 · \(viewModel.currentDayIndex)일째 / \(viewModel.totalDays)일")
+                Text("On the trip · Day \(viewModel.currentDayIndex) of \(viewModel.totalDays)")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.white)
                     .padding(DNASpacing.gutter)
             } else {
                 Button { showingCoverPicker = true } label: {
-                    Text("사진 바꾸기")
+                    Text("Change Photo")
                         .dnaFont(.caption)
                         .foregroundStyle(path == nil ? Color.dnaTextPrimary : Color.white)
                         .padding(.horizontal, DNASpacing.sm)
@@ -258,13 +258,13 @@ struct TripDetailView: View {
     /// "2026년 9월 3일 – 9일 · 여가 · 친구 3명". 입력하지 않은 동행은 쓰지 않는다.
     private func metaLine(_ trip: Trip) -> String {
         let year = trip.legs.first.map { Calendar.current.component(.year, from: $0.startDate) }
-        var parts = [year.map { "\($0)년 " + trip.shortDateRangeKo } ?? trip.shortDateRangeKo]
+        var parts = [year.map { String(localized: "\($0), \(trip.shortDateRangeKo)") } ?? trip.shortDateRangeKo]
         if trip.purpose == .obligation {
-            parts.append("출장")
+            parts.append(String(localized: "Business"))
         } else if trip.status != .active {
-            parts.append("여가")
+            parts.append(String(localized: "Leisure"))
         }
-        if !trip.companion.labelKo.isEmpty { parts.append(trip.companion.labelKo) }
+        if !trip.companion.label.isEmpty { parts.append(trip.companion.label) }
         return parts.joined(separator: " · ")
     }
 
@@ -278,14 +278,14 @@ struct TripDetailView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
             }
             if trip.concepts != nil { conceptRow(trip) }
-            Text("여행이 시작되면 매일 한 장의 사진으로 하루를 남길 수 있어요.")
+            Text("Once your trip starts, you can keep each day with one photo.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
-            Button("여행 시작") {
+            Button("Start Trip") {
                 Task { await viewModel.start(dependencies: dependencies) }
             }
             .buttonStyle(.dnaPrimary)
-            Label("여행이 끝나는 날 평가를 알려드릴게요.", systemImage: "bell")
+            Label("We’ll remind you to rate it when your trip ends.", systemImage: "bell")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
@@ -295,10 +295,10 @@ struct TripDetailView: View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
             HStack(spacing: DNASpacing.sm) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("오늘의 한 장")
+                    Text("Today’s Photo")
                         .dnaFont(.sectionTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
-                    Text(viewModel.todayPhoto == nil ? "아직 안 남겼어요" : "남겼어요")
+                    Text(viewModel.todayPhoto == nil ? String(localized: "Not added yet") : String(localized: "Added"))
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -307,17 +307,17 @@ struct TripDetailView: View {
             .padding(DNASpacing.md)
             .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
 
-            Button(viewModel.todayPhoto == nil ? "오늘의 한 장 고르기" : "오늘의 사진 바꾸기") {
+            Button(viewModel.todayPhoto == nil ? String(localized: "Choose Today’s Photo") : String(localized: "Change Today’s Photo")) {
                 photoDayEdit = PhotoDayEdit(dayIndex: viewModel.currentDayIndex)
             }
             .buttonStyle(.dnaPrimary)
 
-            Text("여행이 끝나는 날 평가를 알려드릴게요")
+            Text("We’ll remind you to rate it when your trip ends")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .frame(maxWidth: .infinity)
 
-            Button("일찍 돌아왔어요 · 여행 끝내기") { confirmingEnd = true }
+            Button("Back Early · End Trip") { confirmingEnd = true }
                 .buttonStyle(.dnaGhost)
                 .frame(maxWidth: .infinity)
         }
@@ -329,7 +329,7 @@ struct TripDetailView: View {
         HStack(spacing: DNASpacing.xs) {
             if let concepts = trip.concepts {
                 ForEach([concepts.primary] + concepts.secondary, id: \.self) { concept in
-                    Text(concept.labelKo)
+                    Text(concept.label)
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .padding(.horizontal, DNASpacing.sm)
@@ -338,7 +338,7 @@ struct TripDetailView: View {
                 }
             }
             if trip.purpose == .leisure {
-                Button("컨셉 고치기") {
+                Button("Edit Concepts") {
                     editPrimary = trip.concepts?.primary
                     editSecondary = trip.concepts?.secondary ?? []
                     showingConceptEdit = true
@@ -369,7 +369,7 @@ struct TripDetailView: View {
             RankingBoardView()
         } label: {
             HStack {
-                Text("내 랭킹 \(rank)위")
+                Text("My Rank: #\(rank)")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
@@ -386,7 +386,7 @@ struct TripDetailView: View {
     private func cityReviewsSection(_ trip: Trip) -> some View {
         let saved = trip.evaluation?.cityReviews ?? []
         return VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text("도시별 평가")
+            Text("City Ratings")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             ForEach(Array(trip.reviewTargets.enumerated()), id: \.offset) { _, target in
@@ -404,15 +404,15 @@ struct TripDetailView: View {
                         }
                     }
                     if let review {
-                        if let liked = review.liked { memoLine("좋았던 점", liked) }
-                        if let disliked = review.disliked { memoLine("아쉬웠던 점", disliked) }
+                        if let liked = review.liked { memoLine(String(localized: "What you liked"), liked) }
+                        if let disliked = review.disliked { memoLine(String(localized: "What fell short"), disliked) }
                     } else {
                         HStack {
-                            Text("아직 평가 전")
+                            Text("Not rated yet")
                                 .dnaFont(.caption)
                                 .foregroundStyle(Color.dnaTextSecondary)
                             Spacer()
-                            Button("평가하기") { showingEvaluation = true }
+                            Button("Rate") { showingEvaluation = true }
                                 .buttonStyle(.dnaDark(fullWidth: false))
                         }
                     }
@@ -442,11 +442,11 @@ struct TripDetailView: View {
         let filled = days.filter { viewModel.photo(forDay: $0) != nil }.count
         return VStack(alignment: .leading, spacing: DNASpacing.xs) {
             HStack(alignment: .firstTextBaseline) {
-                Text("하루 한 장")
+                Text("One Photo a Day")
                     .dnaFont(.sectionTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Spacer()
-                Text("\(days.count)일 중 \(filled)일")
+                Text("\(filled) of \(days.count) days")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -456,7 +456,7 @@ struct TripDetailView: View {
                 }
             }
             if viewModel.photos.contains(where: { $0.selection == .autoFallback }) {
-                Text("'자동'은 비어 있던 날을 앱이 골라둔 사진이에요. 눌러서 직접 바꿀 수 있어요.")
+                Text("“Auto” marks days the app filled in with a photo for you. Tap to choose your own.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -487,7 +487,7 @@ struct TripDetailView: View {
                     }
                     .overlay(alignment: .topLeading) {
                         if photo?.selection == .autoFallback {
-                            Text("자동")
+                            Text("Auto")
                                 .dnaFont(.tabLabel)
                                 .foregroundStyle(Color.dnaTextPrimary)
                                 .padding(.horizontal, 8)
@@ -500,8 +500,8 @@ struct TripDetailView: View {
             }
             .buttonStyle(.plain)
             .disabled(!editable)
-            .accessibilityLabel(photo == nil ? "\(day)일째 사진 고르기" : "\(day)일째 사진 바꾸기")
-            Text(trip.status == .active && day == viewModel.currentDayIndex ? "오늘" : "\(day)일째")
+            .accessibilityLabel(photo == nil ? String(localized: "Choose photo for day \(day)") : String(localized: "Change photo for day \(day)"))
+            Text(trip.status == .active && day == viewModel.currentDayIndex ? String(localized: "Today") : String(localized: "Trip day \(day)"))
                 .dnaFont(.tabLabel)
                 .foregroundStyle(Color.dnaTextPrimary)
         }
@@ -521,7 +521,7 @@ struct TripDetailView: View {
 
     private func legsSection(_ trip: Trip) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text("일정")
+            Text("Itinerary")
                 .dnaFont(.sectionTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
             ForEach(Array(trip.legs.enumerated()), id: \.offset) { _, leg in
@@ -536,7 +536,7 @@ struct TripDetailView: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                     Spacer()
-                    Text("\(leg.days)일")
+                    Text("\(leg.days) days")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
@@ -550,22 +550,26 @@ struct TripDetailView: View {
         let calendar = Calendar.current
         let start = calendar.dateComponents([.month, .day], from: leg.startDate)
         let end = calendar.dateComponents([.month, .day], from: leg.endDate)
-        let from = "\(start.month ?? 0)월 \(start.day ?? 0)일"
+        let monthDay = DateFormatter()
+        monthDay.setLocalizedDateFormatFromTemplate("MMMd")
+        let dayOnly = DateFormatter()
+        dayOnly.setLocalizedDateFormatFromTemplate("d")
+        let from = monthDay.string(from: leg.startDate)
         if leg.startDate == leg.endDate { return from }
-        return start.month == end.month ? "\(from) – \(end.day ?? 0)일" : "\(from) – \(end.month ?? 0)월 \(end.day ?? 0)일"
+        return start.month == end.month ? "\(from) – \(dayOnly.string(from: leg.endDate))" : "\(from) – \(monthDay.string(from: leg.endDate))"
     }
 
     @ViewBuilder
     private func activitiesSection(_ trip: Trip) -> some View {
         let links = dependencies.affiliateLinkService.links(for: trip)
         if links.isEmpty {
-            SectionCard(title: "출발 전 뭐 할까") {
+            SectionCard(title: String(localized: "What to Do Before You Go")) {
                 VStack(alignment: .leading, spacing: DNASpacing.sm) {
-                    Text("여행지에 도시를 추가하면 그 도시의 액티비티를 바로 찾을 수 있어요.")
+                    Text("Add a city to your destination to find activities there right away.")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    Button("도시 추가하기") {
+                    Button("Add a City") {
                         showingEdit = true
                     }
                     .dnaFont(.button)
@@ -574,7 +578,7 @@ struct TripDetailView: View {
                 }
             }
         } else {
-            AffiliateActivitySection(title: "출발 전 뭐 할까", links: links)
+            AffiliateActivitySection(title: String(localized: "What to Do Before You Go"), links: links)
         }
     }
 }

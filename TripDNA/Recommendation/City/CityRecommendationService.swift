@@ -244,7 +244,7 @@ nonisolated struct CityRecommendationService: Sendable {
         let cards: [CityRecommendationRecord.Card] = CityRanker.pickCards(from: survivors, seed: seed).compactMap { pick in
             byID[pick.ranked.city.id].map { card in
                 .init(
-                    cityID: pick.ranked.city.id, cityName: pick.ranked.city.ko, country: pick.ranked.city.country,
+                    cityID: pick.ranked.city.id, cityName: pick.ranked.city.displayName, country: pick.ranked.city.country,
                     isExploration: pick.isExploration, seasonCheckNeeded: pick.ranked.status == .needsSeasonCheck,
                     reason: card.reason, caveat: card.caveat, cost: card.cost,
                     conditions: pick.ranked.conditionResults, conditionCheckNeeded: pick.ranked.needsConditionCheck

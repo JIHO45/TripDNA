@@ -26,9 +26,9 @@ struct ConceptAndCityReviewTests {
         let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: url))
         #expect(file.version == 1)
         #expect(file.categories.map(\.id) + ["event"] == TripConcept.allCases.map(\.rawValue))
-        // 화면 이름(labelKo)은 짧은 이름이라 자료 파일의 label_ko와 비교하지 않는다.
+        // 화면 이름(label)은 짧은 이름이라 자료 파일의 label_ko와 비교하지 않는다.
         for category in file.categories {
-            #expect(TripConcept(rawValue: category.id)?.labelKo.isEmpty == false)
+            #expect(TripConcept(rawValue: category.id)?.label.isEmpty == false)
         }
     }
 

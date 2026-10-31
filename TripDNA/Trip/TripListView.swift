@@ -8,16 +8,22 @@ struct TripListView: View {
     @State private var showingRegistration = false
     @State private var mode: Mode = .list
 
-    private enum Mode: String, CaseIterable {
-        case list = "목록"
-        case ranking = "내 랭킹"
+    private enum Mode: CaseIterable {
+        case list, ranking
+
+        var title: String {
+            switch self {
+            case .list: String(localized: "List")
+            case .ranking: String(localized: "My Ranking")
+            }
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
                 HStack {
-                    Text("여행")
+                    Text("Trips")
                         .dnaFont(.screenTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                     Spacer()
@@ -59,7 +65,7 @@ struct TripListView: View {
         Button {
             showingRegistration = true
         } label: {
-            Text("+ 등록")
+            Text("+ Add")
                 .dnaFont(.button)
                 .foregroundStyle(Color.dnaTextPrimary)
                 .padding(.horizontal, DNASpacing.md)
@@ -67,11 +73,11 @@ struct TripListView: View {
                 .background(Color.dnaSurface1, in: Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("여행 등록")
+        .accessibilityLabel("Add Trip")
     }
 
     private var modePicker: some View {
-        DNASegmentedControl(items: Mode.allCases.map { ($0.rawValue, $0) }, selection: mode) { mode = $0 }
+        DNASegmentedControl(items: Mode.allCases.map { ($0.title, $0) }, selection: mode) { mode = $0 }
     }
 
     // MARK: - 목록
@@ -87,22 +93,22 @@ struct TripListView: View {
                         emptyCard
                     }
                     if let current = viewModel.currentTrip {
-                        section("여행 중") { row(current, trailing: AnyView(inTripBadge(current))) }
+                        section(String(localized: "On a Trip")) { row(current, trailing: AnyView(inTripBadge(current))) }
                     }
                     if !viewModel.upcomingTrips.isEmpty {
-                        section("다가오는 여행") {
+                        section(String(localized: "Upcoming Trips")) {
                             ForEach(viewModel.upcomingTrips) { trip in
                                 row(trip, trailing: AnyView(dDayLabel(trip)))
                             }
                         }
                     }
                     if !viewModel.awaitingTrips.isEmpty {
-                        section("평가를 기다리는 여행") {
+                        section(String(localized: "Waiting for Your Rating")) {
                             ForEach(viewModel.awaitingTrips) { trip in awaitingCard(trip) }
                         }
                     }
                     if !viewModel.pastTripsByYear.isEmpty {
-                        section("지난 여행") {
+                        section(String(localized: "Past Trips")) {
                             ForEach(viewModel.pastTripsByYear, id: \.year) { group in
                                 Text(String(group.year))
                                     .dnaFont(.caption)
@@ -125,10 +131,10 @@ struct TripListView: View {
 
     private var emptyCard: some View {
         VStack(alignment: .leading, spacing: DNASpacing.xs) {
-            Text("아직 등록한 여행이 없어요")
+            Text("No trips yet")
                 .dnaFont(.cardTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("위의 + 등록으로 갈 예정인 여행이나 다녀온 여행을 남겨보세요.")
+            Text("Tap + Add above to save a trip you’re planning or one you’ve taken.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }
@@ -159,7 +165,7 @@ struct TripListView: View {
                             .foregroundStyle(Color.dnaTextPrimary)
                             .lineLimit(1)
                         if trip.purpose == .obligation {
-                            Text("출장")
+                            Text("Business")
                                 .dnaFont(.tabLabel)
                                 .foregroundStyle(Color.dnaTextSecondary)
                                 .padding(.horizontal, 6)
@@ -196,8 +202,8 @@ struct TripListView: View {
     /// "11월 14일 – 17일 · 친구 · 문화·역사". 입력하지 않은 항목은 쓰지 않는다.
     private func subtitle(_ trip: Trip) -> String {
         var parts = [trip.shortDateRangeKo]
-        if !trip.companion.labelKo.isEmpty { parts.append(trip.companion.labelKo) }
-        if let primary = trip.concepts?.primary { parts.append(primary.labelKo) }
+        if !trip.companion.label.isEmpty { parts.append(trip.companion.label) }
+        if let primary = trip.concepts?.primary { parts.append(primary.label) }
         return parts.joined(separator: " · ")
     }
 
@@ -218,7 +224,7 @@ struct TripListView: View {
     }
 
     private func inTripBadge(_ trip: Trip) -> some View {
-        Text("여행 중")
+        Text("On a Trip")
             .dnaFont(.caption)
             .foregroundStyle(Color.dnaActionText)
     }
@@ -226,7 +232,7 @@ struct TripListView: View {
     @ViewBuilder
     private func pastTrailing(_ trip: Trip) -> some View {
         if trip.status == .skippedEvaluation {
-            Text("평가 안 함")
+            Text("Not Rated")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextTertiary)
         } else {
@@ -237,7 +243,7 @@ struct TripListView: View {
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
                 if let rank = trip.rankPosition {
-                    Text("\(rank)위")
+                    Text("#\(rank)")
                         .dnaFont(.cardTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
                         .monospacedDigit()
@@ -261,7 +267,7 @@ struct TripListView: View {
                         .foregroundStyle(Color.white.opacity(0.7))
                 }
                 Spacer(minLength: 0)
-                Text("이어서")
+                Text("Resume")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaInk)
                     .padding(.horizontal, DNASpacing.sm)

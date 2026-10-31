@@ -7,13 +7,13 @@ nonisolated enum CityGrade: String, Codable, Comparable, Sendable {
     case makeTime = "make_time"
     case choose
 
-    /// LLM 입력과 로그에 쓰는 한국어 이름.
-    var nameKo: String {
+    /// LLM 입력과 로그에 쓰는 이름(앱 언어를 따른다).
+    var name: String {
         switch self {
-        case .none: "찾지 못함"
-        case .ifThere: "간다면 즐길 만함"
-        case .makeTime: "일부러 시간을 낼 만함"
-        case .choose: "여행지를 선택할 만함"
+        case .none: String(localized: "Not found")
+        case .ifThere: String(localized: "Fun if you go")
+        case .makeTime: String(localized: "Worth making time for")
+        case .choose: String(localized: "Worth choosing as a destination")
         }
     }
 
@@ -35,6 +35,8 @@ nonisolated struct City: Codable, Equatable, Sendable, Identifiable {
     let id: String
     let ko: String
     let en: String
+    /// 앱 언어에 맞는 도시 이름.
+    var displayName: String { AppLanguage.isKorean ? ko : en }
     let country: String
     /// 세부 29개 → 등급.
     let grades: [String: CityGrade]

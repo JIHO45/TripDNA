@@ -11,7 +11,7 @@ struct WantedTripsSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
-                Text("칩을 눌러 칸을 옮겨요")
+                Text("Tap a chip to move it between boxes")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
                 ForEach([1, 2, 3], id: \.self) { tier in
@@ -20,10 +20,10 @@ struct WantedTripsSettingsView: View {
                 ConceptTierBox(tier: nil, tiers: tiers) { tiers.place($0, in: $1) }
 
                 VStack(alignment: .leading, spacing: DNASpacing.xs) {
-                    Text("피하고 싶은 게 있다면 · 선택")
+                    Text("Anything to avoid? · Optional")
                         .dnaFont(.sectionTitle)
                         .foregroundStyle(Color.dnaTextPrimary)
-                    TextField("예: 긴 이동, 사람 많은 곳", text: Binding(
+                    TextField("e.g. Long travel, crowded places", text: Binding(
                         get: { tiers.avoidNote ?? "" },
                         set: { tiers.avoidNote = $0 }
                     ), axis: .vertical)
@@ -31,11 +31,11 @@ struct WantedTripsSettingsView: View {
                         .padding(DNASpacing.md)
                         .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
                 }
-                Text("다녀온 여행 기록으로 칸을 채우지 않아요")
+                Text("Boxes aren't filled from your past trips")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                 if saveFailed {
-                    Text("저장하지 못했어요. 다시 시도해 주세요.")
+                    Text("Couldn't save. Please try again.")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaError)
                 }
@@ -44,7 +44,7 @@ struct WantedTripsSettingsView: View {
             .padding(.vertical, DNASpacing.md)
         }
         .background(Color.dnaCanvas.ignoresSafeArea())
-        .navigationTitle("원하는 여행")
+        .navigationTitle("Wanted Trips")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             tiers = (try? await dependencies.store.loadWantedTiers()) ?? WantedConceptTiers()
@@ -68,7 +68,7 @@ struct WantedTripsSettingsView: View {
 
 // MARK: - 기억하는 취향
 
-/// 지금 앱이 저장하는 기억은 "원하는 여행"의 피하고 싶은 것 하나뿐이다.
+/// 지금 앱이 저장하는 기억은 "Wanted Trips"의 피하고 싶은 것 하나뿐이다.
 struct MemorySettingsView: View {
     @Environment(AppDependencies.self) private var dependencies
     @State private var tiers: WantedConceptTiers?
@@ -83,7 +83,7 @@ struct MemorySettingsView: View {
             if let note = avoidNote {
                 Section {
                     VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                        Text("피하고 싶은 것")
+                        Text("Things to avoid")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                         Text(note)
@@ -91,15 +91,15 @@ struct MemorySettingsView: View {
                             .foregroundStyle(Color.dnaTextPrimary)
                     }
                     .swipeActions {
-                        Button("지우기", role: .destructive) { Task { await forget() } }
+                        Button("Delete", role: .destructive) { Task { await forget() } }
                     }
                 } footer: {
-                    Text("왼쪽으로 밀면 지울 수 있어요. 고치려면 원하는 여행에서 바꿔요.")
+                    Text("Swipe left to delete. To edit it, change it in Wanted Trips.")
                 }
                 .listRowBackground(Color.dnaSurface1)
             } else {
                 Section {
-                    Text("원하는 여행에서 피하고 싶은 것을 적으면 여기에 보여요")
+                    Text("Anything you write under things to avoid in Wanted Trips shows up here")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -109,7 +109,7 @@ struct MemorySettingsView: View {
             }
         }
         .settingsListStyle()
-        .navigationTitle("기억하는 취향")
+        .navigationTitle("Remembered Tastes")
         .navigationBarTitleDisplayMode(.inline)
         .settingsToast($toast)
         .task { tiers = try? await dependencies.store.loadWantedTiers() }
@@ -123,7 +123,7 @@ struct MemorySettingsView: View {
             tiers = updated
             await dependencies.track(.memoryForgotten)
         } catch {
-            toast = SettingsToast(message: "지우지 못했어요")
+            toast = SettingsToast(message: String(localized: "Couldn't delete"))
         }
     }
 }
@@ -140,7 +140,7 @@ struct ExclusionsSettingsView: View {
         List {
             if items.isEmpty && cities.isEmpty {
                 Section {
-                    Text("제외한 곳이 없어요")
+                    Text("Nothing excluded")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                         .padding(.vertical, DNASpacing.sm)
@@ -148,24 +148,24 @@ struct ExclusionsSettingsView: View {
                 .listRowBackground(Color.dnaSurface1)
             } else {
                 if !cities.isEmpty {
-                    Section("도시") {
+                    Section("Cities") {
                         ForEach(cities) { city in cityRow(city) }
                     }
                     .listRowBackground(Color.dnaSurface1)
                 }
                 if !items.isEmpty {
-                    Section("나라") {
+                    Section("Countries") {
                         ForEach(items) { item in row(item) }
                     }
                     .listRowBackground(Color.dnaSurface1)
                 }
                 Section {} footer: {
-                    Text("나라 제외를 풀어도 따로 정한 도시 제외는 남아요. 도시를 열어보거나 저장해도 제외가 풀리지 않아요.")
+                    Text("Removing a country exclusion keeps any separate city exclusions. Opening or saving a city doesn't remove its exclusion.")
                 }
             }
         }
         .settingsListStyle()
-        .navigationTitle("추천에서 제외한 곳")
+        .navigationTitle("Excluded from Recommendations")
         .navigationBarTitleDisplayMode(.inline)
         .settingsToast($toast)
         .task { await reload() }
@@ -178,17 +178,17 @@ struct ExclusionsSettingsView: View {
                 Text(city.cityName)
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Text("도시 제외 · \(CountryCatalog.name(for: city.country)) · \(city.excludedAt.formatted(.dateTime.year().month().day()))")
+                Text("City excluded · \(CountryCatalog.name(for: city.country)) · \(city.excludedAt.formatted(.dateTime.year().month().day()))")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             Spacer(minLength: 0)
-            Button("해제") { Task { await releaseCity(city) } }
+            Button("Allow Again") { Task { await releaseCity(city) } }
                 .dnaFont(.button)
                 .foregroundStyle(Color.dnaActionText)
                 .buttonStyle(.plain)
                 .frame(minWidth: 44, minHeight: 44)
-                .accessibilityLabel("\(city.cityName) 제외 해제")
+                .accessibilityLabel("Remove exclusion for \(city.cityName)")
         }
     }
 
@@ -196,11 +196,11 @@ struct ExclusionsSettingsView: View {
         do {
             cities = try await dependencies.store.updateCityState { $0.release(cityID: city.cityID) }.excluded
         } catch {
-            toast = SettingsToast(message: "저장하지 못했어요. 다시 시도해 주세요.")
+            toast = SettingsToast(message: String(localized: "Couldn't save. Please try again."))
             return
         }
         let store = dependencies.store
-        toast = SettingsToast(message: "\(city.cityName) 제외를 풀었어요", undo: {
+        toast = SettingsToast(message: String(localized: "\(city.cityName) is no longer excluded"), undo: {
             _ = try? await store.updateCityState { state in
                 state.excluded.removeAll { $0.cityID == city.cityID }
                 state.excluded.insert(city, at: 0)
@@ -221,19 +221,19 @@ struct ExclusionsSettingsView: View {
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             Spacer(minLength: 0)
-            Button("해제") { Task { await release(item) } }
+            Button("Allow Again") { Task { await release(item) } }
                 .dnaFont(.button)
                 .foregroundStyle(Color.dnaActionText)
                 .buttonStyle(.plain)
                 .frame(minWidth: 44, minHeight: 44)
-                .accessibilityLabel("\(CountryCatalog.name(for: item.countryCode)) 제외 해제")
+                .accessibilityLabel("Remove exclusion for \(CountryCatalog.name(for: item.countryCode))")
         }
     }
 
     /// 저장돼 있는 것만 보여준다: 범위는 나라 단위뿐이고, 이유는 고른 경우에만 있다.
     private func detail(_ item: CardFeedback) -> String {
-        var parts = ["나라 제외", item.createdAt.formatted(.dateTime.year().month().day()) ]
-        if let reason = item.reason { parts.append(reason.labelKo) }
+        var parts = [String(localized: "Country excluded"), item.createdAt.formatted(.dateTime.year().month().day()) ]
+        if let reason = item.reason { parts.append(reason.label) }
         return parts.joined(separator: " · ")
     }
 
@@ -246,12 +246,12 @@ struct ExclusionsSettingsView: View {
         do {
             try await dependencies.recommendationService.revokeDislike(countryCode: item.countryCode)
         } catch {
-            toast = SettingsToast(message: "제외를 풀지 못했어요")
+            toast = SettingsToast(message: String(localized: "Couldn't remove the exclusion"))
             return
         }
         await reload()
         let service = dependencies.recommendationService
-        toast = SettingsToast(message: "\(CountryCatalog.name(for: item.countryCode)) 제외를 풀었어요", undo: {
+        toast = SettingsToast(message: String(localized: "\(CountryCatalog.name(for: item.countryCode)) is no longer excluded"), undo: {
             _ = try? await service.applyFeedback(
                 countryCode: item.countryCode, slot: item.slot, action: .dislike, reason: item.reason
             )
@@ -270,17 +270,17 @@ struct HomeCountrySettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            Text("출발 공항 후보를 채우고, 이 나라의 도시는 추천에서 기본으로 빼요. 추천을 요청할 때마다 켜고 끌 수 있어요.")
+            Text("Fills in departure airport suggestions and leaves this country's cities out of recommendations by default. You can turn that on or off each time you request one.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .padding(.horizontal, DNASpacing.lg)
             HStack(spacing: DNASpacing.xs) {
                 if let region = deviceRegion, region != code {
-                    Button("기기 지역 · \(CountryCatalog.name(for: region))") { choose(region) }
+                    Button("Device region · \(CountryCatalog.name(for: region))") { choose(region) }
                         .buttonStyle(.dnaSecondary)
                 }
                 if dependencies.homeCountryCode != nil {
-                    Button("정하지 않기") { clear() }
+                    Button("Don't Set") { clear() }
                         .buttonStyle(.dnaSecondary)
                 }
             }
@@ -289,7 +289,7 @@ struct HomeCountrySettingsView: View {
         }
         .padding(.top, DNASpacing.sm)
         .background(Color.dnaCanvas.ignoresSafeArea())
-        .navigationTitle("사는 나라")
+        .navigationTitle("Home Country")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { code = dependencies.homeCountryCode ?? "" }
         .onChange(of: code) {
@@ -311,12 +311,12 @@ struct HomeCountrySettingsView: View {
 enum AirportCatalog {
     /// 작은 정적 목록. 나라가 없으면 목록이 비어 있고, 사는 나라를 먼저 보여준다.
     static let airports: [(countryCode: String, airports: [(code: String, name: String)])] = [
-        ("KR", [("ICN", "인천"), ("GMP", "김포"), ("PUS", "김해(부산)"), ("CJU", "제주")]),
-        ("JP", [("NRT", "나리타"), ("HND", "하네다"), ("KIX", "간사이")]),
-        ("US", [("JFK", "뉴욕 JFK"), ("LAX", "로스앤젤레스"), ("SFO", "샌프란시스코")]),
-        ("GB", [("LHR", "런던 히스로")]),
-        ("SG", [("SIN", "싱가포르 창이")]),
-        ("AU", [("SYD", "시드니")])
+        ("KR", [("ICN", String(localized: "Incheon")), ("GMP", String(localized: "Gimpo")), ("PUS", String(localized: "Gimhae (Busan)")), ("CJU", String(localized: "Jeju"))]),
+        ("JP", [("NRT", String(localized: "Narita")), ("HND", String(localized: "Haneda")), ("KIX", String(localized: "Kansai"))]),
+        ("US", [("JFK", String(localized: "New York JFK")), ("LAX", String(localized: "Los Angeles")), ("SFO", String(localized: "San Francisco"))]),
+        ("GB", [("LHR", String(localized: "London Heathrow"))]),
+        ("SG", [("SIN", String(localized: "Singapore Changi"))]),
+        ("AU", [("SYD", String(localized: "Sydney"))])
     ]
 
     static func label(for code: String) -> String {
@@ -342,9 +342,9 @@ struct DepartureAirportSettingsView: View {
     var body: some View {
         List {
             Section {
-                Toggle("직항만", isOn: $directOnly)
+                Toggle("Direct Flights Only", isOn: $directOnly)
             } footer: {
-                Text(directOnly ? "직항만 볼게요." : "경유도 괜찮아요.")
+                Text(directOnly ? String(localized: "Direct flights only.") : String(localized: "Layovers are fine."))
             }
             .listRowBackground(Color.dnaSurface1)
 
@@ -371,15 +371,15 @@ struct DepartureAirportSettingsView: View {
             }
             Section {
                 if saveFailed {
-                    Text("저장하지 못했어요. 다시 시도해 주세요.").foregroundStyle(Color.dnaError)
+                    Text("Couldn't save. Please try again.").foregroundStyle(Color.dnaError)
                 }
-                Text("목록에 없는 공항은 아직 고를 수 없어요. 고른 공항을 다시 누르면 정하지 않은 상태로 돌아가요.")
+                Text("Airports not on the list can't be chosen yet. Tap the selected airport again to unset it.")
                     .foregroundStyle(Color.dnaTextSecondary)
             }
             .listRowBackground(Color.clear)
         }
         .settingsListStyle()
-        .navigationTitle("출발 공항 기본값")
+        .navigationTitle("Default Departure Airport")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             let profile = try? await dependencies.store.loadProfile()

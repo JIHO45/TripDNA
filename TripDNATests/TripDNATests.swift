@@ -77,7 +77,7 @@ struct TripDNATests {
         ]
         let outdoor = TagDefinition(
             id: "outdoor",
-            labelKo: "자연/트레킹",
+            labelKo: "자연/트레킹", labelEn: "Nature & Trekking",
             group: .interest,
             routing: [.taste, .interest],
             axisSignature: [.natureUrban: -0.6],
@@ -143,7 +143,7 @@ struct TripDNATests {
 
         let outdoor = TagDefinition(
             id: "outdoor",
-            labelKo: "자연/트레킹",
+            labelKo: "자연/트레킹", labelEn: "Nature & Trekking",
             group: .interest,
             routing: [.taste, .interest],
             axisSignature: [.natureUrban: -0.6],
@@ -524,7 +524,7 @@ struct TripDNATests {
         countries: [CountryProfile]
     ) throws -> SwiftDataAppStore {
         let outdoor = TagDefinition(
-            id: "outdoor", labelKo: "자연/트레킹", group: .interest,
+            id: "outdoor", labelKo: "자연/트레킹", labelEn: "Nature & Trekking", group: .interest,
             routing: [.taste, .interest], axisSignature: [.natureUrban: -0.6],
             polarityPairID: nil, constraintTarget: nil, qualityTarget: false
         )
@@ -727,7 +727,7 @@ struct TripDNATests {
         let tagJSON = Data("""
         {
           "outdoor": {
-            "labelKo": "자연/트레킹",
+            "labelKo": "자연/트레킹", "labelEn": "Nature & Trekking",
             "group": "interest",
             "routing": ["taste", "interest"],
             "axisSignature": {"natureUrban": -0.6},

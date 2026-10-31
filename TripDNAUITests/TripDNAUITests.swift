@@ -25,23 +25,21 @@ final class TripDNAUITests: XCTestCase {
     @MainActor
     func testPlannedTripCityEditingAndActivityBrowser() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTesting", "-uiDemo"]
+        app.launchArguments = ["-uiTesting", "-uiDemo", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["여행"].waitForExistence(timeout: 20))
         app.tabBars.buttons["여행"].tap()
-        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "포르투갈")).firstMatch
+        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "리스본")).firstMatch
         XCTAssertTrue(trip.waitForExistence(timeout: 10))
         trip.tap()
-        XCTAssertTrue(app.buttons["수정"].waitForExistence(timeout: 10))
-        app.buttons["수정"].tap()
-        let city = app.textFields["도시 (예: 도쿄, 오사카)"]
+        openEdit(app)
+        let city = app.textFields["도시 (예: 교토, 오사카)"]
         XCTAssertTrue(city.waitForExistence(timeout: 10))
         XCTAssertEqual(city.value as? String, "리스본")
         city.tap()
         city.typeText(", Porto")
         app.buttons["변경 저장"].tap()
-        XCTAssertTrue(app.buttons["수정"].waitForExistence(timeout: 10))
-        app.buttons["수정"].tap()
+        openEdit(app)
         XCTAssertTrue(city.waitForExistence(timeout: 10))
         XCTAssertEqual(city.value as? String, "리스본, Porto")
         app.buttons["취소"].tap()
@@ -55,17 +53,25 @@ final class TripDNAUITests: XCTestCase {
     @MainActor
     func testDisabledActivitiesHideTripSection() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTesting", "-uiDemo", "-disableAffiliateActivities"]
+        app.launchArguments = ["-uiTesting", "-uiDemo", "-disableAffiliateActivities", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["여행"].waitForExistence(timeout: 20))
         app.tabBars.buttons["여행"].tap()
-        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "포르투갈")).firstMatch
+        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "리스본")).firstMatch
         XCTAssertTrue(trip.waitForExistence(timeout: 10))
         trip.tap()
-        XCTAssertTrue(app.buttons["수정"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["여행 관리"].waitForExistence(timeout: 10))
         app.swipeUp()
         XCTAssertFalse(app.staticTexts["출발 전 뭐 할까"].exists)
         XCTAssertFalse(app.buttons["도시 추가하기"].exists)
+    }
+
+    @MainActor
+    private func openEdit(_ app: XCUIApplication) {
+        XCTAssertTrue(app.buttons["여행 관리"].waitForExistence(timeout: 10))
+        app.buttons["여행 관리"].tap()
+        XCTAssertTrue(app.buttons["여행 정보 수정"].waitForExistence(timeout: 5))
+        app.buttons["여행 정보 수정"].tap()
     }
 
     @MainActor

@@ -72,7 +72,8 @@ nonisolated enum CityResponseError: Error, Equatable {
 /// 등급 이름 같은 내부 용어가 문장에 샜는지 본다. 사실의 정확성은 검사하지 못한다(테스터가 읽고 기록한다).
 nonisolated enum CityResponseValidator {
     static let forbiddenTerms: [String] =
-        [CityGrade.ifThere, .makeTime, .choose].map(\.nameKo) + ["탐색 후보", "make_time", "if_there"]
+        ["간다면 즐길 만함", "일부러 시간을 낼 만함", "여행지를 선택할 만함", "탐색 후보"] // l10n-ignore 한국어 LLM 출력에서 내부 용어 검출
+        + [CityGrade.ifThere, .makeTime, .choose].map(\.name) + ["make_time", "if_there"]
 
     static func parse(_ text: String) throws -> CityLLMResponse {
         guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start < end,

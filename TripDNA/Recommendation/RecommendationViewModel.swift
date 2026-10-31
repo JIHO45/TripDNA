@@ -10,11 +10,11 @@ enum BudgetLevel: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    var labelKo: String {
+    var label: String {
         switch self {
-        case .low: "낮음"
-        case .medium: "중간"
-        case .high: "높음"
+        case .low: String(localized: "Low")
+        case .medium: String(localized: "Medium")
+        case .high: String(localized: "High")
         }
     }
 
@@ -39,13 +39,13 @@ struct RecommendationFilter: Equatable {
     var isActive: Bool { budget != nil || includeHomeCountry }
 
     /// 메인 화면 상단에 노출할 활성 필터 요약.
-    var summaryKo: [String] {
+    var summary: [String] {
         var parts: [String] = []
         if let budget {
-            parts.append("예산 \(budget.labelKo)")
+            parts.append(String(localized: "Budget \(budget.label)"))
         }
         if includeHomeCountry {
-            parts.append("사는 나라 포함")
+            parts.append(String(localized: "Home country included"))
         }
         return parts
     }
@@ -121,7 +121,7 @@ final class RecommendationViewModel {
 
     func refreshSlots(_ dependencies: AppDependencies) async {
         guard vector != nil else {
-            errorMessage = "아직 취향 지문이 없어요."
+            errorMessage = String(localized: "You don't have a taste fingerprint yet.")
             return
         }
         slots = await generateSlots(dependencies)
@@ -169,7 +169,7 @@ final class RecommendationViewModel {
         )
         slotReactions[recommendation.slot] = .save
         savedSnapshots[recommendation.countryCode] = recommendation
-        toastMessage = "저장했어요"
+        toastMessage = String(localized: "Saved")
         await refreshSavedList(dependencies)
     }
 
@@ -241,9 +241,9 @@ final class RecommendationViewModel {
             try await dependencies.recommendationService.revokeDislike(countryCode: feedback.countryCode)
             sessionExcluded.remove(feedback.countryCode)
             await refreshDislikedList(dependencies)
-            toastMessage = "다시 추천에 포함할게요"
+            toastMessage = String(localized: "We'll include it in recommendations again")
         } catch {
-            errorMessage = "되돌리지 못했어요. 다시 시도해 주세요."
+            errorMessage = String(localized: "Couldn't undo that. Please try again.")
         }
     }
 
@@ -268,7 +268,7 @@ final class RecommendationViewModel {
             savedSnapshots[feedback.countryCode] = nil
             await refreshSavedList(dependencies)
         } catch {
-            errorMessage = "저장을 해제하지 못했어요. 다시 시도해 주세요."
+            errorMessage = String(localized: "Couldn't remove the save. Please try again.")
         }
     }
 
@@ -276,31 +276,31 @@ final class RecommendationViewModel {
 
     func reasonText(for recommendation: Recommendation) -> String {
         let quotedTags = recommendation.explanationTagIDs
-            .map { "'\(TagCatalog.labelKo(for: $0))'" }
+            .map { "'\(TagCatalog.label(for: $0))'" }
             .joined(separator: "·")
 
         switch recommendation.slot {
         case .bestMatch:
             if let anchor = anchorTripTitle(recommendation.rankingAnchorTripID), !quotedTags.isEmpty {
-                return "\(anchor)에서 골랐던 \(quotedTags)와 닮았어요"
+                return String(localized: "Similar to the \(quotedTags) you picked on \(anchor)")
             }
             if !quotedTags.isEmpty {
-                return "\(quotedTags) 취향과 가장 잘 맞아요"
+                return String(localized: "The best match for your \(quotedTags) taste")
             }
             if let anchor = anchorTripTitle(recommendation.rankingAnchorTripID) {
-                return "랭킹 상위 \(anchor) 여행과 결이 닮았어요"
+                return String(localized: "Similar in feel to your top-ranked \(anchor) trip")
             }
-            return "지금 지문과 가장 잘 맞는 곳이에요"
+            return String(localized: "The best match for your current fingerprint")
         case .freshStretch:
             if !quotedTags.isEmpty {
-                return "익숙한 취향에서 반 발짝 바깥이에요. \(quotedTags)는 그대로예요"
+                return String(localized: "A half step outside your usual taste. \(quotedTags) stays the same")
             }
-            return "익숙한 취향에서 반 발짝 바깥이에요"
+            return String(localized: "A half step outside your usual taste")
         case .underratedFit:
             if !quotedTags.isEmpty {
-                return "\(quotedTags) 취향이면 의외로 잘 맞을 수 있어요"
+                return String(localized: "If you like \(quotedTags), this could be a surprisingly good fit")
             }
-            return "아직 덜 떠올렸을 수 있지만, 취향엔 잘 맞아요"
+            return String(localized: "You may not have thought of it yet, but it suits your taste")
         }
     }
 
@@ -309,7 +309,7 @@ final class RecommendationViewModel {
         if let snapshot = savedSnapshots[feedback.countryCode] {
             return reasonText(for: snapshot)
         }
-        return feedback.slot.subtitleKo
+        return feedback.slot.subtitle
     }
 
     // MARK: 내부

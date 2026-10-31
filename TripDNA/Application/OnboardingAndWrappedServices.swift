@@ -151,29 +151,29 @@ nonisolated struct WrappedService {
         let cards = [
             WrappedCard(
                 kind: .movement,
-                title: "\(year)년의 이동",
-                detail: "\(countries.count)개 나라, \(annualTrips.count)번의 여행"
+                title: String(localized: "Movement in \(year)"),
+                detail: String(localized: "\(countries.count) countries, \(annualTrips.count) trips")
             ),
-            WrappedCard(kind: .topTrip, title: "올해의 1위", detail: topTripID),
+            WrappedCard(kind: .topTrip, title: String(localized: "This Year's Top Trip"), detail: topTripID),
             WrappedCard(
                 kind: .strongestTaste,
-                title: "가장 강한 취향",
+                title: String(localized: "Your Strongest Taste"),
                 detail: strongestAxis.rawValue
             ),
             WrappedCard(
                 kind: .tags,
-                title: "올해의 태그",
-                detail: mostFrequentTag ?? "기록 없음"
+                title: String(localized: "This Year's Top Tag"),
+                detail: mostFrequentTag.map { TagCatalog.label(for: $0) } ?? String(localized: "No records")
             ),
             WrappedCard(
                 kind: .photo,
-                title: "올해의 한 장",
-                detail: hasPhoto ? "사진 있음" : "사진 없음"
+                title: String(localized: "Photo of the Year"),
+                detail: hasPhoto ? String(localized: "Has photos") : String(localized: "No photos")
             ),
             WrappedCard(
                 kind: .share,
-                title: "\(year) 여행 지문",
-                detail: "\(countries.count)개 목적지"
+                title: String(localized: "\(year) Travel Fingerprint"),
+                detail: String(localized: "\(countries.count) destinations")
             )
         ]
         return WrappedSummary(

@@ -54,13 +54,13 @@ struct ShareCardSheet<Card: View>: View {
                             .frame(maxWidth: 270)
                             .clipShape(RoundedRectangle(cornerRadius: DNARadius.hero, style: .continuous))
                             .frame(maxWidth: .infinity)
-                            .accessibilityLabel("\(title) 이미지")
+                            .accessibilityLabel("\(title) image")
                             .accessibilityIdentifier("shareCard.preview")
                     } else {
-                        Text("이미지를 만들지 못했어요. 다시 시도해주세요.")
+                        Text("Couldn't create the image. Please try again.")
                             .dnaFont(.body)
                             .foregroundStyle(Color.dnaTextPrimary)
-                        Button("다시 만들기", action: render)
+                        Button("Create Again", action: render)
                     }
                     destinationRow
                     Text(disclosure)
@@ -87,7 +87,7 @@ struct ShareCardSheet<Card: View>: View {
                         Image(systemName: "xmark")
                             .foregroundStyle(Color.dnaTextPrimary)
                     }
-                    .accessibilityLabel("닫기")
+                    .accessibilityLabel("Close")
                 }
             }
             .safeAreaInset(edge: .bottom) { bottomBar }
@@ -115,7 +115,7 @@ struct ShareCardSheet<Card: View>: View {
     private var destinationRow: some View {
         HStack(spacing: DNASpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("나라 이름 표시")
+                Text("Show Country Names")
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
                 Text(destinationNote)
@@ -123,7 +123,7 @@ struct ShareCardSheet<Card: View>: View {
                     .foregroundStyle(showsDestinationNames ? Color.dnaUnverifiedText : Color.dnaTextSecondary)
             }
             Spacer(minLength: 0)
-            Toggle("나라 이름 표시", isOn: $showsDestinationNames)
+            Toggle("Show Country Names", isOn: $showsDestinationNames)
                 .labelsHidden()
                 .disabled(!allowsDestinationNames)
                 .accessibilityIdentifier("shareCard.destinations")
@@ -137,14 +137,14 @@ struct ShareCardSheet<Card: View>: View {
     }
 
     private var destinationNote: String {
-        if !allowsDestinationNames { return "이 카드에는 나라 이름이 없어요" }
-        return showsDestinationNames ? "나라 이름이 이미지에 들어가요" : "나라 이름은 숨겨져 있어요"
+        if !allowsDestinationNames { return String(localized: "This card has no country names") }
+        return showsDestinationNames ? String(localized: "Country names appear in the image") : String(localized: "Country names are hidden")
     }
 
     private var bottomBar: some View {
         DNABottomCTA {
             Toggle(isOn: $confirmed) {
-                Text("공개할 내용을 확인했어요")
+                Text("I've checked what will be shared")
                     .dnaFont(size: 14, weight: .bold)
                     .foregroundStyle(Color.dnaTextPrimary)
             }
@@ -155,7 +155,7 @@ struct ShareCardSheet<Card: View>: View {
                     Button {
                         Task { await save(renderedImage) }
                     } label: {
-                        Text(isSaving ? "저장 중" : "이미지 저장")
+                        Text(isSaving ? String(localized: "Saving") : String(localized: "Save Image"))
                     }
                     .buttonStyle(.dnaSecondary)
                     .accessibilityIdentifier("shareCard.save")
@@ -166,7 +166,7 @@ struct ShareCardSheet<Card: View>: View {
                         guard confirmed, !isSaving else { return }
                         sharePayload = ShareCardPayload(image: renderedImage)
                     } label: {
-                        Text("공유").frame(minHeight: 48)
+                        Text("Share").frame(minHeight: 48)
                     }
                     .buttonStyle(.dnaDark(fullWidth: true))
                     .accessibilityIdentifier("shareCard.share")
@@ -182,14 +182,14 @@ struct ShareCardSheet<Card: View>: View {
         if showsPermissionToast {
             HStack(spacing: DNASpacing.sm) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("사진 보관함에 저장할 수 없어요")
+                    Text("Can't save to your photo library")
                         .dnaFont(.cardTitle)
-                    Text("저장 권한이 꺼져 있어요")
+                    Text("Permission to save is turned off")
                         .dnaFont(.caption)
                         .opacity(0.8)
                 }
                 Spacer(minLength: 0)
-                Button("설정 열기") {
+                Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
@@ -226,17 +226,17 @@ struct ShareCardSheet<Card: View>: View {
             return
         }
         guard let data = image.pngData() else {
-            message = "이미지를 만들지 못했어요. 다시 시도해주세요."
+            message = String(localized: "Couldn't create the image. Please try again.")
             return
         }
         do {
             try await PHPhotoLibrary.shared().performChanges {
                 PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
             }
-            message = "사진첩에 저장했어요."
+            message = String(localized: "Saved to Photos.")
             await recordExport(action: "save", activityType: nil)
         } catch {
-            message = "저장하지 못했어요. 다시 시도하거나 공유를 이용해주세요."
+            message = String(localized: "Couldn't save. Try again or use Share.")
         }
     }
 
@@ -268,7 +268,7 @@ private struct ShareConfirmCheckStyle: ToggleStyle {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(.isToggle)
-        .accessibilityValue(configuration.isOn ? "켜짐" : "꺼짐")
+        .accessibilityValue(configuration.isOn ? String(localized: "On") : String(localized: "Off"))
     }
 }
 

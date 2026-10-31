@@ -23,7 +23,7 @@ struct RecommendationDetailView: View {
                 noticesSection
                 if dependencies.affiliateActivitiesEnabled {
                     AffiliateActivitySection(
-                        title: "이 나라에서는 뭐 할까",
+                        title: String(localized: "What to do in this country"),
                         links: dependencies.affiliateLinkService.links(for: recommendation)
                     )
                 }
@@ -62,7 +62,7 @@ struct RecommendationDetailView: View {
                     ScoreBadge(score: recommendation.matchScore)
                     Spacer(minLength: 0)
                 }
-                Text("\(recommendation.slot.labelKo) 슬롯의 추천이에요")
+                Text("Recommended as \(recommendation.slot.label)")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
             }
@@ -83,7 +83,7 @@ struct RecommendationDetailView: View {
     // MARK: 섹션
 
     private var whySection: some View {
-        SectionCard(title: "왜 추천하나요") {
+        SectionCard(title: String(localized: "Why we recommend it")) {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 Text(viewModel.reasonText(for: recommendation))
                     .dnaFont(.body)
@@ -104,16 +104,16 @@ struct RecommendationDetailView: View {
     /// 검증된 데이터(물가 지수)만 배지로 보여주고, 예산·비행시간처럼
     /// 검증되지 않은 항목은 숫자나 적합 배지를 추정해서 표시하지 않는다.
     private var realityFitSection: some View {
-        SectionCard(title: "현실 적합") {
+        SectionCard(title: String(localized: "Reality Check")) {
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 FitBadgesRow(badges: recommendation.fitBadges)
 
-                Text("물가 배지는 참고용이에요. 취향 매치 점수와 합쳐서 계산하지 않아요.")
+                Text("Price badges are for reference. They aren't part of your taste match score.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("예산·비행시간은 검증된 데이터가 준비되면 보여드릴게요.")
+                Text("We'll show budget and flight time once verified data is ready.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -122,9 +122,9 @@ struct RecommendationDetailView: View {
     }
 
     private var noticesSection: some View {
-        SectionCard(title: "알아둘 점") {
+        SectionCard(title: String(localized: "Good to Know")) {
             if recommendation.notices.isEmpty {
-                Text("지금 알려드릴 주의 사항이 없어요.")
+                Text("Nothing to flag right now.")
                     .dnaFont(.body)
                     .foregroundStyle(Color.dnaTextSecondary)
             } else {
@@ -152,7 +152,7 @@ struct RecommendationDetailView: View {
             Button {
                 Task { await viewModel.save(recommendation, dependencies: dependencies) }
             } label: {
-                Label(isSaved ? "저장했어요" : "저장하기", systemImage: isSaved ? "checkmark" : "bookmark")
+                Label(isSaved ? String(localized: "Saved") : String(localized: "Save"), systemImage: isSaved ? "checkmark" : "bookmark")
             }
             .buttonStyle(.dnaPrimary(isDisabled: isSaved))
             .disabled(isSaved)
@@ -160,14 +160,14 @@ struct RecommendationDetailView: View {
             NavigationLink {
                 TripRegistrationView(prefilledCountryCode: recommendation.countryCode)
             } label: {
-                Label("이 나라로 여행 등록", systemImage: "airplane")
+                Label("Register Trip to This Country", systemImage: "airplane")
             }
             .buttonStyle(.dnaSecondary)
 
             Button {
                 showingDislikeSheet = true
             } label: {
-                Text("관심 없어요")
+                Text("Not Interested")
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.dnaGhost)

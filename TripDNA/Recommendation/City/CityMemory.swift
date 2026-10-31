@@ -40,10 +40,10 @@ nonisolated enum CityMemoryConsent {
     static let key = "tripdna.cityMemoryConsent"
 
     // 동의 시트와 설정이 같은 문구를 쓴다. 처리방침 4·7절과 맞춘다.
-    static let alwaysSent = "고른 여행 컨셉, 조건(시기·기간·인원·예산), 적은 문장, 원하는 여행, 도시에 대한 질문"
-    static let sentIfGranted = "최근 여행 평가 10건까지의 별점과 메모(메모당 500자까지), 다녀온 도시"
-    static let neverSent = "원본 사진, 위치 기록, 이름이나 연락처"
-    static let recipients = "Google Firebase(중계 서버), Anthropic(AI 모델). 모두 미국에서 처리돼요."
+    static var alwaysSent: String { String(localized: "Selected trip concepts, conditions (timing, length, party size, budget), the text you write, the trip you want, and your questions about cities") }
+    static var sentIfGranted: String { String(localized: "Star ratings and notes from up to 10 recent trip reviews (up to 500 characters per note), and the cities you visited") }
+    static var neverSent: String { String(localized: "Original photos, location history, your name or contact info") }
+    static var recipients: String { String(localized: "Google Firebase (relay server) and Anthropic (AI model). All processing happens in the US.") }
 
     enum State: String { case undecided, granted, declined }
 

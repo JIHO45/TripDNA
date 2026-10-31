@@ -11,17 +11,17 @@ struct RecommendationFilterSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DNASpacing.xl) {
-                    Text("예산에 맞춰")
+                    Text("Fit your budget")
                         .font(.title.weight(.regular))
                         .foregroundStyle(Color.dnaTextPrimary)
                     filterSection(
-                        title: "예산 범위",
-                        caption: "예산을 넘는 물가의 나라를 후보에서 제외해요. 예산이 높다고 비싼 곳만 나오지 않아요."
+                        title: String(localized: "Budget Range"),
+                        caption: String(localized: "Countries with prices above your budget are left out. A higher budget doesn't mean only expensive places.")
                     ) {
                         DNAFlowLayout(spacing: 8) {
                             ForEach(BudgetLevel.allCases) { budget in
                                 DNATagChip(
-                                    title: budget.labelKo,
+                                    title: budget.label,
                                     isSelected: viewModel.filter.budget == budget
                                 ) {
                                     toggleOptional(\.budget, to: budget)
@@ -32,10 +32,10 @@ struct RecommendationFilterSheet: View {
 
                     if dependencies.canIncludeHomeCountry {
                         filterSection(
-                            title: "사는 나라",
-                            caption: "사는 나라는 기본으로 추천에서 빼요. 켜면 이번 추천에 넣어요."
+                            title: String(localized: "Home Country"),
+                            caption: String(localized: "Your home country is left out by default. Turn this on to include it this time.")
                         ) {
-                            Toggle("사는 나라도 포함", isOn: $viewModel.filter.includeHomeCountry)
+                            Toggle("Include Home Country", isOn: $viewModel.filter.includeHomeCountry)
                                 .foregroundStyle(Color.dnaTextPrimary)
                                 .accessibilityIdentifier("recommendationFilter.includeHomeCountry")
                         }
@@ -47,12 +47,12 @@ struct RecommendationFilterSheet: View {
                 .padding(.bottom, DNASpacing.sm)
             }
             .dnaBackground()
-            .navigationTitle("추천 조건")
+            .navigationTitle("Recommendation Filters")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("초기화") {
+                    Button("Reset") {
                         viewModel.resetFilter()
                     }
                     .foregroundStyle(Color.dnaTextSecondary)
@@ -66,7 +66,7 @@ struct RecommendationFilterSheet: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                             .frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel("닫기")
+                    .accessibilityLabel("Close")
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -77,7 +77,7 @@ struct RecommendationFilterSheet: View {
                             dismiss()
                         }
                     } label: {
-                        Text("추천 다시 보기")
+                        Text("Update Recommendations")
                     }
                     .buttonStyle(.dnaPrimary)
                 }
@@ -90,7 +90,7 @@ struct RecommendationFilterSheet: View {
     // MARK: 출발지 (프로필 거주국, 읽기 전용)
 
     private var departureSection: some View {
-        filterSection(title: "출발지", caption: "프로필의 거주 국가 기준이에요. 홈 설정에서 바꿀 수 있어요.") {
+        filterSection(title: String(localized: "Departure"), caption: String(localized: "Based on the country of residence in your profile. You can change it in Home settings.")) {
             HStack(spacing: DNASpacing.sm) {
                 if let code = dependencies.homeCountryCode {
                     Text(CountryFlag.emoji(for: code))
@@ -101,7 +101,7 @@ struct RecommendationFilterSheet: View {
                 } else {
                     Image(systemName: "questionmark.circle")
                         .foregroundStyle(Color.dnaTextSecondary)
-                    Text("거주 국가가 아직 설정되지 않았어요")
+                    Text("Country of residence isn't set yet")
                         .dnaFont(.body)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }

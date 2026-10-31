@@ -56,14 +56,14 @@ enum UIDemoSeed {
         case .empty:
             break
         case .upcoming:
-            try await store.create(trip("PT", "리스본", from: 26, to: 30, .food, now: now))
-            try await store.create(evaluated("JP", "교토", from: -22, to: -18, .cultureHistory, stars: 5, now: now))
+            try await store.create(trip("PT", String(localized: "Lisbon"), from: 26, to: 30, .food, now: now))
+            try await store.create(evaluated("JP", String(localized: "Kyoto"), from: -22, to: -18, .cultureHistory, stars: 5, now: now))
         case .active:
-            var active = try trip("PT", "리스본", from: -2, to: 3, .cityExploration, now: now)
+            var active = try trip("PT", String(localized: "Lisbon"), from: -2, to: 3, .cityExploration, now: now)
             try active.start(at: day(-2, now))
             try await store.create(active)
         case .pendingEval:
-            var ended = try trip("JP", "오사카", from: -9, to: -5, .food, now: now)
+            var ended = try trip("JP", String(localized: "Osaka"), from: -9, to: -5, .food, now: now)
             try ended.end(at: day(-5, now))
             try await store.create(ended)
         case .many:
@@ -98,11 +98,11 @@ enum UIDemoSeed {
             }
         case .wrappedOne:
             let from = lastYearOffset(200, now)
-            try await store.create(evaluated("JP", "오사카", from: from, to: from + 4, .food, stars: 5, now: now))
+            try await store.create(evaluated("JP", String(localized: "Osaka"), from: from, to: from + 4, .food, stars: 5, now: now))
         case .saved:
             try await store.updateCityState {
-                $0.save(card(of: "jp-kyoto"), conditionSummary: "문화·역사 · 11월", now: day(-3, now))
-                $0.save(card(of: "pt-lisbon"), conditionSummary: "미식 · 3월", now: day(-1, now))
+                $0.save(card(of: "jp-kyoto"), conditionSummary: String(localized: "Culture & History · November"), now: day(-3, now))
+                $0.save(card(of: "pt-lisbon"), conditionSummary: String(localized: "Food · March"), now: day(-1, now))
                 $0.exclude(card(of: "es-barcelona"), now: day(-5, now))
             }
         }
@@ -145,7 +145,7 @@ enum UIDemoSeed {
                 satisfaction: stars, wouldRepeat: stars >= 4,
                 cityReviews: [CityReview(
                     countryCode: country, city: city, rating: stars,
-                    liked: "걷기 좋았고 먹을 곳이 많았어요", disliked: stars <= 3 ? "사람이 너무 많았어요" : nil
+                    liked: String(localized: "Great for walking, and lots of places to eat"), disliked: stars <= 3 ? String(localized: "Too crowded") : nil
                 )],
                 source: .postTrip
             ),
@@ -155,17 +155,17 @@ enum UIDemoSeed {
     }
 
     private static let manyTrips: [(country: String, city: String, concept: TripConcept, secondary: [TripConcept], stars: Int)] = [
-        ("JP", "오사카", .food, [.shopping], 5),
-        ("IT", "로마", .cultureHistory, [.food], 4),
-        ("NZ", "퀸스타운", .natureScenery, [.activities], 5),
-        ("TH", "푸껫", .relaxation, [], 3),
-        ("GB", "런던", .cityExploration, [.cultureHistory], 4),
-        ("JP", "교토", .food, [.cultureHistory], 5)
+        ("JP", String(localized: "Osaka"), .food, [.shopping], 5),
+        ("IT", String(localized: "Rome"), .cultureHistory, [.food], 4),
+        ("NZ", String(localized: "Queenstown"), .natureScenery, [.activities], 5),
+        ("TH", String(localized: "Phuket"), .relaxation, [], 3),
+        ("GB", String(localized: "London"), .cityExploration, [.cultureHistory], 4),
+        ("JP", String(localized: "Kyoto"), .food, [.cultureHistory], 5)
     ]
 
     private static func seedTrips(_ store: any AppStore, now: Date) async throws {
-        try await store.create(evaluated("JP", "교토", from: -200, to: -196, .cultureHistory, stars: 5, now: now))
-        try await store.create(evaluated("TH", "푸껫", from: -120, to: -115, .relaxation, stars: 4, now: now))
+        try await store.create(evaluated("JP", String(localized: "Kyoto"), from: -200, to: -196, .cultureHistory, stars: 5, now: now))
+        try await store.create(evaluated("TH", String(localized: "Phuket"), from: -120, to: -115, .relaxation, stars: 4, now: now))
     }
 
     private static let tiers: WantedConceptTiers = {
@@ -173,29 +173,29 @@ enum UIDemoSeed {
         tiers.tier1 = [.food, .cultureHistory]
         tiers.tier2 = [.cityExploration]
         tiers.tier3 = [.relaxation]
-        tiers.avoidNote = "사람이 너무 붐비는 곳은 피하고 싶어요"
+        tiers.avoidNote = String(localized: "I'd like to avoid places that are too crowded")
         return tiers
     }()
 
     // MARK: 추천 기록
 
     private static func card(
-        of cityID: String, reason: String = "골목과 시장을 걸으며 먹는 하루가 이어지는 도시예요.",
-        caveat: String = "성수기에는 붐벼요.", cost: CostRange? = nil, conditions: [ConditionResult] = []
+        of cityID: String, reason: String = String(localized: "A city of long days spent wandering alleys and markets and eating your way through them."),
+        caveat: String = String(localized: "It gets crowded in peak season."), cost: CostRange? = nil, conditions: [ConditionResult] = []
     ) -> CityRecommendationRecord.Card {
         let city = CityCatalog.load()?.cities.first { $0.id == cityID }
         return .init(
-            cityID: cityID, cityName: city?.ko ?? cityID, country: city?.country ?? "",
+            cityID: cityID, cityName: city?.displayName ?? cityID, country: city?.country ?? "",
             isExploration: false, seasonCheckNeeded: false, reason: reason, caveat: caveat, cost: cost,
             conditions: conditions, conditionCheckNeeded: conditions.contains { $0.status == .unconfirmed }
         )
     }
 
     private static let japanOnly = CityCondition(
-        id: "c1", text: "일본", quote: "일본", level: .required, kind: .country, target: "JP"
+        id: "c1", text: String(localized: "Japan"), quote: String(localized: "Japan"), level: .required, kind: .country, target: "JP"
     )
     private static let shortFlight = CityCondition(
-        id: "c2", text: "비행 5시간 이내", quote: "비행 5시간 이내", level: .required, kind: .other
+        id: "c2", text: String(localized: "Within a 5-hour flight"), quote: String(localized: "Within a 5-hour flight"), level: .required, kind: .other
     )
 
     /// 후보 풀은 서비스의 `replay`와 같은 입력으로 순위를 다시 계산해 만든다. 그래야 저장된 응답을 믿고
@@ -229,10 +229,10 @@ enum UIDemoSeed {
         let ranked = rankedCities(request, conditions: conditions, excludedCountries: excludedCountries)
         let pool = Array(ranked.prefix(CityLLMRequestBuilder.poolSize))
         let response = CityLLMResponse(
-            understanding: understanding ?? "데모 응답",
+            understanding: understanding ?? String(localized: "Demo response"),
             cards: pool.enumerated().map { index, item in
                 .init(
-                    id: item.city.id, reason: "데모용 설명이에요.", caveat: "데모용 유의점이에요.",
+                    id: item.city.id, reason: String(localized: "This is a demo description."), caveat: String(localized: "This is a demo caveat."),
                     cost: demoCost(item.city.id, index: index)
                 )
             }
@@ -266,7 +266,7 @@ enum UIDemoSeed {
         request.year = Calendar.current.component(.year, from: .now)
         request.nights = 3
         request.budgetMaxKRW = budget
-        request.wants = "일본, 비행 5시간 이내"
+        request.wants = String(localized: "Japan, within a 5-hour flight")
         return request
     }
 
@@ -281,7 +281,7 @@ enum UIDemoSeed {
                 card(of: "jp-kyoto", cost: .init(low: 1_000_000, high: 1_400_000), conditions: [met])
             ],
             conditions: [japanOnly, shortFlight],
-            understanding: "11월에 3박으로, 먹는 즐거움이 중심인 일본 여행을 찾고 있어요.", now: now
+            understanding: String(localized: "You're looking for a Japan trip in November, 3 nights, centered on the joy of eating."), now: now
         )
     }
 
@@ -302,7 +302,7 @@ enum UIDemoSeed {
                 card(of: item.city.id, cost: demoCost(item.city.id, index: index))
             },
             excludedCountries: ["JP"], homeCountry: "JP",
-            understanding: "11월에 3박으로, 먹는 즐거움이 중심인 여행을 찾고 있어요.", now: now
+            understanding: String(localized: "You're looking for a trip in November, 3 nights, centered on the joy of eating."), now: now
         )
     }
 }

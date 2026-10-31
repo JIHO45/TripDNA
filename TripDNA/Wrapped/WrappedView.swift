@@ -32,21 +32,19 @@ struct WrappedView: View {
     private var emptyState: some View {
         VStack(spacing: DNASpacing.sm) {
             Spacer()
-            Text("\(String(year))년에 등록한")
+            Text("No trips registered\nfor \(WrappedYear.yearText(year))")
                 .dnaFont(.screenTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("여행이 없어요")
-                .dnaFont(.screenTitle)
-                .foregroundStyle(Color.dnaTextPrimary)
-            Text("올해 다녀온 여행을 등록하면 Wrapped가 만들어져요.")
+                .multilineTextAlignment(.center)
+            Text("Register a trip you took this year and your Wrapped will be made.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
                 .multilineTextAlignment(.center)
             Spacer()
             DNABottomCTA {
-                Button("여행 등록하기") { showingRegistration = true }
+                Button("Register a Trip") { showingRegistration = true }
                     .buttonStyle(.dnaPrimary)
-                Button("닫기") { dismiss() }
+                Button("Close") { dismiss() }
                     .buttonStyle(.dnaGhost)
             }
         }

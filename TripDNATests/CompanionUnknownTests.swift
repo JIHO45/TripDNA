@@ -9,7 +9,7 @@ struct CompanionUnknownTests {
         let trip = try Trip(legs: [leg], companion: .unknown, purpose: .leisure)
         let decoded = try JSONDecoder().decode(Trip.self, from: JSONEncoder().encode(trip))
         #expect(decoded.companion == .unknown)
-        #expect(Companion.unknown.labelKo.isEmpty)
+        #expect(Companion.unknown.label.isEmpty)
         for raw in ["alone", "couple", "family", "friends"] {
             #expect(Companion(rawValue: raw) != nil)
         }

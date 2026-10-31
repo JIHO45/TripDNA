@@ -22,11 +22,11 @@ struct PermissionsSettingsView: View {
 
     var body: some View {
         List {
-            Section("사진") {
-                LabeledContent("사진 접근", value: photoText)
+            Section("Photos") {
+                LabeledContent("Photo access", value: photoText)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Button("iOS 설정 열기") { openSystemSettings() }
-                Toggle("놓친 날 사진 골라두기", isOn: Binding(
+                Button("Open iOS Settings") { openSystemSettings() }
+                Toggle("Pre-select photos for missed days", isOn: Binding(
                     get: { fallbackOn },
                     set: { setFallback($0) }
                 ))
@@ -34,41 +34,41 @@ struct PermissionsSettingsView: View {
             .listRowBackground(Color.dnaSurface1)
 
             Section {
-                LabeledContent("알림 권한", value: notificationText)
+                LabeledContent("Notification permission", value: notificationText)
                     .foregroundStyle(Color.dnaTextPrimary)
-                Toggle("여행 알림", isOn: Binding(
+                Toggle("Trip notifications", isOn: Binding(
                     get: { notificationsOn && notificationsGranted },
                     set: { setNotifications($0) }
                 ))
             } header: {
-                Text("알림")
+                Text("Notifications")
             } footer: {
                 if let message { Text(message).foregroundStyle(Color.dnaError) }
             }
             .listRowBackground(Color.dnaSurface1)
 
             Section {
-                info("추천을 받을 때 보내는 것", CityMemoryConsent.alwaysSent)
-                info("보내지 않는 것", CityMemoryConsent.neverSent)
-                info("받는 곳", CityMemoryConsent.recipients)
-                Toggle("지난 여행 평가·메모 보내기", isOn: Binding(
+                info("What's sent with a recommendation request", CityMemoryConsent.alwaysSent)
+                info("What's never sent", CityMemoryConsent.neverSent)
+                info("Who receives it", CityMemoryConsent.recipients)
+                Toggle("Send past trip ratings and notes", isOn: Binding(
                     get: { memoriesOn },
                     set: { memoriesOn = $0; CityMemoryConsent.state = $0 ? .granted : .declined }
                 ))
             } header: {
-                Text("AI로 보내는 정보")
+                Text("Info sent to AI")
             } footer: {
-                Text("켜면 추천을 받을 때 최근 여행 평가의 별점과 메모 원문, 다녀온 도시를 외부 AI 모델로 함께 보내요. 끄면 다음 추천부터 보내지 않아요. 이미 보낸 내용은 이 앱에서 되돌릴 수 없어요. 기기에 남은 추천 기록은 데이터 삭제에서 지울 수 있어요.")
+                Text("When on, recommendation requests also send your recent trip ratings, the full text of your notes, and the cities you've visited to an external AI model. When off, nothing is sent from the next recommendation on. Anything already sent can't be recalled from this app. Recommendation history kept on your device can be deleted under Delete data.")
             }
             .listRowBackground(Color.dnaSurface1)
         }
         .settingsListStyle()
-        .navigationTitle("권한과 보내는 정보")
+        .navigationTitle("Permissions and shared info")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: scenePhase) { await refresh() }
     }
 
-    private func info(_ title: String, _ body: String) -> some View {
+    private func info(_ title: LocalizedStringKey, _ body: String) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xxs) {
             Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
             Text(body).dnaFont(.body).foregroundStyle(Color.dnaTextSecondary)
@@ -77,18 +77,18 @@ struct PermissionsSettingsView: View {
 
     private var photoText: String {
         switch photoStatus {
-        case .authorized: "허용"
-        case .limited: "일부 사진만"
-        case .denied, .restricted: "허용 안 함"
-        default: "아직 묻지 않음"
+        case .authorized: String(localized: "Allowed")
+        case .limited: String(localized: "Selected photos only")
+        case .denied, .restricted: String(localized: "Not allowed")
+        default: String(localized: "Not asked yet")
         }
     }
 
     private var notificationText: String {
         switch notificationStatus {
-        case .authorized, .provisional, .ephemeral: "허용"
-        case .denied: "허용 안 함"
-        default: "아직 묻지 않음"
+        case .authorized, .provisional, .ephemeral: String(localized: "Allowed")
+        case .denied: String(localized: "Not allowed")
+        default: String(localized: "Not asked yet")
         }
     }
 
@@ -117,7 +117,7 @@ struct PermissionsSettingsView: View {
             let granted = photosGranted
             AppStorageLocation.defaults.set(granted, forKey: AutoPhotoFallbackService.consentKey)
             fallbackOn = granted
-            message = granted ? nil : "사진 접근을 허용해야 켤 수 있어요. iOS 설정에서 바꿔 주세요."
+            message = granted ? nil : String(localized: "Allow photo access to turn this on. You can change it in iOS Settings.")
         }
     }
 
@@ -130,7 +130,7 @@ struct PermissionsSettingsView: View {
         Task {
             let granted = (try? await EvaluationNotificationService.enable(for: await dependencies.allTrips())) ?? false
             await refresh()
-            message = granted ? nil : "알림을 허용해야 켤 수 있어요. iOS 설정에서 바꿔 주세요."
+            message = granted ? nil : String(localized: "Allow notifications to turn this on. You can change it in iOS Settings.")
         }
     }
 }
@@ -161,9 +161,9 @@ struct StoredDataCounts: Equatable {
     }
 
     var lines: [String] {
-        var result = ["여행 \(trips)개", "평가 \(evaluations)개", "사진 \(photos)장", "저장·제외·반응 기록 \(feedback)개"]
-        if hasPreferences { result.append("원하는 여행과 기억하는 취향") }
-        if iCloudBackupRemains { result.append("iCloud에 있는 백업") }
+        var result = [String(localized: "\(trips) trips"), String(localized: "\(evaluations) ratings"), String(localized: "\(photos) photos"), String(localized: "\(feedback) saved, excluded, and reaction records")]
+        if hasPreferences { result.append(String(localized: "Wanted trips and remembered tastes")) }
+        if iCloudBackupRemains { result.append(String(localized: "Backup in iCloud")) }
         return result
     }
 }
@@ -179,26 +179,26 @@ struct DataDeletionSettingsView: View {
 
     var body: some View {
         List {
-            Section("하나씩 지우기") {
-                NavigationLink("기억 하나") { MemorySettingsView() }
+            Section("Delete One at a Time") {
+                NavigationLink("One Memory") { MemorySettingsView() }
                     .foregroundStyle(Color.dnaTextPrimary)
-                hint("여행이나 평가 하나", "여행 탭에서 해당 여행을 열어 지워요.")
+                hint("A single trip or rating", "Open the trip in the Trips tab to delete it.")
             }
             .listRowBackground(Color.dnaSurface1)
 
             Section {
-                Button("모든 데이터 지우기", role: .destructive) { showingConfirm = true }
+                Button("Delete all data", role: .destructive) { showingConfirm = true }
                     .disabled(isDeleting)
             } footer: {
-                Text("이 기기의 모든 기록과 iCloud에 있는 백업이 지워져요. 지우면 어디서도 복구할 수 없어요.")
+                Text("All records on this device and the backup in iCloud will be deleted. Once deleted, they can't be recovered anywhere.")
             }
             .listRowBackground(Color.dnaSurface1)
 
             if let failure {
-                Section("지우지 못한 데이터") {
+                Section("Data Not Deleted") {
                     Text(failure.iCloudBackupRemains
-                         ? "iCloud 백업을 지우지 못해서 기기 기록도 그대로 두었어요. 인터넷과 iCloud 로그인을 확인하고 다시 시도해 주세요."
-                         : "삭제를 끝내지 못했어요. 아래는 아직 남아 있는 데이터예요.")
+                         ? String(localized: "Couldn't delete the iCloud backup, so your device's records were left as they are. Check your internet connection and iCloud sign-in, then try again.")
+                         : String(localized: "Couldn't finish deleting. The data below is still there."))
                         .foregroundStyle(Color.dnaError)
                     ForEach(failure.lines, id: \.self) { Text($0).foregroundStyle(Color.dnaTextPrimary) }
                 }
@@ -206,13 +206,13 @@ struct DataDeletionSettingsView: View {
             }
         }
         .settingsListStyle()
-        .navigationTitle("데이터 삭제")
+        .navigationTitle("Delete data")
         .navigationBarTitleDisplayMode(.inline)
         .task { counts = await StoredDataCounts(store: dependencies.store) }
         .sheet(isPresented: $showingConfirm) { confirmSheet }
     }
 
-    private func hint(_ title: String, _ body: String) -> some View {
+    private func hint(_ title: LocalizedStringKey, _ body: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.xxs) {
             Text(title).foregroundStyle(Color.dnaTextPrimary)
             Text(body).dnaFont(.caption).foregroundStyle(Color.dnaTextSecondary)
@@ -221,10 +221,10 @@ struct DataDeletionSettingsView: View {
 
     private var confirmSheet: some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
-            Text("모든 데이터를 지울까요?")
+            Text("Delete all data?")
                 .dnaFont(.heroTitle)
                 .foregroundStyle(Color.dnaTextPrimary)
-            Text("지우면 되돌릴 수 없어요.")
+            Text("This can't be undone.")
                 .dnaFont(.body)
                 .foregroundStyle(Color.dnaTextSecondary)
             VStack(alignment: .leading, spacing: DNASpacing.xxs) {
@@ -233,10 +233,10 @@ struct DataDeletionSettingsView: View {
                 }
             }
             Spacer(minLength: 0)
-            Button(isDeleting ? "지우는 중…" : "모두 지우기") { Task { await deleteAll() } }
+            Button(isDeleting ? String(localized: "Deleting…") : String(localized: "Delete Everything")) { Task { await deleteAll() } }
                 .buttonStyle(.dnaPrimary(isDisabled: isDeleting))
                 .disabled(isDeleting)
-            Button("취소") { showingConfirm = false }
+            Button("Cancel") { showingConfirm = false }
                 .buttonStyle(.dnaGhost)
                 .disabled(isDeleting)
         }

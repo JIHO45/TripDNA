@@ -20,7 +20,7 @@ struct TripPhotoPager: View {
     /// 크롭과 동일한 가로:세로 = 3:4 세로형 히어로.
     var usesPortraitHero: Bool = false
     var showsDayStrip: Bool = true
-    var emptyDayMessage: String = "이 날은 아직 사진이 없어요"
+    var emptyDayMessage: String = String(localized: "No photo for this day yet")
     /// 상단 full-bleed + 스크롤 시 블러 (여행 상세 히어로용).
     var usesScrollHeroEffect: Bool = false
     /// 노치까지 확장할 때 상단 스크림 높이 계산용. 0이면 키 윈도우 inset을 쓴다.
@@ -56,14 +56,14 @@ struct TripPhotoPager: View {
 
             if let item = items.first(where: { $0.dayIndex == selection }) {
                 VStack(spacing: 4) {
-                    Text("\(item.dayIndex)일차")
+                    Text("Day \(item.dayIndex)")
                         .dnaFont(.cardTitle)
                         .foregroundStyle(.white)
                     if isEditable(item.dayIndex) {
                         Button {
                             onEditDay?(item.dayIndex)
                         } label: {
-                            Text(item.storagePath == nil ? "사진 고르기" : "사진 바꾸기")
+                            Text(item.storagePath == nil ? String(localized: "Choose Photo") : String(localized: "Change Photo"))
                                 .dnaFont(.caption)
                                 .foregroundStyle(Color.dnaData)
                         }
@@ -182,7 +182,7 @@ struct TripPhotoPager: View {
                         Image(systemName: isEditable(item.dayIndex) ? "plus.circle" : "photo")
                             .font(prefersCompact ? .title3 : .title)
                             .foregroundStyle(Color.dnaTextSecondary)
-                        Text(isEditable(item.dayIndex) ? "탭해서 사진 고르기" : emptyDayMessage)
+                        Text(isEditable(item.dayIndex) ? String(localized: "Tap to choose a photo") : emptyDayMessage)
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                             .multilineTextAlignment(.center)
@@ -241,7 +241,7 @@ struct TripPhotoPager: View {
                                         )
                                 )
 
-                                Text("\(item.dayIndex)일")
+                                Text("D\(item.dayIndex)")
                                     .font(.caption2.weight(selection == item.dayIndex ? .bold : .regular))
                                     .foregroundStyle(selection == item.dayIndex ? Color.dnaData : Color.dnaTextSecondary)
                             }
@@ -318,7 +318,7 @@ extension View {
                     usesPortraitHero: true,
                     usesScrollHeroEffect: true
                 )
-                Text("아래 콘텐츠")
+                Text("Content below")
                     .foregroundStyle(.white)
                     .padding()
                 Color.clear.frame(height: 400)

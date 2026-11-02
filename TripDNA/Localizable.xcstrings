@@ -1475,6 +1475,16 @@
         }
       }
     },
+    "30 recommendations and 30 questions a month": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "매달 추천 30회, 질문 30회"
+          }
+        }
+      }
+    },
     "3:4 · Shown at this ratio in trip details and your recap": {
       "localizations": {
         "ko": {
@@ -1611,6 +1621,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "여행의 컨셉이 틀렸어요"
+          }
+        }
+      }
+    },
+    "Active": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독 중"
           }
         }
       }
@@ -2983,16 +3003,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "동료"
-          }
-        }
-      }
-    },
-    "Coming soon": {
-      "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "준비 중"
           }
         }
       }
@@ -6281,6 +6291,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud에 로그인되어 있지 않아 백업하지 않아요"
+          }
+        }
+      }
+    },
+    "Not subscribed": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독 안 함"
           }
         }
       }
@@ -10475,6 +10495,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "이번 달 무료 %1$@ 다 썼어요. %2$@에 다시 채워져요."
+          }
+        }
+      }
+    },
+    "You've used up this month's subscription %@. It refills on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "You've used up this month's subscription %1$@. It refills on %2$@."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 달 구독 %1$@ 다 썼어요. %2$@에 다시 채워져요."
           }
         }
       }

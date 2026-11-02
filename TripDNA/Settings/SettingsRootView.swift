@@ -10,6 +10,7 @@ struct SettingsRootView: View {
     @State private var memoryCount: String?
     @State private var excludedCount: String?
     @State private var savedCount: String?
+    @State private var isSubscribed: Bool?
 
     var body: some View {
         NavigationStack {
@@ -26,10 +27,10 @@ struct SettingsRootView: View {
                 .listRowBackground(Color.dnaSurface1)
 
                 Section("Subscription") {
-                    LabeledContent("TripDNA Subscription") {
-                        Text("Coming soon").foregroundStyle(Color.dnaTextSecondary)
-                    }
-                    .foregroundStyle(Color.dnaTextPrimary)
+                    link(
+                        "TripDNA Subscription",
+                        detail: isSubscribed.map { $0 ? String(localized: "Active") : String(localized: "Not subscribed") }
+                    ) { SubscriptionView() }
                 }
                 .listRowBackground(Color.dnaSurface1)
 
@@ -92,6 +93,8 @@ struct SettingsRootView: View {
                 await loadAirportSummary()
                 await loadSummaries()
             }
+            // 구독 화면에서 돌아올 때마다 다시 읽는다.
+            .onAppear { Task { isSubscribed = await Subscription.isActive() } }
         }
     }
 

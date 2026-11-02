@@ -49,6 +49,7 @@ struct RecommendationView: View {
             router.recommendationInputRequested = false
             openInput()
         }
+        .sheet(isPresented: $cityModel.showsSubscription) { SubscriptionView() }
         .sheet(isPresented: $showingEdit) {
             CityConditionEditSheet(model: cityModel, onNewRequest: { openInput() })
         }

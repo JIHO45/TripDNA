@@ -15,6 +15,7 @@ struct TripDNAApp: App {
         WindowGroup {
             RootView()
                 .environment(appDelegate.router)
+                .task { await Subscription.finishUpdates() }
         }
     }
 }

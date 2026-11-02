@@ -2,10 +2,11 @@
 // 계약(앱: TripDNA/Recommendation/City/CityLLMClient.swift, CityLLMCredentials.swift)
 //   POST {system, user, model, maxTokens, webSearchMaxUses?, usageId?}
 //   헤더: Authorization: Bearer <익명 로그인 ID 토큰>, X-Firebase-AppCheck: <App Check 토큰>,
-//         X-Apple-Device-Token: <DeviceCheck 토큰>(출시 빌드만. 없으면 기기 확인을 건너뛴다)
+//         X-Apple-Device-Token: <DeviceCheck 토큰>(출시 빌드만. 없으면 기기 확인을 건너뛴다),
+//         X-Apple-Transaction: <구독 거래 JWS>(구독 중일 때만. 검증되면 구독 한도로 센다)
 //   → 200 {content, stop_reason}: Messages API 응답 그대로. 잘림·빈 응답 판정은 앱이 한다.
 //   → 401: 두 토큰 중 하나라도 없거나 검증에 실패.
-//   → 429 {error: "quota", kind, resetAt}: 이번 달 무료 한도를 다 썼다. resetAt은 다시 채워지는 UTC 시각(유닉스 초).
+//   → 429 {error: "quota", kind, resetAt, subscribed}: 한도를 다 썼다. resetAt은 다시 채워지는 시각(유닉스 초).
 //   → 503 {error: "busy"}: 오늘(UTC) 전체 호출 상한에 닿았다. 사용자 한도는 차감하지 않는다.
 // 검색 호출은 상세 질문 1회, 검색 없는 호출은 usageId(추천받기 1회의 ID)별로 추천 1회로 센다.
 // 사용자 내용은 기록하지 않는다(로그에는 상태 코드만). Firestore에는 익명 uid별 이번 달 횟수와 추천 ID만 둔다.
@@ -13,6 +14,9 @@ const { onRequest } = require("firebase-functions/v2/https");
 const functionsV1 = require("firebase-functions/v1");
 const { defineSecret, defineString } = require("firebase-functions/params");
 const crypto = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+const { SignedDataVerifier, Environment } = require("@apple/app-store-server-library");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
@@ -69,10 +73,10 @@ function buildParams(body) {
   return { params, usage: { kind: "recommend", id } };
 }
 
-// 무료 한도(2026-10-17 결정, 월 기준). 추천 1회는 조건 추출과 추천 본문, 두 호출을 쓴다.
+// 한도(2026-10-17 결정, 월 기준). 추천 1회는 조건 추출과 추천 본문, 두 호출을 쓴다.
 // 앱은 실패한 추천을 다시 시도할 때 같은 ID를 한 번 더 쓴다. 그래서 ID 하나에 호출 4번(두 번 시도)까지 1회로 센다.
-// ponytail: 구독(StoreKit 검증)이 없어 모두 무료 한도다. 구독 한도 30회는 구독 검증과 함께 붙인다.
-const LIMITS = { recommend: 3, question: 3 };
+const FREE_LIMITS = { recommend: 3, question: 3 };
+const SUB_LIMITS = { recommend: 30, question: 30 };
 const CALLS_PER_RECOMMEND = 4;
 
 const monthOf = (now) => now.toISOString().slice(0, 7);
@@ -86,16 +90,16 @@ const expireAtOf = (month) => {
 };
 
 // 이번 호출을 셀 수 있으면 {allowed: true, next}(저장할 문서), 한도를 넘으면 {allowed: false}.
-// 문서: {month: "YYYY-MM", recos: {추천ID: 호출 수}, questions: 수}. 달이 바뀌면 새로 시작한다.
-function applyUsage(data, usage, now) {
-  const month = monthOf(now);
+// 문서: {month: 기간 키, recos: {추천ID: 호출 수}, questions: 수}. 기간 키가 바뀌면 새로 시작한다.
+// 기간 키는 무료면 "YYYY-MM"(UTC 달), 구독이면 이번 한 달 기간의 시작 시각(밀리초 문자열)이다.
+function applyUsage(data, usage, month, limits = FREE_LIMITS) {
   const cur = data?.month === month ? data : { month, recos: {}, questions: 0 };
   if (usage.kind === "question") {
-    if (cur.questions >= LIMITS.question) return { allowed: false };
+    if (cur.questions >= limits.question) return { allowed: false };
     return { allowed: true, next: { ...cur, questions: cur.questions + 1 } };
   }
   const calls = cur.recos[usage.id];
-  if (calls === undefined && Object.keys(cur.recos).length >= LIMITS.recommend) return { allowed: false };
+  if (calls === undefined && Object.keys(cur.recos).length >= limits.recommend) return { allowed: false };
   if (calls >= CALLS_PER_RECOMMEND) return { allowed: false };
   return { allowed: true, next: { ...cur, recos: { ...cur.recos, [usage.id]: (calls ?? 0) + 1 } } };
 }
@@ -109,6 +113,64 @@ function releaseUsage(data, usage, month) {
   const calls = (recos[usage.id] ?? 0) - 1;
   if (calls > 0) recos[usage.id] = calls; else delete recos[usage.id];
   return { ...data, recos };
+}
+
+// 구독 확인(2026-10-07 결정: 앱이 보낸 거래 JWS를 Apple 공식 라이브러리로 검증).
+// 서명이 Apple Root CA G3까지 이어지고 번들 ID·환경이 맞아야 한다. 운영(App Store)을 먼저, 아니면 Sandbox(TestFlight·심사)로 본다.
+// Xcode 로컬 StoreKit 거래는 Xcode 인증서로 서명돼 여기서 통과하지 못한다(무료 한도로 센다).
+const BUNDLE_ID = "com.Joe.TripDNA";
+const SUB_PRODUCTS = new Set(["tripdna.subscription.monthly", "tripdna.subscription.yearly"]);
+const appAppleId = defineString("APP_APPLE_ID"); // App Store Connect > 앱 정보 > Apple ID(숫자)
+const appleRoots = [fs.readFileSync(path.join(__dirname, "AppleRootCA-G3.cer"))];
+
+async function decodeTransaction(jws) {
+  for (const env of [Environment.PRODUCTION, Environment.SANDBOX]) {
+    const appId = env === Environment.PRODUCTION ? Number(appAppleId.value()) : undefined;
+    try {
+      return await new SignedDataVerifier(appleRoots, true, env, BUNDLE_ID, appId).verifyAndDecodeTransaction(jws);
+    } catch {
+      // 다음 환경으로
+    }
+  }
+  return null;
+}
+
+// 지금 유효한 구독 거래면 그 내용을, 아니면 null(무료 사용자로 센다).
+async function verifySubscription(jws, now, decode = decodeTransaction) {
+  const t = await decode(jws).catch(() => null);
+  if (!t || !SUB_PRODUCTS.has(t.productId) || t.revocationDate || !t.originalTransactionId) return null;
+  if (!(t.expiresDate > now.getTime()) || !(t.purchaseDate <= now.getTime())) return null;
+  return t;
+}
+
+// 구독 한도는 결제 주기를 따른다(2026-10-23 결정). 이번 결제일부터 한 달씩 끊어, 연 구독도 매달 30회다.
+// 31일 결제처럼 없는 날은 그 달 말일로 맞춘다. {start, end}는 밀리초.
+function subscriptionPeriod(purchaseMs, now) {
+  const p = new Date(purchaseMs);
+  const at = (k) => {
+    const y = p.getUTCFullYear();
+    const m = p.getUTCMonth() + k;
+    const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    return Date.UTC(y, m, Math.min(p.getUTCDate(), lastDay), p.getUTCHours(), p.getUTCMinutes(), p.getUTCSeconds(), p.getUTCMilliseconds());
+  };
+  let k = 0;
+  while (at(k + 1) <= now.getTime()) k++;
+  return { start: at(k), end: at(k + 1) };
+}
+
+// 누구의 어떤 한도로 셀지. 구독은 원 거래 ID별로 세서, 거래 정보를 여러 기기·사람이 나눠 써도 30회를 함께 쓴다.
+// 구독 문서에는 익명 uid를 두지 않는다. 계정 삭제 트리거가 아니라 TTL(기간 끝 7일 뒤)로 지워진다.
+const DAY_MS = 24 * 60 * 60 * 1000;
+function quotaFor(uid, sub, now) {
+  if (!sub) {
+    const month = monthOf(now);
+    return { docId: uid, period: month, limits: FREE_LIMITS, resetAt: resetAtOf(now), expireAt: expireAtOf(month), subscribed: false };
+  }
+  const { start, end } = subscriptionPeriod(sub.purchaseDate, now);
+  return {
+    docId: `sub-${sub.originalTransactionId}`, period: String(start), limits: SUB_LIMITS,
+    resetAt: Math.floor(end / 1000), expireAt: new Date(end + 7 * DAY_MS), subscribed: true,
+  };
 }
 
 // DeviceCheck(2026-11-02 결정): 재설치·전체 삭제로 새 익명 ID를 받아도 같은 기기에서는 그 달 무료 한도를 다시 주지 않는다.
@@ -177,11 +239,11 @@ function takeDailyCall(now) {
   });
 }
 
-function updateUsage(uid, change) {
-  const ref = getFirestore().collection("usage").doc(uid);
+function updateUsage(docId, expireAt, change) {
+  const ref = getFirestore().collection("usage").doc(docId);
   return getFirestore().runTransaction(async (tx) => {
     const result = change((await tx.get(ref)).data());
-    if (result?.next) tx.set(ref, { ...result.next, expireAt: expireAtOf(result.next.month) });
+    if (result?.next) tx.set(ref, { ...result.next, expireAt });
     return result;
   });
 }
@@ -197,15 +259,21 @@ exports.cityLLM = onRequest(
 
     const now = new Date();
     const month = monthOf(now);
-    const deviceToken = req.get("X-Apple-Device-Token");
+    const transaction = req.get("X-Apple-Transaction");
+    const sub = transaction ? await verifySubscription(transaction, now) : null;
+    if (transaction && !sub) logger.warn("subscription not verified");
+    const quota = quotaFor(uid, sub, now);
+    const quotaExceeded = () =>
+      res.status(429).json({ error: "quota", kind: usage.kind, resetAt: quota.resetAt, subscribed: quota.subscribed });
+
+    // 기기 확인은 무료 한도의 재설치 우회를 막는 것이라 구독자는 건너뛴다.
+    const deviceToken = sub ? undefined : req.get("X-Apple-Device-Token");
     let deviceChecked = false;
     if (deviceToken) {
       try {
         const doc = (await getFirestore().collection("usage").doc(uid).get()).data();
         if (doc?.month !== month || doc.deviceMonth !== month) {
-          if ((await checkDevice(deviceToken, month, callDeviceCheck)) === "claimed") {
-            return res.status(429).json({ error: "quota", kind: usage.kind, resetAt: resetAtOf(now) });
-          }
+          if ((await checkDevice(deviceToken, month, callDeviceCheck)) === "claimed") return quotaExceeded();
           deviceChecked = true;
         }
       } catch {
@@ -215,8 +283,8 @@ exports.cityLLM = onRequest(
 
     let allowed;
     try {
-      ({ allowed } = await updateUsage(uid, (data) => {
-        const result = applyUsage(data, usage, now);
+      ({ allowed } = await updateUsage(quota.docId, quota.expireAt, (data) => {
+        const result = applyUsage(data, usage, quota.period, quota.limits);
         if (deviceChecked && result.next) result.next.deviceMonth = month;
         return result;
       }));
@@ -225,9 +293,9 @@ exports.cityLLM = onRequest(
       logger.error("usage check failed");
       return res.status(503).json({ error: "usage unavailable" });
     }
-    if (!allowed) return res.status(429).json({ error: "quota", kind: usage.kind, resetAt: resetAtOf(now) });
+    if (!allowed) return quotaExceeded();
 
-    const release = () => updateUsage(uid, (data) => ({ next: releaseUsage(data, usage, monthOf(now)) }))
+    const release = () => updateUsage(quota.docId, quota.expireAt, (data) => ({ next: releaseUsage(data, usage, quota.period) }))
       .catch(() => logger.error("usage release failed"));
     // 사용자 한도를 통과한 뒤에 센다. 막히면 사용자 한도는 되돌린다.
     const open = await takeDailyCall(now).catch(() => false);
@@ -296,3 +364,6 @@ exports.DAILY_CALL_CAP = DAILY_CALL_CAP;
 exports.releaseUsage = releaseUsage;
 exports.resetAtOf = resetAtOf;
 exports.verifyCaller = verifyCaller;
+exports.verifySubscription = verifySubscription;
+exports.subscriptionPeriod = subscriptionPeriod;
+exports.quotaFor = quotaFor;

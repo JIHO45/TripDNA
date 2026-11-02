@@ -14,7 +14,7 @@ nonisolated enum CityLLMError: Error, Equatable {
     case emptyResponse
     /// `max_tokens`에 닿아 응답이 잘렸다. 생각(thinking) 토큰도 이 한도에 들어간다.
     case truncated
-    /// 프록시의 이번 달 무료 한도를 다 썼다. `resetAt`에 다시 채워진다.
+    /// 프록시의 이번 한도(무료 또는 구독)를 다 썼다. `resetAt`에 다시 채워진다.
     case quotaExceeded(resetAt: Date)
 }
 
@@ -53,7 +53,7 @@ nonisolated struct CityLLMConfiguration: Sendable {
 /// 잘림·빈 응답 판정은 직접 호출과 같은 `messageText(from:)`로 한다.
 /// webSearchMaxUses가 있으면 서버가 `web_search_20250305` 도구를 붙인다.
 /// 서버는 검색 호출을 질문 1회로, 검색 없는 호출을 usageId별 추천 1회로 센다. 한도를 넘으면
-/// 429 {"resetAt": 유닉스 초}.
+/// 429 {"resetAt": 유닉스 초, "subscribed": 구독 한도였는지}. 구독 중이면 헤더 X-Apple-Transaction(CityLLMCredentials)으로 알린다.
 nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
     let url: URL
     let model: String
@@ -101,8 +101,11 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
     }
 
     /// 한도 소진 안내. 다시 채워지는 시각은 기기 시간대로 보여준다(예: 한국이면 12월 1일 오전 9:00).
-    static func quotaMessage(_ what: String, resetAt: Date) -> String {
-        String(localized: "You've used up this month's free \(particled(what, .eulReul)). It refills on \(resetAt.formatted(.dateTime.month().day().hour().minute())).")
+    static func quotaMessage(_ what: String, resetAt: Date, subscribed: Bool = false) -> String {
+        let time = resetAt.formatted(.dateTime.month().day().hour().minute())
+        return subscribed
+            ? String(localized: "You've used up this month's subscription \(particled(what, .eulReul)). It refills on \(time).")
+            : String(localized: "You've used up this month's free \(particled(what, .eulReul)). It refills on \(time).")
     }
 }
 

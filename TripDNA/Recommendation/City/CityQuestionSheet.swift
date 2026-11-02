@@ -16,6 +16,8 @@ final class CityQuestionModel {
     private(set) var status = Status.idle
     /// 시트를 닫았다 열어도 쓰던 질문이 남는다.
     var draft = ""
+    /// 무료 한도를 다 쓴 사용자가 질문하면 구독 화면을 연다.
+    var showsSubscription = false
 
     var isLoading: Bool { if case .loading = status { true } else { false } }
 
@@ -48,7 +50,9 @@ final class CityQuestionModel {
             } catch CityQuestionError.notConfigured {
                 status = .failed(question: text, message: String(localized: "The AI connection isn't set up yet. A proxy URL (CityLLMProxyURL) or a development key is required."))
             } catch CityLLMError.quotaExceeded(let resetAt) {
-                status = .failed(question: text, message: CityLLMProxyClient.quotaMessage(String(localized: "questions"), resetAt: resetAt))
+                let subscribed = await Subscription.isActive()
+                status = .failed(question: text, message: CityLLMProxyClient.quotaMessage(String(localized: "questions"), resetAt: resetAt, subscribed: subscribed))
+                showsSubscription = !subscribed
             } catch {
                 status = .failed(question: text, message: String(localized: "Couldn't get an answer. Please try again."))
             }
@@ -109,6 +113,7 @@ struct CityQuestionSheet: View {
                 }
             }
         }
+        .sheet(isPresented: $model.showsSubscription) { SubscriptionView() }
         // 입력을 시작하면 키보드와 기록이 함께 보이게 전체 높이로 늘린다.
         .onChange(of: focused) { _, isFocused in
             if isFocused { detent = .large }

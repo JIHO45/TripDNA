@@ -66,7 +66,7 @@ const question = { kind: "question" };
 // 앞에서부터 차례로 적용하고 각 호출의 허용 여부를 돌려준다.
 function run(usages, now = nov, data) {
   return usages.map((u) => {
-    const r = applyUsage(data, u, now);
+    const r = applyUsage(data, u, now.toISOString().slice(0, 7));
     if (r.allowed) data = r.next;
     return r.allowed;
   }).concat([data]);
@@ -84,8 +84,8 @@ test("질문은 호출마다 1회, 월 3회. 추천과 따로 센다", () => {
 
 test("달이 바뀌면(UTC) 다시 채운다", () => {
   const full = run([reco("a"), reco("b"), reco("c")]).at(-1);
-  assert.equal(applyUsage(full, reco("d"), new Date("2026-11-30T23:59:59Z")).allowed, false);
-  assert.equal(applyUsage(full, reco("d"), new Date("2026-12-01T00:00:00Z")).allowed, true);
+  assert.equal(applyUsage(full, reco("d"), "2026-11").allowed, false);
+  assert.equal(applyUsage(full, reco("d"), "2026-12").allowed, true);
 });
 
 test("다시 채우는 시각은 다음 달 1일 00:00 UTC", () => {
@@ -165,4 +165,45 @@ test("DeviceCheck JWT는 ES256으로 서명된다", () => {
   const ok = crypto.verify("sha256", Buffer.from(`${header}.${payload}`), { key: publicKey, dsaEncoding: "ieee-p1363" },
     Buffer.from(signature, "base64url"));
   assert.ok(ok);
+});
+
+const { verifySubscription, subscriptionPeriod, quotaFor } = require("./index.js");
+
+test("구독 거래: 우리 상품이고 만료·환불 전이어야 한다", async () => {
+  const base = { productId: "tripdna.subscription.monthly", originalTransactionId: "100", purchaseDate: Date.parse("2026-11-01T00:00:00Z"), expiresDate: Date.parse("2026-12-01T00:00:00Z") };
+  const check = (t) => verifySubscription("jws", nov, async () => t);
+  assert.equal((await check(base))?.originalTransactionId, "100");
+  assert.equal(await check({ ...base, productId: "other" }), null);
+  assert.equal(await check({ ...base, expiresDate: Date.parse("2026-11-10T00:00:00Z") }), null);
+  assert.equal(await check({ ...base, revocationDate: Date.parse("2026-11-10T00:00:00Z") }), null);
+  assert.equal(await check(null), null);
+  assert.equal(await verifySubscription("jws", nov, async () => { throw new Error("bad signature"); }), null);
+});
+
+test("구독 기간은 결제일부터 한 달씩, 없는 날은 말일", () => {
+  const jan31 = Date.parse("2026-01-31T10:00:00Z");
+  assert.deepEqual(subscriptionPeriod(jan31, new Date("2026-01-31T10:00:00Z")), { start: jan31, end: Date.parse("2026-02-28T10:00:00Z") });
+  assert.deepEqual(subscriptionPeriod(jan31, new Date("2026-03-15T00:00:00Z")), { start: Date.parse("2026-02-28T10:00:00Z"), end: Date.parse("2026-03-31T10:00:00Z") });
+  // 연 구독도 매달 다시 채운다.
+  const p = subscriptionPeriod(Date.parse("2026-03-05T00:00:00Z"), nov);
+  assert.equal(p.start, Date.parse("2026-11-05T00:00:00Z"));
+});
+
+test("구독자는 원 거래 ID 문서에 30회, 무료는 uid 문서에 3회", () => {
+  const sub = { originalTransactionId: "100", purchaseDate: Date.parse("2026-11-05T00:00:00Z") };
+  const q = quotaFor("uid1", sub, nov);
+  assert.equal(q.docId, "sub-100");
+  assert.equal(q.subscribed, true);
+  assert.equal(q.resetAt, Date.parse("2026-12-05T00:00:00Z") / 1000);
+  let data;
+  const allowed = Array.from({ length: 31 }, () => {
+    const r = applyUsage(data, question, q.period, q.limits);
+    if (r.allowed) data = r.next;
+    return r.allowed;
+  });
+  assert.equal(allowed.filter(Boolean).length, 30);
+  const free = quotaFor("uid1", null, nov);
+  assert.equal(free.docId, "uid1");
+  assert.equal(free.subscribed, false);
+  assert.equal(free.period, "2026-11");
 });

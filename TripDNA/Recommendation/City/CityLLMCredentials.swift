@@ -35,6 +35,7 @@ nonisolated enum CityLLMCredentials {
         let appCheck = try await AppCheck.appCheck().token(forcingRefresh: false)
         var headers = ["Authorization": "Bearer \(idToken)", "X-Firebase-AppCheck": appCheck.token]
         if let device = await deviceToken() { headers["X-Apple-Device-Token"] = device }
+        if let transaction = await Subscription.transactionJWS() { headers["X-Apple-Transaction"] = transaction }
         return headers
     }
 

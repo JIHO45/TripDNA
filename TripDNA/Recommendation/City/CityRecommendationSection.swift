@@ -10,6 +10,8 @@ final class CityRecommendationViewModel {
     }
 
     private(set) var state = State.idle
+    /// 무료 한도를 다 쓴 사용자가 추천받기를 누르면 구독 화면을 연다(2026-10-17 결정). 지난 결과는 그대로 둔다.
+    var showsSubscription = false
 
     /// 실패한 추천의 ID는 다음 추천받기에서 한 번 다시 써서(`CityRecommendationState.retryUsageID`), 실패로 무료 횟수를 잃지 않게 한다.
     /// 서버는 ID 하나를 호출 4번까지 1회로 센다. 한도 초과가 아닌 첫 실패만 넘기고, 다시 실패하면 새 ID(1회 차감)로 간다.
@@ -259,7 +261,9 @@ final class CityRecommendationViewModel {
             case CityRecommendationError.noCandidates:
                 state = .failed(String(localized: "Couldn't find a city that matches your conditions."))
             case CityRecommendationError.quotaExceeded(let resetAt):
-                state = .failed(CityLLMProxyClient.quotaMessage(String(localized: "recommendations"), resetAt: resetAt))
+                let subscribed = await Subscription.isActive()
+                state = .failed(CityLLMProxyClient.quotaMessage(String(localized: "recommendations"), resetAt: resetAt, subscribed: subscribed))
+                showsSubscription = !subscribed
             default:
                 state = .failed(String(localized: "Couldn't get recommendations. Please try again. (\(String(describing: error)))"))
                 await dependencies.track(.cityRecommendationFailed)

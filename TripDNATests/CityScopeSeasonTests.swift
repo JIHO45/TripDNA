@@ -26,6 +26,11 @@ struct CityScopeSeasonTests {
         #expect(catalog.cities.count == 103)
         #expect(catalog.cities.allSatisfy { !($0.scope ?? "").isEmpty })
     }
+    @Test func everyCatalogCityHasBundledPhoto() throws {
+        let catalog = try #require(CityCatalog.load(bundle: Bundle(for: BundleToken.self)) ?? CityCatalog.load())
+        let missing = catalog.cities.map(\.id).filter { CityPhoto.image(for: $0) == nil }
+        #expect(missing.isEmpty, "사진 없는 도시: \(missing)")
+    }
     @Test func cairnsWaterIsAvailableInBothHemisphericSeasons() throws {
         let bundle = try #require(CityCatalog.load())
         let cairns = try #require(bundle.cities.first { $0.id == "au-cairns" })

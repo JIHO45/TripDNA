@@ -428,7 +428,33 @@ private struct CityCardCarousel: View {
 
 // MARK: - 카드
 
-/// 사진 없는 도시 카드. 도시 사진 자료가 없어 색 면과 이름으로 그린다. 가짜 사진은 넣지 않는다.
+/// 번들 도시 사진(`<cityID>.jpg`, 번들 루트에 평평하게 들어간다). 가로·세로 비율이 달라 슬롯에 맞춰 잘라 채운다.
+enum CityPhoto {
+    static func image(for cityID: String) -> UIImage? {
+        Bundle.main.url(forResource: cityID, withExtension: "jpg").flatMap { UIImage(contentsOfFile: $0.path) }
+    }
+}
+
+private struct CityPhotoView: View {
+    let cityID: String
+    let height: CGFloat
+
+    var body: some View {
+        Group {
+            if let image = CityPhoto.image(for: cityID) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                Color.dnaData.opacity(0.12).background(Color.dnaSurface2)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipped()
+        .accessibilityHidden(true)
+    }
+}
+
+/// 도시 카드. 번들 도시 사진을 위에 두고, 사진 파일이 없으면 색 면으로 그린다.
 private struct CityCardView: View {
     let card: CityRecommendationRecord.Card
     let model: CityRecommendationViewModel
@@ -449,9 +475,7 @@ private struct CityCardView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Color.dnaData.opacity(0.12)
-                .background(Color.dnaSurface2)
-                .frame(height: 96)
+            CityPhotoView(cityID: card.cityID, height: 128)
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
                 CityTitleBlock(card: card)
                 if card.isExploration {
@@ -633,10 +657,8 @@ struct CityDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
-                // 도시 사진 자료가 없어 색 면으로 둔다. 이름은 사진 아래에 둔다.
-                Color.dnaData.opacity(0.12)
-                    .background(Color.dnaSurface2)
-                    .frame(height: 150)
+                // 이름은 사진 아래에 둔다.
+                CityPhotoView(cityID: card.cityID, height: 150)
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                 CityTitleBlock(card: card)
                 CityBadgeView(card: card)

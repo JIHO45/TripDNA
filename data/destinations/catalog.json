@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_on": "2026-10-27",
+  "updated_on": "2026-11-02",
   "status": "draft",
   "release_ready": false,
   "author": "Codex; 사람 검수 없음",
@@ -8572,31 +8572,31 @@
         "en": "Muğla"
       },
       "country": "TR",
-      "scope": "무을라 중심도시 멘테셰. 보드룸·마르마리스·페티예·올루데니즈를 합산하지 않음",
+      "scope": "무을라 주 전체: 주도 멘테셰와 보드룸·마르마리스·페티예(올루데니즈 포함)·다트차·쾨이제이즈(달얀)·달라만 등 해안 지구. 지구끼리는 차로 1~3시간 떨어진 별개 거점이며, 한 거점에 머물며 당일로 다녀오는 범위로 본다. 다일 굴렛 크루즈는 제외",
       "grades": {
-        "scenery": "if_there",
-        "hiking": "none",
-        "wildlife": "none",
-        "beach": "none",
-        "spa": "none",
-        "resort": "none",
+        "scenery": "make_time",
+        "hiking": "make_time",
+        "wildlife": "if_there",
+        "beach": "choose",
+        "spa": "make_time",
+        "resort": "choose",
         "streets": "make_time",
         "architecture": "if_there",
         "nightview": "none",
         "street": "if_there",
-        "dining": "if_there",
+        "dining": "make_time",
         "cafe": "if_there",
-        "drinks": "none",
+        "drinks": "if_there",
         "heritage": "make_time",
-        "museums": "if_there",
+        "museums": "make_time",
         "traditional": "if_there",
-        "water": "none",
+        "water": "make_time",
         "winter": "none",
-        "extreme": "none",
+        "extreme": "make_time",
         "themepark": "none",
         "markets": "if_there",
         "brands": "none",
-        "bars": "none",
+        "bars": "make_time",
         "livebar": "none",
         "travelers": "none",
         "locals": "none",
@@ -8605,12 +8605,26 @@
         "concert": "none"
       },
       "core": {
-        "streets": "멘테셰 구시가지의 골목과 전통 가옥 거리를 걷는다.",
-        "heritage": "구시가지의 모스크와 옛 상업 공간을 둘러본다."
+        "scenery": "올루데니즈 석호와 버터플라이 밸리, 다트차 반도의 해안 경관을 본다.",
+        "hiking": "페티예 지구에서 리키아 길의 해안 절벽 구간을 걷는다.",
+        "beach": "올루데니즈, 보드룸 반도, 달얀 이즈투주의 해변에서 쉬고 수영한다.",
+        "spa": "달얀의 머드 배스와 술타니예 온천을 다녀온다.",
+        "resort": "보드룸·마르마리스·페티예의 해변 리조트에서 숙소 중심으로 쉰다.",
+        "streets": "보드룸 항구 거리와 멘테셰 구시가지의 골목·전통 가옥 거리를 걷는다.",
+        "dining": "보드룸 반도의 해산물 식당과 메이하네에서 에게해 요리를 먹는다.",
+        "heritage": "보드룸 성, 할리카르나소스 마우솔레움 유적, 카우노스 암굴 무덤, 카야쾨이 폐허 마을을 둘러본다.",
+        "museums": "보드룸 성 안의 수중고고학 박물관에서 난파선 유물을 관람한다.",
+        "water": "페티예·괴젝에서 섬을 도는 당일 보트 투어를 하고 스노클링·다이빙을 한다.",
+        "extreme": "바바다으 산에서 올루데니즈 위로 탠덤 패러글라이딩을 한다.",
+        "bars": "보드룸과 마르마리스의 바 거리와 클럽을 다닌다."
       },
       "nearby": {},
       "season": {},
-      "season_unverified": [],
+      "season_unverified": [
+        "hiking",
+        "water",
+        "wildlife"
+      ],
       "candidate_id": "tr-mugla",
       "status": "draft",
       "human_review": null,
@@ -8632,7 +8646,8 @@
         "등급 경계와 범위의 사람 판정 필요",
         "core에 적힌 장소·체험의 사실과 운영·접근 조건 대조 필요",
         "하위 등급과 none은 누락·과소평가 여부 확인 필요",
-        "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음"
+        "시즌 미확인 세부는 시기 조건 충족으로 계산하지 않음",
+        "2026-11-02 사용자 결정으로 범위를 멘테셰에서 무을라 주 전체로 확대. 지구 간 이동 시간과 당일 접근, 새 core의 사실은 웹 대조 전(모델 지식 초안)"
       ],
       "season_basis": {},
       "revisions": [
@@ -8642,6 +8657,102 @@
           "before": "make_time",
           "after": "if_there",
           "reason": "멘테셰의 지역 박물관은 일부러 시간을 낼 근거가 약하다. 하향.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "scenery",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 올루데니즈 석호, 버터플라이 밸리, 다트차 반도 해안처럼 경관을 보러 따로 일정을 잡는 장소가 범위에 들어온다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "hiking",
+          "before": "none",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 리키아 길이 페티예 지구(오바식·올루데니즈)에서 시작해 해안 절벽 구간을 하루 단위로 걸을 수 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "wildlife",
+          "before": "none",
+          "after": "if_there",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 달얀 이즈투주 해변의 붉은바다거북 산란지와 보호센터가 있으나 관찰은 시기·운에 달려 일부러 시간을 낼 근거는 약하다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "beach",
+          "before": "none",
+          "after": "choose",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 올루데니즈·보드룸 반도·이즈투주 등 지중해·에게해 해변이 이 지역을 고르는 대표 이유다. 안탈리아 beach choose와 같은 수준으로 본다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "spa",
+          "before": "none",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 달얀의 머드 배스와 술타니예 온천을 일부러 다녀오는 일정이 흔하다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "resort",
+          "before": "none",
+          "after": "choose",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 보드룸·마르마리스·페티예의 해변 리조트에서 숙소 중심으로 쉬는 것이 대표 여행 방식이다. 안탈리아 resort choose와 같은 수준으로 본다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "dining",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 보드룸 반도의 해산물 식당과 메이하네, 고급 레스토랑을 찾아 끼니를 계획할 근거가 있다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "drinks",
+          "before": "none",
+          "after": "if_there",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 해안 지구의 바와 지역 와인·라크를 곁들이는 정도로 부수적이다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "museums",
+          "before": "if_there",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 보드룸 성 안의 수중고고학 박물관은 난파선 유물 컬렉션 자체를 보러 갈 이유가 있다. 2026-10-17 하향은 멘테셰 지역 박물관 기준이었다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "water",
+          "before": "none",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 페티예·괴젝의 12섬 보트 투어, 보드룸·카쉬 인근 다이빙 등 당일 보트·수상 일정이 대표 활동이다. 다일 굴렛 크루즈는 범위 밖이다.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "extreme",
+          "before": "none",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 바바다으 산에서 올루데니즈로 내려오는 탠덤 패러글라이딩을 일부러 예약한다. 단일 경험이 충분히 강하면 choose 후보이므로 사람 판정 필요.",
+          "review_status": "pending"
+        },
+        {
+          "date": "2026-11-02",
+          "sub": "bars",
+          "before": "none",
+          "after": "make_time",
+          "reason": "범위를 무을라 주 전체(보드룸·마르마리스·페티예 등 해안 지구 포함)로 넓힌 사용자 결정(2026-11-02)에 따른 재판정. 보드룸의 바 거리·클럽과 마르마리스 바 스트리트를 일부러 찾는다.",
           "review_status": "pending"
         }
       ]

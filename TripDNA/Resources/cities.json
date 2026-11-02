@@ -3879,40 +3879,44 @@
    "en": "Muğla",
    "grades": {
     "architecture": "if_there",
-    "bars": "none",
-    "beach": "none",
+    "bars": "make_time",
+    "beach": "choose",
     "brands": "none",
     "cafe": "if_there",
     "concert": "none",
-    "dining": "if_there",
-    "drinks": "none",
-    "extreme": "none",
+    "dining": "make_time",
+    "drinks": "if_there",
+    "extreme": "make_time",
     "festival": "none",
     "heritage": "make_time",
-    "hiking": "none",
+    "hiking": "make_time",
     "livebar": "none",
     "locals": "none",
     "markets": "if_there",
-    "museums": "if_there",
+    "museums": "make_time",
     "nightview": "none",
-    "resort": "none",
-    "scenery": "if_there",
-    "spa": "none",
+    "resort": "choose",
+    "scenery": "make_time",
+    "spa": "make_time",
     "sports": "none",
     "street": "if_there",
     "streets": "make_time",
     "themepark": "none",
     "traditional": "if_there",
     "travelers": "none",
-    "water": "none",
-    "wildlife": "none",
+    "water": "make_time",
+    "wildlife": "if_there",
     "winter": "none"
    },
    "id": "tr-mugla",
    "ko": "무을라",
-   "scope": "무을라 중심도시 멘테셰. 보드룸·마르마리스·페티예·올루데니즈를 합산하지 않음",
+   "scope": "무을라 주 전체: 주도 멘테셰와 보드룸·마르마리스·페티예(올루데니즈 포함)·다트차·쾨이제이즈(달얀)·달라만 등 해안 지구. 지구끼리는 차로 1~3시간 떨어진 별개 거점이며, 한 거점에 머물며 당일로 다녀오는 범위로 본다. 다일 굴렛 크루즈는 제외",
    "season": {},
-   "seasonUnverified": []
+   "seasonUnverified": [
+    "hiking",
+    "water",
+    "wildlife"
+   ]
   },
   {
    "country": "TW",
@@ -4547,5 +4551,5 @@
   "make_time",
   "choose"
  ],
- "version": "2026-10-27-74830487"
+ "version": "2026-11-02-30dee364"
 }

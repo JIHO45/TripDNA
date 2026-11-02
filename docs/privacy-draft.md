@@ -24,7 +24,7 @@
 
 ## App Store Connect 입력표
 
-2026-10-31 코드 대조로 다시 썼다(이전 표는 구독·목록 밖 도시 기록을 전제로 했다). 근거: 앱이 넣은 Firebase SDK는 Core·Auth·AppCheck뿐이고(Analytics·Crashlytics 없음, `GoogleService-Info.plist`의 `IS_ANALYTICS_ENABLED` false), StoreKit 코드가 없고, 목록 밖 도시는 기록하지 않는다(결정 D). 같은 내용을 [`PrivacyInfo.xcprivacy`](../TripDNA/PrivacyInfo.xcprivacy)에 넣었다. App Store Connect에는 사용자가 직접 입력한다.
+2026-10-31 코드 대조로 다시 썼다(이전 표는 구독·목록 밖 도시 기록을 전제로 했다). 근거: 앱이 넣은 Firebase SDK는 Core·Auth·AppCheck뿐이고(Analytics·Crashlytics 없음, `GoogleService-Info.plist`의 `IS_ANALYTICS_ENABLED` false), StoreKit 코드가 없고, 목록 밖 도시는 기록하지 않는다(결정 D). 같은 내용을 [`PrivacyInfo.xcprivacy`](../TripDNA/PrivacyInfo.xcprivacy)에 넣었다. App Store Connect에는 사용자가 직접 입력한다. 2026-11-02 구독 추가로 Purchase History를 넣었고, 사용자가 이 표대로 App Store Connect 입력을 마쳤다.
 
 **Do you or your third-party partners collect data from this app? → Yes.** **Tracking → No.**
 
@@ -34,6 +34,7 @@
 | Usage Data › Other Usage Data | 익명 UID별 이번 달 추천·질문 횟수 | Yes | No | App Functionality | 무료 한도 확인. 그 달 끝 + 7일에 삭제 |
 | Usage Data › Product Interaction | 이벤트별 일별 합계(`metric`) | No | No | Analytics | ID·기기 정보 없이 숫자만. 자동 수집이라 선택적 공개 예외에 들지 않는다고 보고 선언한다 |
 | User Content › Other User Content | 조건·자유문장·질문, 동의 시 평가 별점·메모·다녀온 도시 | No | No | App Functionality | 중계 서버는 저장하지 않지만 Anthropic이 자체 정책(일반적으로 30일 이내)으로 보관할 수 있어 "실시간 처리 후 폐기"로 보기 어렵다. 요청에 UID를 넣지 않는다 |
+| Purchases › Purchase History | 구독 거래의 원 거래 ID(`usage/sub-{원 거래 ID}`) | Yes | No | App Functionality | 2026-11-02 구독 서버 확인 추가. 구독자 사용량을 원 거래 ID 문서로 센다 |
 
 선언하지 않는 것과 이유:
 
@@ -43,7 +44,6 @@
 - DeviceCheck 토큰(2026-11-02 추가): 그 달 첫 요청에서 Apple에 조회·표시하는 데만 쓰고 보관하지 않는다. 기기 표시(2비트와 달)는 Apple이 보관한다. 우리 서버에 남는 것은 사용량 문서의 확인한 달(`deviceMonth`)뿐이라 위 Other Usage Data(사용 횟수)에 포함된다. 처리방침 5·7·9절에 적었다.
 - 서버 운영 로그의 IP 등 접속 정보: Google Cloud 기본 보관(30일). Apple 데이터 유형에 IP 자체는 없고 위치 추정에 쓰지 않아 선언하지 않는다. 처리방침 5절에는 적었다.
 - "틀린 내용 알리기" 메일: 사용자가 직접 보낼 때만 받는 선택적 의견이라 선택적 공개(optional disclosure) 예외로 본다. 처리방침 5절에는 적었다.
-- 구매 기록: 구독 미구현. 구독(StoreKit 서버 검증)을 넣으면 Purchases › Purchase History를 다시 판단한다.
 
 검토할 점(사용자 판단):
 

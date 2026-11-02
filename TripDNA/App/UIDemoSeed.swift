@@ -18,6 +18,8 @@ enum UIDemoSeed {
         case many
         /// 추천 결과: 카드 3장(필수 충족 1, 추가 확인 필요 1), 예산, 이해한 내용.
         case recoResult
+        /// 추천 카드 사진 크롭 확인: 서울, 취리히, 도하, 나트랑.
+        case recoPhotos
         /// 추천 결과 카드가 모두 예산에 걸려 보일 카드가 없음.
         case recoZero
         /// 사는 나라(JP)를 뺀 추천 결과.
@@ -77,6 +79,8 @@ enum UIDemoSeed {
             try await seedTrips(store, now: now)
             try await store.saveWantedTiers(tiers)
             try await store.updateCityState { $0.lastRecord = resultRecord(now: now) }
+        case .recoPhotos:
+            try await store.updateCityState { $0.lastRecord = photoRecord(now: now) }
         case .recoZero:
             try await seedTrips(store, now: now)
             try await store.saveWantedTiers(tiers)
@@ -282,6 +286,18 @@ enum UIDemoSeed {
             ],
             conditions: [japanOnly, shortFlight],
             understanding: String(localized: "You're looking for a Japan trip in November, 3 nights, centered on the joy of eating."), now: now
+        )
+    }
+
+    private static func photoRecord(now: Date) -> CityRecommendationRecord {
+        var request = request(budget: nil)
+        request.wants = ""
+        return record(
+            request,
+            cards: ["kr-seoul", "ch-zurich", "us-washington", "es-valencia", "pl-krakow", "sa-riyadh", "id-denpasar", "sa-mecca", "gb-london", "in-delhi", "ar-buenos-aires", "it-verona", "us-los-angeles", "qa-doha", "vn-nha-trang"].map {
+                card(of: $0, reason: String(localized: "This is a demo description."), caveat: String(localized: "This is a demo caveat."))
+            },
+            understanding: nil, now: now
         )
     }
 

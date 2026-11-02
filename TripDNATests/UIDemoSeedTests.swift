@@ -12,10 +12,15 @@ struct UIDemoSeedTests {
 
         #expect(session.isReadyForMainApp)
         let state = try await dependencies.store.cityState()
-        let hasRecord = [.recoResult, .recoZero, .recoHomeExcluded].contains(scenario)
+        let hasRecord = [.recoResult, .recoPhotos, .recoZero, .recoHomeExcluded].contains(scenario)
         #expect((state.lastRecord != nil) == hasRecord)
         if scenario == .recoZero {
             #expect(state.lastRecord?.cards.isEmpty == true)
+        }
+        if scenario == .recoPhotos {
+            #expect(state.lastRecord?.cards.map(\.cityID) == ["kr-seoul", "ch-zurich", "us-washington", "es-valencia", "pl-krakow", "sa-riyadh", "id-denpasar", "sa-mecca", "gb-london", "in-delhi", "ar-buenos-aires", "it-verona", "us-los-angeles", "qa-doha", "vn-nha-trang"])
+            #expect(state.lastRecord?.input.wants == "")
+            #expect(state.lastRecord?.input.budgetMax == nil)
         }
     }
 }

@@ -1,3 +1,4 @@
+import DeviceCheck
 import Foundation
 import FirebaseAppCheck
 import FirebaseAuth
@@ -22,7 +23,8 @@ nonisolated final class AppAttestFactory: NSObject, AppCheckProviderFactory {
     func createProvider(with app: FirebaseApp) -> AppCheckProvider? { AppAttestProvider(app: app) }
 }
 
-/// 프록시 요청에 붙이는 헤더: 누가 보냈는지(익명 로그인 ID 토큰)와 정식 앱인지(App Check 토큰).
+/// 프록시 요청에 붙이는 헤더: 누가 보냈는지(익명 로그인 ID 토큰), 정식 앱인지(App Check 토큰),
+/// 어느 기기인지(DeviceCheck 토큰, 출시 빌드만). 서버는 기기 토큰으로 재설치 뒤 새 익명 ID가 그 달 무료 한도를 다시 받지 못하게 한다.
 /// 로그인 화면은 없다. 처음 호출할 때 익명 계정을 만들고 이후에는 같은 계정을 쓴다.
 nonisolated enum CityLLMCredentials {
     static func headers() async throws -> [String: String] {
@@ -31,7 +33,20 @@ nonisolated enum CityLLMCredentials {
         let user = if let current = auth.currentUser { current } else { try await auth.signInAnonymously().user }
         let idToken = try await user.getIDToken()
         let appCheck = try await AppCheck.appCheck().token(forcingRefresh: false)
-        return ["Authorization": "Bearer \(idToken)", "X-Firebase-AppCheck": appCheck.token]
+        var headers = ["Authorization": "Bearer \(idToken)", "X-Firebase-AppCheck": appCheck.token]
+        if let device = await deviceToken() { headers["X-Apple-Device-Token"] = device }
+        return headers
+    }
+
+    /// 개발 빌드는 보내지 않는다. 서버는 운영 DeviceCheck만 쓰고, 시뮬레이터는 DeviceCheck를 지원하지 않는다.
+    /// 만들지 못하면 보내지 않으며 서버는 기기 확인을 건너뛴다.
+    private static func deviceToken() async -> String? {
+        #if DEBUG
+        return nil
+        #else
+        guard DCDevice.current.isSupported else { return nil }
+        return try? await DCDevice.current.generateToken().base64EncodedString()
+        #endif
     }
 
     /// 전체 삭제 때 익명 계정도 지운다. 오프라인 등으로 서버 삭제에 실패하면 기기에서만 로그아웃해

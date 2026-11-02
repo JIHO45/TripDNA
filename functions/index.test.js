@@ -117,3 +117,52 @@ test("집계 이벤트는 정해진 이름만 받는다", () => {
     assert.equal(metricEventOf(bad), null, JSON.stringify(bad));
   }
 });
+
+const { applyDailyCall, DAILY_CALL_CAP } = require("./index.js");
+
+test("하루 전체 호출 상한까지 받고, 넘으면 막는다", () => {
+  assert.deepEqual(applyDailyCall(undefined), { allowed: true, next: { calls: 1 } });
+  assert.equal(applyDailyCall({ calls: DAILY_CALL_CAP - 1 }).allowed, true);
+  assert.equal(applyDailyCall({ calls: DAILY_CALL_CAP }).allowed, false);
+});
+
+const { bitsFor, checkDevice, deviceJWT } = require("./index.js");
+const crypto = require("node:crypto");
+
+test("기기 비트는 이어지는 달마다 다르다", () => {
+  const months = ["2026-11", "2026-12", "2027-01", "2027-02"].map((m) => JSON.stringify(bitsFor(m)));
+  assert.equal(new Set(months).size, 4);
+  assert.deepEqual(bitsFor("2026-11"), bitsFor("2027-03"));
+});
+
+function fakeApple(state) {
+  const calls = [];
+  const call = async (path, body) => {
+    calls.push([path, body]);
+    return path === "query_two_bits" ? state : {};
+  };
+  return { call, calls };
+}
+
+test("이번 달에 기록된 기기는 claimed, 아니면 이번 달로 기록한다", async () => {
+  const thisMonth = fakeApple({ bit0: true, bit1: false, last_update_time: "2026-11" });
+  assert.equal(await checkDevice("t", "2026-11", thisMonth.call), "claimed");
+  assert.equal(thisMonth.calls.length, 1);
+
+  for (const state of [null, { bit0: true, bit1: true, last_update_time: "2026-10" }]) {
+    const apple = fakeApple(state);
+    assert.equal(await checkDevice("t", "2026-11", apple.call), "ok");
+    assert.deepEqual(apple.calls[1], ["update_two_bits", { device_token: "t", ...bitsFor("2026-11") }]);
+  }
+});
+
+test("DeviceCheck JWT는 ES256으로 서명된다", () => {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" });
+  const [header, payload, signature] = deviceJWT(pem, "KEY123", 1_800_000_000_000).split(".");
+  assert.deepEqual(JSON.parse(Buffer.from(header, "base64url")), { alg: "ES256", kid: "KEY123" });
+  assert.deepEqual(JSON.parse(Buffer.from(payload, "base64url")), { iss: "CH7CDR7288", iat: 1_800_000_000 });
+  const ok = crypto.verify("sha256", Buffer.from(`${header}.${payload}`), { key: publicKey, dsaEncoding: "ieee-p1363" },
+    Buffer.from(signature, "base64url"));
+  assert.ok(ok);
+});

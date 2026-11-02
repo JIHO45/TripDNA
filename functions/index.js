@@ -1,15 +1,18 @@
 // 앱의 LLM 호출 중계. API 키는 서버에만 두고, 앱이 보낸 요청은 아래 상한 안에서만 전달한다.
 // 계약(앱: TripDNA/Recommendation/City/CityLLMClient.swift, CityLLMCredentials.swift)
 //   POST {system, user, model, maxTokens, webSearchMaxUses?, usageId?}
-//   헤더: Authorization: Bearer <익명 로그인 ID 토큰>, X-Firebase-AppCheck: <App Check 토큰>
+//   헤더: Authorization: Bearer <익명 로그인 ID 토큰>, X-Firebase-AppCheck: <App Check 토큰>,
+//         X-Apple-Device-Token: <DeviceCheck 토큰>(출시 빌드만. 없으면 기기 확인을 건너뛴다)
 //   → 200 {content, stop_reason}: Messages API 응답 그대로. 잘림·빈 응답 판정은 앱이 한다.
 //   → 401: 두 토큰 중 하나라도 없거나 검증에 실패.
 //   → 429 {error: "quota", kind, resetAt}: 이번 달 무료 한도를 다 썼다. resetAt은 다시 채워지는 UTC 시각(유닉스 초).
+//   → 503 {error: "busy"}: 오늘(UTC) 전체 호출 상한에 닿았다. 사용자 한도는 차감하지 않는다.
 // 검색 호출은 상세 질문 1회, 검색 없는 호출은 usageId(추천받기 1회의 ID)별로 추천 1회로 센다.
 // 사용자 내용은 기록하지 않는다(로그에는 상태 코드만). Firestore에는 익명 uid별 이번 달 횟수와 추천 ID만 둔다.
 const { onRequest } = require("firebase-functions/v2/https");
 const functionsV1 = require("firebase-functions/v1");
-const { defineSecret } = require("firebase-functions/params");
+const { defineSecret, defineString } = require("firebase-functions/params");
+const crypto = require("node:crypto");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
@@ -108,6 +111,72 @@ function releaseUsage(data, usage, month) {
   return { ...data, recos };
 }
 
+// DeviceCheck(2026-11-02 결정): 재설치·전체 삭제로 새 익명 ID를 받아도 같은 기기에서는 그 달 무료 한도를 다시 주지 않는다.
+// Apple이 기기마다 2비트와 마지막 기록 달(YYYY-MM)을 보관하며 재설치해도 남는다. 익명 ID가 그 달 처음 부를 때만
+// 조회해서, 이번 달에 이미 기록된 기기면 무료 한도 없음(429), 아니면 이번 달로 기록하고 사용량 문서에 deviceMonth를 남긴다.
+// 토큰이 없거나(개발 빌드·토큰 생성 실패) Apple 호출이 실패하면 확인을 건너뛴다. 비용은 하루 전체 상한이 막는다.
+const deviceKey = defineSecret("DEVICECHECK_KEY"); // Apple Developer > Keys에서 만든 DeviceCheck .p8 파일 내용
+const deviceKeyId = defineString("DEVICECHECK_KEY_ID");
+const TEAM_ID = "CH7CDR7288";
+
+// 같은 값을 다시 쓰면 기록 달이 갱신되지 않을 수 있어(확인하지 않음) 달마다 다른 비트를 쓴다.
+// ponytail: 4달 주기로 같은 값이 돌아온다. 그 경우 기록 달이 안 바뀌면 그 달 한 번 더 무료가 생길 수 있다.
+function bitsFor(month) {
+  const [y, m] = month.split("-").map(Number);
+  const index = y * 12 + m;
+  return { bit0: index % 2 === 1, bit1: Math.floor(index / 2) % 2 === 1 };
+}
+
+// "claimed": 이번 달에 이미 다른 익명 ID가 쓴 기기. "ok": 이번 달로 기록했다.
+async function checkDevice(token, month, call) {
+  const state = await call("query_two_bits", { device_token: token });
+  if (state?.last_update_time === month) return "claimed";
+  await call("update_two_bits", { device_token: token, ...bitsFor(month) });
+  return "ok";
+}
+
+function deviceJWT(keyPem, keyId, now = Date.now()) {
+  const part = (obj) => Buffer.from(JSON.stringify(obj)).toString("base64url");
+  const input = `${part({ alg: "ES256", kid: keyId })}.${part({ iss: TEAM_ID, iat: Math.floor(now / 1000) })}`;
+  const signature = crypto.sign("sha256", Buffer.from(input), { key: keyPem, dsaEncoding: "ieee-p1363" });
+  return `${input}.${signature.toString("base64url")}`;
+}
+
+// 출시 빌드(TestFlight·App Store)의 토큰만 받으므로 운영 주소만 쓴다.
+async function callDeviceCheck(path, body) {
+  const res = await fetch(`https://api.devicecheck.apple.com/v1/${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${deviceJWT(deviceKey.value(), deviceKeyId.value())}`, "content-type": "application/json" },
+    body: JSON.stringify({ ...body, transaction_id: crypto.randomUUID(), timestamp: Date.now() }),
+  });
+  if (!res.ok) throw new Error(`devicecheck ${res.status}`);
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null; // 한 번도 기록하지 않은 기기는 JSON 대신 "Failed to find bit state"가 온다.
+  }
+}
+
+// 전체 비용 상한(2026-11-01 결정). DeviceCheck를 건너뛰는 경우를 포함해 하루(UTC) 전체 호출 수를 막는다. 넘으면 그날은 모두 503.
+// ponytail: 고정값. 출시 뒤 실제 비용(metrics·청구서)을 보고 조정한다.
+const DAILY_CALL_CAP = 1000;
+
+function applyDailyCall(data) {
+  const calls = data?.calls ?? 0;
+  return calls >= DAILY_CALL_CAP ? { allowed: false } : { allowed: true, next: { calls: calls + 1 } };
+}
+
+// 문서: budget/{YYYY-MM-DD} = {calls}. 사용자 정보는 없다.
+function takeDailyCall(now) {
+  const ref = getFirestore().collection("budget").doc(now.toISOString().slice(0, 10));
+  return getFirestore().runTransaction(async (tx) => {
+    const result = applyDailyCall((await tx.get(ref)).data());
+    if (result.next) tx.set(ref, result.next);
+    return result.allowed;
+  });
+}
+
 function updateUsage(uid, change) {
   const ref = getFirestore().collection("usage").doc(uid);
   return getFirestore().runTransaction(async (tx) => {
@@ -118,7 +187,7 @@ function updateUsage(uid, change) {
 }
 
 exports.cityLLM = onRequest(
-  { secrets: [apiKey], timeoutSeconds: 180, maxInstances: 5 },
+  { secrets: [apiKey, deviceKey], timeoutSeconds: 180, maxInstances: 5 },
   async (req, res) => {
     if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
     const uid = await verifyCaller(req);
@@ -127,15 +196,46 @@ exports.cityLLM = onRequest(
     if (error) return res.status(400).json({ error });
 
     const now = new Date();
+    const month = monthOf(now);
+    const deviceToken = req.get("X-Apple-Device-Token");
+    let deviceChecked = false;
+    if (deviceToken) {
+      try {
+        const doc = (await getFirestore().collection("usage").doc(uid).get()).data();
+        if (doc?.month !== month || doc.deviceMonth !== month) {
+          if ((await checkDevice(deviceToken, month, callDeviceCheck)) === "claimed") {
+            return res.status(429).json({ error: "quota", kind: usage.kind, resetAt: resetAtOf(now) });
+          }
+          deviceChecked = true;
+        }
+      } catch {
+        logger.warn("device check skipped");
+      }
+    }
+
     let allowed;
     try {
-      ({ allowed } = await updateUsage(uid, (data) => applyUsage(data, usage, now)));
+      ({ allowed } = await updateUsage(uid, (data) => {
+        const result = applyUsage(data, usage, now);
+        if (deviceChecked && result.next) result.next.deviceMonth = month;
+        return result;
+      }));
     } catch {
       // 셀 수 없으면 부르지 않는다(무제한 호출을 막는다).
       logger.error("usage check failed");
       return res.status(503).json({ error: "usage unavailable" });
     }
     if (!allowed) return res.status(429).json({ error: "quota", kind: usage.kind, resetAt: resetAtOf(now) });
+
+    const release = () => updateUsage(uid, (data) => ({ next: releaseUsage(data, usage, monthOf(now)) }))
+      .catch(() => logger.error("usage release failed"));
+    // 사용자 한도를 통과한 뒤에 센다. 막히면 사용자 한도는 되돌린다.
+    const open = await takeDailyCall(now).catch(() => false);
+    if (!open) {
+      logger.warn("daily call cap reached or unavailable");
+      await release();
+      return res.status(503).json({ error: "busy" });
+    }
 
     try {
       const client = new Anthropic({ apiKey: apiKey.value() });
@@ -144,8 +244,7 @@ exports.cityLLM = onRequest(
     } catch (e) {
       const status = e instanceof Anthropic.APIError ? e.status : undefined;
       logger.error("anthropic call failed", { status, type: e?.constructor?.name });
-      await updateUsage(uid, (data) => ({ next: releaseUsage(data, usage, monthOf(now)) }))
-        .catch(() => logger.error("usage release failed"));
+      await release();
       // 앱에는 원인만 구분해 준다: 상류 과부하·한도는 503, 그 밖은 502.
       res.status(status === 429 || status >= 500 ? 503 : 502).json({ error: "upstream failed" });
     }
@@ -188,7 +287,12 @@ exports.deleteUserData = functionsV1.auth.user().onDelete((user) =>
 exports.expireAtOf = expireAtOf;
 exports.metricEventOf = metricEventOf;
 exports.buildParams = buildParams;
+exports.bitsFor = bitsFor;
+exports.checkDevice = checkDevice;
+exports.deviceJWT = deviceJWT;
 exports.applyUsage = applyUsage;
+exports.applyDailyCall = applyDailyCall;
+exports.DAILY_CALL_CAP = DAILY_CALL_CAP;
 exports.releaseUsage = releaseUsage;
 exports.resetAtOf = resetAtOf;
 exports.verifyCaller = verifyCaller;

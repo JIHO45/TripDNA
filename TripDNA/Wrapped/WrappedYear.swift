@@ -157,7 +157,7 @@ struct WrappedYear: Equatable {
             year: year,
             isInProgress: calendar.component(.year, from: now) == year,
             tripCount: annual.count,
-            countryNames: countries.map(CountryCatalog.name(for:)),
+            countryNames: countries.map { CountryCatalog.name(for: $0) },
             cityCount: cities.count,
             months: months,
             fingerprint: ConceptFingerprint(trips: annual, now: now),

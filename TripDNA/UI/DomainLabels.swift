@@ -68,7 +68,7 @@ nonisolated enum KoreanParticle {
     }
 }
 
-func particled(_ word: String, _ particle: KoreanParticle) -> String {
+nonisolated func particled(_ word: String, _ particle: KoreanParticle) -> String {
     KoreanParticle.particled(word, particle)
 }
 

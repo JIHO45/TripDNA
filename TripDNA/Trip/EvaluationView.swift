@@ -299,7 +299,7 @@ struct EvaluationView: View {
                 Text(cityName(review))
                     .dnaFont(.cardTitle)
                     .foregroundStyle(Color.dnaTextPrimary)
-                if let match {
+                if match != nil {
                     if memoCount > 0 {
                         Text("\(memoCount) notes on likes and dislikes")
                             .dnaFont(.caption)

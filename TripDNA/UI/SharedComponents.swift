@@ -977,7 +977,7 @@ struct ScoreBadge: View {
     let score: Double
 
     var body: some View {
-        Text("Taste match \(Int((score * 100).rounded()))%")
+        Text("Taste match \(score.formatted(.percent.precision(.fractionLength(0))))")
             .dnaFont(.caption)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)

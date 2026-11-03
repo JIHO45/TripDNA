@@ -8579,12 +8579,12 @@
         }
       }
     },
-    "Taste match %lld%%": {
+    "Taste match %@": {
       "localizations": {
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "취향 매치 %lld%%"
+            "value": "취향 매치 %@"
           }
         }
       }

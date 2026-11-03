@@ -155,7 +155,7 @@ struct SettingsToast: Equatable {
     let id = UUID()
     let message: String
     var undoTitle: String?
-    var undo: (@Sendable () async -> Void)?
+    var undo: (@MainActor () async -> Void)?
 
     static func == (lhs: SettingsToast, rhs: SettingsToast) -> Bool { lhs.id == rhs.id }
 }

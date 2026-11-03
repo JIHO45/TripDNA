@@ -87,7 +87,7 @@ final class HomeViewModel {
             guard let trip = trip(id: id) else { return (String(localized: "Traveling"), "") }
             return (String(localized: "Traveling"), String(localized: "Day \(dayIndex(of: trip)) in \(Self.placeName(trip))"))
         case .upcoming(let id, let days):
-            let place = trip(id: id).map(Self.placeName) ?? ""
+            let place = trip(id: id).map { Self.placeName($0) } ?? ""
             return (String(localized: "Upcoming trip"), String(localized: "\(days) days until \(place)"))
         case .recommendations, .invitation:
             return (String(localized: "Planning your next trip"), String(localized: "Where to next?"))

@@ -72,7 +72,7 @@ struct ShareInstallBadge: View {
 }
 
 /// 공유 카드 글자의 줄바꿈 규칙. 항목은 쪼개지지 않고, 항목 사이에서만 줄이 바뀌며, 구분자가 줄 처음에 오지 않는다.
-enum ShareText {
+nonisolated enum ShareText {
     /// "문화·역사"처럼 항목 안의 가운뎃점 앞뒤에 word joiner(U+2060)를 넣어 거기서 줄이 바뀌지 않게 한다.
     static func keepTogether(_ item: String) -> String {
         item.replacingOccurrences(of: "·", with: "\u{2060}·\u{2060}")

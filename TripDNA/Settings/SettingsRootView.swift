@@ -1,4 +1,5 @@
 import Photos
+import StoreKit
 import SwiftUI
 
 /// 홈의 프로필 버튼으로 여는 설정. 구독 / 취향과 추천 / 데이터와 권한 순으로 묶는다.
@@ -30,7 +31,10 @@ struct SettingsRootView: View {
                     link(
                         "TripDNA Subscription",
                         detail: isSubscribed.map { $0 ? String(localized: "Active") : String(localized: "Not subscribed") }
-                    ) { SubscriptionView() }
+                    ) {
+                        // push 화면은 내비게이션 뒤로 버튼이 있으므로 스토어 뷰의 X를 숨긴다.
+                        SubscriptionView().storeButton(.hidden, for: .cancellation)
+                    }
                 }
                 .listRowBackground(Color.dnaSurface1)
 

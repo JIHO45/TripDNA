@@ -12,9 +12,43 @@ test("앱이 보내는 요청(maxTokens 문자열)을 그대로 전달한다", (
   assert.equal(params.tools, undefined);
 });
 
-test("검색 요청에는 web_search 도구를 붙인다", () => {
-  const { params } = buildParams({ ...ok, webSearchMaxUses: 3 });
+test("검색 요청에는 web_search 도구를 붙이고 AI 사용량으로 센다", () => {
+  const { params, usage } = buildParams({ ...ok, webSearchMaxUses: 3 });
   assert.deepEqual(params.tools, [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }]);
+  assert.equal(usage.kind, "chat");
+  assert.equal(usage.searchUses, 3);
+  assert.ok(usage.id.length >= 8); // 예전 앱: requestId가 없으면 서버가 만든다
+});
+
+const chat = { system: "s", model: "claude-haiku-5-5", maxTokens: 4000, purpose: "chat", requestId: "req-00000001",
+  messages: [{ role: "user", content: "a" }, { role: "assistant", content: "b" }, { role: "user", content: "c" }] };
+
+test("대화는 messages를 그대로 보내고 캐시를 켠다", () => {
+  const { params, usage, error } = buildParams(chat);
+  assert.equal(error, undefined);
+  assert.equal(params.messages.length, 3);
+  assert.deepEqual(params.cache_control, { type: "ephemeral" });
+  assert.deepEqual(usage, { kind: "chat", id: "req-00000001", searchUses: 0, inputChars: 4 });
+});
+
+test("대화·요약 요청의 형식 검사", () => {
+  const m = (...roles) => roles.map((role) => ({ role, content: "x" }));
+  for (const bad of [
+    { ...chat, purpose: "other" },
+    { ...chat, purpose: undefined },
+    { ...chat, user: "u" },
+    { ...chat, messages: [] },
+    { ...chat, messages: m("assistant") },
+    { ...chat, messages: m("user", "assistant") },
+    { ...chat, messages: m("user", "user", "user") },
+    { ...chat, messages: [{ role: "user", content: "" }] },
+    { ...chat, messages: [{ role: "user", content: "x".repeat(200001) }] },
+    { ...chat, requestId: "bad/id" },
+    { ...chat, purpose: "summary", webSearchMaxUses: 1 },
+  ]) {
+    assert.ok(buildParams(bad).error, JSON.stringify(bad).slice(0, 120));
+  }
+  assert.equal(buildParams({ ...chat, purpose: "summary" }).error, undefined);
 });
 
 test("허용 범위 밖의 요청은 거부한다", () => {
@@ -61,7 +95,6 @@ test("토큰이 없거나 하나라도 틀리면 거부한다", async () => {
 const { applyUsage, releaseUsage, resetAtOf } = require("./index.js");
 const nov = new Date("2026-11-15T12:00:00Z");
 const reco = (id) => ({ kind: "recommend", id });
-const question = { kind: "question" };
 
 // 앞에서부터 차례로 적용하고 각 호출의 허용 여부를 돌려준다.
 function run(usages, now = nov, data) {
@@ -77,11 +110,6 @@ test("추천은 ID별로 1회, 한 추천은 호출 네 번(재시도 포함)까
   assert.deepEqual(result.slice(0, -1), [true, true, true, true, false, true, true, false, true]);
 });
 
-test("질문은 호출마다 1회, 월 3회. 추천과 따로 센다", () => {
-  const result = run([question, question, reco("a"), question, question]);
-  assert.deepEqual(result.slice(0, -1), [true, true, true, true, false]);
-});
-
 test("달이 바뀌면(UTC) 다시 채운다", () => {
   const full = run([reco("a"), reco("b"), reco("c")]).at(-1);
   assert.equal(applyUsage(full, reco("d"), "2026-11").allowed, false);
@@ -94,12 +122,100 @@ test("다시 채우는 시각은 다음 달 1일 00:00 UTC", () => {
 });
 
 test("상류 실패는 그 호출만 되돌린다", () => {
-  const one = run([reco("a"), question]).at(-1);
+  const one = run([reco("a")]).at(-1);
   assert.deepEqual(releaseUsage(one, reco("a"), "2026-11").recos, {});
-  assert.equal(releaseUsage(one, question, "2026-11").questions, 0);
   const two = run([reco("a"), reco("a")]).at(-1);
   assert.deepEqual(releaseUsage(two, reco("a"), "2026-11").recos, { a: 1 });
   assert.equal(releaseUsage(one, reco("a"), "2026-10"), null);
+});
+
+const { costOf, reserveOf, inputTokensOf, applyChatReserve, applyChatSettle, applyChatRelease, HOLD_TTL_MS, TIMEOUT_SECONDS } = require("./index.js");
+const t0 = nov.getTime();
+const P = "2026-11";
+
+test("실제 비용: 단가 × 토큰(마이크로달러) + 검색 1회 1만, 10만 토큰 넘는 프롬프트는 비싼 단가", () => {
+  assert.equal(costOf({ input_tokens: 1000, output_tokens: 1000 }), 100 + 500);
+  assert.equal(costOf({ input_tokens: 0, cache_creation_input_tokens: 1000, cache_read_input_tokens: 10000, output_tokens: 0 }), 125 + 100);
+  assert.equal(costOf({ input_tokens: 100, output_tokens: 0, server_tool_use: { web_search_requests: 2 } }), 10 + 20000);
+  assert.equal(costOf({ input_tokens: 100001, output_tokens: 0 }), Math.ceil(100001 * 0.5));
+  assert.equal(costOf(undefined), 0);
+});
+
+test("예약은 실제로 나올 수 있는 비용보다 크다", () => {
+  const r = reserveOf({ inputTokens: 1000, maxTokens: 4000, searchUses: 0 });
+  assert.ok(r >= costOf({ input_tokens: 1000, output_tokens: 4000 }));
+  assert.ok(r >= costOf({ cache_creation_input_tokens: 1000, output_tokens: 4000 }));
+  const s = reserveOf({ inputTokens: 1000, maxTokens: 4000, searchUses: 3 });
+  assert.ok(s > 3 * 10000 + r);
+});
+
+test("토큰 계산이 실패하면 글자 수 × 상한으로 본다", async () => {
+  const params = { model: "m", system: "s", messages: [] };
+  assert.equal(await inputTokensOf(params, 10, async () => ({ input_tokens: 7 })), 7);
+  assert.equal(await inputTokensOf(params, 10, async () => { throw new Error("x"); }), 20);
+  assert.equal(await inputTokensOf(params, 10, async () => ({})), 20);
+});
+
+test("다 쓴 경우와, 남았지만 이 요청에 모자란 경우를 구분한다", () => {
+  const spent = { month: P, recos: {}, chat: { used: 1000, holds: {}, settled: [] } };
+  assert.equal(applyChatReserve(spent, P, 1000, "r1", 1, t0).reason, "exhausted");
+  const some = { month: P, recos: {}, chat: { used: 400, holds: {}, settled: [] } };
+  const r = applyChatReserve(some, P, 1000, "r1", 700, t0);
+  assert.equal(r.reason, "tooLarge");
+  assert.equal(r.share, 0.4);
+  assert.equal(applyChatReserve(some, P, 1000, "r1", 600, t0).allowed, true);
+});
+
+test("동시 예약은 함께 예산을 넘지 못한다", () => {
+  let data;
+  const a = applyChatReserve(data, P, 1000, "a", 600, t0);
+  data = a.next;
+  const b = applyChatReserve(data, P, 1000, "b", 600, t0);
+  assert.equal(b.reason, "tooLarge");
+  assert.equal(applyChatReserve(data, P, 1000, "c", 400, t0).allowed, true);
+});
+
+test("정산: 예약을 풀고 실제 비용을 차감한다. 예약보다 많아도 실제 비용", () => {
+  const held = applyChatReserve(undefined, P, 1000, "a", 100, t0).next;
+  const s = applyChatSettle(held, P, 1000, "a", 150, t0 + 1000);
+  assert.equal(s.charged, true);
+  assert.equal(s.next.chat.used, 150);
+  assert.deepEqual(s.next.chat.holds, {});
+  assert.equal(s.share, 0.15);
+});
+
+test("같은 요청은 두 번 정산되지 않고, 같은 ID로 다시 예약할 수 없다", () => {
+  const held = applyChatReserve(undefined, P, 1000, "a", 100, t0).next;
+  const once = applyChatSettle(held, P, 1000, "a", 50, t0).next;
+  assert.equal(applyChatSettle(once, P, 1000, "a", 50, t0).charged, false);
+  assert.equal(applyChatReserve(held, P, 1000, "a", 1, t0).reason, "duplicate");
+  assert.equal(applyChatReserve(once, P, 1000, "a", 1, t0).reason, "duplicate");
+});
+
+test("만료된 예약은 예산에서 빠지고, 만료 뒤 정산은 아무것도 바꾸지 않는다", () => {
+  const held = applyChatReserve(undefined, P, 1000, "a", 900, t0).next;
+  assert.equal(applyChatReserve(held, P, 1000, "b", 900, t0 + HOLD_TTL_MS - 1).reason, "tooLarge");
+  assert.equal(applyChatReserve(held, P, 1000, "b", 900, t0 + HOLD_TTL_MS).allowed, true);
+  assert.equal(applyChatSettle(held, P, 1000, "a", 50, t0 + HOLD_TTL_MS).charged, false);
+});
+
+test("예약 만료는 함수 제한 시간보다 길다", () => {
+  assert.ok(HOLD_TTL_MS > TIMEOUT_SECONDS * 1000);
+});
+
+test("실패하면 예약만 풀고 차감하지 않는다. 기간이 바뀌면 그대로 둔다", () => {
+  const held = applyChatReserve(undefined, P, 1000, "a", 100, t0).next;
+  const r = applyChatRelease(held, P, "a");
+  assert.deepEqual(r.next.chat, { used: 0, holds: {}, settled: [] });
+  assert.equal(applyChatRelease(held, "2026-12", "a").next, undefined);
+  assert.equal(applyChatSettle(held, "2026-12", 1000, "a", 10, t0).charged, false);
+});
+
+test("기간이 바뀌면 AI 사용량을 새로 센다", () => {
+  const spent = { month: "2026-10", recos: {}, chat: { used: 5000, holds: {}, settled: ["x"] } };
+  const r = applyChatReserve(spent, P, 1000, "x", 10, t0);
+  assert.equal(r.allowed, true);
+  assert.equal(r.next.chat.used, 0);
 });
 
 const { expireAtOf } = require("./index.js");
@@ -189,15 +305,17 @@ test("구독 기간은 결제일부터 한 달씩, 없는 날은 말일", () => 
   assert.equal(p.start, Date.parse("2026-11-05T00:00:00Z"));
 });
 
-test("구독자는 원 거래 ID 문서에 30회, 무료는 uid 문서에 3회", () => {
+test("구독자는 원 거래 ID 문서와 구독 예산, 무료는 uid 문서와 무료 예산", () => {
+  const { CHAT_BUDGETS } = require("./index.js");
   const sub = { originalTransactionId: "100", purchaseDate: Date.parse("2026-11-05T00:00:00Z") };
   const q = quotaFor("uid1", sub, nov);
   assert.equal(q.docId, "sub-100");
   assert.equal(q.subscribed, true);
+  assert.equal(q.chatBudget, CHAT_BUDGETS.sub);
   assert.equal(q.resetAt, Date.parse("2026-12-05T00:00:00Z") / 1000);
   let data;
-  const allowed = Array.from({ length: 31 }, () => {
-    const r = applyUsage(data, question, q.period, q.limits);
+  const allowed = Array.from({ length: 31 }, (_, i) => {
+    const r = applyUsage(data, reco(`r${i}`), q.period, q.limits);
     if (r.allowed) data = r.next;
     return r.allowed;
   });
@@ -205,5 +323,6 @@ test("구독자는 원 거래 ID 문서에 30회, 무료는 uid 문서에 3회",
   const free = quotaFor("uid1", null, nov);
   assert.equal(free.docId, "uid1");
   assert.equal(free.subscribed, false);
+  assert.equal(free.chatBudget, CHAT_BUDGETS.free);
   assert.equal(free.period, "2026-11");
 });

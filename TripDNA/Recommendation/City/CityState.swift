@@ -118,6 +118,16 @@ extension UserProfileRepository {
     }
 }
 
+extension AppStore {
+    /// 응답을 기다린 작업의 결과를 저장한다. 작업을 시작한 뒤 전체 삭제가 있었으면 저장하지 않고 false를 돌려준다.
+    @discardableResult
+    func updateCityState(ifGeneration generation: Int, _ change: (inout CityRecommendationState) -> Void) async throws -> Bool {
+        var state = try await loadCityState()
+        change(&state)
+        return try await saveCityState(state, ifGeneration: generation)
+    }
+}
+
 extension CityRecommendationRecord {
     /// 화면에 보일 카드. 받은 뒤에 "다시 추천하지 않기"한 도시·나라와, 필수 조건 위반이 확인된 카드는 보이지 않는다.
     /// 결과 저장은 그대로 두고 보여줄 때 거른다.
@@ -210,7 +220,7 @@ extension RecommendationRequest {
 }
 
 /// 짧은 원화 표기. 한국어는 "100만 원"(단위 표기는 호출처가 정한다), 그 밖은 "₩500K"·"₩1.5M".
-func shortKRW(_ amount: Int, koreanUnit: String) -> String {
+nonisolated func shortKRW(_ amount: Int, koreanUnit: String) -> String {
     if AppLanguage.isKorean { return "\(amount / 10_000)\(koreanUnit)" }
     if amount >= 1_000_000 { return "₩\((Double(amount) / 1_000_000).formatted())M" }
     return "₩\(amount / 1_000)K"

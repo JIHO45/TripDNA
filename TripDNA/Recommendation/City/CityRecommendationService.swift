@@ -113,6 +113,8 @@ nonisolated struct CityRecommendationService: Sendable {
     let client: (any CityLLMClient)?
     let log: CityRecommendationLog
     var model = CityLLMConfiguration.model
+    /// 있으면, 요청을 시작한 뒤 전체 삭제가 있었을 때 로그를 남기지 않는다.
+    var dataGeneration: UserDataGeneration?
 
     /// 조건 필터(제외 나라·시즌)와 순위 계산은 코드가, 설명은 LLM이 한다. 성공이든 실패든 레코드를 남긴다.
     func recommend(
@@ -128,7 +130,7 @@ nonisolated struct CityRecommendationService: Sendable {
         now: Date = Date()
     ) async throws -> CityRecommendationRecord {
         guard let primary = request.primary else { throw CityRecommendationError.notReady }
-        let generation = UserDataGeneration.current
+        let generation = dataGeneration?.current
         let month = request.month ?? request.startDate.map { Calendar.current.component(.month, from: $0) }
         var input = CityRankingInput(primary: primary, secondary: request.secondary, tiers: tiers, month: month)
         input.seed = seed
@@ -226,7 +228,11 @@ nonisolated struct CityRecommendationService: Sendable {
             error: failure.map { String(describing: $0) } ?? (parsed != nil && selection.cards.isEmpty ? "noneWithinBudget" : nil), latencySeconds: Date().timeIntervalSince(start)
         )
         // 요청 문장·메모가 든 기록이라, 기다리는 사이 전체 삭제를 했으면 남기지 않는다.
-        if UserDataGeneration.current == generation { try? log.save(record) }
+        if let dataGeneration, let generation {
+            _ = try? dataGeneration.ifCurrent(generation) { try log.save(record) }
+        } else {
+            try? log.save(record)
+        }
         if let failure { throw failure }
         return record
     }

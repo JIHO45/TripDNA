@@ -12,6 +12,9 @@ final class CityRecommendationViewModel {
     private(set) var state = State.idle
     /// 무료 한도를 다 쓴 사용자가 추천받기를 누르면 구독 화면을 연다(2026-10-17 결정). 지난 결과는 그대로 둔다.
     var showsSubscription = false
+    /// 테스트가 가짜 LLM과 임시 로그 폴더를 넣는다.
+    @ObservationIgnored var makeClient: (String) -> (any CityLLMClient)? = { CityLLMConfiguration.makeClient(usageID: $0) }
+    @ObservationIgnored var log = CityRecommendationLog.standard
 
     /// 실패한 추천의 ID는 다음 추천받기에서 한 번 다시 써서(`CityRecommendationState.retryUsageID`), 실패로 무료 횟수를 잃지 않게 한다.
     /// 서버는 ID 하나를 호출 4번까지 1회로 센다. 한도 초과가 아닌 첫 실패만 넘기고, 다시 실패하면 새 ID(1회 차감)로 간다.
@@ -197,13 +200,13 @@ final class CityRecommendationViewModel {
 
     func cancelConsent() { pendingConsentRequest = nil }
 
-    private func run(request: RecommendationRequest, dependencies: AppDependencies) async {
+    func run(request: RecommendationRequest, dependencies: AppDependencies) async {
         guard let catalog = CityCatalog.load() else {
             state = .failed(String(localized: "Couldn't load the city data."))
             return
         }
         state = .loading
-        let generation = UserDataGeneration.current
+        let generation = dependencies.store.dataGeneration.current
         let tiers = (try? await dependencies.store.loadWantedTiers()) ?? WantedConceptTiers()
         var excludedCountries = Set<String>()
         excludedCountries.formUnion((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
@@ -226,7 +229,7 @@ final class CityRecommendationViewModel {
         let isRetry = cityState.retryUsageID != nil
         if isRetry { _ = try? await dependencies.store.updateCityState { $0.retryUsageID = nil } }
         let service = CityRecommendationService(
-            catalog: catalog, client: CityLLMConfiguration.makeClient(usageID: usageID), log: .standard
+            catalog: catalog, client: makeClient(usageID), log: log, dataGeneration: dependencies.store.dataGeneration
         )
         do {
             let record = try await service.recommend(
@@ -235,7 +238,7 @@ final class CityRecommendationViewModel {
                 departureAirport: departureAirport, memories: memories
             )
             // 기다리는 사이 전체 삭제를 했으면 결과를 버린다.
-            guard !Task.isCancelled, UserDataGeneration.current == generation else { return }
+            guard !Task.isCancelled, dependencies.store.dataGeneration.current == generation else { return }
             lastRecord = record
             originalRecord = nil
             budgetChange = nil
@@ -244,7 +247,7 @@ final class CityRecommendationViewModel {
             refills = []
             understandingExpanded = true
             state = .done(record)
-            _ = try? await dependencies.store.updateCityState {
+            _ = try? await dependencies.store.updateCityState(ifGeneration: generation) {
                 $0.lastRecord = record
                 $0.originalRecord = nil
                 $0.skippedCityIDs = []
@@ -253,9 +256,9 @@ final class CityRecommendationViewModel {
             await dependencies.recordFirstRecommendationIfNeeded(source: "city")
             await dependencies.track(.cityRecommendationReceived)
         } catch {
-            guard UserDataGeneration.current == generation else { return }
+            guard dependencies.store.dataGeneration.current == generation else { return }
             if let retryID = Self.retryID(after: error, usageID: usageID, isRetry: isRetry) {
-                _ = try? await dependencies.store.updateCityState { $0.retryUsageID = retryID }
+                _ = try? await dependencies.store.updateCityState(ifGeneration: generation) { $0.retryUsageID = retryID }
             }
             guard !Task.isCancelled else { return }
             switch error {

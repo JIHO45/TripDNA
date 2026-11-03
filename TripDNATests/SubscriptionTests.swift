@@ -25,7 +25,18 @@ struct SubscriptionTests {
         #expect(await Subscription.isActive() == false)
 
         try await session.buyProduct(identifier: Subscription.monthlyID)
-        #expect(await Subscription.isActive())
+        // 테스트 세션은 구매가 끝난 뒤 currentEntitlements에 늦게 반영될 때가 있어(2026-11-03 간헐 실패) 최대 3초 기다린다.
+        // 실제 결제 직후의 지연은 TestFlight에서 따로 확인한다.
+        #expect(await Self.becomesActive(within: .seconds(3)))
         session.clearTransactions()
+    }
+
+    private static func becomesActive(within limit: Duration) async -> Bool {
+        let deadline = ContinuousClock.now + limit
+        while ContinuousClock.now < deadline {
+            if await Subscription.isActive() { return true }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return await Subscription.isActive()
     }
 }

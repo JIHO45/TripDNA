@@ -17,6 +17,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     private var storedOnboardingDraft: OnboardingDraft?
     private var storedCityState = CityRecommendationState()
     private(set) var storedEvents: [AnalyticsEvent]
+    let dataGeneration = UserDataGeneration()
 
     init(
         trips: [Trip] = [],
@@ -181,6 +182,10 @@ nonisolated final class InMemoryAppStore: AppStore {
 
     func saveCityState(_ state: CityRecommendationState) async throws { storedCityState = state }
 
+    func saveCityState(_ state: CityRecommendationState, ifGeneration generation: Int) async throws -> Bool {
+        try dataGeneration.ifCurrent(generation) { storedCityState = state }
+    }
+
     func loadOnboardingDraft() async throws -> OnboardingDraft? { storedOnboardingDraft }
 
     func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws { storedOnboardingDraft = draft }
@@ -199,6 +204,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     }
 
     func deleteAllUserData() async throws {
+        dataGeneration.advance()
         storedTrips.removeAll()
         storedRanking = nil
         storedFeedback.removeAll()

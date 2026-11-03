@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 protocol TripRepository {
     func trips() async throws -> [Trip]
@@ -113,6 +114,27 @@ protocol UserDataDeletionRepository {
     func deleteAllUserData() async throws
 }
 
+/// 전체 삭제 횟수. 응답을 기다리는 작업은 시작할 때 값을 들고 있다가, 그 사이 전체 삭제가 있었으면
+/// 받은 결과를 저장하지 않는다(지운 기록이 늦게 도착한 응답으로 되살아나지 않게).
+/// 확인과 저장을 한 잠금 안에서 하므로, 확인한 뒤 저장하기 전에 삭제가 끼어들 수 없다.
+nonisolated final class UserDataGeneration: Sendable {
+    private let value = Mutex(0)
+
+    var current: Int { value.withLock { $0 } }
+
+    /// 전체 삭제가 지우기 전에 부른다.
+    func advance() { value.withLock { $0 += 1 } }
+
+    /// 세대가 그대로일 때만 `write`를 실행하고 true를 돌려준다.
+    func ifCurrent(_ generation: Int, _ write: () throws -> Void) throws -> Bool {
+        try value.withLock { now in
+            guard now == generation else { return false }
+            try write()
+            return true
+        }
+    }
+}
+
 /// 앱이 쓰는 저장소 전체. 화면·뷰모델은 이 하나만 들고 다니고,
 /// 실제 구현(SwiftData / 인메모리)은 교체 가능하게 둔다.
 protocol AppStore:
@@ -126,7 +148,12 @@ protocol AppStore:
     UserProfileRepository,
     EventRepository,
     UserDataDeletionRepository
-{}
+{
+    /// `deleteAllUserData`가 지우기 전에 올린다.
+    var dataGeneration: UserDataGeneration { get }
+    /// 세대가 그대로일 때만 저장한다. 저장했으면 true.
+    func saveCityState(_ state: CityRecommendationState, ifGeneration generation: Int) async throws -> Bool
+}
 
 nonisolated enum RepositoryError: Error, Equatable {
     case duplicateID

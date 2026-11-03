@@ -18,6 +18,8 @@ final class CityQuestionModel {
     var draft = ""
     /// 무료 한도를 다 쓴 사용자가 질문하면 구독 화면을 연다.
     var showsSubscription = false
+    /// 테스트가 가짜 LLM을 넣는다.
+    @ObservationIgnored var makeClient: () -> (any CitySearchClient)? = { CityLLMConfiguration.makeSearchClient() }
 
     var isLoading: Bool { if case .loading = status { true } else { false } }
 
@@ -26,31 +28,32 @@ final class CityQuestionModel {
     }
 
     /// 질문은 이전 기록 없이 따로 보낸다(LLM에 지난 질문·답을 붙이지 않는다).
-    func ask(_ raw: String, card: CityRecommendationRecord.Card, request: RecommendationRequest?, summary: String, store: any AppStore) {
+    @discardableResult
+    func ask(_ raw: String, card: CityRecommendationRecord.Card, request: RecommendationRequest?, summary: String, store: any AppStore) -> Task<Void, Never>? {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isLoading else { return }
+        guard !text.isEmpty, !isLoading else { return nil }
         guard let catalog = CityCatalog.load() else {
             status = .failed(question: text, message: String(localized: "Couldn't load the city data."))
-            return
+            return nil
         }
         status = .loading(question: text)
         if draft.trimmingCharacters(in: .whitespacesAndNewlines) == text { draft = "" }
-        let generation = UserDataGeneration.current
-        Task {
-            let service = CityQuestionService(catalog: catalog, client: CityLLMConfiguration.makeSearchClient())
+        let generation = store.dataGeneration.current
+        return Task {
+            let service = CityQuestionService(catalog: catalog, client: makeClient())
             do {
                 let answer = try await service.ask(text, card: card, request: request, conditionSummary: summary)
-                // 기다리는 사이 전체 삭제를 했으면 답을 버린다.
-                guard UserDataGeneration.current == generation else {
-                    status = .idle
-                    return
-                }
                 let entry = CityQuestionEntry(question: text, askedAt: Date(), conditionSummary: summary, answer: answer)
-                entries.append(entry)
-                status = .idle
                 do {
-                    try await store.updateCityState { $0.addQuestion(entry, cityID: card.cityID) }
+                    // 기다리는 사이 전체 삭제를 했으면 답을 버린다.
+                    guard try await store.updateCityState(ifGeneration: generation, { $0.addQuestion(entry, cityID: card.cityID) }) else {
+                        status = .idle
+                        return
+                    }
+                    entries.append(entry)
+                    status = .idle
                 } catch {
+                    entries.append(entry)
                     status = .notSaved
                 }
             } catch CityQuestionError.notConfigured {

@@ -204,6 +204,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
     }
 
     private let container: ModelContainer
+    let dataGeneration = UserDataGeneration()
     private let countryProfiles: [CountryProfile]
     private let tagDefinitions: [TagDefinition]
     private let encoder = JSONEncoder()
@@ -464,6 +465,10 @@ actor SwiftDataAppStore: nonisolated AppStore {
         try saveSingleton(state, key: SingletonKey.cityState)
     }
 
+    func saveCityState(_ state: CityRecommendationState, ifGeneration generation: Int) async throws -> Bool {
+        try dataGeneration.ifCurrent(generation) { try saveSingleton(state, key: SingletonKey.cityState) }
+    }
+
     func loadOnboardingDraft() async throws -> OnboardingDraft? {
         try singleton(OnboardingDraft.self, key: SingletonKey.onboardingDraft)
     }
@@ -505,6 +510,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
     }
 
     func deleteAllUserData() async throws {
+        dataGeneration.advance()
         try modelContext.delete(model: StoredTrip.self)
         try modelContext.delete(model: StoredCardFeedback.self)
         try modelContext.delete(model: StoredDailyPhoto.self)

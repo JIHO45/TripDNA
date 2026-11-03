@@ -1,19 +1,10 @@
 import Foundation
-import Synchronization
 
 enum AppPersistence {
     /// 기기에 남는 SwiftData 저장소. 출시 빌드가 쓴다.
     case onDisk
     /// 프리뷰·테스트용. 앱을 닫으면 사라진다.
     case inMemory
-}
-
-/// 전체 삭제 횟수. 응답을 기다리는 요청은 시작할 때 값을 들고 있다가, 그 사이 전체 삭제가 있었으면
-/// 받은 결과를 저장하지 않는다(지운 기록이 늦게 도착한 응답으로 되살아나지 않게).
-nonisolated enum UserDataGeneration {
-    private static let value = Mutex(0)
-    static var current: Int { value.withLock { $0 } }
-    static func advance() { value.withLock { $0 += 1 } }
 }
 
 @Observable
@@ -181,8 +172,7 @@ final class AppDependencies {
     func deleteAccount(session: SessionStore) async throws {
         // iCloud 사본을 먼저 지운다. 실패하면 기기 기록도 그대로 두고 알린다(사본만 남는 일을 막는다).
         try await backup?.deleteRemote()
-        // 여기부터 도착하는 응답은 저장하지 않는다. 그 전에 저장된 것은 아래에서 지운다.
-        UserDataGeneration.advance()
+        // 지우기 전에 세대를 올린다. 이후 도착하는 응답(질문·추천·추천 로그)은 저장되지 않는다.
         try await store.deleteAllUserData()
         try LocalPhotoStore.deleteAll()
         // 추천 기록에는 메모 원문과 요청 문장이 있다. 전체 삭제에 포함하고, 실패는 호출자가 사용자에게 알린다.

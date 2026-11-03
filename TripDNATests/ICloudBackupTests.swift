@@ -9,6 +9,8 @@ private actor FakeBackupRemote: BackupRemote {
     var snapshot: Data?
     var uploads = 0
     var failDelete = false
+    /// 사진을 내려받지 못한 것처럼 폴더를 만들지 않아, 사진 폴더를 바꾸는 단계가 실패하게 한다.
+    var skipPhotoDownload = false
 
     init(manifest: BackupManifest? = nil, snapshot: Data? = nil) {
         self.manifest = manifest
@@ -16,6 +18,7 @@ private actor FakeBackupRemote: BackupRemote {
     }
 
     func setFailDelete() { failDelete = true }
+    func setSkipPhotoDownload() { skipPhotoDownload = true }
 
     func accountAvailable() async throws -> Bool { true }
     func fetchManifest() async throws -> BackupManifest? { manifest }
@@ -29,6 +32,7 @@ private actor FakeBackupRemote: BackupRemote {
         uploads += 1
     }
     func downloadPhotos(_ names: [String], into folder: URL) async throws {
+        if skipPhotoDownload { return }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }
     func deleteAll() async throws {
@@ -149,6 +153,30 @@ struct ICloudBackupTests {
 
         await #expect(throws: (any Error).self) { try await backup.restore() }
         #expect(try await store.loadProfile()?.id == "me")
+    }
+
+    @Test func failedRestoreKeepsExistingPhotos() async throws {
+        let other = try makeStore()
+        try await other.saveProfile(profile("old"))
+        let otherRemote = FakeBackupRemote()
+        await makeBackup(other, otherRemote).backUpIfNeeded()
+        let remote = FakeBackupRemote(manifest: await otherRemote.manifest, snapshot: await otherRemote.snapshot)
+        await remote.setSkipPhotoDownload()
+
+        let photos = FileManager.default.temporaryDirectory.appendingPathComponent("backup-photos-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
+        let photo = photos.appendingPathComponent("mine.jpg")
+        try Data("photo".utf8).write(to: photo)
+        let store = try makeStore()
+        try await store.saveProfile(profile("me"))
+        let backup = ICloudBackup(store: store, remote: remote, defaults: makeDefaults(), photoFolder: photos)
+
+        await #expect(throws: (any Error).self) { try await backup.restore() }
+        #expect(FileManager.default.fileExists(atPath: photo.path))
+        #expect(try await store.loadProfile()?.id == "me")
+        // 옆에 옮겨 둔 사본이 남지 않는다.
+        let siblings = try FileManager.default.contentsOfDirectory(atPath: photos.deletingLastPathComponent().path)
+        #expect(!siblings.contains { $0.hasPrefix("\(photos.lastPathComponent)-before-restore") })
     }
 
     @Test func failedRemoteDeletionIsReported() async throws {

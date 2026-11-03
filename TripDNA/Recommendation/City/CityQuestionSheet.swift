@@ -35,10 +35,16 @@ final class CityQuestionModel {
         }
         status = .loading(question: text)
         if draft.trimmingCharacters(in: .whitespacesAndNewlines) == text { draft = "" }
+        let generation = UserDataGeneration.current
         Task {
             let service = CityQuestionService(catalog: catalog, client: CityLLMConfiguration.makeSearchClient())
             do {
                 let answer = try await service.ask(text, card: card, request: request, conditionSummary: summary)
+                // 기다리는 사이 전체 삭제를 했으면 답을 버린다.
+                guard UserDataGeneration.current == generation else {
+                    status = .idle
+                    return
+                }
                 let entry = CityQuestionEntry(question: text, askedAt: Date(), conditionSummary: summary, answer: answer)
                 entries.append(entry)
                 status = .idle

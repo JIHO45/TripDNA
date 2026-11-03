@@ -203,6 +203,7 @@ final class CityRecommendationViewModel {
             return
         }
         state = .loading
+        let generation = UserDataGeneration.current
         let tiers = (try? await dependencies.store.loadWantedTiers()) ?? WantedConceptTiers()
         var excludedCountries = Set<String>()
         excludedCountries.formUnion((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
@@ -233,7 +234,8 @@ final class CityRecommendationViewModel {
                 homeCountryExcluded: homeExcluded, homeCountry: dependencies.homeCountryCode,
                 departureAirport: departureAirport, memories: memories
             )
-            guard !Task.isCancelled else { return }
+            // 기다리는 사이 전체 삭제를 했으면 결과를 버린다.
+            guard !Task.isCancelled, UserDataGeneration.current == generation else { return }
             lastRecord = record
             originalRecord = nil
             budgetChange = nil
@@ -251,6 +253,7 @@ final class CityRecommendationViewModel {
             await dependencies.recordFirstRecommendationIfNeeded(source: "city")
             await dependencies.track(.cityRecommendationReceived)
         } catch {
+            guard UserDataGeneration.current == generation else { return }
             if let retryID = Self.retryID(after: error, usageID: usageID, isRetry: isRetry) {
                 _ = try? await dependencies.store.updateCityState { $0.retryUsageID = retryID }
             }

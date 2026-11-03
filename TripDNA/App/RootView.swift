@@ -7,6 +7,7 @@ struct RootView: View {
     @State private var restoreOffer: BackupManifest?
     @State private var isRestoring = false
     @State private var restoreFailed = false
+    @State private var showsStorageWarning = false
 
     var body: some View {
         Group {
@@ -35,12 +36,18 @@ struct RootView: View {
         } message: { manifest in
             Text("Backup from \(manifest.createdAt.formatted(date: .abbreviated, time: .shortened)) · \(manifest.tripCount) trips. Restore it on this device? Even if you start fresh, you can restore it later from iCloud backup in Settings.")
         }
+        .alert("Couldn't open your saved data", isPresented: $showsStorageWarning) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your existing records haven't been deleted, but anything you add now won't be saved. Fully close TripDNA and open it again. If this keeps happening, free up storage on your iPhone or update the app.")
+        }
         .alert("Couldn't restore", isPresented: $restoreFailed) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("You can try again from iCloud backup in Settings.")
         }
         .task {
+            showsStorageWarning = dependencies.storageUnavailable
             await dependencies.restore(session: session)
             if let backup = dependencies.backup {
                 // 온보딩 전(새로 설치한 기기)에만 되살리기를 먼저 묻는다. 묻는 동안에는 올리지 않는다.

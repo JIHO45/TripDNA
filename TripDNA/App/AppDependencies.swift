@@ -1,10 +1,19 @@
 import Foundation
+import Synchronization
 
 enum AppPersistence {
     /// 기기에 남는 SwiftData 저장소. 출시 빌드가 쓴다.
     case onDisk
     /// 프리뷰·테스트용. 앱을 닫으면 사라진다.
     case inMemory
+}
+
+/// 전체 삭제 횟수. 응답을 기다리는 요청은 시작할 때 값을 들고 있다가, 그 사이 전체 삭제가 있었으면
+/// 받은 결과를 저장하지 않는다(지운 기록이 늦게 도착한 응답으로 되살아나지 않게).
+nonisolated enum UserDataGeneration {
+    private static let value = Mutex(0)
+    static var current: Int { value.withLock { $0 } }
+    static func advance() { value.withLock { $0 += 1 } }
 }
 
 @Observable
@@ -22,6 +31,8 @@ final class AppDependencies {
     /// 기기에 남는 저장소일 때만 있다. 프리뷰·테스트·데모는 iCloud에 닿지 않는다.
     let backup: ICloudBackup?
     let quizService = TasteQuizService()
+    /// 기기 저장소를 열지 못해 임시 저장소로 돌고 있다. 이번 실행의 기록은 앱을 닫으면 사라지므로 사용자에게 알린다.
+    let storageUnavailable: Bool
 
     var interestTagIDs: Set<String> = []
     /// 사는 나라는 기본으로 후보에서 제외하고, 추천 조건의 "사는 나라도 포함"으로 매번 넣을 수 있다.
@@ -170,6 +181,8 @@ final class AppDependencies {
     func deleteAccount(session: SessionStore) async throws {
         // iCloud 사본을 먼저 지운다. 실패하면 기기 기록도 그대로 두고 알린다(사본만 남는 일을 막는다).
         try await backup?.deleteRemote()
+        // 여기부터 도착하는 응답은 저장하지 않는다. 그 전에 저장된 것은 아래에서 지운다.
+        UserDataGeneration.advance()
         try await store.deleteAllUserData()
         try LocalPhotoStore.deleteAll()
         // 추천 기록에는 메모 원문과 요청 문장이 있다. 전체 삭제에 포함하고, 실패는 호출자가 사용자에게 알린다.
@@ -228,6 +241,7 @@ final class AppDependencies {
         #endif
         let store = Self.makeStore(persistence: effectivePersistence, countries: countries, tags: tags)
         self.store = store
+        storageUnavailable = effectivePersistence == .onDisk && store is InMemoryAppStore
         if effectivePersistence == .onDisk, !AppStorageLocation.isIsolated, let local = store as? SwiftDataAppStore {
             backup = ICloudBackup(store: local)
         } else {
@@ -281,7 +295,7 @@ final class AppDependencies {
 
     /// 저장소를 만들지 못하면(디스크 손상·마이그레이션 실패) 앱을 죽이는 대신
     /// 인메모리로 계속 쓰게 한다. 이번 실행의 기록은 남지 않지만, 사용자가 앱을
-    /// 아예 열지 못하는 상황은 피한다.
+    /// 아예 열지 못하는 상황은 피한다. 기기의 기존 저장소 파일은 건드리지 않으며, `storageUnavailable`로 알린다.
     private static func makeStore(
         persistence: AppPersistence,
         countries: [CountryProfile],

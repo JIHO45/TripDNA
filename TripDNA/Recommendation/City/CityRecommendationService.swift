@@ -128,6 +128,7 @@ nonisolated struct CityRecommendationService: Sendable {
         now: Date = Date()
     ) async throws -> CityRecommendationRecord {
         guard let primary = request.primary else { throw CityRecommendationError.notReady }
+        let generation = UserDataGeneration.current
         let month = request.month ?? request.startDate.map { Calendar.current.component(.month, from: $0) }
         var input = CityRankingInput(primary: primary, secondary: request.secondary, tiers: tiers, month: month)
         input.seed = seed
@@ -224,7 +225,8 @@ nonisolated struct CityRecommendationService: Sendable {
             rawResponse: raw, understanding: parsed?.understanding, cards: selection.cards,
             error: failure.map { String(describing: $0) } ?? (parsed != nil && selection.cards.isEmpty ? "noneWithinBudget" : nil), latencySeconds: Date().timeIntervalSince(start)
         )
-        try? log.save(record)
+        // 요청 문장·메모가 든 기록이라, 기다리는 사이 전체 삭제를 했으면 남기지 않는다.
+        if UserDataGeneration.current == generation { try? log.save(record) }
         if let failure { throw failure }
         return record
     }

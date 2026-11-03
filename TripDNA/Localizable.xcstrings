@@ -3257,6 +3257,16 @@
         }
       }
     },
+    "Couldn't open your saved data": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장된 기록을 열지 못했어요"
+          }
+        }
+      }
+    },
     "Couldn't read the photo.": {
       "localizations": {
         "ko": {
@@ -10521,6 +10531,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "가장 강한 취향"
+          }
+        }
+      }
+    },
+    "Your existing records haven't been deleted, but anything you add now won't be saved. Fully close TripDNA and open it again. If this keeps happening, free up storage on your iPhone or update the app.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기존 기록은 지워지지 않았지만, 지금 추가하는 내용은 저장되지 않아요. TripDNA를 완전히 종료한 뒤 다시 열어 주세요. 계속 이러면 iPhone 저장 공간을 확보하거나 앱을 업데이트해 주세요."
           }
         }
       }

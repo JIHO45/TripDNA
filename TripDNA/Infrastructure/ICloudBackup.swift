@@ -308,12 +308,24 @@ final class ICloudBackup {
             guard let manifest = try await remote.fetchManifest() else { throw BackupError.notFound }
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("restore-\(UUID().uuidString)", isDirectory: true)
             try await remote.downloadPhotos(manifest.photoNames, into: folder)
-            // 내려받은 사진들로 사진 폴더를 통째로 바꾼다.
+            // 내려받은 사진들로 사진 폴더를 통째로 바꾼다. 기존 사진은 옆으로 옮겨 두었다가
+            // 기록까지 다 되살린 뒤에만 지운다. 중간에 실패하면 기존 사진을 제자리로 돌린다.
             let files = FileManager.default
-            if files.fileExists(atPath: photoFolder.path) { try files.removeItem(at: photoFolder) }
-            try files.createDirectory(at: photoFolder.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try files.moveItem(at: folder, to: photoFolder)
-            try await store.restoreBackup(snapshot)
+            let previous = photoFolder.deletingLastPathComponent()
+                .appendingPathComponent("\(photoFolder.lastPathComponent)-before-restore-\(UUID().uuidString)", isDirectory: true)
+            let hadPhotos = files.fileExists(atPath: photoFolder.path)
+            if hadPhotos { try files.moveItem(at: photoFolder, to: previous) }
+            do {
+                try files.createDirectory(at: photoFolder.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try files.moveItem(at: folder, to: photoFolder)
+                try await store.restoreBackup(snapshot)
+            } catch {
+                // 기존 사진은 옆에 있으므로 지금 자리의 폴더는 내려받은 사진뿐이다.
+                try? files.removeItem(at: photoFolder)
+                if hadPhotos { try? files.moveItem(at: previous, to: photoFolder) }
+                throw error
+            }
+            if hadPhotos { try? files.removeItem(at: previous) }
         } catch {
             status = Self.status(for: error)
             throw error

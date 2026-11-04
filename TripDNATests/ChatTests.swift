@@ -1,0 +1,261 @@
+import Foundation
+import Synchronization
+import Testing
+@testable import TripDNA
+
+/// 대화 순서대로 답을 돌려주는 가짜 LLM. 받은 요청의 목적을 기록한다.
+final class FakeChat: ChatClient, @unchecked Sendable {
+    private let calls = Mutex<[ChatPurpose]>([])
+    let handler: @Sendable (ChatPurpose, [ChatTurn]) throws -> ChatReply
+
+    init(_ handler: @escaping @Sendable (ChatPurpose, [ChatTurn]) throws -> ChatReply) { self.handler = handler }
+
+    var purposes: [ChatPurpose] { calls.withLock { $0 } }
+
+    func chat(system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?) async throws -> ChatReply {
+        calls.withLock { $0.append(purpose) }
+        return try handler(purpose, turns)
+    }
+
+    static func text(_ text: String, usage: AIUsage? = nil) -> ChatReply {
+        ChatReply(reply: CitySearchReply(content: [CityContentBlock(type: "text", text: text)], stopReason: "end_turn"), usage: usage)
+    }
+}
+
+/// persist 호출을 모은다.
+final class Saved: @unchecked Sendable {
+    private let items = Mutex<[ChatConversation]>([])
+    var all: [ChatConversation] { items.withLock { $0 } }
+    func add(_ c: ChatConversation) { items.withLock { $0.append(c) } }
+}
+
+struct ChatTests {
+    static let now = Date(timeIntervalSince1970: 1_800_000_000)
+    static let context = ChatContextSnapshot(text: "묻는 곳: 추천 탭", builtAt: now, includesRatings: false)
+
+    static func conversation(pairs: Int, length: Int = 10, summary: ChatSummary? = nil, includesRatings: Bool = false) -> ChatConversation {
+        var c = ChatService.newConversation(
+            tab: .recommendation,
+            context: ChatContextSnapshot(text: "정보", builtAt: now, includesRatings: includesRatings), now: now
+        )
+        for i in 0..<pairs {
+            c.messages.append(ChatMessage(role: .user, text: "q\(i)" + String(repeating: "가", count: length), date: now))
+            c.messages.append(ChatMessage(role: .assistant, text: "a\(i)" + String(repeating: "나", count: length), date: now))
+        }
+        c.summary = summary
+        return c
+    }
+
+    // MARK: 저장
+
+    @Test func conversationsSurviveReopenAndDeleteAll() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).store")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let usage = AIUsage(share: 0.4, resetAt: Self.now, subscribed: false)
+        do {
+            let store = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+            let saved = try await store.updateChatState(ifGeneration: store.dataGeneration.current) {
+                $0.upsert(Self.conversation(pairs: 1))
+                $0.usage = usage
+            }
+            #expect(saved)
+        }
+        let reopened = SwiftDataAppStore(container: try SwiftDataAppStore.makeContainer(url: url), countries: [], tags: [])
+        let state = try await reopened.loadChatState()
+        #expect(state.conversations.first?.messages.count == 2)
+        #expect(state.usage == usage)
+
+        let stores: [any AppStore] = [reopened, InMemoryAppStore()]
+        for store in stores {
+            try await store.updateChatState(ifGeneration: store.dataGeneration.current) { $0.upsert(Self.conversation(pairs: 1)) }
+            let generation = store.dataGeneration.current
+            try await store.deleteAllUserData()
+            #expect(try await store.loadChatState() == ChatState())
+            // 기다리던 답은 전체 삭제 뒤에 저장하지 않는다.
+            #expect(try await !store.updateChatState(ifGeneration: generation) { $0.upsert(Self.conversation(pairs: 1)) })
+        }
+    }
+
+    // MARK: 보낼 내용
+
+    @Test func sendsSummaryPlusMessagesAfterIt() {
+        let c = Self.conversation(pairs: 3, summary: ChatSummary(text: "요약본", coveredCount: 2))
+        guard case .send(let system, let turns) = ChatPlanner.plan(c, question: "새 질문", baseSystem: "기본") else {
+            Issue.record("expected send"); return
+        }
+        #expect(system.contains("요약본") && system.contains("정보"))
+        #expect(turns.map(\.content) == [c.messages[2].text, c.messages[3].text, c.messages[4].text, c.messages[5].text, "새 질문"])
+        #expect(turns.first?.role == .user && turns.last?.role == .user)
+    }
+
+    @Test func longConversationIsSummarizedKeepingRecentTurns() {
+        let c = Self.conversation(pairs: 10, length: 1000)
+        let limit = 10_000
+        guard case .summarize(let upTo) = ChatPlanner.plan(c, question: "q", baseSystem: "b", limit: limit) else {
+            Issue.record("expected summarize"); return
+        }
+        #expect(upTo > 0 && upTo % 2 == 0)
+        #expect(upTo <= c.messages.count - ChatPlanner.keepRecentTurns * 2 || upTo == c.messages.count)
+        // 요약 뒤에는 보낼 수 있다.
+        var summarized = c
+        summarized.summary = ChatSummary(text: "요약", coveredCount: upTo)
+        if case .summarize = ChatPlanner.plan(summarized, question: "q", baseSystem: "b", limit: limit) {
+            // 요약 요청 한도 때문에 나눠 요약하는 경우만 허용
+            #expect(upTo < c.messages.count - ChatPlanner.keepRecentTurns * 2)
+        }
+    }
+
+    @Test func repeatedSummaryCoversExistingSummaryAndNewMessagesOnly() {
+        let c = Self.conversation(pairs: 4, summary: ChatSummary(text: "앞의 요약", coveredCount: 4))
+        let request = ChatPlanner.summaryRequest(c, upTo: 6)
+        #expect(request.contains("앞의 요약"))
+        #expect(!request.contains("q0") && !request.contains("q1"))
+        #expect(request.contains("q2") && request.contains("a2"))
+        #expect(!request.contains("q3"))
+    }
+
+    @Test func veryLongRecentReplyIsFoldedIntoSummary() {
+        // 최근 답 하나가 한도를 넘으면 최근 N번 안이라도 요약에 넣는다.
+        var c = Self.conversation(pairs: 2)
+        c.messages[3] = ChatMessage(role: .assistant, text: String(repeating: "x", count: 9_000), date: Self.now)
+        // 요약 요청도 한도 안에 들어가야 하므로 앞의 짧은 주고받기부터 나눠 요약하고, 다음에 긴 답을 요약한다.
+        guard case .summarize(let first) = ChatPlanner.plan(c, question: "q", baseSystem: "b", limit: 8_000) else {
+            Issue.record("expected summarize"); return
+        }
+        #expect(first == 2)
+        c.summary = ChatSummary(text: "요약", coveredCount: first)
+        guard case .summarize(let second) = ChatPlanner.plan(c, question: "q", baseSystem: "b", limit: 8_000) else {
+            Issue.record("expected second summarize"); return
+        }
+        #expect(second == 4)
+        c.summary = ChatSummary(text: "요약", coveredCount: second)
+        guard case .send(_, let turns) = ChatPlanner.plan(c, question: "q", baseSystem: "b", limit: 8_000) else {
+            Issue.record("expected send"); return
+        }
+        #expect(turns.map(\.content) == ["q"])
+    }
+
+    @Test func questionAloneTooLongIsRefusedBeforeSending() async {
+        let client = FakeChat { _, _ in FakeChat.text("x") }
+        let service = ChatService(client: client)
+        let question = String(repeating: "q", count: ChatPlanner.inputLimit)
+        await #expect(throws: ChatError.questionTooLong) {
+            _ = try await service.respond(to: question, in: Self.conversation(pairs: 0), ratingsAllowed: true) { _, _ in }
+        }
+        #expect(client.purposes.isEmpty)
+    }
+
+    // MARK: 요약 실패·잔액 부족
+
+    @Test func summaryIsKeptWhenReplyIsRefusedAndReusedNextTime() async throws {
+        let limited = AIUsageLimit(reason: .tooLarge, resetAt: Self.now, subscribed: false, share: 0.9)
+        let refuse = FakeChat { purpose, _ in
+            if purpose == .summary { return FakeChat.text("합친 요약") }
+            throw CityLLMError.usageLimit(limited)
+        }
+        let big = String(repeating: "가", count: 20_000)
+        var c = Self.conversation(pairs: 0)
+        for i in 0..<6 {
+            c.messages.append(ChatMessage(role: .user, text: "q\(i)" + big, date: Self.now))
+            c.messages.append(ChatMessage(role: .assistant, text: "a\(i)", date: Self.now))
+        }
+        let saved = Saved()
+        await #expect(throws: CityLLMError.usageLimit(limited)) {
+            _ = try await ChatService(client: refuse).respond(to: "질문", in: c, ratingsAllowed: true) { conversation, _ in saved.add(conversation) }
+        }
+        let withSummary = try #require(saved.all.last)
+        #expect(withSummary.summary?.text == "합친 요약")
+        #expect(withSummary.messages == c.messages)
+
+        let answer = FakeChat { _, _ in FakeChat.text("답") }
+        let done = try await ChatService(client: answer).respond(to: "질문", in: withSummary, ratingsAllowed: true) { _, _ in }
+        #expect(answer.purposes == [.chat])
+        #expect(done.messages.suffix(2).map(\.text) == ["질문", "답"])
+    }
+
+    @Test func failedSummaryLeavesConversationUntouched() async {
+        let failing = FakeChat { _, _ in throw CityLLMError.http(502) }
+        let c = Self.conversation(pairs: 6, length: 20_000)
+        let saved = Saved()
+        await #expect(throws: CityLLMError.http(502)) {
+            _ = try await ChatService(client: failing).respond(to: "질문", in: c, ratingsAllowed: true) { conversation, _ in saved.add(conversation) }
+        }
+        #expect(failing.purposes == [.summary])
+        #expect(saved.all.isEmpty)
+    }
+
+    @Test func answerAppendsBothMessagesAndTitle() async throws {
+        let usage = AIUsage(share: 0.2, resetAt: Self.now, subscribed: true)
+        let client = FakeChat { _, turns in
+            #expect(turns.map(\.content) == ["교토 가을 어때?\n둘째 줄"])
+            return FakeChat.text("좋아요", usage: usage)
+        }
+        let received = Mutex<AIUsage?>(nil)
+        let done = try await ChatService(client: client).respond(
+            to: "교토 가을 어때?\n둘째 줄", in: Self.conversation(pairs: 0), ratingsAllowed: true, now: Self.now
+        ) { _, u in received.withLock { $0 = u } }
+        #expect(done.title == "교토 가을 어때?")
+        #expect(done.messages.map(\.role) == [.user, .assistant])
+        #expect(received.withLock { $0 } == usage)
+    }
+
+    // MARK: 맥락과 평가 전송
+
+    @Test func contextLeavesOutTripsAndRatingsWhenNotAllowed() throws {
+        let trip = try CityMemoryAndTwoStageTests.trip(city: "교토", rating: 5, liked: "골목", evaluatedAt: Self.now)
+        var tiers = WantedConceptTiers()
+        tiers.place(.food, in: 1)
+        let off = ChatContextBuilder.build(tab: .trips, trips: [trip], tiers: tiers, saved: [], ratingsAllowed: false, now: Self.now)
+        #expect(!off.text.contains("교토") && !off.text.contains("골목"))
+        #expect(off.text.contains("여행 탭") && off.text.contains("1티어"))
+        #expect(!off.includesRatings)
+
+        let on = ChatContextBuilder.build(tab: .recommendation, trips: [trip], tiers: nil, saved: [], ratingsAllowed: true, now: Self.now)
+        #expect(on.text.contains("교토") && on.text.contains("<<<골목>>>") && on.text.contains("추천 탭"))
+        #expect(on.includesRatings)
+    }
+
+    @Test func turningRatingsOffBlocksConversationsThatHaveThem() async {
+        let c = Self.conversation(pairs: 1, includesRatings: true)
+        #expect(!c.canContinue(ratingsAllowed: false))
+        #expect(c.canContinue(ratingsAllowed: true))
+        #expect(Self.conversation(pairs: 1).canContinue(ratingsAllowed: false))
+        let client = FakeChat { _, _ in FakeChat.text("x") }
+        await #expect(throws: ChatError.readOnly) {
+            _ = try await ChatService(client: client).respond(to: "q", in: c, ratingsAllowed: false) { _, _ in }
+        }
+        #expect(client.purposes.isEmpty)
+    }
+
+    // MARK: 한도 안내와 프록시 계약
+
+    @Test func usageLimitMessagesDifferForFreeAndSubscribers() {
+        let free = AIUsageLimit(reason: .exhausted, resetAt: Self.now, subscribed: false, share: 1)
+        let sub = AIUsageLimit(reason: .exhausted, resetAt: Self.now, subscribed: true, share: 1)
+        let large = AIUsageLimit(reason: .tooLarge, resetAt: Self.now, subscribed: false, share: 0.5)
+        #expect(free.message != sub.message)
+        #expect(large.message != free.message && large.message != sub.message)
+    }
+
+    @Test func proxyDecodesChatLimitAndUsage() throws {
+        let response = HTTPURLResponse(url: URL(string: "https://x.example")!, statusCode: 429, httpVersion: nil, headerFields: nil)!
+        let body = Data(#"{"error":"quota","kind":"chat","reason":"tooLarge","resetAt":1800000000,"subscribed":true,"share":0.7}"#.utf8)
+        #expect(throws: CityLLMError.usageLimit(AIUsageLimit(reason: .tooLarge, resetAt: Self.now, subscribed: true, share: 0.7))) {
+            try CityLLMProxyClient.check(response, body)
+        }
+        let ok = Data(#"{"content":[{"type":"text","text":"hi"}],"stop_reason":"end_turn","usage":{"share":0.25,"resetAt":1800000000,"subscribed":false}}"#.utf8)
+        let reply = try JSONDecoder().decode(ChatReply.self, from: ok)
+        #expect(reply.usage == AIUsage(share: 0.25, resetAt: Self.now, subscribed: false))
+        #expect(reply.reply.content.first?.text == "hi")
+    }
+
+    @Test func chatBodyMatchesServerContract() {
+        let body = CityLLMProxyClient.chatBody(
+            model: "m", system: "s", turns: [ChatTurn(role: .user, content: "u")], purpose: .summary, searchUses: nil, requestID: "req-1234"
+        )
+        #expect(body["purpose"] as? String == "summary")
+        #expect(body["requestId"] as? String == "req-1234")
+        #expect(body["webSearchMaxUses"] == nil)
+        #expect((body["messages"] as? [[String: String]]) == [["role": "user", "content": "u"]])
+    }
+}

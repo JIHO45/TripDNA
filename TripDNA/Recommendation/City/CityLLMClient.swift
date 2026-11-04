@@ -14,8 +14,78 @@ nonisolated enum CityLLMError: Error, Equatable {
     case emptyResponse
     /// `max_tokens`에 닿아 응답이 잘렸다. 생각(thinking) 토큰도 이 한도에 들어간다.
     case truncated
-    /// 프록시의 이번 한도(무료 또는 구독)를 다 썼다. `resetAt`에 다시 채워진다.
+    /// 프록시의 이번 추천 한도(무료 또는 구독)를 다 썼다. `resetAt`에 다시 채워진다.
     case quotaExceeded(resetAt: Date)
+    /// 질문·대화의 AI 사용량(비용 예산)에 막혔다.
+    case usageLimit(AIUsageLimit)
+}
+
+/// 이번 기간 AI 사용량. 서버가 질문·대화 응답과 429에 붙인다.
+nonisolated struct AIUsage: Codable, Equatable, Sendable {
+    /// 쓴 비율(0~1).
+    let share: Double
+    let resetAt: Date
+    let subscribed: Bool
+}
+
+nonisolated struct AIUsageLimit: Equatable, Sendable {
+    enum Reason: String, Sendable {
+        /// 다 썼다.
+        case exhausted
+        /// 남았지만 이 요청을 처리하기에는 모자란다(긴 대화·긴 질문).
+        case tooLarge
+    }
+    let reason: Reason
+    let resetAt: Date
+    let subscribed: Bool
+    let share: Double?
+
+    /// 무료는 업그레이드 안내, 구독은 다시 채워지는 날짜만. 남았지만 모자란 경우는 줄이거나 새 대화를 권한다.
+    var message: String {
+        let time = resetAt.formatted(.dateTime.month().day().hour().minute())
+        switch (reason, subscribed) {
+        case (.tooLarge, _):
+            return String(localized: "There isn't enough AI usage left for this request. Try a shorter question or start a new conversation.")
+        case (.exhausted, true):
+            return String(localized: "You've used up this period's AI usage. It refills on \(time).")
+        case (.exhausted, false):
+            return String(localized: "You've used up this month's free AI usage. It refills on \(time). Subscribe to use more.")
+        }
+    }
+}
+
+/// 대화 한 차례. 서버는 user로 시작하고 끝나며 번갈아 오는 목록만 받는다.
+nonisolated struct ChatTurn: Equatable, Sendable {
+    enum Role: String, Codable, Sendable { case user, assistant }
+    let role: Role
+    let content: String
+}
+
+nonisolated enum ChatPurpose: String, Sendable {
+    case chat
+    /// 오래된 대화의 요약. 검색하지 않는다.
+    case summary
+}
+
+/// 대화 응답. 프록시면 이번 기간 AI 사용량이 함께 온다.
+nonisolated struct ChatReply: Decodable, Equatable, Sendable {
+    let reply: CitySearchReply
+    let usage: AIUsage?
+
+    private struct Usage: Decodable { let share: Double; let resetAt: TimeInterval; let subscribed: Bool }
+    private enum CodingKeys: String, CodingKey { case usage }
+
+    init(reply: CitySearchReply, usage: AIUsage?) { self.reply = reply; self.usage = usage }
+
+    init(from decoder: Decoder) throws {
+        reply = try CitySearchReply(from: decoder)
+        let raw = try? decoder.container(keyedBy: CodingKeys.self).decodeIfPresent(Usage.self, forKey: .usage)
+        usage = raw.map { AIUsage(share: $0.share, resetAt: Date(timeIntervalSince1970: $0.resetAt), subscribed: $0.subscribed) }
+    }
+}
+
+nonisolated protocol ChatClient: Sendable {
+    func chat(system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?) async throws -> ChatReply
 }
 
 nonisolated struct CityLLMConfiguration: Sendable {
@@ -33,8 +103,11 @@ nonisolated struct CityLLMConfiguration: Sendable {
         return proxy
     }
 
-    /// 두 클라이언트 모두 웹 검색 호출도 지원한다. 질문 기능이 쓴다.
-    static func makeSearchClient(bundle: Bundle = .main) -> (any CityLLMClient & CitySearchClient)? {
+    /// 대화 응답 한도. 생각 토큰도 들어간다. 예약 금액에 들어가므로 추천보다 작게 둔다.
+    static let chatMaxTokens = 8000
+
+    /// 두 클라이언트 모두 웹 검색 호출과 대화도 지원한다. 질문·대화 기능이 쓴다.
+    static func makeSearchClient(bundle: Bundle = .main) -> (any CityLLMClient & CitySearchClient & ChatClient)? {
         if let raw = bundle.object(forInfoDictionaryKey: "CityLLMProxyURL") as? String,
            !raw.isEmpty, let url = URL(string: raw) {
             return CityLLMProxyClient(url: url, model: model)
@@ -52,9 +125,10 @@ nonisolated struct CityLLMConfiguration: Sendable {
 /// → 200 {"content": [...], "stop_reason": "..."}. Messages API 응답을 가공 없이 돌려주므로
 /// 잘림·빈 응답 판정은 직접 호출과 같은 `messageText(from:)`로 한다.
 /// webSearchMaxUses가 있으면 서버가 `web_search_20250305` 도구를 붙인다.
-/// 서버는 검색 호출을 질문 1회로, 검색 없는 호출을 usageId별 추천 1회로 센다. 한도를 넘으면
-/// 429 {"resetAt": 유닉스 초, "subscribed": 구독 한도였는지}. 구독 중이면 헤더 X-Apple-Transaction(CityLLMCredentials)으로 알린다.
-nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
+/// 서버는 검색·대화 호출을 AI 사용량(비용 예산)으로, 검색 없는 추천 호출을 usageId별 추천 1회로 센다. 한도에 막히면
+/// 429 {"resetAt": 유닉스 초, "subscribed": 구독 한도였는지, "kind", "reason"?, "share"?}.
+/// 구독 중이면 헤더 X-Apple-Transaction(CityLLMCredentials)으로 알린다.
+nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient, ChatClient {
     let url: URL
     let model: String
     /// 추천받기 한 번의 ID. 조건 추출과 추천 본문이 같은 ID로 한 번만 세진다(`makeClient(usageID:)`).
@@ -66,12 +140,36 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "system": system, "user": user, "model": model,
-            "maxTokens": String(CityLLMConfiguration.maxTokens), "webSearchMaxUses": maxUses
+            "maxTokens": String(CityLLMConfiguration.maxTokens), "webSearchMaxUses": maxUses,
+            "requestId": UUID().uuidString
         ] as [String: Any])
         for (field, value) in try await CityLLMCredentials.headers() { request.setValue(value, forHTTPHeaderField: field) }
         let (data, response) = try await CityLLMConfiguration.session.data(for: request)
         try Self.check(response, data)
         return try JSONDecoder().decode(CitySearchReply.self, from: data)
+    }
+
+    func chat(system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?) async throws -> ChatReply {
+        var request = URLRequest(url: url, timeoutInterval: 120)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: Self.chatBody(
+            model: model, system: system, turns: turns, purpose: purpose, searchUses: searchUses, requestID: UUID().uuidString
+        ))
+        for (field, value) in try await CityLLMCredentials.headers() { request.setValue(value, forHTTPHeaderField: field) }
+        let (data, response) = try await CityLLMConfiguration.session.data(for: request)
+        try Self.check(response, data)
+        return try JSONDecoder().decode(ChatReply.self, from: data)
+    }
+
+    static func chatBody(model: String, system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?, requestID: String) -> [String: Any] {
+        var body: [String: Any] = [
+            "system": system, "model": model, "purpose": purpose.rawValue, "requestId": requestID,
+            "maxTokens": String(CityLLMConfiguration.chatMaxTokens),
+            "messages": turns.map { ["role": $0.role.rawValue, "content": $0.content] }
+        ]
+        if let searchUses { body["webSearchMaxUses"] = searchUses }
+        return body
     }
 
     func complete(system: String, user: String) async throws -> String {
@@ -93,9 +191,22 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
 
     static func check(_ response: URLResponse, _ data: Data) throws {
         guard let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) else { return }
-        struct Quota: Decodable { let resetAt: TimeInterval }
+        struct Quota: Decodable {
+            let resetAt: TimeInterval
+            let kind: String?
+            let reason: String?
+            let subscribed: Bool?
+            let share: Double?
+        }
         if http.statusCode == 429, let quota = try? JSONDecoder().decode(Quota.self, from: data) {
-            throw CityLLMError.quotaExceeded(resetAt: Date(timeIntervalSince1970: quota.resetAt))
+            let resetAt = Date(timeIntervalSince1970: quota.resetAt)
+            if quota.kind == "chat" {
+                throw CityLLMError.usageLimit(AIUsageLimit(
+                    reason: quota.reason.flatMap(AIUsageLimit.Reason.init) ?? .exhausted,
+                    resetAt: resetAt, subscribed: quota.subscribed ?? false, share: quota.share
+                ))
+            }
+            throw CityLLMError.quotaExceeded(resetAt: resetAt)
         }
         throw CityLLMError.http(http.statusCode)
     }
@@ -110,7 +221,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient {
 }
 
 /// 개발용. 키는 Keychain에서만 읽고 어디에도 기록하지 않는다. 출시 빌드에는 들어가지 않는다.
-nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
+nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient, ChatClient {
     let apiKey: String
     let model: String
 
@@ -139,6 +250,27 @@ nonisolated struct AnthropicDirectClient: CityLLMClient, CitySearchClient {
             throw CityLLMError.http(http.statusCode)
         }
         return try JSONDecoder().decode(CitySearchReply.self, from: data)
+    }
+
+    func chat(system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?) async throws -> ChatReply {
+        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!, timeoutInterval: 120)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        var body: [String: Any] = [
+            "model": model, "max_tokens": CityLLMConfiguration.chatMaxTokens, "system": system,
+            "messages": turns.map { ["role": $0.role.rawValue, "content": $0.content] },
+            "cache_control": ["type": "ephemeral"]
+        ]
+        if let searchUses { body["tools"] = [["type": "web_search_20250305", "name": "web_search", "max_uses": searchUses]] }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await CityLLMConfiguration.session.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw CityLLMError.http(http.statusCode)
+        }
+        // 직접 호출에는 사용량 계산이 없다.
+        return ChatReply(reply: try JSONDecoder().decode(CitySearchReply.self, from: data), usage: nil)
     }
 
     func complete(system: String, user: String) async throws -> String {

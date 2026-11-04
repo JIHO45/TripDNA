@@ -58,7 +58,12 @@ final class CityQuestionModel {
                 }
             } catch CityQuestionError.notConfigured {
                 status = .failed(question: text, message: String(localized: "The AI connection isn't set up yet. A proxy URL (CityLLMProxyURL) or a development key is required."))
+            } catch CityLLMError.usageLimit(let limit) {
+                status = .failed(question: text, message: limit.message)
+                // 구독자에게는 구독 화면을 열지 않는다(추가 구매가 없다). 남았지만 모자란 경우도 열지 않는다.
+                showsSubscription = limit.reason == .exhausted && !limit.subscribed
             } catch CityLLMError.quotaExceeded(let resetAt) {
+                // 새 서버를 배포하기 전의 횟수 한도 응답.
                 let subscribed = await Subscription.isActive()
                 status = .failed(question: text, message: CityLLMProxyClient.quotaMessage(String(localized: "questions"), resetAt: resetAt, subscribed: subscribed))
                 showsSubscription = !subscribed
@@ -70,7 +75,6 @@ final class CityQuestionModel {
 }
 
 /// "이 도시에 대해 묻기" 시트. 중간 높이로 열려 지난 질문을 먼저 보여주고, 입력칸을 누르면 전체 높이로 늘어난다.
-/// 초안: 답의 세 부분 이름(자료 근거 / 조언 / 확인하지 못한 것)은 시안 ⓖ의 임시 문구다.
 struct CityQuestionSheet: View {
     @Bindable var model: CityQuestionModel
     let card: CityRecommendationRecord.Card
@@ -222,37 +226,7 @@ struct CityQuestionSheet: View {
             .background(Color.dnaSurface2, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
     }
 
-    @ViewBuilder
     private func answerView(_ answer: CityAnswer) -> some View {
-        answerPart(String(localized: "Evidence"), answer.evidence)
-        answerPart(String(localized: "Advice"), answer.advice)
-        answerPart(String(localized: "Couldn't confirm"), answer.unconfirmed)
-        if !answer.sources.isEmpty {
-            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                // 출처는 답 전체에 대한 것이다. 문장별로 어느 출처인지 연결하지 않으므로 본문에 번호를 달지 않는다.
-                Text("Sources found in search")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
-                ForEach(Array(answer.sources.enumerated()), id: \.offset) { index, source in
-                    let published = source.published.map { String(localized: "Published \($0)") } ?? String(localized: "Publication date unknown")
-                    Link(destination: source.url) {
-                        Text(String(localized: "[\(index + 1)] \(source.title) · \(published) · retrieved \(source.retrievedAt.formatted(.dateTime.month().day()))"))
-                            .dnaFont(.caption)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .foregroundStyle(Color.dnaActionText)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func answerPart(_ title: String, _ text: String) -> some View {
-        if !text.isEmpty {
-            VStack(alignment: .leading, spacing: DNASpacing.xxs) {
-                Text(title).dnaFont(.cardTitle).foregroundStyle(Color.dnaTextPrimary)
-                Text(text).dnaFont(.body).foregroundStyle(Color.dnaTextPrimary)
-            }
-        }
+        AIAnswerView(text: answer.text, sources: answer.sources)
     }
 }

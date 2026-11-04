@@ -9,7 +9,7 @@ struct CityQuestionTests {
         try JSONDecoder().decode(CitySearchReply.self, from: Data(json.utf8))
     }
 
-    static let answerText = #"{\"evidence\":\"입장료는 15유로예요.\",\"advice\":\"미식 취향에 맞아요.\",\"unconfirmed\":\"예약 여부\"}"#
+    static let answerText = #"입장료는 **15유로**예요.\n미식 취향에 맞아요."#
 
     static func fixture(results: String, citedURL: String, stop: String = "end_turn") -> String {
         """
@@ -24,9 +24,9 @@ struct CityQuestionTests {
 
     static let okResults = #"[{"type":"web_search_result","url":"https://a.example/x","title":"공식 안내","page_age":"April 30, 2026","encrypted_content":"zz"}]"#
 
-    @Test func parsesThreePartsAndSources() throws {
+    @Test func parsesTextAfterSearchAndSources() throws {
         let answer = try CityQuestionParser.parse(Self.reply(Self.fixture(results: Self.okResults, citedURL: "https://a.example/x")), now: Self.now)
-        #expect(answer.evidence == "입장료는 15유로예요." && answer.advice == "미식 취향에 맞아요." && answer.unconfirmed == "예약 여부")
+        #expect(answer.text == "입장료는 **15유로**예요.\n미식 취향에 맞아요.")
         #expect(answer.sources.count == 1)
         #expect(answer.sources[0].url.absoluteString == "https://a.example/x")
         #expect(answer.sources[0].title == "공식 안내")
@@ -42,8 +42,14 @@ struct CityQuestionTests {
         let errorResult = #"{"type":"web_search_tool_result_error","error_code":"unavailable"}"#
         let answer = try CityQuestionParser.parse(Self.reply(Self.fixture(results: errorResult, citedURL: "https://a.example/x")), now: Self.now)
         #expect(answer.sources.isEmpty && answer.searchFailed)
-        #expect(answer.evidence == "입장료는 15유로예요.")
-        #expect(answer.unconfirmed.contains("확인하지 못했어요"))
+        #expect(answer.text.hasPrefix("입장료는"))
+        #expect(answer.text.contains("확인하지 못했어요"))
+    }
+
+    @Test func decodesLegacyThreePartAnswer() throws {
+        let json = #"{"evidence":"근거","advice":"조언","unconfirmed":"","sources":[],"searchFailed":false}"#
+        let answer = try JSONDecoder().decode(CityAnswer.self, from: Data(json.utf8))
+        #expect(answer.text == "근거\n\n조언")
     }
 
     @Test func pauseTurnAndRefusalFail() throws {

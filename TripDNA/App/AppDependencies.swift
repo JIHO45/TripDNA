@@ -178,6 +178,7 @@ final class AppDependencies {
         // 추천 기록에는 메모 원문과 요청 문장이 있다. 전체 삭제에 포함하고, 실패는 호출자가 사용자에게 알린다.
         try CityRecommendationLog.standard.deleteAll()
         CityMemoryConsent.reset()
+        ChatConsent.reset()
         EvaluationNotificationService.clearAll()
         AppStorageLocation.defaults.removeObject(forKey: AutoPhotoFallbackService.consentKey)
         AppStorageLocation.defaults.removeObject(forKey: "tripdna.dailyPhotoAutoFallbackAsked")

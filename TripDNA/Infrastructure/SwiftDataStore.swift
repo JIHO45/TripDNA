@@ -201,6 +201,7 @@ actor SwiftDataAppStore: nonisolated AppStore {
         static let wantedTiers = "wantedTiers"
         static let onboardingDraft = "onboardingDraft"
         static let cityState = "cityState"
+        static let chatState = "chatState"
     }
 
     private let container: ModelContainer
@@ -467,6 +468,14 @@ actor SwiftDataAppStore: nonisolated AppStore {
 
     func saveCityState(_ state: CityRecommendationState, ifGeneration generation: Int) async throws -> Bool {
         try dataGeneration.ifCurrent(generation) { try saveSingleton(state, key: SingletonKey.cityState) }
+    }
+
+    func loadChatState() async throws -> ChatState {
+        try singleton(ChatState.self, key: SingletonKey.chatState) ?? ChatState()
+    }
+
+    func saveChatState(_ state: ChatState, ifGeneration generation: Int) async throws -> Bool {
+        try dataGeneration.ifCurrent(generation) { try saveSingleton(state, key: SingletonKey.chatState) }
     }
 
     func loadOnboardingDraft() async throws -> OnboardingDraft? {

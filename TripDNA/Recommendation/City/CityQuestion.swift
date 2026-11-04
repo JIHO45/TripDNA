@@ -53,7 +53,7 @@ nonisolated struct CityContentBlock: Decodable, Equatable, Sendable {
 
 // MARK: - 답
 
-/// 초안: 세 부분의 이름은 시안(RecoStates ⓖ)의 임시 문구이며 최종 문구는 정해지지 않았다.
+/// 일반 LLM 채팅처럼 본문 한 덩어리와, 그 아래 붙는 출처.
 nonisolated struct CityAnswer: Codable, Equatable, Sendable {
     struct Source: Codable, Equatable, Sendable {
         let title: String
@@ -62,15 +62,33 @@ nonisolated struct CityAnswer: Codable, Equatable, Sendable {
         let published: String?
         let retrievedAt: Date
     }
-    /// 자료 근거. 번호는 `sources`의 1부터 시작하는 순서.
-    let evidence: String
-    /// 조언(적합성 판단).
-    let advice: String
-    /// 확인하지 못한 것.
-    let unconfirmed: String
+    /// 답 본문(가벼운 마크다운).
+    let text: String
     let sources: [Source]
     /// 검색을 시도했지만 결과가 오류였던 경우.
     let searchFailed: Bool
+
+    init(text: String, sources: [Source], searchFailed: Bool) {
+        self.text = text; self.sources = sources; self.searchFailed = searchFailed
+    }
+
+    private enum CodingKeys: String, CodingKey { case text, sources, searchFailed }
+    /// 예전에 저장한 답은 세 부분(evidence/advice/unconfirmed)으로 나뉘어 있었다.
+    private enum LegacyKeys: String, CodingKey { case evidence, advice, unconfirmed }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sources = try c.decode([Source].self, forKey: .sources)
+        searchFailed = try c.decode(Bool.self, forKey: .searchFailed)
+        if let text = try c.decodeIfPresent(String.self, forKey: .text) {
+            self.text = text
+        } else {
+            let old = try decoder.container(keyedBy: LegacyKeys.self)
+            text = [LegacyKeys.evidence, .advice, .unconfirmed]
+                .compactMap { try? old.decodeIfPresent(String.self, forKey: $0) }
+                .filter { !$0.isEmpty }.joined(separator: "\n\n")
+        }
+    }
 }
 
 nonisolated enum CityQuestionError: Error, Equatable {
@@ -81,8 +99,6 @@ nonisolated enum CityQuestionError: Error, Equatable {
 }
 
 nonisolated enum CityQuestionParser {
-    private struct Parts: Decodable { let evidence: String?; let advice: String?; let unconfirmed: String? }
-
     static func parse(_ reply: CitySearchReply, now: Date) throws -> CityAnswer {
         switch reply.stopReason {
         case "refusal": throw CityQuestionError.refused
@@ -91,13 +107,15 @@ nonisolated enum CityQuestionParser {
         }
         let results = reply.content.flatMap(\.results)
         let allowed = Dictionary(results.map { ($0.url, $0) }, uniquingKeysWith: { a, _ in a })
-        let searched = reply.content.contains { $0.type == "server_tool_use" || $0.type == "web_search_tool_result" }
-        let failed = searched && reply.content.contains { $0.searchError != nil }
+        let isTool: (CityContentBlock) -> Bool = { $0.type == "server_tool_use" || $0.type == "web_search_tool_result" }
+        let failed = reply.content.contains(where: isTool) && reply.content.contains { $0.searchError != nil }
 
-        let text = reply.content.compactMap { $0.type == "text" ? $0.text : nil }.joined()
-        guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start < end,
-              let data = String(text[start...end]).data(using: .utf8),
-              let parts = try? JSONDecoder().decode(Parts.self, from: data) else { throw CityQuestionError.unreadable }
+        // 검색 전에 쓴 "검색할게요" 같은 말은 버리고, 마지막 검색 뒤의 글만 답으로 쓴다.
+        let afterSearch = reply.content.lastIndex(where: isTool).map { reply.content.index(after: $0) } ?? reply.content.startIndex
+        var text = reply.content[afterSearch...].compactMap { $0.type == "text" ? $0.text : nil }.joined()
+        for match in text.matches(of: /https?:\/\/\S+/).reversed() { text.removeSubrange(match.range) }
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { throw CityQuestionError.unreadable }
 
         // 출처는 이 응답의 검색 결과에 실제로 있던 URL만, 인용된 순서로. 모델이 쓴 URL은 믿지 않는다.
         var sources: [CityAnswer.Source] = []
@@ -106,21 +124,10 @@ nonisolated enum CityQuestionParser {
                   !sources.contains(where: { $0.url == parsed }) else { continue }
             sources.append(.init(title: hit.title ?? parsed.host ?? url, url: parsed, published: hit.pageAge, retrievedAt: now))
         }
-        func clean(_ s: String?) -> String {
-            var out = s ?? ""
-            for match in out.matches(of: /https?:\/\/\S+/).reversed() { out.removeSubrange(match.range) }
-            return out.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        var unconfirmed = clean(parts.unconfirmed)
         if failed && sources.isEmpty {
-            unconfirmed += (unconfirmed.isEmpty ? "" : "\n") + String(localized: "Search failed, so we couldn't check the latest info. That doesn't mean there isn't any.")
+            text += "\n\n" + String(localized: "Search failed, so we couldn't check the latest info. That doesn't mean there isn't any.")
         }
-        let evidence = clean(parts.evidence), advice = clean(parts.advice)
-        guard !(evidence.isEmpty && advice.isEmpty && unconfirmed.isEmpty) else { throw CityQuestionError.unreadable }
-        return CityAnswer(
-            evidence: evidence,
-            advice: advice, unconfirmed: unconfirmed, sources: sources, searchFailed: failed
-        )
+        return CityAnswer(text: text, sources: sources, searchFailed: failed)
     }
 }
 
@@ -140,8 +147,9 @@ nonisolated struct CityQuestionService: Sendable {
     - 검색이 실패했거나 근거가 부족하면 확인하지 못했다고 그대로 쓰세요. 못 찾은 것을 "없다"로 바꾸지 마세요.
     - URL, 사이트 이름, 날짜를 지어내지 마세요. 본문에 URL을 쓰지 마세요(출처는 검색 도구가 따로 붙입니다).
     - 입력의 등급 이름, 세부 id 같은 내부 용어를 문장에 쓰지 마세요. 입력에 없는 사용자 사실을 만들지 마세요.
-    - 마지막에 다음 JSON 객체 하나만 출력하세요. 키는 영어, 값은 한국어 문장입니다. 해당 내용이 없으면 빈 문자열.
-      {"evidence": "검색 결과나 입력 자료로 확인한 사실", "advice": "그 사실과 사용자 조건을 이은 판단·조언", "unconfirmed": "확인하지 못한 것"}
+    - 일반 AI 채팅처럼 질문에 바로 답하세요. 결론을 먼저, 이어서 필요한 설명을 짧은 문단이나 "- " 목록으로 쓰세요.
+    - "근거/조언/확인하지 못한 것" 같은 고정 섹션, 제목(#), 표, JSON을 쓰지 마세요. 강조는 **굵게**만 쓰세요.
+    - 출처 목록은 쓰지 마세요(앱이 답 아래에 붙입니다).
     """
 
     func user(question: String, card: CityRecommendationRecord.Card, request: RecommendationRequest?, conditionSummary: String) -> String {
@@ -179,7 +187,7 @@ nonisolated struct CityQuestionService: Sendable {
     ) async throws -> CityAnswer {
         guard let client else { throw CityQuestionError.notConfigured }
         let reply = try await client.completeWithSearch(
-            system: CityLLMOutputLanguage.apply(to: Self.system, textFields: "evidence, advice, unconfirmed"), user: user(question: question, card: card, request: request, conditionSummary: conditionSummary),
+            system: CityLLMOutputLanguage.apply(to: Self.system, textFields: "the answer"), user: user(question: question, card: card, request: request, conditionSummary: conditionSummary),
             maxUses: Self.maxSearches
         )
         return try CityQuestionParser.parse(reply, now: now)

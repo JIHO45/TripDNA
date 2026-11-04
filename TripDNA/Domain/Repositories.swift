@@ -153,6 +153,9 @@ protocol AppStore:
     var dataGeneration: UserDataGeneration { get }
     /// 세대가 그대로일 때만 저장한다. 저장했으면 true.
     func saveCityState(_ state: CityRecommendationState, ifGeneration generation: Int) async throws -> Bool
+    /// AI 대화 목록과 마지막 AI 사용량. 없으면 빈 상태. 전체 삭제·iCloud 백업에 들어간다.
+    func loadChatState() async throws -> ChatState
+    func saveChatState(_ state: ChatState, ifGeneration generation: Int) async throws -> Bool
 }
 
 nonisolated enum RepositoryError: Error, Equatable {

@@ -16,6 +16,7 @@ nonisolated final class InMemoryAppStore: AppStore {
     private var storedWantedTiers: WantedConceptTiers?
     private var storedOnboardingDraft: OnboardingDraft?
     private var storedCityState = CityRecommendationState()
+    private var storedChatState = ChatState()
     private(set) var storedEvents: [AnalyticsEvent]
     let dataGeneration = UserDataGeneration()
 
@@ -186,6 +187,12 @@ nonisolated final class InMemoryAppStore: AppStore {
         try dataGeneration.ifCurrent(generation) { storedCityState = state }
     }
 
+    func loadChatState() async throws -> ChatState { storedChatState }
+
+    func saveChatState(_ state: ChatState, ifGeneration generation: Int) async throws -> Bool {
+        try dataGeneration.ifCurrent(generation) { storedChatState = state }
+    }
+
     func loadOnboardingDraft() async throws -> OnboardingDraft? { storedOnboardingDraft }
 
     func saveOnboardingDraft(_ draft: OnboardingDraft?) async throws { storedOnboardingDraft = draft }
@@ -217,6 +224,7 @@ nonisolated final class InMemoryAppStore: AppStore {
         storedWantedTiers = nil
         storedOnboardingDraft = nil
         storedCityState = CityRecommendationState()
+        storedChatState = ChatState()
         storedEvents.removeAll()
     }
 }

@@ -38,6 +38,7 @@ struct RecommendationView: View {
         .dnaTopScrollBlur()
         .dnaBackground()
         .toolbar(.hidden, for: .navigationBar)
+        .aiChatButton(tab: .recommendation)
         .onAppear { Task { await cityModel.restore(dependencies: dependencies) } }
         .fullScreenCover(item: $inputRequest) { input in
             RecommendationInputSheet(initial: input.initial) { request in

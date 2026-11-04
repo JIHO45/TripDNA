@@ -7,7 +7,7 @@ struct CityQuestionLogTests {
         let source = CityAnswer.Source(title: "공식", url: URL(string: "https://example.com")!, published: nil, retrievedAt: Date(timeIntervalSince1970: 0))
         return CityQuestionEntry(
             question: question, askedAt: Date(timeIntervalSince1970: 100), conditionSummary: "미식 · 11월",
-            answer: CityAnswer(evidence: "근거", advice: "조언", unconfirmed: "", sources: [source], searchFailed: false)
+            answer: CityAnswer(text: "답", sources: [source], searchFailed: false)
         )
     }
 

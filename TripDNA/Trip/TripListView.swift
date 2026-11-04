@@ -43,6 +43,7 @@ struct TripListView: View {
         }
         .background(AppCanvas())
         .toolbar(.hidden, for: .navigationBar)
+        .aiChatButton(tab: .trips)
         .sheet(isPresented: $showingRegistration) {
             NavigationStack {
                 TripRegistrationView(prefilledCountryCode: nil)

@@ -32,6 +32,8 @@ enum UIDemoSeed {
         case wrappedPast
         /// 지난 해에 다녀온 여행이 1건뿐 → 1건 전용 문구.
         case wrappedOne
+        /// AI 대화 기록: 예전 형식 답(문단·목록), 제목이 있는 긴 답, 넓은 표, 깨진 표.
+        case chat
     }
 
     /// `-uiDemo` 다음 인자. 없거나 모르는 이름이면 `.upcoming`.
@@ -103,6 +105,9 @@ enum UIDemoSeed {
         case .wrappedOne:
             let from = lastYearOffset(200, now)
             try await store.create(evaluated("JP", String(localized: "Osaka"), from: from, to: from + 4, .food, stars: 5, now: now))
+        case .chat:
+            let generation = store.dataGeneration.current
+            _ = try await store.updateChatState(ifGeneration: generation) { $0.upsert(chatConversation(now: now)) }
         case .saved:
             try await store.updateCityState {
                 $0.save(card(of: "jp-kyoto"), conditionSummary: String(localized: "Culture & History · November"), now: day(-3, now))
@@ -112,6 +117,23 @@ enum UIDemoSeed {
         }
         session.onboardingPhase = .completed
     }
+
+    // l10n-ignore-begin
+    private static func chatConversation(now: Date) -> ChatConversation {
+        let pairs: [(String, String)] = [
+            ("발리에서 푹 쉬고 싶어요", "푹 쉬는 게 목적이라면 **누사두아**가 잘 맞아요.\n- 리조트가 모여 있고 해변이 잔잔해요.\n- 우붓은 자연 속 리조트가 많지만 바다는 없어요."),
+            ("리스본, 포르투, 세비야를 날씨·물가·음식으로 비교해 주세요", "세 곳 모두 3월에 걷기 좋지만 성격이 달라요.\n\n| 기준 | 리스본 | 포르투 | 세비야 |\n| --- | --- | --- | --- |\n| 3월 날씨 | 온화하고 가끔 비 | 비가 잦고 바람이 강한 편이라 우산과 겉옷을 챙기는 게 좋아요 | 가장 따뜻해요 |\n| 물가 | 확인하지 못했어요 | 확인하지 못했어요 | 확인하지 못했어요 |\n| 음식 | **해산물**, 에그타르트 | 프란세지냐 | 타파스 |\n\n물가는 시기와 환율에 따라 달라서 따로 확인해 보세요."),
+            ("교토 4박 일정 전체를 정리해 주세요", "## 1~2일차: 동쪽\n기요미즈데라와 기온을 묶어 걸어서 다녀요. 오후에는 니넨자카 골목을 천천히 봐요.\n\n## 3~4일차: 서쪽\n- 아라시야마 대나무 숲은 이른 아침이 한산해요.\n- 금각사는 버스로 이동해요.\n\n| 일차 | 지역 |\n| 1 | 동쪽 |\n표 구분 줄이 없는 위 두 줄은 원문으로 보여야 해요."),
+        ]
+        var messages: [ChatMessage] = []
+        for (question, answer) in pairs {
+            messages.append(ChatMessage(role: .user, text: question, date: now))
+            messages.append(ChatMessage(role: .assistant, text: answer, date: now))
+        }
+        let context = ChatContextSnapshot(text: "묻는 곳: 추천 탭(새 여행지를 고르는 중)", builtAt: now, includesRatings: false)
+        return ChatConversation(id: UUID(), tab: .recommendation, title: "답 형식 확인", createdAt: now, updatedAt: now, context: context, messages: messages)
+    }
+    // l10n-ignore-end
 
     /// 지난 해 1월 1일에서 `n`일 뒤가 오늘로부터 며칠 전인지(음수). 올해가 바뀌어도 "지난 해"로 남도록 `now`에서 계산한다.
     private static func lastYearOffset(_ n: Int, _ now: Date) -> Int {

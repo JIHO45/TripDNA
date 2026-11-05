@@ -71,3 +71,5 @@ functions/node_modules/
 functions/.secret.local
 .firebase/
 firebase-debug.log
+data/exploration/chat-check/**/responses*.jsonl
+data/exploration/chat-check/fixed/evidence.json

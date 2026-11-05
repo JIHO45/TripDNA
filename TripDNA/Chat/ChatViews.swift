@@ -2,17 +2,102 @@ import SwiftUI
 
 // MARK: - 답 표시(도시 질문과 대화가 같이 쓴다)
 
+/// 답 본문의 덩어리. 제목·목록·표만 따로 그리고 나머지는 인라인 서식 문단이다.
+nonisolated enum AnswerBlock: Equatable {
+    case paragraph(String)
+    case heading(String)
+    case bullet(String)
+    case table(header: [String], rows: [[String]])
+}
+
+/// 모델이 쓰는 가벼운 마크다운을 줄 단위로 나눈다. 표는 머리 줄 바로 다음에 같은 열 수의 구분 줄(`| --- |`)이 있을 때만 표로 본다.
+/// 표로 볼 수 없는 줄(구분 줄 없음, 열 수가 머리보다 많은 줄)은 원문 그대로 문단에 남긴다.
+nonisolated enum AnswerBlockParser {
+    static func parse(_ text: String) -> [AnswerBlock] {
+        let lines = text.components(separatedBy: "\n")
+        var blocks: [AnswerBlock] = []
+        var paragraph: [String] = []
+        func flush() {
+            let joined = paragraph.joined(separator: "\n").trimmingCharacters(in: .newlines)
+            if !joined.trimmingCharacters(in: .whitespaces).isEmpty { blocks.append(.paragraph(joined)) }
+            paragraph = []
+        }
+        var i = 0
+        while i < lines.count {
+            let line = lines[i]
+            if let table = table(at: i, in: lines) {
+                flush()
+                blocks.append(.table(header: table.header, rows: table.rows))
+                i = table.end
+                continue
+            }
+            if let match = line.wholeMatch(of: #/\s{0,3}#{1,6}\s+(.+?)[\s#]*/#) {
+                flush()
+                blocks.append(.heading(String(match.1)))
+            } else if let match = line.wholeMatch(of: #/\s*[-*•]\s+(.+)/#) {
+                flush()
+                blocks.append(.bullet(String(match.1)))
+            } else if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                flush()
+            } else {
+                paragraph.append(line)
+            }
+            i += 1
+        }
+        flush()
+        return blocks
+    }
+
+    /// `start`에서 시작하는 표. 본문 줄은 `|`가 있는 줄이 끝날 때까지다. 열이 모자란 줄은 빈칸으로 채운다.
+    private static func table(at start: Int, in lines: [String]) -> (header: [String], rows: [[String]], end: Int)? {
+        guard start + 1 < lines.count, let header = cells(lines[start]), header.count >= 2,
+              let separator = cells(lines[start + 1]), separator.count == header.count,
+              separator.allSatisfy({ $0.wholeMatch(of: #/:?-+:?/#) != nil }) else { return nil }
+        var rows: [[String]] = []
+        var end = start + 2
+        while end < lines.count, let row = cells(lines[end]) {
+            // 머리보다 열이 많으면 잘라 버리지 않고 표를 거기서 끝낸다(그 줄은 문단으로 보인다).
+            guard row.count <= header.count else { break }
+            rows.append(row + Array(repeating: "", count: header.count - row.count))
+            end += 1
+        }
+        return (header, rows, end)
+    }
+
+    /// `|`로 나눈 칸. 앞뒤의 `|`는 떼고 `\|`는 글자로 둔다. `|`가 없는 줄은 nil.
+    static func cells(_ line: String) -> [String]? {
+        var trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.contains("|") else { return nil }
+        if trimmed.hasPrefix("|") { trimmed.removeFirst() }
+        if trimmed.hasSuffix("|") && !trimmed.hasSuffix("\\|") { trimmed.removeLast() }
+        let placeholder = "\u{0}"
+        return trimmed.replacingOccurrences(of: "\\|", with: placeholder)
+            .components(separatedBy: "|")
+            .map { $0.replacingOccurrences(of: placeholder, with: "|").trimmingCharacters(in: .whitespaces) }
+    }
+}
+
 /// LLM 답 본문(가벼운 마크다운)과 그 아래 검색 출처.
 struct AIAnswerView: View {
     let text: String
     let sources: [CityAnswer.Source]
+    /// 표 한 칸의 최대 폭. 넘으면 칸 안에서 줄을 바꾼다.
+    @ScaledMetric(relativeTo: .subheadline) private var cellWidth: CGFloat = 200
+
+    private static func inline(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DNASpacing.sm) {
-            Text((try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text))
-                .dnaFont(.body)
-                .foregroundStyle(Color.dnaTextPrimary)
-                .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: DNASpacing.xs) {
+                ForEach(Array(AnswerBlockParser.parse(text).enumerated()), id: \.offset) { _, block in
+                    blockView(block)
+                }
+            }
+            .dnaFont(.body)
+            .foregroundStyle(Color.dnaTextPrimary)
+            .textSelection(.enabled)
             if !sources.isEmpty {
                 VStack(alignment: .leading, spacing: DNASpacing.xxs) {
                     // 출처는 답 전체에 대한 것이다. 문장별로 어느 출처인지 연결하지 않으므로 본문에 번호를 달지 않는다.
@@ -31,6 +116,56 @@ struct AIAnswerView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder private func blockView(_ block: AnswerBlock) -> some View {
+        switch block {
+        case .paragraph(let text):
+            Text(Self.inline(text))
+        case .heading(let text):
+            Text(Self.inline(text)).dnaFont(.sectionTitle).padding(.top, DNASpacing.xxs)
+        case .bullet(let text):
+            HStack(alignment: .firstTextBaseline, spacing: DNASpacing.xs) {
+                Text(verbatim: "•")
+                Text(Self.inline(text))
+            }
+        case .table(let header, let rows):
+            // 열이 많거나 칸이 넓어도 읽을 수 있게 가로로 넘긴다.
+            ScrollView(.horizontal) {
+                Grid(alignment: .leading, horizontalSpacing: DNASpacing.sm, verticalSpacing: DNASpacing.xs) {
+                    GridRow {
+                        ForEach(Array(header.enumerated()), id: \.offset) { _, cell in
+                            CappedWidth(cap: cellWidth) { Text(Self.inline(cell)).dnaFont(.cardTitle) }
+                        }
+                    }
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        Divider().overlay(Color.dnaDivider)
+                        GridRow {
+                            ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
+                                CappedWidth(cap: cellWidth) { Text(Self.inline(cell)) }
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, DNASpacing.xxs)
+            }
+            .scrollIndicators(.automatic)
+        }
+    }
+}
+
+/// 자식을 원래 폭과 `cap` 중 작은 폭으로 둔다. 가로 스크롤 안에서는 글이 한 줄로 끝없이 늘어나므로, 넘치는 칸만 줄을 바꾸게 한다.
+private struct CappedWidth: Layout {
+    let cap: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let child = subviews.first else { return .zero }
+        let width = min(child.sizeThatFits(.unspecified).width, cap)
+        return child.sizeThatFits(ProposedViewSize(width: width, height: nil))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: nil))
     }
 }
 

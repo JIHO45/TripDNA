@@ -6,14 +6,17 @@ import Testing
 /// 대화 순서대로 답을 돌려주는 가짜 LLM. 받은 요청의 목적을 기록한다.
 final class FakeChat: ChatClient, @unchecked Sendable {
     private let calls = Mutex<[ChatPurpose]>([])
+    private let sentSystems = Mutex<[String]>([])
     let handler: @Sendable (ChatPurpose, [ChatTurn]) throws -> ChatReply
 
     init(_ handler: @escaping @Sendable (ChatPurpose, [ChatTurn]) throws -> ChatReply) { self.handler = handler }
 
     var purposes: [ChatPurpose] { calls.withLock { $0 } }
+    var systems: [String] { sentSystems.withLock { $0 } }
 
     func chat(system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?) async throws -> ChatReply {
         calls.withLock { $0.append(purpose) }
+        sentSystems.withLock { $0.append(system) }
         return try handler(purpose, turns)
     }
 
@@ -147,6 +150,25 @@ struct ChatTests {
 
     // MARK: 요약 실패·잔액 부족
 
+    /// 대화는 앱 언어로 강제하지 않는다. 답변 언어는 지침의 마지막 한 줄(사용자가 쓴 언어)로만 정한다.
+    @Test func chatAndSummaryAreNotForcedToAppLanguage() async throws {
+        #expect(ChatService.system.hasSuffix("Reply in the language the user writes in."))
+        #expect(!ChatService.system.contains("OUTPUT LANGUAGE"))
+
+        let fake = FakeChat { purpose, _ in FakeChat.text(purpose == .summary ? "요약" : "답") }
+        let big = String(repeating: "가", count: 20_000)
+        var c = Self.conversation(pairs: 0)
+        for i in 0..<6 {
+            c.messages.append(ChatMessage(role: .user, text: "q\(i)" + big, date: Self.now))
+            c.messages.append(ChatMessage(role: .assistant, text: "a\(i)", date: Self.now))
+        }
+        _ = try await ChatService(client: fake).respond(to: "질문", in: c, ratingsAllowed: true) { _, _ in }
+        #expect(fake.purposes.first == .summary && fake.purposes.last == .chat)
+        #expect(fake.systems.first == ChatService.summarySystem)
+        #expect(fake.systems.last?.hasPrefix(ChatService.system) == true)
+        #expect(fake.systems.allSatisfy { !$0.contains("OUTPUT LANGUAGE") })
+    }
+
     @Test func summaryIsKeptWhenReplyIsRefusedAndReusedNextTime() async throws {
         let limited = AIUsageLimit(reason: .tooLarge, resetAt: Self.now, subscribed: false, share: 0.9)
         let refuse = FakeChat { purpose, _ in
@@ -257,5 +279,40 @@ struct ChatTests {
         #expect(body["requestId"] as? String == "req-1234")
         #expect(body["webSearchMaxUses"] == nil)
         #expect((body["messages"] as? [[String: String]]) == [["role": "user", "content": "u"]])
+    }
+}
+
+/// 답 본문을 제목·목록·표·문단으로 나누는 규칙. 표로 볼 수 없는 줄은 원문 그대로 문단에 남아야 한다.
+struct AnswerBlockParserTests {
+    @Test func headingsBulletsAndParagraphs() {
+        let blocks = AnswerBlockParser.parse("## 결론\n**누사두아**가 맞아요.\n둘째 줄\n\n- 해변이 잔잔해요\n* 리조트가 많아요\n#태그는 제목이 아님")
+        #expect(blocks == [
+            .heading("결론"),
+            .paragraph("**누사두아**가 맞아요.\n둘째 줄"),
+            .bullet("해변이 잔잔해요"),
+            .bullet("리조트가 많아요"),
+            .paragraph("#태그는 제목이 아님"),
+        ])
+    }
+
+    @Test func validTablePadsShortRowsAndKeepsEscapedPipe() {
+        let text = "비교예요.\n| 기준 | 리스본 | 포르투 |\n| --- | :---: | ---: |\n| 날씨 | 온화 | 비 \\| 바람 |\n| 음식 | 해산물 |\n끝."
+        #expect(AnswerBlockParser.parse(text) == [
+            .paragraph("비교예요."),
+            .table(header: ["기준", "리스본", "포르투"], rows: [["날씨", "온화", "비 | 바람"], ["음식", "해산물", ""]]),
+            .paragraph("끝."),
+        ])
+    }
+
+    @Test func brokenTablesStayAsText() {
+        // 구분 줄 없음, 구분 줄 열 수 불일치, 칸을 나눈 문장
+        for text in ["| 도시 | 날씨 |\n| 리스본 | 맑음 |", "| 도시 | 날씨 |\n| --- |\n| 리스본 | 맑음 |", "리스본 | 포르투 중에 골라요"] {
+            #expect(AnswerBlockParser.parse(text) == [.paragraph(text)], "\(text)")
+        }
+    }
+
+    @Test func rowWithExtraCellsEndsTableAndStaysAsText() {
+        let blocks = AnswerBlockParser.parse("| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 | 5 |")
+        #expect(blocks == [.table(header: ["a", "b"], rows: [["1", "2"]]), .paragraph("| 3 | 4 | 5 |")])
     }
 }

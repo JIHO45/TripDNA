@@ -1,0 +1,210 @@
+{
+ "H01-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H01-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H01-답3": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H01-답4": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H02-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H02-답2": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H02-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H02-답4": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H03-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H03-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H03-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H03-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H04-답1": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H04-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H04-답3": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H04-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H05-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H05-답2": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H05-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H05-답4": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H06-답1": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H06-답2": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H06-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H06-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H07-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H07-답2": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H07-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H07-답4": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H08-답1": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H08-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H08-답3": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H08-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H09-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H09-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H09-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H09-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H10-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H10-답2": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H10-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H10-답4": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H11-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H11-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H11-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H11-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H12-답1": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ },
+ "H12-답2": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H12-답3": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H12-답4": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H13-답1": {
+  "model": "claude-haiku-5-5",
+  "rep": 1
+ },
+ "H13-답2": {
+  "model": "claude-haiku-5-5",
+  "rep": 2
+ },
+ "H13-답3": {
+  "model": "claude-sonnet-5-5",
+  "rep": 1
+ },
+ "H13-답4": {
+  "model": "claude-sonnet-5-5",
+  "rep": 2
+ }
+}

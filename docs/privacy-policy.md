@@ -1,7 +1,7 @@
 # TripDNA 개인정보 처리방침
 
 > 이 파일은 Notion에 붙여넣기 위한 사본이다. 게시한 뒤에는 **Notion 페이지가 원본**이다. 내용을 바꿀 때는 Notion을 먼저 고치고 이 파일도 맞춘다. 근거가 되는 결정은 [저장·전송](data/storage-and-privacy.md#결정-선택지초안)에 있다.
-> 2026-11-06 AI 대화 부분(4절 맥락 고정·웹 검색·건수, 5절 운영 비용 합계 보관 기간)을 코드와 대조해 보강했다. 같은 날 사용자 결정: 운영 비용 합계는 집계일 00:00 UTC부터 90일 뒤 자동 삭제 대상(법정 기간이 아닌 운영 기준, TTL은 보통 만료 후 24시간 안에 지움). 서버가 `ops` 문서에 `expireAt`을 쓰고, TTL 정책은 2026-11-06 배포했다(`firestore.indexes.json`). AI 대화 서버를 배포할 때 두 시행일을 배포일로 바꿔 Notion에 반영한다.
+> 2026-11-06 AI 대화 부분(4절 맥락 고정·웹 검색·건수, 5절 운영 비용 합계 보관 기간)을 코드와 대조해 보강했다. 같은 날 사용자 결정: 운영 비용 합계는 집계일 00:00 UTC부터 90일 뒤 자동 삭제 대상(법정 기간이 아닌 운영 기준, TTL은 보통 만료 후 24시간 안에 지움). 서버가 `ops` 문서에 `expireAt`을 쓰고, TTL 정책은 2026-11-06 배포했다(`firestore.indexes.json`). 같은 날 하루 호출 수(`budget/{날짜}`)도 같은 기준으로 5절에 넣고 TTL을 걸었다. AI 대화 서버를 배포할 때 두 시행일을 배포일로 바꿔 Notion에 반영한다.
 > 2026-10-31 작성. 아래 `---` 사이의 한국어·영어 두 부분을 각각 다른 Notion 페이지에 붙여넣는다. 이 안내 문단은 붙여넣지 않는다.
 > 게시 주소(영어): https://woolly-devourer-5d2.notion.site/TripDNA-Privacy-Policy-4093ed084bab809a99c9ffcf15daf337 (앱 설정의 링크). 2026-10-31 사용자 결정으로 영어 페이지만 게시한다. 한국어 부분은 게시하지 않는 참고용 번역이다.
 
@@ -55,6 +55,7 @@ AI 대화의 원문은 기기에만 저장하고(iCloud 백업 포함, 우리 �
 | 요청과 응답 내용 | 저장하지 않습니다. 중계 서버는 전달만 합니다. | 보관하지 않음 |
 | 이용 합계 | 앱을 고치기 위해 하루 동안 특정 행동이 몇 번 있었는지 세는 숫자(예: 추천을 받은 횟수, 공유한 횟수, 추천에서 도시를 뺀 횟수). 익명 ID나 기기 정보 없이 숫자만 더하므로 누가 했는지 알 수 없습니다. | 기한 없음(개인을 알아볼 수 없는 합계) |
 | 운영 비용 합계 | AI 호출 비용을 파악하려고 하루 동안의 호출 시작 수, 비용을 확인한 수와 그 비용 합계, 확인하지 못한 수를 더한 숫자. 익명 ID나 기기 정보 없이 날짜별 숫자만 더합니다. | 집계일 시작 시각(UTC)으로부터 90일 후 자동 삭제 대상으로 지정됩니다. 실제 삭제는 일반적으로 만료 후 24시간 이내에 이루어지며, 처리 상황에 따라 지연될 수 있습니다. |
+| 하루 호출 수 | 과도한 비용을 막기 위한 서비스 전체의 하루 AI 호출 수 상한을 확인하려고, 날짜별 전체 호출 수 하나만 셉니다. 익명 ID나 기기 정보는 없습니다.  집계일 시작 시각(UTC)으로부터 90일 후 자동 삭제 대상으로 지정됩니다. 실제 삭제는 일반적으로 만료 후 24시간 이내에 이루어지며, 처리 상황에 따라 지연될 수 있습니다. |
 | 서버 운영 기록 | 요청 시각, 처리 결과 코드 등. 요청 내용은 기록하지 않습니다. IP 주소 같은 접속 정보는 Google이 서비스 운영을 위해 처리할 수 있습니다. | Google Cloud 기본 보관 기간(30일) |
 
 추천 카드의 “틀린 내용 알리기”를 누르면 메일 앱이 열리고 도시 이름과 추천 결과의 버전이 미리 채워집니다. 사용자가 직접 보낸 경우에만 받으며, 받은 메일은 문의 답변과 추천 수정에만 씁니다.
@@ -146,6 +147,7 @@ City questions and AI chat can use web search to check information that changes,
 | Request and response content | Not stored. The relay server only passes it on. | Not kept |
 | Usage totals | Daily counts of certain actions, used to improve the app (for example, how many recommendations were received, how many cards were shared, how many cities were removed from recommendations). Only numbers are added, with no anonymous ID or device information, so no one can tell who did what. | No limit (totals that cannot identify anyone) |
 | Operating cost totals | To understand AI call costs, daily numbers of calls started, calls whose cost was confirmed with the total cost, and calls whose cost could not be confirmed. Only numbers per date are added, with no anonymous ID or device information. | Scheduled for automatic deletion 90 days after the start of the aggregation date (UTC). Deletion typically occurs within 24 hours after expiration but may take longer. |
+| Daily call count | To enforce a service-wide daily cap on AI calls that prevents excessive costs, a single total number of calls per date is counted, with no anonymous ID or device information.  Scheduled for automatic deletion 90 days after the start of the aggregation date (UTC). Deletion typically occurs within 24 hours after expiration but may take longer. |
 | Server operation logs | Request time, result code and similar. Request content is not logged. Google may process connection data such as IP addresses to run its service. | Google Cloud default retention (30 days) |
 
 If you tap “Report a problem” on a recommendation card, your mail app opens with the city name and the recommendation’s version filled in. We receive it only if you send it, and use it only to reply and fix recommendations.

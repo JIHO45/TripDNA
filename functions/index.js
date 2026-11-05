@@ -235,7 +235,7 @@ function applyChatRelease(data, period, id) {
 
 // 운영비(사용자 정보 없음): ops/{YYYY-MM-DD} = {started, confirmed, confirmedCost, unknown, expireAt}.
 // 실패한 호출은 제공자가 청구했는지 알 수 없어 unknown으로만 센다. 함수가 도중에 끝난 호출은 started − confirmed − unknown이다.
-// 생성일(문서 날짜 00:00 UTC)부터 90일 뒤 삭제(처리방침 5절, 2026-11-06 결정). 삭제는 ops 컬렉션 expireAt TTL 정책이 한다.
+// 생성일(문서 날짜 00:00 UTC)부터 90일 뒤 삭제(처리방침 5절, 2026-11-06 결정). budget 문서도 같은 값을 쓴다. 삭제는 각 컬렉션의 expireAt TTL 정책이 한다.
 const opsExpireAtOf = (now) =>
   new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + 90 * DAY_MS);
 function recordOps(now, fields) {
@@ -361,12 +361,12 @@ function applyDailyCall(data) {
   return calls >= DAILY_CALL_CAP ? { allowed: false } : { allowed: true, next: { calls: calls + 1 } };
 }
 
-// 문서: budget/{YYYY-MM-DD} = {calls}. 사용자 정보는 없다.
+// 문서: budget/{YYYY-MM-DD} = {calls, expireAt}. 사용자 정보는 없다. ops와 같이 90일 뒤 TTL로 지운다(2026-11-06 결정).
 function takeDailyCall(now) {
   const ref = getFirestore().collection("budget").doc(now.toISOString().slice(0, 10));
   return getFirestore().runTransaction(async (tx) => {
     const result = applyDailyCall((await tx.get(ref)).data());
-    if (result.next) tx.set(ref, result.next);
+    if (result.next) tx.set(ref, { ...result.next, expireAt: opsExpireAtOf(now) });
     return result.allowed;
   });
 }

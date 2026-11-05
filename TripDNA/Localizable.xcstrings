@@ -2453,58 +2453,12 @@
         }
       }
     },
-    "Budget set to %@, so %lld cities were added" : {
+    "Budget set to %@, so the recommendation order was adjusted" : {
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld city was added"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld cities were added"
-                }
-              }
-            }
-          }
-        },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예산을 %1$@ 바꿔서 %2$lld곳이 늘었어요"
-          }
-        }
-      }
-    },
-    "Budget set to %@, so %lld cities were removed" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld city was removed"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld cities were removed"
-                }
-              }
-            }
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "예산을 %1$@ 바꿔서 %2$lld곳이 빠졌어요"
+            "value" : "예산을 %@ 바꿔 추천 순서를 조정했어요"
           }
         }
       }
@@ -2519,58 +2473,12 @@
         }
       }
     },
-    "Budget set to undecided, so %lld cities were added" : {
+    "Budget set to undecided, so the recommendation order was adjusted" : {
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld city was added"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld cities were added"
-                }
-              }
-            }
-          }
-        },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예산을 미정으로 바꿔서 %lld곳이 늘었어요"
-          }
-        }
-      }
-    },
-    "Budget set to undecided, so %lld cities were removed" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld city was removed"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld cities were removed"
-                }
-              }
-            }
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "예산을 미정으로 바꿔서 %lld곳이 빠졌어요"
+            "value" : "예산을 미정으로 바꿔 추천 순서를 조정했어요"
           }
         }
       }

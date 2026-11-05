@@ -108,33 +108,31 @@ final class CityRecommendationViewModel {
         /// 조사까지 붙인 바꾼 예산 문구. 예: "1인 100만 원 이하로", "미정으로".
         /// 바꾼 예산 문구(`budgetText`). 미정으로 바꿨으면 nil.
         let budget: String?
-        let removed: Int
-        let added: Int
+        /// 보이는 카드나 그 순서가 바뀌었는지. 예산을 넘는 추정 도시는 빠지지 않고 뒤로 가므로 개수는 적지 않는다.
+        let reordered: Bool
 
         var message: String {
             if let budget {
-                if removed > 0 { return String(localized: "Budget set to \(particled(budget, .euroRo)), so \(removed) cities were removed") }
-                if added > 0 { return String(localized: "Budget set to \(particled(budget, .euroRo)), so \(added) cities were added") }
-                return String(localized: "Budget set to \(particled(budget, .euroRo))")
+                return reordered
+                    ? String(localized: "Budget set to \(particled(budget, .euroRo)), so the recommendation order was adjusted")
+                    : String(localized: "Budget set to \(particled(budget, .euroRo))")
             }
-            if removed > 0 { return String(localized: "Budget set to undecided, so \(removed) cities were removed") }
-            if added > 0 { return String(localized: "Budget set to undecided, so \(added) cities were added") }
-            return String(localized: "Budget set to undecided")
+            return reordered
+                ? String(localized: "Budget set to undecided, so the recommendation order was adjusted")
+                : String(localized: "Budget set to undecided")
         }
     }
 
-    /// 예산만 바꿔 순서를 다시 계산한다. LLM을 부르지 않는다. 넘긴 도시는 그대로 두고, 바뀐 만큼을 안내로 남긴다.
+    /// 예산만 바꿔 순서를 다시 계산한다. LLM을 부르지 않는다. 넘긴 도시는 그대로 두고, 보이는 카드가 바뀌었는지를 안내로 남긴다.
     func updateBudget(_ budgetMax: Int?, catalog: CityCatalog? = CityCatalog.load()) {
         guard let before = lastRecord else { return }
         let previous = before.input.budgetMax
-        let shown = Set(visibleCards(before).map(\.cityID))
+        let shown = visibleCards(before).map(\.cityID)
         guard recut(budgetMax, catalog: catalog), let now = lastRecord else { return }
         // 처음 예산으로 돌아오면 원본을 다시 보여주므로 바뀐 안내가 없다.
         guard previous != budgetMax, now.derivedFrom != nil else { budgetChange = nil; return }
-        let after = Set(visibleCards(now).map(\.cityID))
         budgetChange = BudgetChange(
-            previous: previous, budget: now.input.budgetText,
-            removed: shown.subtracting(after).count, added: after.subtracting(shown).count
+            previous: previous, budget: now.input.budgetText, reordered: visibleCards(now).map(\.cityID) != shown
         )
     }
 

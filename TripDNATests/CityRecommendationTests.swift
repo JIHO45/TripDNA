@@ -1034,7 +1034,7 @@ struct CityStateTests {
 
         // 줄어드는 경우
         await model.applyBudget(2_000_000, dependencies: dependencies)
-        #expect(model.budgetChange?.message == "예산을 1인 200만 원 이하로 바꿔서 2곳이 빠졌어요")
+        #expect(model.budgetChange?.message == "예산을 1인 200만 원 이하로 바꿔 추천 순서를 조정했어요")
         #expect(model.skippedCityIDs == [skipped])
         // 되돌리면 이전 예산과 처음 보이던 카드로 돌아오고, 안내는 사라진다. 넘긴 도시는 그대로다.
         await model.revertBudget(dependencies: dependencies)
@@ -1122,7 +1122,7 @@ struct CityStateTests {
         await model.applyBudget(nil, dependencies: dependencies)
         #expect(model.lastRecord?.input.budgetMax == nil)
         #expect(model.lastRecord?.budgetCutCityIDs.isEmpty == true)
-        #expect(model.budgetChange?.message.hasPrefix("예산을 미정으로 바꿔서") == true)
+        #expect(model.budgetChange?.message.hasPrefix("예산을 미정으로 바꿔") == true)
         #expect(model.canEditBudget)
         await model.revertBudget(dependencies: dependencies)
         #expect(model.lastRecord?.id == record.id)

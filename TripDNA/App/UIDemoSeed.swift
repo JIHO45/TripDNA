@@ -20,7 +20,7 @@ enum UIDemoSeed {
         case recoResult
         /// 추천 카드 사진 크롭 확인: 서울, 취리히, 도하, 나트랑.
         case recoPhotos
-        /// 추천 결과 카드가 모두 예산에 걸려 보일 카드가 없음.
+        /// 조건에 맞는 도시가 없어 보일 카드가 없음. 예산을 넘는 추정 도시는 빼지 않으므로 예산 없이 만든다.
         case recoZero
         /// 사는 나라(JP)를 뺀 추천 결과.
         case recoHomeExcluded
@@ -265,7 +265,7 @@ enum UIDemoSeed {
         )
         let cut = CityRecommendationService.select(
             pool: pool, response: response, budget: request.budgetMax, seed: 1
-        ).cutIDs
+        ).overBudgetIDs
         return .init(
             id: UUID().uuidString, derivedFrom: nil, createdAt: now,
             version: .init(
@@ -325,8 +325,8 @@ enum UIDemoSeed {
 
     private static func zeroRecord(now: Date) -> CityRecommendationRecord {
         record(
-            request(budget: 500_000), cards: [], conditions: [japanOnly, shortFlight],
-            understanding: nil, error: "noneWithinBudget", now: now
+            request(budget: nil), cards: [], conditions: [japanOnly, shortFlight],
+            understanding: nil, error: "noCards", now: now
         )
     }
 

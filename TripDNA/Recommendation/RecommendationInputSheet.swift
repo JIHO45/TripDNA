@@ -342,7 +342,7 @@ struct RecommendationInputSheet: View {
                 .padding(DNASpacing.sm)
                 .background(Color.dnaSurface1, in: RoundedRectangle(cornerRadius: DNARadius.control, style: .continuous))
             }
-            Text("Cities with estimated costs over your budget are left out. Costs are estimates.")
+            Text("Cities with estimated costs over your budget are shown after the others. Costs are rough estimates, not live prices.")
                 .dnaFont(.caption)
                 .foregroundStyle(Color.dnaTextSecondary)
         }

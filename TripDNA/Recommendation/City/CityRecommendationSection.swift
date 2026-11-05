@@ -82,9 +82,16 @@ final class CityRecommendationViewModel {
         let stored = loaded ?? CityRecommendationState()
         if loaded != nil { saved = stored.saved; excluded = stored.excluded }
         hiddenCountries = Set((try? await dependencies.recommendationService.activeDislikes())?.map(\.countryCode) ?? [])
-        if state == .idle, lastRecord == nil, let record = stored.lastRecord {
+        if state == .idle, lastRecord == nil, var record = stored.lastRecord {
+            var original = stored.originalRecord
+            // 예전 규칙으로 저장된 결과도 지금 규칙(예산을 넘는 추정 도시는 뒤로)으로 보여준다.
+            if let catalog = CityCatalog.load() {
+                let service = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
+                record = service.reselected(record)
+                original = original.map(service.reselected)
+            }
             lastRecord = record
-            originalRecord = stored.originalRecord
+            originalRecord = original
             lastRequest = record.input
             skipOrder = stored.skippedCityIDs
             skippedCityIDs = Set(skipOrder)
@@ -116,7 +123,7 @@ final class CityRecommendationViewModel {
         }
     }
 
-    /// 예산만 바꿔 컷을 다시 계산한다. LLM을 부르지 않는다. 넘긴 도시는 그대로 두고, 바뀐 만큼을 안내로 남긴다.
+    /// 예산만 바꿔 순서를 다시 계산한다. LLM을 부르지 않는다. 넘긴 도시는 그대로 두고, 바뀐 만큼을 안내로 남긴다.
     func updateBudget(_ budgetMax: Int?, catalog: CityCatalog? = CityCatalog.load()) {
         guard let before = lastRecord else { return }
         let previous = before.input.budgetMax

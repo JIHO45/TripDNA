@@ -84,8 +84,27 @@ struct AIAnswerView: View {
     /// 표 한 칸의 최대 폭. 넘으면 칸 안에서 줄을 바꾼다.
     @ScaledMetric(relativeTo: .subheadline) private var cellWidth: CGFloat = 200
 
-    private static func inline(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
+    /// 굵게·기울임·링크만 살린다.
+    /// - `**…**`는 직접 굵게 만든다. 마크다운 규칙으로는 "**페낭(말레이시아)**이나"처럼 문장부호 뒤에 조사가 붙으면 굵게가 안 되고 `**`가 보인다.
+    /// - `~`는 글자 그대로 둔다: "25~50달러, 60~120달러"처럼 범위를 쓴 두 물결표 사이가 취소선이 되지 않게.
+    static func inline(_ text: String) -> AttributedString {
+        var result = AttributedString()
+        var rest = Substring(text)
+        while let match = rest.firstMatch(of: #/\*\*(.+?)\*\*/#) {
+            result += markdown(rest[..<match.range.lowerBound])
+            var bold = markdown(match.1)
+            for run in bold.runs {
+                bold[run.range].inlinePresentationIntent = (run.inlinePresentationIntent ?? []).union(.stronglyEmphasized)
+            }
+            result += bold
+            rest = rest[match.range.upperBound...]
+        }
+        return result + markdown(rest)
+    }
+
+    private static func markdown(_ text: Substring) -> AttributedString {
+        let escaped = text.replacingOccurrences(of: "~", with: "\\~")
+        return (try? AttributedString(markdown: escaped, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
     }
 
     var body: some View {
@@ -408,7 +427,7 @@ private struct ChatConversationView: View {
         case .loading(let question):
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 bubble(question)
-                ProgressView("Checking…")
+                AnswerLoadingText()
                 Text("Even if you close this screen, the answer will be saved here")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)

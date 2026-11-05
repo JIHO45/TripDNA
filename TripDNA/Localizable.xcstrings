@@ -1729,16 +1729,6 @@
         }
       }
     },
-    "Advice" : {
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "조언"
-          }
-        }
-      }
-    },
     "After removing %lld cities with estimated costs over your budget, none are left. Try adjusting your budget or trip length." : {
       "localizations" : {
         "en" : {
@@ -2743,16 +2733,6 @@
         }
       }
     },
-    "Checking…" : {
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "확인하고 있어요"
-          }
-        }
-      }
-    },
     "Choose" : {
       "localizations" : {
         "ko" : {
@@ -3127,16 +3107,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "백업하지 못했어요. 잠시 후 다시 시도해 주세요."
-          }
-        }
-      }
-    },
-    "Couldn't confirm" : {
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "확인하지 못한 것"
           }
         }
       }
@@ -4241,16 +4211,6 @@
         }
       }
     },
-    "Evidence" : {
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "자료 근거"
-          }
-        }
-      }
-    },
     "Excluded from Recommendations" : {
       "localizations" : {
         "ko" : {
@@ -5197,6 +5157,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "제주"
+          }
+        }
+      }
+    },
+    "Just a moment…" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "잠시만 기다려 주세요"
           }
         }
       }
@@ -6961,6 +6931,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "놓친 날 사진 골라두기"
+          }
+        }
+      }
+    },
+    "Preparing your answer…" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "답변을 준비하고 있어요"
           }
         }
       }

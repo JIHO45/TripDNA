@@ -1050,6 +1050,35 @@ struct LoadingView: View {
     }
 }
 
+/// AI 답변 대기 표시. 서버가 진행 단계를 주지 않으므로 실제 단계처럼 보이는 문구는 쓰지 않고,
+/// 2.5초 뒤 두 번째 문구로 바꾼 다음 답이 올 때까지 그대로 둔다.
+/// 깜빡임은 현재 시각에서 불투명도를 계산한다. repeatForever와 달리 백그라운드에서 돌아와도 멈추지 않는다.
+struct AnswerLoadingText: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var waitedLong = false
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { context in
+            Text(waitedLong ? "Just a moment…" : "Preparing your answer…")
+                .dnaFont(.body)
+                .foregroundStyle(Color.dnaTextSecondary)
+                .contentTransition(.opacity)
+                .opacity(reduceMotion ? 1 : Self.pulse(at: context.date))
+        }
+        .animation(.easeInOut, value: waitedLong)
+        .task {
+            try? await Task.sleep(for: .seconds(2.5))
+            waitedLong = true
+        }
+    }
+
+    /// 1.8초 주기로 1.0과 0.4 사이를 오간다. 0.4 아래로 내려가지 않아 글자가 사라지지 않는다.
+    static func pulse(at date: Date) -> Double {
+        let phase = date.timeIntervalSinceReferenceDate * 2 * .pi / 1.8
+        return 0.7 + 0.3 * cos(phase)
+    }
+}
+
 /// 빈 상태는 막힌 화면이 아니라 다음 행동으로 이어져야 한다. 갈 곳이 있으면 `actionTitle`을 준다.
 struct EmptyStateView: View {
     var systemImage: String = "airplane.departure"

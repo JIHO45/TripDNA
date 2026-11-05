@@ -284,6 +284,26 @@ struct ChatTests {
 
 /// 답 본문을 제목·목록·표·문단으로 나누는 규칙. 표로 볼 수 없는 줄은 원문 그대로 문단에 남아야 한다.
 struct AnswerBlockParserTests {
+    /// 범위를 쓴 물결표 두 개가 취소선이 되지 않는다(TestFlight에서 본 "25~50달러, 중급 호텔은 60~120달러").
+    @Test func tildeRangesStayPlainButBoldStillWorks() {
+        let text = "저가 호텔은 25~50달러, 중급 호텔은 60~120달러, **카오산**이 싸요. ~~취소~~"
+        let result = AIAnswerView.inline(text)
+        #expect(String(result.characters) == "저가 호텔은 25~50달러, 중급 호텔은 60~120달러, 카오산이 싸요. ~~취소~~")
+        #expect(!result.runs.contains { $0.inlinePresentationIntent?.contains(.strikethrough) == true })
+        #expect(result.runs.contains { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true })
+    }
+
+    /// 문장부호로 끝난 굵은 글씨 뒤에 조사가 붙어도 굵게 보이고 `**`가 남지 않는다(실험 답변 945줄 중 23줄이 이랬다).
+    @Test func boldBeforeKoreanParticleAfterPunctuation() {
+        let text = "**페낭(말레이시아)**이나 **하노이**를, 기간은 **11월 21일(토)~11월 30일(월)**입니다. 짝 없는 ** 별표"
+        let result = AIAnswerView.inline(text)
+        #expect(String(result.characters) == "페낭(말레이시아)이나 하노이를, 기간은 11월 21일(토)~11월 30일(월)입니다. 짝 없는 ** 별표")
+        let bold = result.runs.filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
+            .map { String(result[$0.range].characters) }
+        #expect(bold == ["페낭(말레이시아)", "하노이", "11월 21일(토)~11월 30일(월)"])
+        #expect(!result.runs.contains { $0.inlinePresentationIntent?.contains(.strikethrough) == true })
+    }
+
     @Test func headingsBulletsAndParagraphs() {
         let blocks = AnswerBlockParser.parse("## 결론\n**누사두아**가 맞아요.\n둘째 줄\n\n- 해변이 잔잔해요\n* 리조트가 많아요\n#태그는 제목이 아님")
         #expect(blocks == [

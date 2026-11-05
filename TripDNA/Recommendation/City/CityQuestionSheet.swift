@@ -187,7 +187,7 @@ struct CityQuestionSheet: View {
         case .loading(let question):
             VStack(alignment: .leading, spacing: DNASpacing.sm) {
                 questionBubble(question)
-                ProgressView("Checking…")
+                AnswerLoadingText()
                 Text("Even if you close this sheet, the answer will stay here")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)

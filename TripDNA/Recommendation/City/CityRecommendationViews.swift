@@ -5,6 +5,20 @@ private func costRange(_ low: Int, _ high: Int, currency: String) -> String {
     return AppLanguage.isKorean ? "\(money(low))~\(money(high))" : "\(money(low))–\(money(high))"
 }
 
+/// 비용 추정의 계산 기준. 예: "1인 · 3박 · 항공 포함".
+private func costBasis(_ request: RecommendationRequest) -> String {
+    [
+        request.budgetBasis == .perPerson ? String(localized: "Per person") : String(localized: "Whole group"),
+        request.nights.map { String(localized: "\($0) nights") },
+        request.budgetIncludesFlight ? String(localized: "Flights included") : String(localized: "Flights excluded")
+    ].compactMap(\.self).joined(separator: " · ")
+}
+
+/// 예상 비용 범위의 아래쪽이 예산을 넘는지. 이런 도시는 빼지 않고 뒤에 둔다.
+private func isOverBudget(_ cost: CostRange, _ request: RecommendationRequest?) -> Bool {
+    request?.budgetMax.map { cost.low > $0 } ?? false
+}
+
 /// 도시 추천 결과(시안 RecoResult ③④). 받는 중·실패·지난 결과 복원까지 한 곳에서 그린다.
 struct CityRecommendationSection: View {
     let model: CityRecommendationViewModel
@@ -115,11 +129,6 @@ struct CityRecommendationSection: View {
         } else {
             if !main.isEmpty {
                 CityCardCarousel(cards: main, model: model, request: record.input)
-            }
-            if !record.budgetCutCityIDs.isEmpty {
-                Text("\(record.budgetCutCityIDs.count) cities with estimated costs over your budget were left out.")
-                    .dnaFont(.caption)
-                    .foregroundStyle(Color.dnaTextSecondary)
             }
             if !check.isEmpty { checkGroup(check, request: record.input) }
         }
@@ -491,9 +500,17 @@ private struct CityCardView: View {
                     .multilineTextAlignment(.leading)
                 if let cost = card.cost {
                     Divider()
-                    Text(request.nights.map { String(localized: "Estimated for \($0) nights: \(costRange(cost.low, cost.high, currency: request.budgetCurrency)) (estimate)") } ?? String(localized: "Estimated \(costRange(cost.low, cost.high, currency: request.budgetCurrency)) (estimate)"))
+                    Text("Estimated \(costRange(cost.low, cost.high, currency: request.budgetCurrency))")
+                        .dnaFont(.caption)
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    Text(costBasis(request) + " · " + String(localized: "Rough estimate, not live prices"))
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
+                    if isOverBudget(cost, request) {
+                        Text("Estimated over your budget")
+                            .dnaFont(.caption)
+                            .foregroundStyle(Color.dnaWarning)
+                    }
                 }
                 if card.seasonCheckNeeded {
                     Text("Check that this works for your chosen dates")
@@ -675,7 +692,17 @@ struct CityDetailView: View {
                         Text(costRange(cost.low, cost.high, currency: request?.budgetCurrency ?? BudgetCurrency.krw))
                             .dnaFont(.heroTitle)
                             .foregroundStyle(Color.dnaTextPrimary)
-                        Text("This is an estimate. It doesn't guarantee actual prices or that your budget is met, so check flight and hotel prices yourself before you go.")
+                        if let request {
+                            Text(costBasis(request))
+                                .dnaFont(.body)
+                                .foregroundStyle(Color.dnaTextSecondary)
+                        }
+                        if isOverBudget(cost, request) {
+                            Text("Estimated over your budget")
+                                .dnaFont(.caption)
+                                .foregroundStyle(Color.dnaWarning)
+                        }
+                        Text("This is a rough estimate, not live prices. It doesn't guarantee actual prices or that your budget is met, so check flight and hotel prices yourself before you go.")
                             .dnaFont(.caption)
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
@@ -973,7 +1000,7 @@ struct CityConditionEditSheet: View {
                     }
                     .textFieldStyle(.roundedBorder)
                 }
-                Text("This only re-filters the cities you already got, without new recommendations. It doesn't use up a recommendation.")
+                Text("This only re-sorts the cities you already got, without new recommendations. It doesn't use up a recommendation.")
                     .dnaFont(.caption)
                     .foregroundStyle(Color.dnaTextSecondary)
                 Button("View with These Conditions") {

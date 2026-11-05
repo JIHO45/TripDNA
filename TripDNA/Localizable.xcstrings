@@ -619,34 +619,6 @@
         }
       }
     },
-    "%lld cities with estimated costs over your budget were left out." : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld city with estimated costs over your budget was left out."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld cities with estimated costs over your budget were left out."
-                }
-              }
-            }
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "예상 비용이 예산을 넘는 %lld곳은 뺐어요."
-          }
-        }
-      }
-    },
     "%lld completed trips" : {
       "localizations" : {
         "en" : {
@@ -2471,58 +2443,12 @@
         }
       }
     },
-    "Budget set to %@, so %lld cities were added" : {
+    "Budget set to %@, so the recommendation order was adjusted" : {
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld city was added"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld cities were added"
-                }
-              }
-            }
-          }
-        },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예산을 %1$@ 바꿔서 %2$lld곳이 늘었어요"
-          }
-        }
-      }
-    },
-    "Budget set to %@, so %lld cities were removed" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld city was removed"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to %@, so %lld cities were removed"
-                }
-              }
-            }
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "예산을 %1$@ 바꿔서 %2$lld곳이 빠졌어요"
+            "value" : "예산을 %@ 바꿔 추천 순서를 조정했어요"
           }
         }
       }
@@ -2537,58 +2463,12 @@
         }
       }
     },
-    "Budget set to undecided, so %lld cities were added" : {
+    "Budget set to undecided, so the recommendation order was adjusted" : {
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld city was added"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld cities were added"
-                }
-              }
-            }
-          }
-        },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예산을 미정으로 바꿔서 %lld곳이 늘었어요"
-          }
-        }
-      }
-    },
-    "Budget set to undecided, so %lld cities were removed" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld city was removed"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Budget set to undecided, so %lld cities were removed"
-                }
-              }
-            }
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "예산을 미정으로 바꿔서 %lld곳이 빠졌어요"
+            "value" : "예산을 미정으로 바꿔 추천 순서를 조정했어요"
           }
         }
       }
@@ -2893,12 +2773,12 @@
         }
       }
     },
-    "Cities with estimated costs over your budget are left out. Costs are estimates." : {
+    "Cities with estimated costs over your budget are shown after the others. Costs are rough estimates, not live prices." : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예상 비용이 예산을 넘는 도시는 빼요. 비용은 추정이에요."
+            "value" : "예상 비용이 예산을 넘는 도시는 뒤에 보여줘요. 비용은 실시간 가격이 아닌 대략적인 추정이에요."
           }
         }
       }
@@ -4133,12 +4013,12 @@
         }
       }
     },
-    "Estimated %@ (estimate)" : {
+    "Estimated %@" : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예상 %@ (추정)"
+            "value" : "예상 %@"
           }
         }
       }
@@ -4153,30 +4033,12 @@
         }
       }
     },
-    "Estimated for %lld nights: %@ (estimate)" : {
+    "Estimated over your budget" : {
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Estimated for %lld night: %@ (estimate)"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Estimated for %lld nights: %@ (estimate)"
-                }
-              }
-            }
-          }
-        },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "예상 %1$lld박 %2$@ (추정)"
+            "value" : "예상 비용이 예산을 넘어요"
           }
         }
       }
@@ -7581,6 +7443,16 @@
         }
       }
     },
+    "Rough estimate, not live prices" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실시간 가격이 아닌 대략적인 추정"
+          }
+        }
+      }
+    },
     "Same day" : {
       "localizations" : {
         "ko" : {
@@ -8793,22 +8665,22 @@
         }
       }
     },
+    "This is a rough estimate, not live prices. It doesn't guarantee actual prices or that your budget is met, so check flight and hotel prices yourself before you go." : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실시간 가격이 아닌 대략적인 추정이에요. 실제 가격이나 예산 충족을 보장하지 않으니 항공·숙박 가격은 출발 전에 직접 확인해 주세요."
+          }
+        }
+      }
+    },
     "This is a test link before partner setup. No booking commission applies." : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "현재는 제휴 연결 전 테스트 링크예요. 예약 수수료는 발생하지 않습니다."
-          }
-        }
-      }
-    },
-    "This is an estimate. It doesn't guarantee actual prices or that your budget is met, so check flight and hotel prices yourself before you go." : {
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "추정이에요. 실제 가격이나 예산 충족을 보장하지 않으니 항공·숙박 가격은 출발 전에 직접 확인해 주세요."
           }
         }
       }
@@ -8823,12 +8695,12 @@
         }
       }
     },
-    "This only re-filters the cities you already got, without new recommendations. It doesn't use up a recommendation." : {
+    "This only re-sorts the cities you already got, without new recommendations. It doesn't use up a recommendation." : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "새로 추천받지 않고 받은 도시만 다시 걸러요. 추천 횟수를 쓰지 않아요."
+            "value" : "새로 추천받지 않고 받은 도시의 순서만 다시 정해요. 추천 횟수를 쓰지 않아요."
           }
         }
       }

@@ -85,11 +85,13 @@ struct BudgetCurrencyTests {
     }
 
     @Test func budgetCutUsesRequestCurrencyAmounts() {
-        // 컷은 금액만 비교하므로 요청과 같은 통화로 낸 비용이면 통화와 무관하게 같은 규칙이다.
+        // 예산 비교는 금액만 보므로 요청과 같은 통화로 낸 비용이면 통화와 무관하게 같은 규칙이다. 넘어도 빼지 않는다.
         let a = City(id: "a", ko: "에이", en: "A", country: "XX", grades: ["scenery": .choose], season: [:], seasonUnverified: [])
         let ranked = CityRanker.rank(catalog: CityCatalog(version: "t", concepts: ["nature": ["scenery"]], cities: [a]), input: .init(primary: .natureScenery))
         let response = CityLLMResponse(understanding: "u", cards: [.init(id: "a", reason: "r", caveat: "", cost: .init(low: 1_200, high: 2_000))])
-        #expect(CityRecommendationService.select(pool: ranked, response: response, budget: 1_000, seed: 1).cutIDs == ["a"])
-        #expect(CityRecommendationService.select(pool: ranked, response: response, budget: 1_500, seed: 1).cutIDs.isEmpty)
+        let over = CityRecommendationService.select(pool: ranked, response: response, budget: 1_000, seed: 1)
+        #expect(over.overBudgetIDs == ["a"])
+        #expect(over.cards.map(\.cityID) == ["a"])
+        #expect(CityRecommendationService.select(pool: ranked, response: response, budget: 1_500, seed: 1).overBudgetIDs.isEmpty)
     }
 }

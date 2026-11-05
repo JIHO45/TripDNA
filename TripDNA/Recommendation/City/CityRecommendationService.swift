@@ -42,9 +42,10 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
     var homeCountryAtRequest: String?
     /// 코드가 계산한 순위 상위 id. 같은 입력과 시드로 다시 계산해 대조할 수 있다.
     let rankedCityIDs: [String]
-    /// LLM이 설명·비용을 낸 후보(순위 상위). 카드는 이 중 예산 컷을 통과한 도시에서 고른다.
+    /// LLM이 설명·비용을 낸 후보(순위 상위). 카드는 이 중 예산 안으로 추정된 도시를 먼저 고른다.
     let poolCityIDs: [String]
-    /// 예상 비용 범위의 아래쪽이 예산보다 커서 컷된 도시.
+    /// 예상 비용 범위의 아래쪽이 예산보다 큰 도시. 비용이 근거 없는 추정이라 빼지 않고 뒤로 보낸다(2026-11-06).
+    /// 그 전 기록에서는 이 도시들을 뺐다. 저장 키를 지키려고 이름은 그대로 둔다.
     let budgetCutCityIDs: [String]
     /// LLM에 보낸 그대로. 프롬프트·표를 다시 만들지 않고도 재현·검토할 수 있다.
     /// 코드가 받아들인 자유문장 조건과, 근거 원문이 없거나 판정할 수 없어 버린 조건 id.
@@ -58,8 +59,8 @@ nonisolated struct CityRecommendationRecord: Codable, Equatable, Sendable, Ident
     let user: String
     let rawResponse: String?
     let understanding: String?
-    let cards: [Card]
-    let error: String?
+    var cards: [Card]
+    var error: String?
     let latencySeconds: Double
 }
 
@@ -211,7 +212,7 @@ nonisolated struct CityRecommendationService: Sendable {
             failure = .notConfigured
         }
 
-        var selection = Selection(cards: [], cutIDs: [])
+        var selection = Selection(cards: [], overBudgetIDs: [])
         if let parsed {
             selection = Self.select(pool: pool, response: parsed, budget: request.budgetMax, seed: seed)
         }
@@ -220,12 +221,12 @@ nonisolated struct CityRecommendationService: Sendable {
             input: request, tiers: tiers, excludedCountries: excludedCountries.sorted(),
             excludedCityIDs: excludedCities.sorted(), homeCountryAtRequest: homeCountry,
             rankedCityIDs: ranked.prefix(CityLLMRequestBuilder.tableLimit).map(\.city.id),
-            poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: selection.cutIDs,
+            poolCityIDs: pool.map(\.city.id), budgetCutCityIDs: selection.overBudgetIDs,
             conditions: conditions, rejectedConditionIDs: rejected, extraction: extraction,
             memories: memories, memoriesUsed: parsed?.memoriesUsed ?? [],
             system: llmRequest.system, user: llmRequest.user,
             rawResponse: raw, understanding: parsed?.understanding, cards: selection.cards,
-            error: failure.map { String(describing: $0) } ?? (parsed != nil && selection.cards.isEmpty ? "noneWithinBudget" : nil), latencySeconds: Date().timeIntervalSince(start)
+            error: failure.map { String(describing: $0) } ?? (parsed != nil && selection.cards.isEmpty ? "noCards" : nil), latencySeconds: Date().timeIntervalSince(start)
         )
         // 요청 문장·메모가 든 기록이라, 기다리는 사이 전체 삭제를 했으면 남기지 않는다.
         if let dataGeneration, let generation {
@@ -239,19 +240,23 @@ nonisolated struct CityRecommendationService: Sendable {
 
     struct Selection {
         var cards: [CityRecommendationRecord.Card]
-        var cutIDs: [String]
+        var overBudgetIDs: [String]
     }
 
-    /// 예산 컷: 예상 비용 범위의 아래쪽이 예산을 넘으면 후보에서 뺀다. 컷 뒤 남은 도시에서 카드를 고른다.
+    /// 예산 순서: 예상 비용 범위의 아래쪽이 예산을 넘는 도시는 빼지 않고 뒤로 보낸다. 비용은 검증되지 않은 추정이다.
+    /// 예산 안 도시에서 먼저 카드를 고르고, 모자라면 넘는 도시를 순위대로 채운다.
     static func select(pool: [RankedCity], response: CityLLMResponse, budget: Int?, seed: UInt64) -> Selection {
         let byID = Dictionary(uniqueKeysWithValues: response.cards.map { ($0.id, $0) })
-        var cutIDs: [String] = []
-        let survivors = pool.filter { item in
-            guard let budget, let low = byID[item.city.id]?.cost?.low else { return true }
-            if low > budget { cutIDs.append(item.city.id); return false }
-            return true
+        let isOver = { (item: RankedCity) in
+            guard let budget, let low = byID[item.city.id]?.cost?.low else { return false }
+            return low > budget
         }
-        let cards: [CityRecommendationRecord.Card] = CityRanker.pickCards(from: survivors, seed: seed).compactMap { pick in
+        let within = pool.filter { !isOver($0) }
+        let over = pool.filter(isOver)
+        var picks = CityRanker.pickCards(from: within, seed: seed)
+        let target = CityRanker.pickCards(from: pool, seed: seed).count
+        picks += over.prefix(max(0, target - picks.count)).map { CityPick(ranked: $0, isExploration: false) }
+        let cards: [CityRecommendationRecord.Card] = picks.compactMap { pick in
             byID[pick.ranked.city.id].map { card in
                 .init(
                     cityID: pick.ranked.city.id, cityName: pick.ranked.city.displayName, country: pick.ranked.city.country,
@@ -261,7 +266,7 @@ nonisolated struct CityRecommendationService: Sendable {
                 )
             }
         }
-        return Selection(cards: cards, cutIDs: cutIDs)
+        return Selection(cards: cards, overBudgetIDs: over.map(\.city.id))
     }
 
     /// 이전 순위 정책으로 만든 기록 중 경험 조건(세부 컨셉을 원함)이 있는 것. 지금 코드로 다시 계산하면 바뀐 충족 기준
@@ -300,7 +305,7 @@ nonisolated struct CityRecommendationService: Sendable {
         return Array(selection.cards.prefix(count))
     }
 
-    /// 예산만 바꿔 컷을 다시 계산한다. 이미 받은 응답을 쓰므로 LLM을 부르지 않고 횟수도 쓰지 않는다.
+    /// 예산만 바꿔 순서를 다시 계산한다. 이미 받은 응답을 쓰므로 LLM을 부르지 않고 횟수도 쓰지 않는다.
     /// 원래 추천에 예산이 없어 비용 범위가 없으면 nil.
     func recut(_ record: CityRecommendationRecord, budgetMax: Int?, now: Date = Date()) -> CityRecommendationRecord? {
         guard let (pool, response) = replay(record), response.cards.allSatisfy({ $0.cost != nil }) else { return nil }
@@ -311,14 +316,26 @@ nonisolated struct CityRecommendationService: Sendable {
             id: UUID().uuidString, derivedFrom: record.id, createdAt: now, version: record.version, seed: record.seed,
             input: request, tiers: record.tiers, excludedCountries: record.excludedCountries,
             excludedCityIDs: record.excludedCityIDs, homeCountryAtRequest: record.homeCountryAtRequest,
-            rankedCityIDs: record.rankedCityIDs, poolCityIDs: record.poolCityIDs, budgetCutCityIDs: selection.cutIDs,
+            rankedCityIDs: record.rankedCityIDs, poolCityIDs: record.poolCityIDs, budgetCutCityIDs: selection.overBudgetIDs,
             conditions: record.conditions, rejectedConditionIDs: record.rejectedConditionIDs, extraction: record.extraction,
             memories: record.memories, memoriesUsed: record.memoriesUsed,
             system: record.system, user: record.user, rawResponse: record.rawResponse,
             understanding: nil, cards: selection.cards,
-            error: selection.cards.isEmpty ? "noneWithinBudget" : nil, latencySeconds: 0
+            error: selection.cards.isEmpty ? "noCards" : nil, latencySeconds: 0
         )
         try? log.save(derived)
         return derived
+    }
+
+    /// 2026-11-06 전 규칙(예산을 넘는 추정 도시를 뺌)으로 저장된 결과를 지금 규칙으로 맞춘다. LLM을 부르지 않는다.
+    /// 예산 안 도시가 카드 수보다 적을 때만 결과가 달라지며, 그때 옛 카드는 새 카드의 앞부분과 같아 뒤에 덧붙인다.
+    func reselected(_ record: CityRecommendationRecord) -> CityRecommendationRecord {
+        guard !record.budgetCutCityIDs.isEmpty, let (pool, response) = replay(record) else { return record }
+        let cards = Self.select(pool: pool, response: response, budget: record.input.budgetMax, seed: record.seed).cards
+        guard cards.count > record.cards.count else { return record }
+        var updated = record
+        updated.cards += cards.dropFirst(record.cards.count)
+        updated.error = nil
+        return updated
     }
 }

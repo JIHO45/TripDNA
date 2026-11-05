@@ -406,7 +406,7 @@ struct CityRecommendationServiceTests {
         #expect(CityLLMProxyClient(url: url, model: "m").usageID != CityLLMProxyClient(url: url, model: "m").usageID)
     }
 
-    @Test func budgetCutsCitiesWhoseLowEstimateExceedsBudget() async throws {
+    @Test func overBudgetCitiesGoLastInsteadOfBeingRemoved() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = Self.request()
@@ -422,7 +422,24 @@ struct CityRecommendationServiceTests {
         #expect(record.cards.allSatisfy { ($0.cost?.low ?? .max) <= 2_000_000 })
     }
 
-    @Test func allCutLeavesNoCardsAndIsLogged() async throws {
+    @Test func fewWithinBudgetFillWithOverBudgetCitiesInRankOrder() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = Self.request()
+        request.budgetMax = 2_000_000
+        // 순위 4번째 한 곳만 예산 안이다.
+        let lows = [3_000_000, 2_500_000, 2_200_000, 1_000_000] + Array(repeating: 9_000_000, count: 4)
+        let service = try Self.service(client: Self.fake(lows: lows), dir: dir)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false, seed: 5
+        )
+        let pool = record.poolCityIDs
+        #expect(record.cards.map(\.cityID) == [pool[3], pool[0], pool[1]])
+        #expect(record.budgetCutCityIDs == pool.filter { $0 != pool[3] })
+        #expect(record.error == nil)
+    }
+
+    @Test func allOverBudgetStillShowsCardsAndIsLogged() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = Self.request()
@@ -431,9 +448,32 @@ struct CityRecommendationServiceTests {
         let record = try await service.recommend(
             request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
         )
-        #expect(record.cards.isEmpty)
-        #expect(record.error == "noneWithinBudget")
+        #expect(record.cards.map(\.cityID) == Array(record.poolCityIDs.prefix(3)))
+        #expect(record.cards.allSatisfy { !$0.isExploration })
+        #expect(record.error == nil)
         #expect(CityRecommendationLog(directory: dir).load().first?.budgetCutCityIDs.count == 8)
+    }
+
+    @Test func reselectedFillsResultsSavedUnderTheOldCutRule() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        var request = Self.request()
+        request.budgetMax = 500_000
+        let service = try Self.service(client: Self.fake(lows: Array(repeating: 9_000_000, count: 8)), dir: dir)
+        let record = try await service.recommend(
+            request: request, tiers: WantedConceptTiers(), excludedCountries: [], homeCountryExcluded: false
+        )
+        // 예전 규칙이었다면 모두 빠져 카드가 없었다.
+        var old = record
+        old.cards = []
+        old.error = "noneWithinBudget"
+        let offline = try Self.service(client: nil, dir: dir)
+        let restored = offline.reselected(old)
+        #expect(restored.cards == record.cards)
+        #expect(restored.error == nil)
+        #expect(restored.id == record.id)
+        // 지금 규칙으로 만든 결과는 그대로다.
+        #expect(offline.reselected(record) == record)
     }
 
     @Test func recutChangesBudgetWithoutCallingLLM() async throws {
@@ -455,8 +495,8 @@ struct CityRecommendationServiceTests {
         #expect(loosened.input.budgetMax == 4_000_000)
         #expect(loosened.cards.map(\.cityID).prefix(2) == record.poolCityIDs.prefix(2))
         let tightened = try #require(offline.recut(loosened, budgetMax: 100_000))
-        #expect(tightened.cards.isEmpty)
-        #expect(tightened.error == "noneWithinBudget")
+        #expect(tightened.cards.map(\.cityID) == Array(record.poolCityIDs.prefix(3)))
+        #expect(tightened.error == nil)
         #expect(tightened.budgetCutCityIDs.count == 8)
         #expect(CityRecommendationLog(directory: dir).load().count == 3)
     }
@@ -994,7 +1034,7 @@ struct CityStateTests {
 
         // 줄어드는 경우
         await model.applyBudget(2_000_000, dependencies: dependencies)
-        #expect(model.budgetChange?.message == "예산을 1인 200만 원 이하로 바꿔서 2곳이 빠졌어요")
+        #expect(model.budgetChange?.message == "예산을 1인 200만 원 이하로 바꿔 추천 순서를 조정했어요")
         #expect(model.skippedCityIDs == [skipped])
         // 되돌리면 이전 예산과 처음 보이던 카드로 돌아오고, 안내는 사라진다. 넘긴 도시는 그대로다.
         await model.revertBudget(dependencies: dependencies)
@@ -1007,13 +1047,11 @@ struct CityStateTests {
         // 영향이 없는 경우
         await model.applyBudget(5_000_000, dependencies: dependencies)
         #expect(model.budgetChange?.message == "예산을 1인 500만 원 이하로 바꿨어요")
-        // 다시 늘어나는 경우: 아무것도 안 남는 예산에서 풀면 늘어난다.
+        // 모두 예산을 넘는다고 추정돼도 빼지 않고 순위대로 보여준다(2026-11-06).
         await model.applyBudget(100_000, dependencies: dependencies)
-        #expect(model.budgetChange?.message == "예산을 1인 10만 원 이하로 바꿔서 \(original.count + 0)곳이 빠졌어요")
-        await model.applyBudget(5_000_000, dependencies: dependencies)
-        let added = try #require(model.budgetChange)
-        #expect(added.message == "예산을 1인 500만 원 이하로 바꿔서 \(added.added)곳이 늘었어요")
-        #expect(added.added > 0)
+        let tight = try #require(model.lastRecord)
+        #expect(tight.budgetCutCityIDs.count == tight.poolCityIDs.count)
+        #expect(!model.visibleCards(tight).isEmpty)
     }
 
     @Test @MainActor func returningToOriginalBudgetRestoresOriginalRecordAndSurvivesRestore() async throws {
@@ -1084,7 +1122,7 @@ struct CityStateTests {
         await model.applyBudget(nil, dependencies: dependencies)
         #expect(model.lastRecord?.input.budgetMax == nil)
         #expect(model.lastRecord?.budgetCutCityIDs.isEmpty == true)
-        #expect(model.budgetChange?.message.hasPrefix("예산을 미정으로 바꿔서") == true)
+        #expect(model.budgetChange?.message.hasPrefix("예산을 미정으로 바꿔") == true)
         #expect(model.canEditBudget)
         await model.revertBudget(dependencies: dependencies)
         #expect(model.lastRecord?.id == record.id)

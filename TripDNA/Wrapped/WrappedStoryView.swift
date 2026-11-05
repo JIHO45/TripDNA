@@ -188,7 +188,8 @@ struct WrappedStoryView: View {
                         HStack(spacing: 10) {
                             Text(entry.concept.label)
                                 .dnaFont(size: 13, weight: .bold)
-                                .frame(width: 64, alignment: .leading)
+                                // 영어 한 단어("Socializing")가 한 줄에 들어가는 폭. 64면 "Relaxatio/n"처럼 끊긴다.
+                                .frame(width: 84, alignment: .leading)
                             ForEach(0..<min(entry.count, 6), id: \.self) { _ in
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                                     .fill(Color.white.opacity(fingerprint.top.contains(entry.concept) ? 1 : 0.45))

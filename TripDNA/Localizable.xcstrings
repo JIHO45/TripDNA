@@ -1373,22 +1373,6 @@
         }
       }
     },
-    "%lld, %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld, %2$@"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld년 %2$@"
-          }
-        }
-      }
-    },
     "%lldN %lldD": {
       "localizations": {
         "en": {
@@ -9052,9 +9036,21 @@
     "Took %lld trips each:\n%@": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Took %1$lld trips each:\n%2$@"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Took %1$lld trip each:\n%2$@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Took %1$lld trips each:\n%2$@"
+                }
+              }
+            }
           }
         },
         "ko": {
@@ -9068,9 +9064,21 @@
     "Took %lld trips each: %@": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Took %1$lld trips each: %2$@"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Took %1$lld trip each: %2$@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Took %1$lld trips each: %2$@"
+                }
+              }
+            }
           }
         },
         "ko": {

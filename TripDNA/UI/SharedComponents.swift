@@ -320,20 +320,31 @@ struct DNAScreenHeader<Trailing: View>: View {
         self.trailing = trailing
     }
 
+    /// 제목과 버튼이 한 줄에 안 들어가면(영어·큰 글자) 단어 중간에서 끊기지 않게 버튼을 제목 아래로 내린다.
     var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .dnaFont(.screenTitle)
-                    .foregroundStyle(Color.dnaTextPrimary)
-                if let subtitle {
-                    Text(subtitle)
-                        .dnaFont(.caption)
-                        .foregroundStyle(Color.dnaTextSecondary)
-                }
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top) {
+                titleBlock
+                Spacer(minLength: DNASpacing.sm)
+                trailing()
             }
-            Spacer(minLength: DNASpacing.sm)
-            trailing()
+            VStack(alignment: .leading, spacing: DNASpacing.sm) {
+                titleBlock
+                trailing()
+            }
+        }
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .dnaFont(.screenTitle)
+                .foregroundStyle(Color.dnaTextPrimary)
+            if let subtitle {
+                Text(subtitle)
+                    .dnaFont(.caption)
+                    .foregroundStyle(Color.dnaTextSecondary)
+            }
         }
     }
 }
@@ -389,12 +400,13 @@ struct DNABottomCTA<Content: View>: View {
         .padding(.bottom, DNASpacing.md)
         // safeAreaInset에서도 좌우 inset이 빠지지 않도록 배경은 패딩 바깥에 깔고,
         // 버튼 콘텐츠 폭은 명시적으로 화면 가로 - lg*2 를 유지한다.
+        // 페이드는 상단 여백 안에서만 둔다. 비율로 두면 첫 줄(체크박스·안내문) 뒤가 투명해져 내용이 겹쳐 보인다.
         .background(alignment: .bottom) {
-            LinearGradient(
-                colors: [background.opacity(0), background],
-                startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.3)
-            )
+            VStack(spacing: 0) {
+                LinearGradient(colors: [background.opacity(0), background], startPoint: .top, endPoint: .bottom)
+                    .frame(height: DNASpacing.sm)
+                background
+            }
             .ignoresSafeArea(edges: .bottom)
             .padding(.horizontal, -DNASpacing.lg)
         }
@@ -757,6 +769,8 @@ struct DNASegmentedControl<V: Hashable>: View {
                 Button { onSelect(items[index].value) } label: {
                     Text(items[index].title)
                         .dnaFont(.cardTitle)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .foregroundStyle(selected ? Color.dnaTextPrimary : Color.dnaTextSecondary)
                         .frame(maxWidth: .infinity, minHeight: 40)
                         .background {

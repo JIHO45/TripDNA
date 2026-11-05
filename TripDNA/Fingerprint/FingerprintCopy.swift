@@ -3,7 +3,8 @@ import Foundation
 extension KoreanParticle {
     /// "미식과 도시"
     static func andJoined(_ first: String, _ second: String) -> String {
-        guard AppLanguage.isKorean else { return "\(first) & \(second)" }
+        // 영어는 "and". "&"는 "Culture & History" 같은 이름과 겹쳐 "A & Culture & History"가 된다.
+        guard AppLanguage.isKorean else { return [first, second].formatted(.list(type: .and)) }
         return "\(attach(first, .waGwa)) \(second)"
     }
 }

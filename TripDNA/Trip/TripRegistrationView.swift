@@ -158,12 +158,10 @@ final class TripRegistrationViewModel {
     /// "11월 14일 – 17일 · 3박 4일". 구간이 여럿이면 첫 구간만 보여준다.
     var whenSummary: String? {
         guard let leg = legs.first else { return nil }
-        let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         let span = nights(of: leg)
-        let range = span == 0
-            ? formatter.string(from: leg.startDate)
-            : "\(formatter.string(from: leg.startDate)) – \(formatter.string(from: leg.endDate))"
+        let range = span == 0 || leg.startDate >= leg.endDate
+            ? leg.startDate.formatted(.dateTime.month().day())
+            : (leg.startDate..<leg.endDate).formatted(.interval.month().day())
         return span == 0 ? range : "\(range) · " + String(localized: "\(span) nights, \(span + 1) days")
     }
 

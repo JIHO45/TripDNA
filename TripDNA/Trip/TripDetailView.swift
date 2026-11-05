@@ -257,8 +257,14 @@ struct TripDetailView: View {
 
     /// "2026년 9월 3일 – 9일 · 여가 · 친구 3명". 입력하지 않은 동행은 쓰지 않는다.
     private func metaLine(_ trip: Trip) -> String {
-        let year = trip.legs.first.map { Calendar.current.component(.year, from: $0.startDate) }
-        var parts = [year.map { String(localized: "\($0), \(trip.shortDateRangeKo)") } ?? trip.shortDateRangeKo]
+        // 연도 포함 구간은 시스템 포맷에 맡긴다. 정수 보간은 영어에서 "2,026"이 된다.
+        var dateText = trip.shortDateRangeKo
+        if let first = trip.legs.first?.startDate, let last = trip.legs.last?.endDate {
+            dateText = first < last
+                ? (first..<last).formatted(.interval.year().month().day())
+                : first.formatted(.dateTime.year().month().day())
+        }
+        var parts = [dateText]
         if trip.purpose == .obligation {
             parts.append(String(localized: "Business"))
         } else if trip.status != .active {

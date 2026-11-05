@@ -243,9 +243,7 @@ struct SavedRecommendationsView: View {
     }
 
     private func savedDateText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy.MM.dd"
-        return String(localized: "Saved \(formatter.string(from: date))")
+        String(localized: "Saved \(date.formatted(date: .abbreviated, time: .omitted))")
     }
 }
 

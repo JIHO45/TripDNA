@@ -9,7 +9,6 @@ struct HomeRedesignView: View {
     @Environment(AppDependencies.self) private var dependencies
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// D-day 원 지름. 안의 숫자(20pt)와 같은 비율로 커진다.
     @ScaledMetric(relativeTo: .title3) private var dDayDiameter: CGFloat = 56
     @State private var viewModel = HomeViewModel()
@@ -158,7 +157,7 @@ struct HomeRedesignView: View {
                 Spacer()
             }
             .padding(12)
-            bottomBarLayout {
+            bottomBar {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(HomeViewModel.placeName(trip))
                         .dnaFont(.heroTitle)
@@ -167,7 +166,7 @@ struct HomeRedesignView: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
-                if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 0) }
+            } actions: {
                 NavigationLink {
                     DailyPhotoView(trip: trip)
                 } label: {
@@ -195,10 +194,19 @@ struct HomeRedesignView: View {
     }
 
     /// 여행 카드 아래 막대. 큰 글자에서는 버튼 라벨이 줄바꿈되지 않게 제목과 버튼을 세로로 쌓는다.
-    private var bottomBarLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DNASpacing.sm))
-            : AnyLayout(HStackLayout(alignment: .center, spacing: DNASpacing.sm))
+    /// 장소·날짜 옆에 버튼을 둔다. 한 줄에 안 들어가면(영어·큰 글자) 버튼을 아래 줄로, 그래도 안 되면 세로로 쌓는다.
+    private func bottomBar<Info: View, Actions: View>(
+        @ViewBuilder info: () -> Info, @ViewBuilder actions: () -> Actions
+    ) -> some View {
+        let info = info(), actions = actions()
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: DNASpacing.sm) { info; Spacer(minLength: 0); actions }
+            VStack(alignment: .leading, spacing: DNASpacing.sm) {
+                info
+                HStack(spacing: DNASpacing.sm) { actions }
+            }
+            VStack(alignment: .leading, spacing: DNASpacing.sm) { info; actions }
+        }
     }
 
     private func upcomingCard(_ trip: Trip, days: Int) -> some View {
@@ -222,7 +230,7 @@ struct HomeRedesignView: View {
                 Spacer()
             }
             .padding(12)
-            bottomBarLayout {
+            bottomBar {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(HomeViewModel.placeName(trip))
                         .dnaFont(.heroTitle)
@@ -231,7 +239,7 @@ struct HomeRedesignView: View {
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextSecondary)
                 }
-                if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 0) }
+            } actions: {
                 NavigationLink {
                     TripDetailView(tripID: trip.id)
                 } label: {

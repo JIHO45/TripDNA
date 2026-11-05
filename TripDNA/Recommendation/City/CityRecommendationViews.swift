@@ -80,7 +80,7 @@ struct CityRecommendationSection: View {
             Button("Try Again", action: retry)
                 .buttonStyle(.dnaSecondary)
             #if DEBUG
-            Button("Enter Dev Key") { showingKeyEntry = true }
+            Button(String("Enter Dev Key")) { showingKeyEntry = true }
                 .buttonStyle(.dnaGhost)
             #endif
         }

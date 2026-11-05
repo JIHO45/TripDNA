@@ -427,7 +427,7 @@ struct TripRegistrationView: View {
         _ step: Step, _ number: String, _ title: String, _ summary: String?, _ body: Body
     ) -> some View {
         let isOpen = openStep == step
-        return VStack(alignment: .leading, spacing: DNASpacing.md) {
+        return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.easeOut(duration: 0.2)) { openStep = isOpen ? nil : step }
             } label: {
@@ -438,16 +438,30 @@ struct TripRegistrationView: View {
                             .foregroundStyle(Color.dnaTextTertiary)
                     }
                     // 시안: 펼친 단계는 큰 질문 제목, 접힌 단계는 회색 이름 + 오른쪽 굵은 값(추천 입력 시트와 같음).
-                    Text(title)
-                        .dnaFont(isOpen ? .stepTitle : .body)
-                        .foregroundStyle(isOpen ? Color.dnaTextPrimary : Color.dnaTextSecondary)
-                    Spacer(minLength: DNASpacing.xs)
-                    if !isOpen {
-                        Text(summary ?? String(localized: "TBD"))
-                            .dnaFont(.cardTitle)
-                            .foregroundStyle(summary == nil ? Color.dnaTextTertiary : Color.dnaTextPrimary)
-                            .lineLimit(1)
+                    // 한 Text의 글꼴을 바꾸면 글자 페이드가 생겨 새 제목이 늦게 나타난다. 상태별 Text를 페이드 없이 바꾼다.
+                    Group {
+                        if isOpen {
+                            Text(title)
+                                .dnaFont(.stepTitle)
+                                .foregroundStyle(Color.dnaTextPrimary)
+                            Spacer(minLength: DNASpacing.xs)
+                        } else {
+                            let name = Text(title)
+                                .dnaFont(.body)
+                                .foregroundStyle(Color.dnaTextSecondary)
+                            let value = Text(summary ?? String(localized: "TBD"))
+                                .dnaFont(.cardTitle)
+                                .foregroundStyle(summary == nil ? Color.dnaTextTertiary : Color.dnaTextPrimary)
+                                .lineLimit(1)
+                            // 이름 옆에 값이 다 안 들어가면(영어) 값이 잘리지 않게 이름 아래로 내린다.
+                            ViewThatFits(in: .horizontal) {
+                                HStack(spacing: DNASpacing.xs) { name; Spacer(minLength: DNASpacing.xs); value }
+                                VStack(alignment: .leading, spacing: 2) { name; value }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
                     }
+                    .transition(.identity)
                     Image(systemName: isOpen ? "chevron.up" : "chevron.down")
                         .dnaFont(.caption)
                         .foregroundStyle(Color.dnaTextTertiary)
@@ -458,12 +472,23 @@ struct TripRegistrationView: View {
             .buttonStyle(.plain)
             .accessibilityAddTraits(.isHeader)
 
-            if isOpen { body }
+            // 내용을 넣었다 뺐다 하면 카드가 움직이는 동안 내용만 최종 위치에 먼저 떠 있다.
+            // 항상 두고 높이만 0↔원래 높이로 바꿔, 내용이 카드와 함께 움직이게 한다.
+            body
+                .padding(.top, DNASpacing.md)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(height: isOpen ? nil : 0, alignment: .top)
+                .clipped()
+                .opacity(isOpen ? 1 : 0)
+                .allowsHitTesting(isOpen)
+                .accessibilityHidden(!isOpen)
         }
         .padding(.horizontal, DNASpacing.md)
         .padding(.vertical, DNASpacing.xxs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.dnaRaised, in: RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
+        // 새로 들어오는 제목도 카드의 움직이는 위치를 기준으로 그려, 최종 위치에 먼저 뜨지 않게 한다.
+        .geometryGroup()
     }
 
     private func optionRow(_ title: String, _ subtitle: String, isSelected: Bool, action: @escaping () -> Void) -> some View {

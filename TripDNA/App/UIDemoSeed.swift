@@ -60,14 +60,14 @@ enum UIDemoSeed {
         case .empty:
             break
         case .upcoming:
-            try await store.create(trip("PT", String(localized: "Lisbon"), from: 26, to: 30, .food, now: now))
-            try await store.create(evaluated("JP", String(localized: "Kyoto"), from: -22, to: -18, .cultureHistory, stars: 5, now: now))
+            try await store.create(trip("PT", "Lisbon", from: 26, to: 30, .food, now: now))
+            try await store.create(evaluated("JP", "Kyoto", from: -22, to: -18, .cultureHistory, stars: 5, now: now))
         case .active:
-            var active = try trip("PT", String(localized: "Lisbon"), from: -2, to: 3, .cityExploration, now: now)
+            var active = try trip("PT", "Lisbon", from: -2, to: 3, .cityExploration, now: now)
             try active.start(at: day(-2, now))
             try await store.create(active)
         case .pendingEval:
-            var ended = try trip("JP", String(localized: "Osaka"), from: -9, to: -5, .food, now: now)
+            var ended = try trip("JP", "Osaka", from: -9, to: -5, .food, now: now)
             try ended.end(at: day(-5, now))
             try await store.create(ended)
         case .many:
@@ -104,14 +104,14 @@ enum UIDemoSeed {
             }
         case .wrappedOne:
             let from = lastYearOffset(200, now)
-            try await store.create(evaluated("JP", String(localized: "Osaka"), from: from, to: from + 4, .food, stars: 5, now: now))
+            try await store.create(evaluated("JP", "Osaka", from: from, to: from + 4, .food, stars: 5, now: now))
         case .chat:
             let generation = store.dataGeneration.current
             _ = try await store.updateChatState(ifGeneration: generation) { $0.upsert(chatConversation(now: now)) }
         case .saved:
             try await store.updateCityState {
-                $0.save(card(of: "jp-kyoto"), conditionSummary: String(localized: "Culture & History · November"), now: day(-3, now))
-                $0.save(card(of: "pt-lisbon"), conditionSummary: String(localized: "Food · March"), now: day(-1, now))
+                $0.save(card(of: "jp-kyoto"), conditionSummary: "Culture & History · November", now: day(-3, now))
+                $0.save(card(of: "pt-lisbon"), conditionSummary: "Food · March", now: day(-1, now))
                 $0.exclude(card(of: "es-barcelona"), now: day(-5, now))
             }
         }
@@ -171,7 +171,7 @@ enum UIDemoSeed {
                 satisfaction: stars, wouldRepeat: stars >= 4,
                 cityReviews: [CityReview(
                     countryCode: country, city: city, rating: stars,
-                    liked: String(localized: "Great for walking, and lots of places to eat"), disliked: stars <= 3 ? String(localized: "Too crowded") : nil
+                    liked: "Great for walking, and lots of places to eat", disliked: stars <= 3 ? "Too crowded" : nil
                 )],
                 source: .postTrip
             ),
@@ -181,17 +181,17 @@ enum UIDemoSeed {
     }
 
     private static let manyTrips: [(country: String, city: String, concept: TripConcept, secondary: [TripConcept], stars: Int)] = [
-        ("JP", String(localized: "Osaka"), .food, [.shopping], 5),
-        ("IT", String(localized: "Rome"), .cultureHistory, [.food], 4),
-        ("NZ", String(localized: "Queenstown"), .natureScenery, [.activities], 5),
-        ("TH", String(localized: "Phuket"), .relaxation, [], 3),
-        ("GB", String(localized: "London"), .cityExploration, [.cultureHistory], 4),
-        ("JP", String(localized: "Kyoto"), .food, [.cultureHistory], 5)
+        ("JP", "Osaka", .food, [.shopping], 5),
+        ("IT", "Rome", .cultureHistory, [.food], 4),
+        ("NZ", "Queenstown", .natureScenery, [.activities], 5),
+        ("TH", "Phuket", .relaxation, [], 3),
+        ("GB", "London", .cityExploration, [.cultureHistory], 4),
+        ("JP", "Kyoto", .food, [.cultureHistory], 5)
     ]
 
     private static func seedTrips(_ store: any AppStore, now: Date) async throws {
-        try await store.create(evaluated("JP", String(localized: "Kyoto"), from: -200, to: -196, .cultureHistory, stars: 5, now: now))
-        try await store.create(evaluated("TH", String(localized: "Phuket"), from: -120, to: -115, .relaxation, stars: 4, now: now))
+        try await store.create(evaluated("JP", "Kyoto", from: -200, to: -196, .cultureHistory, stars: 5, now: now))
+        try await store.create(evaluated("TH", "Phuket", from: -120, to: -115, .relaxation, stars: 4, now: now))
     }
 
     private static let tiers: WantedConceptTiers = {
@@ -199,15 +199,15 @@ enum UIDemoSeed {
         tiers.tier1 = [.food, .cultureHistory]
         tiers.tier2 = [.cityExploration]
         tiers.tier3 = [.relaxation]
-        tiers.avoidNote = String(localized: "I'd like to avoid places that are too crowded")
+        tiers.avoidNote = "I'd like to avoid places that are too crowded"
         return tiers
     }()
 
     // MARK: 추천 기록
 
     private static func card(
-        of cityID: String, reason: String = String(localized: "A city of long days spent wandering alleys and markets and eating your way through them."),
-        caveat: String = String(localized: "It gets crowded in peak season."), cost: CostRange? = nil, conditions: [ConditionResult] = []
+        of cityID: String, reason: String = "A city of long days spent wandering alleys and markets and eating your way through them.",
+        caveat: String = "It gets crowded in peak season.", cost: CostRange? = nil, conditions: [ConditionResult] = []
     ) -> CityRecommendationRecord.Card {
         let city = CityCatalog.load()?.cities.first { $0.id == cityID }
         return .init(
@@ -218,10 +218,10 @@ enum UIDemoSeed {
     }
 
     private static let japanOnly = CityCondition(
-        id: "c1", text: String(localized: "Japan"), quote: String(localized: "Japan"), level: .required, kind: .country, target: "JP"
+        id: "c1", text: "Japan", quote: "Japan", level: .required, kind: .country, target: "JP"
     )
     private static let shortFlight = CityCondition(
-        id: "c2", text: String(localized: "Within a 5-hour flight"), quote: String(localized: "Within a 5-hour flight"), level: .required, kind: .other
+        id: "c2", text: "Within a 5-hour flight", quote: "Within a 5-hour flight", level: .required, kind: .other
     )
 
     /// 후보 풀은 서비스의 `replay`와 같은 입력으로 순위를 다시 계산해 만든다. 그래야 저장된 응답을 믿고
@@ -255,10 +255,10 @@ enum UIDemoSeed {
         let ranked = rankedCities(request, conditions: conditions, excludedCountries: excludedCountries)
         let pool = Array(ranked.prefix(CityLLMRequestBuilder.poolSize))
         let response = CityLLMResponse(
-            understanding: understanding ?? String(localized: "Demo response"),
+            understanding: understanding ?? "Demo response",
             cards: pool.enumerated().map { index, item in
                 .init(
-                    id: item.city.id, reason: String(localized: "This is a demo description."), caveat: String(localized: "This is a demo caveat."),
+                    id: item.city.id, reason: "This is a demo description.", caveat: "This is a demo caveat.",
                     cost: demoCost(item.city.id, index: index)
                 )
             }
@@ -292,7 +292,7 @@ enum UIDemoSeed {
         request.year = Calendar.current.component(.year, from: .now)
         request.nights = 3
         request.budgetMax = budget
-        request.wants = String(localized: "Japan, within a 5-hour flight")
+        request.wants = "Japan, within a 5-hour flight"
         return request
     }
 
@@ -307,7 +307,7 @@ enum UIDemoSeed {
                 card(of: "jp-kyoto", cost: .init(low: 1_000_000, high: 1_400_000), conditions: [met])
             ],
             conditions: [japanOnly, shortFlight],
-            understanding: String(localized: "You're looking for a Japan trip in November, 3 nights, centered on the joy of eating."), now: now
+            understanding: "You're looking for a Japan trip in November, 3 nights, centered on the joy of eating.", now: now
         )
     }
 
@@ -317,7 +317,7 @@ enum UIDemoSeed {
         return record(
             request,
             cards: ["kr-seoul", "ch-zurich", "us-washington", "es-valencia", "pl-krakow", "sa-riyadh", "id-denpasar", "sa-mecca", "gb-london", "in-delhi", "ar-buenos-aires", "it-verona", "us-los-angeles", "qa-doha", "vn-nha-trang"].map {
-                card(of: $0, reason: String(localized: "This is a demo description."), caveat: String(localized: "This is a demo caveat."))
+                card(of: $0, reason: "This is a demo description.", caveat: "This is a demo caveat.")
             },
             understanding: nil, now: now
         )
@@ -340,7 +340,7 @@ enum UIDemoSeed {
                 card(of: item.city.id, cost: demoCost(item.city.id, index: index))
             },
             excludedCountries: ["JP"], homeCountry: "JP",
-            understanding: String(localized: "You're looking for a trip in November, 3 nights, centered on the joy of eating."), now: now
+            understanding: "You're looking for a trip in November, 3 nights, centered on the joy of eating.", now: now
         )
     }
 }

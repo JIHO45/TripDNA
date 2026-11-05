@@ -318,7 +318,7 @@ extension View {
                     usesPortraitHero: true,
                     usesScrollHeroEffect: true
                 )
-                Text("Content below")
+                Text(verbatim: "Content below")
                     .foregroundStyle(.white)
                     .padding()
                 Color.clear.frame(height: 400)

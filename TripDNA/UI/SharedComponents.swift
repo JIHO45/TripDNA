@@ -1311,8 +1311,8 @@ extension View {
 }
 
 #Preview("SectionCard") {
-    SectionCard(title: String(localized: "Section Card")) {
-        Text("Content goes here.")
+    SectionCard(title: "Section Card") {
+        Text(verbatim: "Content goes here.")
             .dnaFont(.body)
             .foregroundStyle(Color.dnaTextSecondary)
     }
@@ -1337,7 +1337,7 @@ extension View {
 }
 
 #Preview("EmptyStateView") {
-    EmptyStateView(title: String(localized: "No data yet"), message: String(localized: "Register a trip and it will show up here."))
+    EmptyStateView(title: "No data yet", message: "Register a trip and it will show up here.")
         .background(AppCanvas())
 }
 

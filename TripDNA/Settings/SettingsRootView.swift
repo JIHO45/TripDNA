@@ -62,8 +62,8 @@ struct SettingsRootView: View {
                 .listRowBackground(Color.dnaSurface1)
 
                 #if DEBUG
-                Section("Development") {
-                    link("LLM API Key") { DevKeyForm() }
+                Section(String("Development")) {
+                    link(LocalizedStringKey(stringLiteral: "LLM API Key")) { DevKeyForm() }
                 }
                 .listRowBackground(Color.dnaSurface1)
                 #endif

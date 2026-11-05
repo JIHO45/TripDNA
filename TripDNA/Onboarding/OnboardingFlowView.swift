@@ -55,7 +55,7 @@ struct OnboardingHookView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PhotoCollagePlaceholder()
+            PhotoCollage()
                 .padding(.horizontal, DNASpacing.gutter)
                 .padding(.top, DNASpacing.xl)
                 .frame(maxHeight: .infinity)
@@ -85,30 +85,31 @@ struct OnboardingHookView: View {
     }
 }
 
-/// 실제 여행 사진 4~5장이 들어올 자리. 사진 출처 기록 전까지는 빈 타일만 둔다.
-private struct PhotoCollagePlaceholder: View {
+/// 시작 화면 사진 4장. 출처는 docs/data/welcome-photos.md (Unsplash 라이선스).
+private struct PhotoCollage: View {
     var body: some View {
         Grid(horizontalSpacing: DNASpacing.xs, verticalSpacing: DNASpacing.xs) {
             GridRow {
-                tile(symbol: "mountain.2")
-                tile(symbol: "fork.knife")
+                tile("WelcomeMountain")
+                tile("WelcomeFood")
             }
             GridRow {
-                tile(symbol: "building.2")
-                tile(symbol: "sun.max")
+                tile("WelcomeCity")
+                tile("WelcomeBeach")
             }
         }
     }
 
-    private func tile(symbol: String) -> some View {
-        RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous)
-            .fill(Color.dnaSurface2)
+    private func tile(_ name: String) -> some View {
+        Color.dnaSurface2
             .overlay {
-                Image(systemName: symbol)
-                    .font(.title)
-                    .foregroundStyle(Color.dnaTextTertiary)
+                Image(name)
+                    .resizable()
+                    .scaledToFill()
             }
+            .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
             .frame(maxHeight: .infinity)
+            .accessibilityHidden(true)
     }
 }
 

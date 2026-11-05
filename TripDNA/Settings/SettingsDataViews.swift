@@ -138,13 +138,15 @@ struct PermissionsSettingsView: View {
 // MARK: - 데이터 삭제
 
 /// 지울 대상별 개수. 삭제 확인과, 실패했을 때 무엇이 남았는지 보여주는 데 쓴다.
-struct StoredDataCounts: Equatable {
+struct StoredDataCounts: Equatable, Identifiable {
     var trips = 0
     var evaluations = 0
     var photos = 0
     var feedback = 0
     var hasPreferences = false
     var iCloudBackupRemains = false
+
+    var id: [String] { lines }
 
     var isEmpty: Bool { trips == 0 && photos == 0 && feedback == 0 && !hasPreferences }
 
@@ -172,8 +174,8 @@ struct DataDeletionSettingsView: View {
     var onFinished: () -> Void
     @Environment(AppDependencies.self) private var dependencies
     @Environment(SessionStore.self) private var session
-    @State private var counts = StoredDataCounts()
-    @State private var showingConfirm = false
+    /// 확인 시트에 보여줄 개수. 값이 있으면 시트가 열린다.
+    @State private var confirming: StoredDataCounts?
     @State private var isDeleting = false
     @State private var failure: StoredDataCounts?
 
@@ -187,7 +189,10 @@ struct DataDeletionSettingsView: View {
             .listRowBackground(Color.dnaSurface1)
 
             Section {
-                Button("Delete all data", role: .destructive) { showingConfirm = true }
+                // 개수를 시트에 직접 넘긴다. isPresented 시트는 body가 읽지 않는 상태의 첫 값을 보여준다.
+                Button("Delete all data", role: .destructive) {
+                    Task { confirming = await StoredDataCounts(store: dependencies.store) }
+                }
                     .disabled(isDeleting)
             } footer: {
                 Text("All records on this device and the backup in iCloud will be deleted. Once deleted, they can't be recovered anywhere.")
@@ -208,8 +213,7 @@ struct DataDeletionSettingsView: View {
         .settingsListStyle()
         .navigationTitle("Delete data")
         .navigationBarTitleDisplayMode(.inline)
-        .task { counts = await StoredDataCounts(store: dependencies.store) }
-        .sheet(isPresented: $showingConfirm) { confirmSheet }
+        .sheet(item: $confirming) { confirmSheet($0) }
     }
 
     private func hint(_ title: LocalizedStringKey, _ body: LocalizedStringKey) -> some View {
@@ -219,7 +223,7 @@ struct DataDeletionSettingsView: View {
         }
     }
 
-    private var confirmSheet: some View {
+    private func confirmSheet(_ counts: StoredDataCounts) -> some View {
         VStack(alignment: .leading, spacing: DNASpacing.md) {
             Text("Delete all data?")
                 .dnaFont(.heroTitle)
@@ -236,7 +240,7 @@ struct DataDeletionSettingsView: View {
             Button(isDeleting ? String(localized: "Deleting…") : String(localized: "Delete Everything")) { Task { await deleteAll() } }
                 .buttonStyle(.dnaPrimary(isDisabled: isDeleting))
                 .disabled(isDeleting)
-            Button("Cancel") { showingConfirm = false }
+            Button("Cancel") { confirming = nil }
                 .buttonStyle(.dnaGhost)
                 .disabled(isDeleting)
         }
@@ -251,14 +255,13 @@ struct DataDeletionSettingsView: View {
         defer { isDeleting = false }
         do {
             try await dependencies.deleteAccount(session: session)
-            showingConfirm = false
+            confirming = nil
             onFinished()
         } catch {
             failure = await StoredDataCounts(store: dependencies.store)
             // iCloud 사본을 못 지우면 기기 기록도 지우지 않고 멈춘다(AppDependencies.deleteAccount).
             failure?.iCloudBackupRemains = (error as? BackupError) == .remoteDeleteFailed
-            counts = failure ?? counts
-            showingConfirm = false
+            confirming = nil
         }
     }
 }

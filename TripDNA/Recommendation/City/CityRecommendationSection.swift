@@ -384,7 +384,7 @@ struct DevKeyForm: View {
     var body: some View {
         Form {
             Section {
-                SecureField("Anthropic API Key", text: $key)
+                SecureField(String("Anthropic API Key"), text: $key)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 Button("Save") {
@@ -395,18 +395,18 @@ struct DevKeyForm: View {
                 }
                 .disabled(key.isEmpty)
                 if saved {
-                    Button("Delete Saved Key", role: .destructive) {
+                    Button(String("Delete Saved Key"), role: .destructive) {
                         DevAPIKeyStore.save("")
                         saved = false
                     }
                 }
             } header: {
-                Text(saved ? "A key is saved" : "No key saved")
+                Text(verbatim: saved ? "A key is saved" : "No key saved")
             } footer: {
-                Text("Stored only in this device's Keychain. Used in debug builds only.")
+                Text(verbatim: "Stored only in this device's Keychain. Used in debug builds only.")
             }
         }
-        .navigationTitle("Development API Key")
+        .navigationTitle(Text(verbatim: "Development API Key"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

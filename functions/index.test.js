@@ -225,6 +225,13 @@ test("사용량 문서는 그 달이 끝나고 7일 뒤 지운다", () => {
   assert.equal(expireAtOf("2026-12").toISOString(), "2027-01-08T00:00:00.000Z");
 });
 
+const { opsExpireAtOf } = require("./index.js");
+
+test("운영비 문서는 그 날짜(UTC)부터 90일 뒤 지운다", () => {
+  assert.equal(opsExpireAtOf(new Date("2026-11-06T23:59:00Z")).toISOString(), "2027-02-04T00:00:00.000Z");
+  assert.equal(opsExpireAtOf(new Date("2026-11-06T00:00:00Z")).toISOString(), "2027-02-04T00:00:00.000Z");
+});
+
 const { metricEventOf } = require("./index.js");
 
 test("집계 이벤트는 정해진 이름만 받는다", () => {

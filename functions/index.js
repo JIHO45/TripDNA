@@ -233,11 +233,14 @@ function applyChatRelease(data, period, id) {
   return { next: { ...data, chat: { ...chat, holds: rest } } };
 }
 
-// 운영비(사용자 정보 없음): ops/{YYYY-MM-DD} = {started, confirmed, confirmedCost, unknown}.
+// 운영비(사용자 정보 없음): ops/{YYYY-MM-DD} = {started, confirmed, confirmedCost, unknown, expireAt}.
 // 실패한 호출은 제공자가 청구했는지 알 수 없어 unknown으로만 센다. 함수가 도중에 끝난 호출은 started − confirmed − unknown이다.
+// 생성일(문서 날짜 00:00 UTC)부터 90일 뒤 삭제(처리방침 5절, 2026-11-06 결정). 삭제는 ops 컬렉션 expireAt TTL 정책이 한다.
+const opsExpireAtOf = (now) =>
+  new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + 90 * DAY_MS);
 function recordOps(now, fields) {
   const inc = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, FieldValue.increment(v)]));
-  return getFirestore().collection("ops").doc(now.toISOString().slice(0, 10)).set(inc, { merge: true })
+  return getFirestore().collection("ops").doc(now.toISOString().slice(0, 10)).set({ ...inc, expireAt: opsExpireAtOf(now) }, { merge: true })
     .catch(() => logger.error("ops record failed"));
 }
 
@@ -516,6 +519,7 @@ exports.deleteUserData = functionsV1.auth.user().onDelete((user) =>
 );
 
 exports.expireAtOf = expireAtOf;
+exports.opsExpireAtOf = opsExpireAtOf;
 exports.metricEventOf = metricEventOf;
 exports.buildParams = buildParams;
 exports.bitsFor = bitsFor;

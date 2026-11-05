@@ -31,9 +31,9 @@
 | Apple 데이터 유형 | 내용 | Linked to user | Tracking | 목적 | 판단 근거 |
 |---|---|---|---|---|---|
 | Identifiers › User ID | Firebase 익명 UID(설치별, 이름·이메일 없음) | Yes | No | App Functionality | 서버(Auth·`usage/{uid}`)에 남는다 |
-| Usage Data › Other Usage Data | 익명 UID별 이번 달 추천·질문 횟수 | Yes | No | App Functionality | 무료 한도 확인. 그 달 끝 + 7일에 삭제 |
+| Usage Data › Other Usage Data | 익명 UID별 이번 달 추천 횟수와 AI 사용량(비용 기준, 2026-11-03부터 질문 횟수 대신) | Yes | No | App Functionality | 무료 한도 확인. 그 달 끝 + 7일에 삭제 |
 | Usage Data › Product Interaction | 이벤트별 일별 합계(`metric`) | No | No | Analytics | ID·기기 정보 없이 숫자만. 자동 수집이라 선택적 공개 예외에 들지 않는다고 보고 선언한다 |
-| User Content › Other User Content | 조건·자유문장·질문, 동의 시 평가 별점·메모·다녀온 도시 | No | No | App Functionality | 중계 서버는 저장하지 않지만 Anthropic이 자체 정책(일반적으로 30일 이내)으로 보관할 수 있어 "실시간 처리 후 폐기"로 보기 어렵다. 요청에 UID를 넣지 않는다 |
+| User Content › Other User Content | 조건·자유문장·질문, AI 대화 메시지·요약할 앞부분, 동의 시 평가 별점·메모·다녀온 도시·여행 목록 | No | No | App Functionality | 중계 서버는 저장하지 않지만 Anthropic이 자체 정책(일반적으로 30일 이내)으로 보관할 수 있어 "실시간 처리 후 폐기"로 보기 어렵다. 요청에 UID를 넣지 않는다 |
 | Purchases › Purchase History | 구독 거래의 원 거래 ID(`usage/sub-{원 거래 ID}`) | Yes | No | App Functionality | 2026-11-02 구독 서버 확인 추가. 구독자 사용량을 원 거래 ID 문서로 센다 |
 
 선언하지 않는 것과 이유:
@@ -50,7 +50,9 @@
 - 사용 횟수를 Product Interaction이 아니라 Other Usage Data로 둔 것은, 한 유형을 Linked와 Not linked로 동시에 답할 수 없어서다. 둘 다 Product Interaction으로 두면 합계까지 Linked로 표시해야 한다.
 - Other User Content를 빼려면 Anthropic 무보관(Zero Data Retention) 계약 같은 근거가 있어야 한다. 지금은 선언하는 쪽이 안전하다.
 
-5.1.2(i) 제3자 AI 고지·명시적 허락은 선언과 별개로 첫 추천 전 동의 시트가 맡는다(결정 A1, 2026-10-31 구현).
+5.1.2(i) 제3자 AI 고지·명시적 허락은 선언과 별개로 첫 추천 전 동의 시트(결정 A1, 2026-10-31 구현)와 첫 AI 대화 전 대화 동의 시트(2026-11-03 구현)가 맡는다.
+
+2026-11-06 AI 대화 대조: 대화는 새 데이터 유형을 만들지 않는다. 대화 메시지와 여행 목록은 기존 User Content › Other User Content(Not linked)에, AI 사용량은 기존 Other Usage Data(Linked)에 든다. 서버의 `ops/{날짜}` 운영 비용 합계는 사용자 식별자 없는 운영 숫자라 선언하지 않는다. 그래서 App Store Connect 답은 바꿀 필요가 없다고 본다(위 표의 설명만 고쳤다).
 
 ## 개인정보 처리방침
 

@@ -1,6 +1,7 @@
 # TripDNA 개인정보 처리방침
 
 > 이 파일은 Notion에 붙여넣기 위한 사본이다. 게시한 뒤에는 **Notion 페이지가 원본**이다. 내용을 바꿀 때는 Notion을 먼저 고치고 이 파일도 맞춘다. 근거가 되는 결정은 [저장·전송](data/storage-and-privacy.md#결정-선택지초안)에 있다.
+> 2026-11-06 AI 대화 부분(4절 맥락 고정·웹 검색·건수, 5절 운영 비용 합계 보관 기간)을 코드와 대조해 보강했다. 같은 날 사용자 결정: 운영 비용 합계는 집계일 00:00 UTC부터 90일 뒤 자동 삭제 대상(법정 기간이 아닌 운영 기준, TTL은 보통 만료 후 24시간 안에 지움). 서버가 `ops` 문서에 `expireAt`을 쓰고, TTL 정책은 2026-11-06 배포했다(`firestore.indexes.json`). AI 대화 서버를 배포할 때 두 시행일을 배포일로 바꿔 Notion에 반영한다.
 > 2026-10-31 작성. 아래 `---` 사이의 한국어·영어 두 부분을 각각 다른 Notion 페이지에 붙여넣는다. 이 안내 문단은 붙여넣지 않는다.
 > 게시 주소(영어): https://woolly-devourer-5d2.notion.site/TripDNA-Privacy-Policy-4093ed084bab809a99c9ffcf15daf337 (앱 설정의 링크). 2026-10-31 사용자 결정으로 영어 페이지만 게시한다. 한국어 부분은 게시하지 않는 참고용 번역이다.
 
@@ -33,13 +34,15 @@ TripDNA(이하 “앱”)는 지난 여행의 기록을 바탕으로 다음 여�
 도시 추천, 도시에 대한 질문 답변, AI 대화의 답은 외부 AI 모델이 만듭니다. 이를 위해 아래 정보를 운영자의 중계 서버를 거쳐 AI 제공자에게 보냅니다. 처음 추천을 받기 전과 처음 AI 대화를 하기 전에 보내는 항목을 안내하고 동의를 받습니다.
 
 - 항상 보내는 것: 고른 여행 컨셉, 여행 조건(시기, 기간, 인원, 예산 등), 직접 적은 문장, 원하는 여행, 질문 내용과 해당 도시
-- AI 대화에서 항상 보내는 것: 대화 메시지, 지난 여행의 컨셉별 개수, 원하는 여행의 단계와 피하고 싶은 점, 저장한 도시(이름, 나라, 조건 요약)
-- 동의한 경우에만 보내는 것: 최근 여행 평가 최대 10건의 별점과 메모(칸마다 500자까지), 다녀온 도시. AI 대화에서는 여행 목록(장소, 날짜, 컨셉, 만족도)과 위 평가도 이 경우에만 보냅니다.
+- AI 대화에서 항상 보내는 것: 대화 메시지, 지난 여행의 컨셉별 개수, 원하는 여행의 단계와 피하고 싶은 점, 저장한 도시 최대 20곳(이름, 나라, 조건 요약)
+- 동의한 경우에만 보내는 것: 최근 여행 평가 최대 10건의 별점과 메모(칸마다 500자까지), 다녀온 도시. AI 대화에서는 최근 여행 최대 30건의 목록(장소, 날짜, 컨셉, 계획·여행 중·다녀옴 여부, 만족도)과 위 평가도 이 경우에만 보냅니다.
 - 보내지 않는 것: 사진 원본, 위치 기록, 이름·연락처
 
 지난 여행 평가 전송은 설정 > 권한과 보내는 정보에서 언제든 끌 수 있습니다. 끄면 다음 요청부터 보내지 않습니다. 이미 보낸 내용은 앱에서 되돌릴 수 없습니다. 끄면 평가가 담긴 맥락으로 시작한 AI 대화는 읽을 수만 있고 이어 쓸 수 없습니다.
 
-AI 대화의 원문은 기기에만 저장하고(iCloud 백업 포함, 우리 서버에는 저장하지 않음), 답을 만들 때 이전 내용의 요약과 최근 메시지를 보냅니다. 대화가 길어지면 앞부분을 요약하려고 그 부분을 한 번 더 보냅니다. AI 대화는 웹 검색을 쓸 수 있습니다.
+AI 대화의 원문은 기기에만 저장하고(iCloud 백업 포함, 우리 서버에는 저장하지 않음), 답을 만들 때 이전 내용의 요약과 최근 메시지를 보냅니다. 대화가 길어지면 앞부분을 요약하려고 그 부분을 한 번 더 보냅니다. AI 대화를 시작할 때 보낼 여행 정보를 정하며, 이후 기록이 바뀌어도 그 대화에는 반영하지 않습니다(새 대화를 시작하면 최신 정보를 씁니다).
+
+도시 질문과 AI 대화는 가격, 운영 시간, 행사 날짜처럼 바뀌는 정보를 확인하려고 웹 검색을 쓸 수 있습니다(질문 하나에 최대 3번, 대화 메시지 하나에 최대 2번). 검색어는 AI가 질문과 대화 내용으로 만들고, 검색은 Anthropic이 처리합니다.
 
 ## 5. 서버에 남는 정보
 
@@ -51,7 +54,7 @@ AI 대화의 원문은 기기에만 저장하고(iCloud 백업 포함, 우리 �
 | 기기 확인 | 앱을 다시 설치하거나 데이터를 지운 뒤 같은 기기에서 무료 한도를 다시 받지 못하게 하려고, 그 달 처음 요청할 때 Apple DeviceCheck로 이 기기가 이번 달에 이미 무료 한도를 받았는지 확인하고 표시합니다. Apple은 기기마다 2개의 값과 마지막으로 표시한 달만 보관하며, 우리 서버는 확인에 쓰는 기기 토큰을 저장하지 않습니다. | 기기 토큰은 저장하지 않음. 기기 표시는 Apple이 보관 |
 | 요청과 응답 내용 | 저장하지 않습니다. 중계 서버는 전달만 합니다. | 보관하지 않음 |
 | 이용 합계 | 앱을 고치기 위해 하루 동안 특정 행동이 몇 번 있었는지 세는 숫자(예: 추천을 받은 횟수, 공유한 횟수, 추천에서 도시를 뺀 횟수). 익명 ID나 기기 정보 없이 숫자만 더하므로 누가 했는지 알 수 없습니다. | 기한 없음(개인을 알아볼 수 없는 합계) |
-| 운영 비용 합계 | AI 호출 비용을 파악하려고 하루 동안의 호출 시작 수, 비용을 확인한 수와 그 비용 합계, 확인하지 못한 수를 더한 숫자. 익명 ID나 기기 정보 없이 날짜별 숫자만 더합니다. | (보관 기간 미정) |
+| 운영 비용 합계 | AI 호출 비용을 파악하려고 하루 동안의 호출 시작 수, 비용을 확인한 수와 그 비용 합계, 확인하지 못한 수를 더한 숫자. 익명 ID나 기기 정보 없이 날짜별 숫자만 더합니다. | 집계일 시작 시각(UTC)으로부터 90일 후 자동 삭제 대상으로 지정됩니다. 실제 삭제는 일반적으로 만료 후 24시간 이내에 이루어지며, 처리 상황에 따라 지연될 수 있습니다. |
 | 서버 운영 기록 | 요청 시각, 처리 결과 코드 등. 요청 내용은 기록하지 않습니다. IP 주소 같은 접속 정보는 Google이 서비스 운영을 위해 처리할 수 있습니다. | Google Cloud 기본 보관 기간(30일) |
 
 추천 카드의 “틀린 내용 알리기”를 누르면 메일 앱이 열리고 도시 이름과 추천 결과의 버전이 미리 채워집니다. 사용자가 직접 보낸 경우에만 받으며, 받은 메일은 문의 답변과 추천 수정에만 씁니다.
@@ -122,13 +125,15 @@ If you allow photo access, the app uses photo dates and locations to find past t
 City recommendations, answers to questions about a city, and AI chat replies are written by an external AI model. To do this, the app sends the information below through the operator’s relay server to the AI provider. Before your first recommendation and before your first AI chat, the app shows what will be sent and asks for your consent.
 
 - Always sent: the trip concept you chose, trip conditions (timing, length, party size, budget, etc.), text you typed, your wanted trips, and your question with the city it is about
-- Always sent for AI chat: your chat messages, the number of past trips per concept, your wanted-trip tiers and avoid note, and your saved cities (name, country, condition summary)
-- Sent only if you agree: star ratings and notes from up to 10 recent trip reviews (up to 500 characters per note), and cities you have visited. For AI chat, the trip list (places, dates, concepts, satisfaction) and these reviews are also sent only in this case.
+- Always sent for AI chat: your chat messages, the number of past trips per concept, your wanted-trip tiers and avoid note, and up to 20 saved cities (name, country, condition summary)
+- Sent only if you agree: star ratings and notes from up to 10 recent trip reviews (up to 500 characters per note), and cities you have visited. For AI chat, a list of up to 30 recent trips (places, dates, concepts, whether planned, in progress, or completed, and satisfaction) and these reviews are also sent only in this case.
 - Never sent: photo files, location history, your name or contact details
 
 You can turn off sending past trip reviews at any time in Settings > Permissions and shared info. It stops from the next request. Information already sent cannot be recalled from the app. If you turn it off, chats that started with reviews included can be read but not continued.
 
-AI chat text is stored only on your device (including your iCloud backup), not on our server. To write a reply, the app sends a summary of earlier messages and the recent messages. When a chat gets long, the earlier part is sent once more to be summarized. AI chat can use web search.
+AI chat text is stored only on your device (including your iCloud backup), not on our server. To write a reply, the app sends a summary of earlier messages and the recent messages. When a chat gets long, the earlier part is sent once more to be summarized. The trip information for a chat is set when the chat starts; later changes to your records are not reflected in that chat (a new chat uses the latest information).
+
+City questions and AI chat can use web search to check information that changes, such as prices, opening hours, and event dates (up to 3 searches per question and 2 per chat message). The AI writes the search terms from your question and the conversation, and Anthropic handles the search.
 
 ## 5. Information kept on the server
 
@@ -140,7 +145,7 @@ AI chat text is stored only on your device (including your iCloud backup), not o
 | Device check | So that reinstalling the app or deleting data does not give the same device the free limit again, the first request each month uses Apple DeviceCheck to check and mark whether this device already received the free limit this month. Apple keeps only two values and the month they were last set for each device; our server does not store the device token used for the check. | Device token not stored. The device mark is kept by Apple |
 | Request and response content | Not stored. The relay server only passes it on. | Not kept |
 | Usage totals | Daily counts of certain actions, used to improve the app (for example, how many recommendations were received, how many cards were shared, how many cities were removed from recommendations). Only numbers are added, with no anonymous ID or device information, so no one can tell who did what. | No limit (totals that cannot identify anyone) |
-| Operating cost totals | To understand AI call costs, daily numbers of calls started, calls whose cost was confirmed with the total cost, and calls whose cost could not be confirmed. Only numbers per date are added, with no anonymous ID or device information. | (retention period not yet set) |
+| Operating cost totals | To understand AI call costs, daily numbers of calls started, calls whose cost was confirmed with the total cost, and calls whose cost could not be confirmed. Only numbers per date are added, with no anonymous ID or device information. | Scheduled for automatic deletion 90 days after the start of the aggregation date (UTC). Deletion typically occurs within 24 hours after expiration but may take longer. |
 | Server operation logs | Request time, result code and similar. Request content is not logged. Google may process connection data such as IP addresses to run its service. | Google Cloud default retention (30 days) |
 
 If you tap “Report a problem” on a recommendation card, your mail app opens with the city name and the recommendation’s version filled in. We receive it only if you send it, and use it only to reply and fix recommendations.

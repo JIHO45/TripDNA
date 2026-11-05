@@ -73,3 +73,4 @@ functions/.secret.local
 firebase-debug.log
 data/exploration/chat-check/**/responses*.jsonl
 data/exploration/chat-check/fixed/evidence.json
+data/exploration/prompt-check/runs/

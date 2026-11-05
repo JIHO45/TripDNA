@@ -91,7 +91,7 @@ final class CityRecommendationViewModel {
             understandingExpanded = !stored.understandingSeen
             state = .done(record)
         }
-        fillVacancies()
+        fillVacancies(announce: false)
     }
 
     // MARK: 추천받기
@@ -138,6 +138,7 @@ final class CityRecommendationViewModel {
         if budgetMax == base.input.budgetMax {
             result = base
         } else {
+            if CityRecommendationService.rankingPolicyChanged(base) { actionError = Self.policyChanged; return false }
             guard let catalog,
                   let derived = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
                     .recut(base, budgetMax: budgetMax) else { return false }
@@ -308,6 +309,7 @@ final class CityRecommendationViewModel {
     }
 
     static var saveFailure: String { String(localized: "Couldn't save. Please try again.") }
+    static var policyChanged: String { String(localized: "Recommendation criteria have changed. Get new recommendations to use this.") }
 
     func toggleSave(_ card: CityRecommendationRecord.Card, dependencies: AppDependencies) async {
         let request = lastRecord?.input
@@ -355,10 +357,15 @@ final class CityRecommendationViewModel {
     func dismissActionError() { actionError = nil }
 
     /// 넘기거나 제외해 빈 자리가 생기면 저장된 응답에서 다음 도시로 채운다. LLM을 부르지 않는다.
-    private func fillVacancies(catalog: CityCatalog? = CityCatalog.load()) {
+    /// `announce`: 기준이 바뀌어 채울 수 없을 때 이유를 띄울지. 사용자가 넘기기·제외를 했을 때만 띄운다(복원할 때는 띄우지 않음).
+    private func fillVacancies(catalog: CityCatalog? = CityCatalog.load(), announce: Bool = true) {
         guard let record = lastRecord else { return }
         let vacancies = record.cards.count - visibleCards(record).count
         guard vacancies > 0, let catalog else { return }
+        if CityRecommendationService.rankingPolicyChanged(record) {
+            if announce { actionError = Self.policyChanged }
+            return
+        }
         let service = CityRecommendationService(catalog: catalog, client: nil, log: .standard)
         refills += service.refill(
             record, count: vacancies, shown: Set((record.cards + refills).map(\.cityID)),

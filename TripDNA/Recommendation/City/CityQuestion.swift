@@ -141,42 +141,42 @@ nonisolated struct CityQuestionService: Sendable {
 
     // l10n-ignore-begin
     static let system = """
-    당신은 여행 도시 추천 앱의 질문 답변자입니다. 사용자가 받은 도시 한 곳에 대한 질문에 한국어로 답하세요.
-    - 이 도시가 사용자 조건에 맞는지, 왜 맞는지, 조건과 비교하는 질문은 입력에 준 자료와 조건만으로 답하고 검색하지 마세요.
-    - 가격, 운영시간, 예약, 행사·시즌 일정처럼 바뀌는 사실은 web_search로 확인하세요. 검색 결과 없이 확인했다고 말하지 마세요.
-    - 검색이 실패했거나 근거가 부족하면 확인하지 못했다고 그대로 쓰세요. 못 찾은 것을 "없다"로 바꾸지 마세요.
-    - URL, 사이트 이름, 날짜를 지어내지 마세요. 본문에 URL을 쓰지 마세요(출처는 검색 도구가 따로 붙입니다).
-    - 입력의 등급 이름, 세부 id 같은 내부 용어를 문장에 쓰지 마세요. 입력에 없는 사용자 사실을 만들지 마세요.
-    - 일반 AI 채팅처럼 질문에 바로 답하세요. 결론을 먼저, 이어서 필요한 설명을 짧은 문단이나 "- " 목록으로 쓰세요.
-    - "근거/조언/확인하지 못한 것" 같은 고정 섹션, 제목(#), 표, JSON을 쓰지 마세요. 강조는 **굵게**만 쓰세요.
-    - 출처 목록은 쓰지 마세요(앱이 답 아래에 붙입니다).
+    You answer questions in a travel city recommendation app, about one city the user received.
+    - Answer questions about whether this city fits the user's conditions, why it fits, or how it compares with the conditions using only the data and conditions in the input, without searching.
+    - Check facts that change, such as prices, opening hours, bookings, and event or season dates, with web_search. Do not say you confirmed something without a search result.
+    - If a search failed or the evidence is thin, say plainly that you couldn't confirm it. Do not turn "not found" into "doesn't exist".
+    - Do not make up URLs, site names, or dates. Do not write URLs in the body (the search tool attaches sources separately).
+    - Do not put internal terms from the input, such as grade names or sub-concept ids, into your answer. Do not invent facts about the user that are not in the input.
+    - Answer the question directly, like a regular AI chat.
+    - Do not use fixed sections such as "evidence / advice / what I couldn't confirm", headings (#), tables, or JSON.
+    - Do not write a source list (the app adds it below the answer).
     """
 
     func user(question: String, card: CityRecommendationRecord.Card, request: RecommendationRequest?, conditionSummary: String) -> String {
-        var lines = ["[도시]", "\(card.cityName) (\(card.country))"]
+        var lines = ["[City]", "\(card.cityName) (\(card.country))"]
         if let city = catalog.cities.first(where: { $0.id == card.cityID }) {
             let strong = city.grades.filter { $0.value >= .makeTime }.sorted { $0.key < $1.key }
                 .map { "\($0.key)=\($0.value.name)" }
-            lines += ["자료의 강점 세부(내부 id, 문장에 쓰지 말 것): \(strong.isEmpty ? "없음" : strong.joined(separator: ", "))"]
+            lines += ["Strong sub-concepts in the data (internal ids; do not use in the answer): \(strong.isEmpty ? "none" : strong.joined(separator: ", "))"]
             if !city.seasonUnverified.isEmpty {
-                lines.append("운영 월을 확인하지 못한 세부: \(city.seasonUnverified.joined(separator: ", "))")
+                lines.append("Sub-concepts with unverified operating months: \(city.seasonUnverified.joined(separator: ", "))")
             }
         }
-        lines += ["", "[추천 카드]", "이유: \(card.reason)"]
-        if !card.caveat.isEmpty { lines.append("유의점: \(card.caveat)") }
+        lines += ["", "[Recommendation card]", "Reason: \(card.reason)"]
+        if !card.caveat.isEmpty { lines.append("Caveat: \(card.caveat)") }
         if let cost = card.cost {
             let currency = request?.budgetCurrency ?? BudgetCurrency.krw
-            lines.append("예상 비용(추정, \(currency == BudgetCurrency.krw ? "원" : currency)): \(cost.low)~\(cost.high)")
+            lines.append("Estimated cost (estimate, \(currency)): \(cost.low)~\(cost.high)")
         }
-        lines += ["", "[추천 조건]", conditionSummary]
+        lines += ["", "[Recommendation conditions]", conditionSummary]
         if let request {
-            if let primary = request.primary { lines.append("주 컨셉: \(primary.label)") }
-            if !request.secondary.isEmpty { lines.append("함께: \(request.secondary.map(\.label).joined(separator: ", "))") }
-            lines.append("인원 \(request.partySize)명")
-            if !request.wants.isEmpty { lines.append("원하는 것: \(request.wants)") }
-            if !request.avoids.isEmpty { lines.append("피하고 싶은 것: \(request.avoids)") }
+            if let primary = request.primary { lines.append("Main concept: \(primary.label)") }
+            if !request.secondary.isEmpty { lines.append("Also: \(request.secondary.map(\.label).joined(separator: ", "))") }
+            lines.append("Party size: \(request.partySize)")
+            if !request.wants.isEmpty { lines.append("Wants: \(request.wants)") }
+            if !request.avoids.isEmpty { lines.append("Avoids: \(request.avoids)") }
         }
-        lines += ["", "[질문]", question]
+        lines += ["", "[Question]", question]
         return lines.joined(separator: "\n")
     }
     // l10n-ignore-end

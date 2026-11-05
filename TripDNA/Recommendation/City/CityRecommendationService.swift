@@ -264,9 +264,16 @@ nonisolated struct CityRecommendationService: Sendable {
         return Selection(cards: cards, cutIDs: cutIDs)
     }
 
+    /// 이전 순위 정책으로 만든 기록 중 경험 조건(세부 컨셉을 원함)이 있는 것. 지금 코드로 다시 계산하면 바뀐 충족 기준
+    /// (city-rank-v4, make_time 통일)이 과거 설명과 섞이므로 보충·예산 변경을 하지 않는다. 저장된 결과는 그대로 보여준다.
+    static func rankingPolicyChanged(_ record: CityRecommendationRecord) -> Bool {
+        record.version.ranking != CityInputVersion.rankingVersion
+            && record.conditions.contains { $0.kind == .subconcept && $0.polarity == .want }
+    }
+
     /// 저장된 응답과 같은 입력으로 후보 풀을 다시 계산한다. 풀이 기록과 다르면(카탈로그가 바뀜) nil.
     private func replay(_ record: CityRecommendationRecord) -> (pool: [RankedCity], response: CityLLMResponse)? {
-        guard let raw = record.rawResponse, let response = try? CityResponseValidator.parse(raw),
+        guard !Self.rankingPolicyChanged(record), let raw = record.rawResponse, let response = try? CityResponseValidator.parse(raw),
               let primary = record.input.primary else { return nil }
         let month = record.input.month ?? record.input.startDate.map { Calendar.current.component(.month, from: $0) }
         let input = CityRankingInput(

@@ -16,7 +16,7 @@ struct CityScopeSeasonTests {
         #expect(ranked.first?.status == .confirmed)
         let built = CityLLMRequestBuilder.build(context: .init(request: request, tiers: .init(), catalog: catalog, model: "test", excludedCountries: [], homeCountryExcluded: false), ranked: ranked, excludedRanked: [], pool: ranked)
         #expect(built.user.contains(city.scope!))
-        #expect(built.user.contains("시즌 밖: winter; 미확인: water"))
+        #expect(built.user.contains("out of season: winter; unverified: water"))
         let legacy = "{\"id\":\"old\",\"ko\":\"옛\",\"en\":\"Old\",\"country\":\"XX\",\"grades\":{},\"season\":{},\"seasonUnverified\":[]}"
         #expect(try JSONDecoder().decode(City.self, from: Data(legacy.utf8)).scope == nil)
     }

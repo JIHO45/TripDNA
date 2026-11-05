@@ -185,7 +185,7 @@ struct CityLLMRequestTests {
         return (built, catalog)
     }
 
-    @Test func requestHasGradeNamesSeasonUnverifiedAndExcludedMarksOnly() throws {
+    @Test func requestHasSeasonUnverifiedAndExcludedMarksButNoGrades() throws {
         let (request, catalog) = try Self.makeRequest(note: "축제 위주로")
         #expect(request.version.catalog == catalog.version)
         #expect(request.version.prompt == CityInputVersion.promptVersion)
@@ -193,11 +193,13 @@ struct CityLLMRequestTests {
         #expect(request.cardIDs.count == CityLLMRequestBuilder.poolSize)
         #expect(!request.requiresCost)
         #expect(request.user.contains("<<<축제 위주로>>>"))
-        #expect(request.user.contains("제외됨"))
-        #expect(request.user.contains("시즌 확인 필요("))
-        #expect(CityGrade.allNames.contains { request.user.contains($0) })
-        #expect(request.system.contains("단정하지"))
-        #expect(request.system.contains("확인이 필요"))
+        #expect(request.user.contains("excluded"))
+        #expect(request.user.contains("season check needed("))
+        // 등급은 순위에만 쓰고 설명 입력에는 넣지 않는다.
+        #expect(!CityGrade.allNames.contains { request.user.contains($0) })
+        #expect(!request.user.contains("grade"))
+        #expect(request.system.contains("as certain"))
+        #expect(request.system.contains("need checking"))
     }
 
     @Test func requestNeverContainsCoreSentences() throws {
@@ -307,8 +309,8 @@ struct CityRecommendationServiceTests {
         extra: [String] = []
     ) -> Fake {
         Fake { user in
-            if user.contains("[고른 컨셉]") { return extraction }
-            let ids = user.components(separatedBy: "[후보 도시")[1]
+            if user.contains("[Chosen concepts]") { return extraction }
+            let ids = user.components(separatedBy: "[Candidate cities")[1]
                 .components(separatedBy: "\n\n")[0]
                 .components(separatedBy: "\n").dropFirst()
                 .map { String($0.split(separator: "|")[0]).trimmingCharacters(in: .whitespaces) }
@@ -531,7 +533,7 @@ struct CityConditionTests {
         let cat = Self.catalog([])
         let kr = Self.city("kr", country: "KR", grades: ["hiking": .choose, "festival": .choose],
                            season: ["festival": [10]], unverified: [])
-        let hike = CityCondition(id: "h", text: "", quote: "q", level: .core, kind: .subconcept, target: "hiking", minGrade: .choose)
+        let hike = CityCondition(id: "h", text: "", quote: "q", level: .core, kind: .subconcept, target: "hiking")
         #expect(CityConditionJudge.status(of: hike, city: kr, catalog: cat, month: nil) == .met)
         let fest = CityCondition(id: "f", text: "", quote: "q", level: .core, kind: .subconcept, target: "festival")
         #expect(CityConditionJudge.status(of: fest, city: kr, catalog: cat, month: 10) == .met)
@@ -546,6 +548,28 @@ struct CityConditionTests {
         #expect(CityConditionJudge.status(of: other, city: kr, catalog: cat, month: nil) == .unconfirmed)
     }
 
+    /// 2026-11-05 정책: 경험 조건은 중요도와 상관없이 make_time 이상이면 충족. 예전 기록의 min_grade는 무시한다.
+    @Test func subconceptConditionsUseMakeTimeForEveryLevel() throws {
+        let cat = Self.catalog([
+            Self.city("paris", grades: ["dining": .choose, "museums": .choose, "nightview": .choose]),
+            Self.city("tokyo", grades: ["dining": .choose, "museums": .makeTime, "nightview": .choose]),
+            Self.city("bangkok", grades: ["dining": .choose, "museums": .ifThere, "nightview": .makeTime])
+        ])
+        let old = try JSONDecoder().decode(CityCondition.self, from: Data(
+            #"{"id":"m","text":"","quote":"q","level":"supporting","kind":"subconcept","target":"museums","min_grade":"choose"}"#.utf8))
+        let city = { (id: String) in cat.cities.first { $0.id == id }! }
+        #expect(CityConditionJudge.status(of: old, city: city("tokyo"), catalog: cat, month: nil) == .met)
+        #expect(CityConditionJudge.status(of: old, city: city("bangkok"), catalog: cat, month: nil) == .notMet)
+        for level in [CityCondition.Level.required, .core] {
+            let c = CityCondition(id: "m", text: "", quote: "q", level: level, kind: .subconcept, target: "museums")
+            #expect(CityConditionJudge.status(of: c, city: city("tokyo"), catalog: cat, month: nil) == .met)
+        }
+        // 필수 경험 조건을 채우지 못한 도시(if_there)는 여전히 후보에서 빠진다.
+        var input = CityRankingInput(primary: .food)
+        input.conditions = [CityCondition(id: "m", text: "", quote: "q", level: .required, kind: .subconcept, target: "museums")]
+        #expect(Set(CityRanker.rank(catalog: cat, input: input).map(\.city.id)) == ["paris", "tokyo"])
+    }
+
     @Test func requiredNotMetDropsRequiredUnconfirmedGoesLastCoreOrders() {
         let cat = Self.catalog([
             Self.city("jp", country: "JP", grades: ["dining": .choose, "hiking": .choose]),
@@ -556,8 +580,8 @@ struct CityConditionTests {
         // 필수 나라 KR → jp 제외.
         input.conditions = [CityCondition(id: "c", text: "", quote: "q", level: .required, kind: .country, target: "KR")]
         #expect(Set(CityRanker.rank(catalog: cat, input: input).map(\.city.id)) == ["kr", "kr2"])
-        // 핵심 선호 하이킹(choose) → 주 컨셉 등급이 낮아도 충족한 도시가 앞선다.
-        input.conditions = [CityCondition(id: "h", text: "", quote: "q", level: .core, kind: .subconcept, target: "hiking", minGrade: .choose)]
+        // 핵심 선호 하이킹 → 주 컨셉 등급이 낮아도 충족한 도시가 앞선다.
+        input.conditions = [CityCondition(id: "h", text: "", quote: "q", level: .core, kind: .subconcept, target: "hiking")]
         #expect(CityRanker.rank(catalog: cat, input: input).first?.city.id == "jp")
         let ranked = CityRanker.rank(catalog: cat, input: input).map(\.city.id)
         #expect(ranked.firstIndex(of: "jp")! < ranked.firstIndex(of: "kr")!)
@@ -608,7 +632,7 @@ struct CityMemoryAndTwoStageTests {
         defer { try? FileManager.default.removeItem(at: dir) }
         var request = CityRecommendationServiceTests.request()
         request.wants = "맛집 위주로 가고 싶어요"
-        let extraction = "{\"conditions\":[{\"id\":\"f1\",\"text\":\"미식 중심\",\"quote\":\"맛집 위주\",\"level\":\"core\",\"kind\":\"subconcept\",\"target\":\"dining\",\"min_grade\":\"choose\"},{\"id\":\"x\",\"text\":\"지어낸\",\"quote\":\"본 적 없는 문장\",\"level\":\"required\",\"kind\":\"other\"}]}"
+        let extraction = "{\"conditions\":[{\"id\":\"f1\",\"text\":\"미식 중심\",\"quote\":\"맛집 위주\",\"level\":\"core\",\"kind\":\"subconcept\",\"target\":\"dining\"},{\"id\":\"x\",\"text\":\"지어낸\",\"quote\":\"본 적 없는 문장\",\"level\":\"required\",\"kind\":\"other\"}]}"
         let client = CityRecommendationServiceTests.fake(extraction: extraction, memoriesUsed: "[{\"id\":\"m1\",\"how\":\"오사카에서 먹거리를 좋아했어요\"}]")
         let service = try CityRecommendationServiceTests.service(client: client, dir: dir)
         let memory = CityMemory(id: "m1", tripID: "t", countryCode: "JP", city: "오사카", rating: 5, liked: "먹을 게 많았다", disliked: nil)
@@ -621,7 +645,7 @@ struct CityMemoryAndTwoStageTests {
         #expect(record.extraction?.raw == extraction)
         #expect(record.memoriesUsed.map(\.id) == ["m1"])
         #expect(record.user.contains("<<<먹을 게 많았다>>>"))
-        #expect(record.user.contains("[이번 요청에서 뽑은 조건"))
+        #expect(record.user.contains("[Conditions from this request"))
         #expect(record.cards.allSatisfy { $0.conditions.map(\.condition.id) == ["f1"] })
     }
 
@@ -646,7 +670,7 @@ struct CityMemoryAndTwoStageTests {
             request: CityRecommendationServiceTests.request(), tiers: WantedConceptTiers(),
             excludedCountries: [], homeCountryExcluded: false
         )
-        #expect(!record.user.contains("지난 여행 평가 —"))
+        #expect(!record.user.contains("Past trip reviews —"))
     }
 
     @Test func extractionFailureStopsBeforeSecondCallAndIsLogged() async throws {
@@ -858,6 +882,74 @@ struct CityStateTests {
         #expect(after.visibleCards(record).count == record.cards.count)
         // 영구 제외로 번지지 않는다.
         #expect(try await dependencies.store.cityState().excluded.isEmpty)
+    }
+
+    // MARK: 순위 정책이 바뀐 기록(city-rank-v4, 경험 조건 충족 기준 make_time 통일)
+
+    /// 저장된 기록의 순위 버전과 조건만 바꾼 사본. 예전에 저장된 기록을 흉내 낸다.
+    static func variant(_ record: CityRecommendationRecord, ranking: String, conditions: [CityCondition]) throws -> CityRecommendationRecord {
+        var object = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
+        var version = try #require(object["version"] as? [String: Any])
+        version["ranking"] = ranking
+        object["version"] = version
+        object["conditions"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(conditions))
+        return try JSONDecoder().decode(CityRecommendationRecord.self, from: JSONSerialization.data(withJSONObject: object))
+    }
+
+    static let museum = CityCondition(id: "m", text: "박물관", quote: "q", level: .supporting, kind: .subconcept, target: "museums")
+
+    @Test func rankingPolicyChangeIsOnlyOldRecordsWithExperienceConditions() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let record = try await Self.seed(dependencies, budget: 5_000_000)
+        #expect(!CityRecommendationService.rankingPolicyChanged(record))
+        #expect(!CityRecommendationService.rankingPolicyChanged(try Self.variant(record, ranking: CityInputVersion.rankingVersion, conditions: [Self.museum])))
+        #expect(CityRecommendationService.rankingPolicyChanged(try Self.variant(record, ranking: "city-rank-v3", conditions: [Self.museum])))
+        // 버전 기록이 더 오래된 것도 이전 정책이다.
+        #expect(CityRecommendationService.rankingPolicyChanged(try Self.variant(record, ranking: "city-rank-v1", conditions: [Self.museum])))
+        // 경험 조건이 없거나, 판정 기준이 없는 회피 조건만 있으면 바뀐 기준의 영향이 없다.
+        let other = CityCondition(id: "o", text: "직항", quote: "q", level: .required, kind: .other)
+        var avoid = Self.museum
+        avoid.polarity = .avoid
+        #expect(!CityRecommendationService.rankingPolicyChanged(try Self.variant(record, ranking: "city-rank-v3", conditions: [other, avoid])))
+    }
+
+    @Test @MainActor func oldPolicyWithExperienceConditionKeepsResultButExplainsBlockedActions() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let seeded = try await Self.seed(dependencies, budget: 5_000_000)
+        let old = try Self.variant(seeded, ranking: "city-rank-v3", conditions: [Self.museum])
+        try await dependencies.store.updateCityState { $0.lastRecord = old }
+        let service = try CityRecommendationServiceTests.service(client: nil, dir: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+        #expect(service.recut(old, budgetMax: 4_000_000) == nil)
+        #expect(service.refill(old, count: 1, shown: Set(old.cards.map(\.cityID)), removedCities: [], removedCountries: []).isEmpty)
+
+        let model = CityRecommendationViewModel()
+        await model.restore(dependencies: dependencies)
+        // 저장된 결과는 그대로 보이고, 열기만 해서는 안내가 뜨지 않는다.
+        #expect(model.state == .done(old))
+        #expect(model.actionError == nil)
+        // 넘기기는 되지만 빈 자리는 채우지 않고 이유를 알린다.
+        await model.skip(old.cards[0].cityID, dependencies: dependencies)
+        #expect(model.skippedCityIDs == [old.cards[0].cityID])
+        #expect(model.refills.isEmpty)
+        #expect(model.actionError == CityRecommendationViewModel.policyChanged)
+        // 예산 변경도 다시 계산하지 않고 이유를 알린다. 결과는 바뀌지 않는다.
+        await model.applyBudget(4_000_000, dependencies: dependencies)
+        #expect(model.lastRecord == old)
+        #expect(model.actionError == CityRecommendationViewModel.policyChanged)
+    }
+
+    @Test @MainActor func oldPolicyWithoutExperienceConditionWorksAsBefore() async throws {
+        let dependencies = AppDependencies(persistence: .inMemory)
+        let seeded = try await Self.seed(dependencies, budget: 5_000_000)
+        let old = try Self.variant(seeded, ranking: "city-rank-v3", conditions: [])
+        try await dependencies.store.updateCityState { $0.lastRecord = old }
+        let model = CityRecommendationViewModel()
+        await model.restore(dependencies: dependencies)
+        await model.skip(old.cards[0].cityID, dependencies: dependencies)
+        #expect(!model.refills.isEmpty)
+        await model.applyBudget(4_000_000, dependencies: dependencies)
+        #expect(model.lastRecord?.derivedFrom == old.id)
+        #expect(model.actionError == nil)
     }
 
     @Test @MainActor func newResultClearsSkipsButBudgetRecutKeepsThem() async throws {
@@ -1113,8 +1205,8 @@ struct CityStateTests {
         #expect(request.summaryText == "미식 · 1인 100만원 이하")
 
         let (built, _) = try CityLLMRequestTests.makeRequest()
-        #expect(built.user.contains("기간: 미정"))
-        #expect(!built.user.contains("하루 예산"))
+        #expect(built.user.contains("Trip length: undecided"))
+        #expect(!built.user.contains("Daily budget"))
 
         // 저장된 예전 요청: 박 수가 있으면 그대로, 없으면 미정으로 읽는다.
         let decoder = JSONDecoder()

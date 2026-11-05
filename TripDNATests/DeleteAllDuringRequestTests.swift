@@ -24,7 +24,7 @@ struct DeleteAllDuringRequestTests {
         let deletes: Bool
         let inner = CityRecommendationServiceTests.fake()
         func complete(system: String, user: String) async throws -> String {
-            if deletes, !user.contains("[고른 컨셉]") {
+            if deletes, !user.contains("[Chosen concepts]") {
                 try await store.deleteAllUserData()
                 try log.deleteAll()
             }

@@ -72,3 +72,4 @@ Google 검색을 쓴 Gemini 응답의 원본은 저장소에 넣지 않는다: `
 - `chat-check/cases.json`: AI 대화 탭의 여러 차례 대화 사례 H01~H12(현재 의도 우선, 대화 중 의도 변경, 앞 조건 유지, 메모 속 지시, 검색·미확인, 기록에 없는 사실, 요약 유지, 평가 전송 끔, 형식, 필수·선호). AI 초안이며 사람 검수 전, 호출 전. 실행: `scripts/check_chat.py`. 지침은 `ChatService.system`을 소스에서 읽고, 기록마다 지침 해시를 남긴다. 자동 검사는 형식과 사례별 정규식뿐이고 내용 판정은 `watch`를 보고 사람이 한다.
 - `chat-check/fixed/`: 같은 검색 자료를 고정해 대화 모델을 비교한다(2026-11-05). `cases.json`은 사례별 사실 기준, `evidence.json`은 출처 원문 발췌(저장소 밖). 실행: `scripts/check_chat_fixed.py`.
 - `chat-check/lang/`: 대화 답변 언어 정책과 요약 지침 검증(2026-11-05). 요약 사례는 실제 요약을 만든 뒤 그 요약으로 다음 답을 만들어 둘을 따로 판정한다. 실행: `scripts/check_chat_lang.py`.
+- `prompt-check/`: 영어로 바꾼 추천·조건 추출 지침(city-prompt-v5, 이후 v6)의 실제 호출 검증(2026-11-05). 판정은 judgments-ko.md·judgments-en.md. 요청 조립·응답 검사는 Swift 테스트(PromptExportTests)가 앱 코드로 하고, 호출은 `scripts/check_prompts.py`. 실행 결과(`runs/`)는 저장소 밖.

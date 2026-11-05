@@ -7295,6 +7295,16 @@
         }
       }
     },
+    "Recommendation criteria have changed. Get new recommendations to use this.": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추천 기준이 바뀌었어요. 새로 추천받으면 이용할 수 있어요."
+          }
+        }
+      }
+    },
     "Recommendations": {
       "localizations": {
         "ko": {

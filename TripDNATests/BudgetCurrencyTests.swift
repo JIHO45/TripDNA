@@ -63,9 +63,9 @@ struct BudgetCurrencyTests {
         for basis in [nil, CityCostBasis(currency: "KRW", airport: "ICN", homeCountry: "KR"), CityCostBasis(currency: "KRW", homeCountry: "KR")] {
             let built = build(1_500_000, currency: "KRW", basis: basis)
             #expect(built.system == CityLLMOutputLanguage.apply(to: CityLLMRequestBuilder.system, textFields: "understanding, reason, caveat, how"))
-            #expect(built.user.contains("예산: 최대 1500000원 (1인, 항공료 포함)"))
-            #expect(built.user.contains("하루 예산(예산÷박수, 단순 계산): 약 375000원"))
-            #expect(!built.user.contains("항공료 출발지"))
+            #expect(built.user.contains("Budget: max 1500000 KRW (per person, flights included)"))
+            #expect(built.user.contains("Daily budget (budget ÷ nights, simple division): about 375000 KRW"))
+            #expect(!built.user.contains("Flight origin"))
             #expect(built.version.prompt == CityInputVersion.currentPromptVersion)
             #expect(!built.version.prompt.hasSuffix("-cur"))
         }
@@ -73,11 +73,11 @@ struct BudgetCurrencyTests {
 
     @Test func nonKRWPromptStatesCurrencyAndDeparture() {
         let built = build(1_000, currency: "USD", basis: CityCostBasis(currency: "USD", airport: "JFK", homeCountry: "US"))
-        #expect(built.system.contains("USD 정수"))
+        #expect(built.system.contains("integers in USD"))
         #expect(built.system.contains("JFK"))
-        #expect(!built.system.contains("원화 정수") && !built.system.contains("한국 출발"))
-        #expect(built.user.contains("최대 1000 USD"))
-        #expect(built.user.contains("항공료 출발지: JFK"))
+        #expect(!built.system.contains("integers in KRW") && !built.system.contains("departing from Korea"))
+        #expect(built.user.contains("max 1000 USD"))
+        #expect(built.user.contains("Flight origin: JFK"))
         #expect(built.version.prompt.hasSuffix("-cur"))
         // KRW여도 출발지가 한국이 아니면 달라진다.
         let jp = build(1_500_000, currency: "KRW", basis: CityCostBasis(currency: "KRW", airport: "NRT", homeCountry: "KR"))

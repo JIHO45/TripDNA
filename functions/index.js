@@ -157,8 +157,10 @@ const SEARCH_FEE = 10000; // 검색 1회 US$0.01
 // ponytail: 측정 전 값. 검색 한 번이 입력에 더하는 토큰의 상한과, 토큰 계산 API가 실패할 때 쓰는 글자당 토큰 상한.
 const SEARCH_RESULT_TOKEN_CAP = 15000;
 const FALLBACK_TOKENS_PER_CHAR = 2;
-// ponytail: 측정 전 임시값(예전 질문 무료 3회·구독 30회와 비슷한 수준). 측정 뒤 사용자가 정한다.
-const CHAT_BUDGETS = { free: 100000, sub: 1000000 };
+// 2026-11-06 사용자 결정(Haiku 5.5 실측 기준 초기 운영값): 무료 월 US$0.10, 구독 기간당 US$1.50.
+// 대화 1회 약 US$0.012~0.024, 추천 30회 약 US$0.04~0.09라 구독자 월 원가 목표 약 US$2 안에 여유가 남는다.
+// ponytail: 실사용 데이터 없이 정한 값. ops·chat.used를 보고 조정하고, 모델을 바꾸면 다시 계산한다.
+const CHAT_BUDGETS = { free: 100000, sub: 1500000 };
 // 예약 만료는 함수 제한 시간보다 길다. 함수가 끝나면 늦은 응답이 올 수 없으므로, 만료로 풀린 예산을 실행 중인 호출이 쓰는 일이 없다.
 const TIMEOUT_SECONDS = 180;
 const HOLD_TTL_MS = (TIMEOUT_SECONDS + 120) * 1000;

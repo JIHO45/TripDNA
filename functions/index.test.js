@@ -333,3 +333,33 @@ test("구독자는 원 거래 ID 문서와 구독 예산, 무료는 uid 문서�
   assert.equal(free.chatBudget, CHAT_BUDGETS.free);
   assert.equal(free.period, "2026-11");
 });
+
+// 배포 전 호환 확인(2026-11-06): 76794b8 이전 TestFlight 앱의 질문 요청과 옛 서버(62e852d)가 쓴 사용량 문서로 새 서버를 돌린다.
+test("예전 앱 질문: 옛 문서에서 무료 예산으로 예약·정산하고, 모자라면 막는다", () => {
+  const { CHAT_BUDGETS } = require("./index.js");
+  // 예전 앱 CityQuestionService: maxTokens 문자열 16000, 검색 3회, requestId·purpose 없음. 입력은 2~3천 자.
+  const old = { system: "s".repeat(1500), user: "u".repeat(1500), model: "claude-haiku-5-5", maxTokens: "16000", webSearchMaxUses: 3 };
+  const { params, usage, error } = buildParams(old);
+  assert.equal(error, undefined);
+  assert.equal(params.max_tokens, 16000);
+  assert.equal(usage.kind, "chat");
+  // 토큰 계산이 실패해도(글자 × 2) 첫 질문은 무료 예산 안에 든다.
+  const reserve = reserveOf({ inputTokens: usage.inputChars * 2, maxTokens: params.max_tokens, searchUses: usage.searchUses });
+  assert.ok(reserve <= CHAT_BUDGETS.free, `reserve ${reserve}`);
+  // 옛 서버가 질문 3회를 센 문서: questions는 무시되고 AI 사용량은 0에서 시작한다.
+  let data = { month: P, recos: { a: 2 }, questions: 3, deviceMonth: P };
+  // 실측 답당 비용(검색 포함 약 $0.016)보다 비싼 $0.03으로 정산해도 반복한다.
+  let allowed = 0;
+  for (let i = 0; i < 10; i++) {
+    const r = applyChatReserve(data, P, CHAT_BUDGETS.free, `old-${i}-0000`, reserve, t0);
+    if (!r.allowed) {
+      assert.ok(r.reason === "tooLarge" || r.reason === "exhausted");
+      break;
+    }
+    allowed++;
+    data = applyChatSettle(r.next, P, CHAT_BUDGETS.free, `old-${i}-0000`, 30000, t0).next;
+  }
+  assert.ok(allowed >= 1);
+  assert.deepEqual(data.recos, { a: 2 }); // 추천 횟수는 그대로
+  assert.equal(data.deviceMonth, P);
+});

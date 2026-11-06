@@ -44,6 +44,16 @@ final class AppDependencies {
     /// 서버가 없으므로 기기에 남는 프로필이 계정 역할을 한다. 이 id로 원장·지문을 묶는다.
     private(set) var localUserID = UUID().uuidString
 
+    /// iCloud 복원으로 기록이 통째로 바뀐 횟수. 메인 화면이 이 값으로 다시 만들어져 바뀐 기록을 불러온다.
+    private(set) var restoredBackupCount = 0
+
+    /// iCloud 백업으로 기기 기록을 바꾸고 세션과 화면을 새 기록에 맞춘다.
+    func restoreFromBackup(session: SessionStore) async throws {
+        try await backup?.restore()
+        await restore(session: session)
+        restoredBackupCount += 1
+    }
+
     /// 앱 진입 시 1회. 기기에 남아 있는 프로필로 홈 국가와 세션을 복원한다.
     /// 온보딩을 마친 기록이 있으면 다시 온보딩을 돌리지 않는다.
     func restore(session: SessionStore) async {

@@ -124,8 +124,7 @@ struct BackupSettingsView: View {
     private func restore() async {
         restoreError = nil
         do {
-            try await backup.restore()
-            await dependencies.restore(session: session)
+            try await dependencies.restoreFromBackup(session: session)
             dismiss()
         } catch {
             restoreError = String(localized: "Couldn't restore. Your device's records weren't changed.")

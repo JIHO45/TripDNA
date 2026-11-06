@@ -12,7 +12,8 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isReadyForMainApp {
-                MainTabView()
+                // 복원 뒤 각 탭이 처음부터 다시 불러오도록 새로 만든다.
+                MainTabView().id(dependencies.restoredBackupCount)
             } else {
                 OnboardingFlowView()
             }
@@ -75,8 +76,7 @@ struct RootView: View {
         isRestoring = true
         defer { isRestoring = false }
         do {
-            try await dependencies.backup?.restore()
-            await dependencies.restore(session: session)
+            try await dependencies.restoreFromBackup(session: session)
         } catch {
             restoreFailed = true
         }

@@ -160,7 +160,7 @@ struct CityLLMRequestTests {
         .deletingLastPathComponent().deletingLastPathComponent()
         .appendingPathComponent("data/destinations/catalog.json")
 
-    static func makeRequest(note: String = "") throws -> (CityLLMRequest, CityCatalog) {
+    static func makeRequest(note: String = "", tiers customTiers: WantedConceptTiers? = nil) throws -> (CityLLMRequest, CityCatalog) {
         let catalog = try #require(CityCatalog.load(bundle: Bundle(for: CityBundleTests.BundleToken.self)) ?? CityCatalog.load())
         var request = RecommendationRequest()
         request.setPrimary(.event)
@@ -169,6 +169,7 @@ struct CityLLMRequestTests {
         request.wants = note
         var tiers = WantedConceptTiers()
         tiers.place(.food, in: 1)
+        if let customTiers { tiers = customTiers }
         var input = CityRankingInput(primary: .event, secondary: [.food], tiers: tiers, month: 6)
         input.excludedCountries = ["JP"]
         let ranked = CityRanker.rank(catalog: catalog, input: input)
@@ -200,6 +201,25 @@ struct CityLLMRequestTests {
         #expect(!request.user.contains("grade"))
         #expect(request.system.contains("as certain"))
         #expect(request.system.contains("need checking"))
+    }
+
+    /// R1 시나리오 4: 도시·자연을 "가장 원해요"에 둔 경우와 둘 다 넷째 칸("모르겠거나 원하지 않아요")에 둔 경우가
+    /// 저장값과 추천 요청에서 같은 입력으로 압축되지 않는다.
+    @Test func bothWantedAndBothUnplacedStayDistinct() throws {
+        var both = WantedConceptTiers()
+        both.place(.cityExploration, in: 1)
+        both.place(.natureScenery, in: 1)
+        let unplaced = WantedConceptTiers()
+        #expect(both != unplaced)
+        #expect(both.tier(of: .cityExploration) == 1 && both.tier(of: .natureScenery) == 1)
+        #expect(unplaced.tier(of: .cityExploration) == nil && unplaced.tier(of: .natureScenery) == nil)
+
+        let (wanted, _) = try Self.makeRequest(tiers: both)
+        let (unknown, _) = try Self.makeRequest(tiers: unplaced)
+        let tierLine = "Tier 1: \(TripConcept.cityExploration.label), \(TripConcept.natureScenery.label)"
+        #expect(wanted.user.contains(tierLine))
+        #expect(!unknown.user.contains("Tier 1:"))
+        #expect(wanted.user != unknown.user)
     }
 
     @Test func requestNeverContainsCoreSentences() throws {

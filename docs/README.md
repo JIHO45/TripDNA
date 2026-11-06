@@ -39,6 +39,8 @@
 
 [평가 계획과 도입 기준](evaluation/README.md)
 
+[R1 필수 시나리오 정리](evaluation/r1-checklist.md): 출시 검사 R1의 시나리오별 자동·시뮬레이터·실기기 근거
+
 ### metrics
 
 [계측](evaluation/metrics.md)

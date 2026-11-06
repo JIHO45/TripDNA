@@ -17,6 +17,7 @@ struct HomeRedesignView: View {
     @State private var showingPhotoScan = false
     @State private var openedCity: SavedCity?
     @State private var showingFingerprintShare = false
+    @State private var wrappedYear: Int?
     @State private var dismissedWantedCard = false
 
     var body: some View {
@@ -539,17 +540,18 @@ struct HomeRedesignView: View {
 
     // MARK: Wrapped 배너
 
-    @ViewBuilder
+    /// Wrapped는 탭 화면 밖에서 전체 화면으로 연다. iPad에서 탭 내용 폭(700pt)에 갇히지 않게 하기 위해서다.
     private var wrappedBanner: some View {
-        switch viewModel.banner {
-        case .open(let year):
-            NavigationLink { WrappedView(year: year) } label: {
+        Group {
+            switch viewModel.banner {
+            case .open(let year):
+                Button { wrappedYear = year } label: {
                 bannerLabel(kicker: "Wrapped", title: "\(String(year)) Wrapped is open", subtitle: nil, showsChevron: true)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("home.wrapped")
-        case .pastAvailable(let year):
-            NavigationLink { WrappedView(year: year) } label: {
+            case .pastAvailable(let year):
+                Button { wrappedYear = year } label: {
                 bannerLabel(
                     kicker: "Past Wrapped",
                     title: "View \(String(year)) Wrapped Again",
@@ -560,9 +562,13 @@ struct HomeRedesignView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("home.wrapped")
-        case .notYet:
-            bannerLabel(kicker: "Wrapped", title: "This year's Wrapped opens December 15", subtitle: nil, showsChevron: false)
-                .accessibilityIdentifier("home.wrapped")
+            case .notYet:
+                bannerLabel(kicker: "Wrapped", title: "This year's Wrapped opens December 15", subtitle: nil, showsChevron: false)
+                    .accessibilityIdentifier("home.wrapped")
+            }
+        }
+        .fullScreenCover(isPresented: Binding(get: { wrappedYear != nil }, set: { if !$0 { wrappedYear = nil } })) {
+            if let wrappedYear { WrappedView(year: wrappedYear) }
         }
     }
 

@@ -17,18 +17,21 @@ struct MainTabView: View {
             NavigationStack {
                 HomeRedesignView(selection: $router.selectedTab)
             }
+            .readableColumn()
             .tabItem { Label("Home", systemImage: "house.fill") }
             .tag(MainTab.home)
 
             NavigationStack {
                 RecommendationView()
             }
+            .readableColumn()
             .tabItem { Label("Recommendations", systemImage: "sparkles") }
             .tag(MainTab.recommendation)
 
             NavigationStack {
                 TripListView()
             }
+            .readableColumn()
             .tabItem { Label("Trips", systemImage: "suitcase.fill") }
             .tag(MainTab.trips)
         }
@@ -36,6 +39,14 @@ struct MainTabView: View {
         .fullScreenCover(item: $router.evaluationRequest) { request in
             EvaluationView(tripID: request.tripID)
         }
+    }
+}
+
+private extension View {
+    /// iPad에서 화면이 폭 전체로 늘어나지 않게 가운데 한 줄로 모은다. iPhone은 세로 전용이라 이보다 좁아 그대로다.
+    /// 700pt는 시작값이다. 사진 비율과 읽기 폭을 보고 조정한다.
+    func readableColumn() -> some View {
+        frame(maxWidth: 700).frame(maxWidth: .infinity)
     }
 }
 

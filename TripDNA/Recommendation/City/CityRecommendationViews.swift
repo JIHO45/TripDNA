@@ -394,6 +394,8 @@ private struct CityCardCarousel: View {
                     ForEach(Array(cards.enumerated()), id: \.element.cityID) { index, card in
                         CityCardView(card: card, model: model, request: request)
                             .containerRelativeFrame(.horizontal) { width, _ in width }
+                            // 가로 스크롤은 카드 높이를 모자라게 잡아 글이 "…"로 잘린다. 카드가 내용에 필요한 높이를 다 쓰게 한다.
+                            .fixedSize(horizontal: false, vertical: true)
                             .onScrollVisibilityChange(threshold: 0.5) { visible in
                                 if visible { model.recordExposure(card, screen: "cards", position: index + 1, dependencies: dependencies) }
                             }
@@ -447,18 +449,23 @@ enum CityPhoto {
 private struct CityPhotoView: View {
     let cityID: String
     let height: CGFloat
+    /// 폭÷높이. 넓은 화면(iPad)에서 사진이 띠처럼 납작해지지 않게 높이를 폭에 맞춰 늘린다.
+    /// iPhone 폭에서는 `height`가 더 커서 그대로다.
+    let ratio: CGFloat
 
     var body: some View {
-        Group {
-            if let image = CityPhoto.image(for: cityID) {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                Color.dnaData.opacity(0.12).background(Color.dnaSurface2)
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .aspectRatio(ratio, contentMode: .fit)
+            .frame(minHeight: height)
+            .overlay {
+                if let image = CityPhoto.image(for: cityID) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else {
+                    Color.dnaData.opacity(0.12).background(Color.dnaSurface2)
+                }
             }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
-        .clipped()
+            .clipped()
         .accessibilityHidden(true)
     }
 }
@@ -484,7 +491,7 @@ private struct CityCardView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            CityPhotoView(cityID: card.cityID, height: 128)
+            CityPhotoView(cityID: card.cityID, height: 128, ratio: 3.2)
             VStack(alignment: .leading, spacing: DNASpacing.xs) {
                 CityTitleBlock(card: card)
                 if card.isExploration {
@@ -498,6 +505,8 @@ private struct CityCardView: View {
                     .foregroundStyle(Color.dnaTextPrimary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
+                    // 카드 높이만 맞춰서는 iPad에서 한 줄로 잡혀, 글 자체도 두 줄까지 필요한 높이를 쓰게 한다.
+                    .fixedSize(horizontal: false, vertical: true)
                 if let cost = card.cost {
                     Divider()
                     Text("Estimated \(costRange(cost.low, cost.high, currency: request.budgetCurrency))")
@@ -675,7 +684,7 @@ struct CityDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DNASpacing.md) {
                 // 이름은 사진 아래에 둔다.
-                CityPhotoView(cityID: card.cityID, height: 150)
+                CityPhotoView(cityID: card.cityID, height: 150, ratio: 2.8)
                     .clipShape(RoundedRectangle(cornerRadius: DNARadius.card, style: .continuous))
                 CityTitleBlock(card: card)
                 CityBadgeView(card: card)

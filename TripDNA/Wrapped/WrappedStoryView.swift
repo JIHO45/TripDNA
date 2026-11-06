@@ -65,7 +65,8 @@ struct WrappedStoryView: View {
             ZStack {
                 Color(hex: 0x0F7B73)
                 if let path = wrapped.topTrip?.coverPath, LocalPhotoStore.image(at: path) != nil {
-                    TripPhotoImage(storagePath: path)
+                    // 채우기 사진이 원래 폭으로 화면을 넓히지 않게 빈 면 위에 얹는다.
+                    Color.clear.overlay { TripPhotoImage(storagePath: path) }.clipped()
                 }
                 LinearGradient(colors: [.black.opacity(0.15), .black.opacity(0.55)], startPoint: .top, endPoint: .bottom)
             }
@@ -151,8 +152,9 @@ struct WrappedStoryView: View {
             HStack(spacing: 6) {
                 ForEach(Array(wrapped.rows.prefix(6))) { row in
                     VStack(alignment: .leading, spacing: 6) {
-                        TripPhotoImage(storagePath: row.coverPath ?? "")
+                        Color.clear
                             .frame(height: 64)
+                            .overlay { TripPhotoImage(storagePath: row.coverPath ?? "") }
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         Text(WrappedYear.monthLabel(row.month)).dnaFont(size: 11).opacity(0.7)
                     }
@@ -249,9 +251,10 @@ struct WrappedStoryView: View {
             if !wrapped.photos.isEmpty {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
                     ForEach(wrapped.photos.prefix(12)) { photo in
-                        TripPhotoImage(storagePath: photo.storagePath)
+                        Color.clear
                             .aspectRatio(3.0 / 4.0, contentMode: .fit)
                             .frame(maxWidth: .infinity)
+                            .overlay { TripPhotoImage(storagePath: photo.storagePath) }
                             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     }
                 }

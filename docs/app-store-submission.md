@@ -249,9 +249,13 @@ joe45dev@gmail.com
 ### 시안 (2026-11-07, 사용자 검토 후 저장)
 
 - 최종 시안: [universal-en.png](../design/app-store/creative/universal-en.png), [universal-ko.png](../design/app-store/creative/universal-ko.png). 16:9 PNG 5244×2950, 투명도 없음.
-- 구성: 흰 바탕, 아이콘·문구(영어 "Let your past trips pick your next destination." / 한국어 "지난 여행이 다음 여행지를 골라요"), 추천 결과 화면, 교토·리스본·바르셀로나 사진(앱 번들과 같은 Unsplash 사진, 출처는 `data/destinations/city-photo-sources.csv`).
+- 구성(2026-11-07 미리보기 확인 후 가운데 배치로 수정): 흰 바탕, 문구(영어 "Let your past trips pick your next destination." / 한국어 "지난 여행이 다음 여행지를 골라요"), 추천 결과 화면, 교토·리스본·바르셀로나 사진(앱 번들과 같은 Unsplash 사진, 출처는 `data/destinations/city-photo-sources.csv`).
 - 휴대폰 화면은 `-uiDemo recoResult`로 띄워 조건 요약을 접은 시뮬레이터 캡처다. "추가 확인 필요" 영역은 흰색으로 덮었다. 모든 카드가 조건 확인을 통과하면 이 영역이 나오지 않으므로 앱에 있는 화면이다. **필수 스크린샷은 덮지 않고 실제 화면으로 찍는다.**
 - 데모 데이터는 앱 언어에 맞춰 문장과 통화를 바꾼다(영어는 USD, 원화 금액의 1/1000). `UIDemoSeed.swift`, DEBUG 빌드에만 들어간다.
 - 다시 만들기: `design/app-store/creative/`에서 `python3 make.py` 후 아래 명령으로 렌더링한다(`*-guide.html`은 잘림 범위 점선이 들어간 확인용).
   `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars --force-device-scale-factor=1 --window-size=5244,2950 --virtual-time-budget=3000 --screenshot=universal-en.png file://$PWD/en.html`
-- 남은 확인: 잘림 범위는 비율로 계산한 값이다. App Store Connect 미리보기나 Apple 공식 템플릿으로 확인한다.
+- 보이는 범위(2026-11-07 App Store Connect 제품 페이지 미리보기 화면에서 잰 값, 5244×2950 기준):
+  - iPhone 헤더: x 1230~4020, y 50~1890. 위 약 300px은 상태 표시줄과 뒤로·공유 버튼에 가린다.
+  - iPad 헤더: x 250~4980, y 360~1780. 위 가운데(x 2140~3076, y 625까지)는 탭 메뉴에 가린다.
+  - 그래서 문구와 추천 카드는 가운데 띠(x 1230~4020, y 650~1780)에 둔다. 처음 시안은 비율로 계산한 범위에 맞춰 문구가 잘렸다. 아이콘·이름 줄은 App Store가 바로 아래 보여주므로 뺐다.
+- 2026-11-07 수정본을 App Store Connect에 올려 미리보기로 확인했다(사용자 확인, 문제 없음). 위 범위 값은 미리보기 화면에서 잰 근사치다.

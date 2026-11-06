@@ -1,6 +1,9 @@
 #if DEBUG
 import Foundation
 
+// 데모 문장은 앱 언어에 맞춰 직접 고르는 DEBUG 전용 데이터라 번역 목록을 거치지 않는다.
+// l10n-ignore-begin
+
 /// `-uiDemo <시나리오>` 런치 인자로 실행할 때만 동작하는 UI 확인용 시드.
 /// 인메모리 저장소(AppDependencies)에만 쓰므로 기기의 실제 기록은 건드리지 않는다. 온보딩은 건너뛴다.
 /// LLM은 부르지 않고, 추천 결과는 번들 카탈로그의 실제 도시 id로 만든 고정 기록을 쓴다.
@@ -34,6 +37,8 @@ enum UIDemoSeed {
         case wrappedOne
         /// AI 대화 기록: 예전 형식 답(문단·목록), 제목이 있는 긴 답, 넓은 표, 깨진 표.
         case chat
+        /// App Store 스크린샷: 지난 해 평가 완료 여행 6건(지문·Wrapped), 확인 필요 없이 요약이 접힌 추천 결과, AI 대화 1개.
+        case appStore
     }
 
     /// `-uiDemo` 다음 인자. 없거나 모르는 이름이면 `.upcoming`.
@@ -108,6 +113,32 @@ enum UIDemoSeed {
         case .chat:
             let generation = store.dataGeneration.current
             _ = try await store.updateChatState(ifGeneration: generation) { $0.upsert(chatConversation(now: now)) }
+        case .appStore:
+            for (index, spec) in storeTrips.enumerated() {
+                let from = lastYearOffset(30 + index * 55, now)
+                var trip = try evaluated(
+                    spec.country, spec.city, from: from, to: from + 4,
+                    spec.concept, secondary: spec.secondary, stars: spec.stars, liked: spec.liked,
+                    disliked: spec.city == text("Taipei", "타이베이") ? text("Lines at the popular spots were long", "유명한 가게는 줄이 길었어요") : nil, now: now
+                )
+                // 대표 사진은 앱에 들어 있는 도시 사진(Unsplash, data/destinations/city-photo-sources.csv)을 쓴다.
+                let cover = Bundle.main.url(forResource: spec.photo, withExtension: "jpg")
+                let coverPath = cover.flatMap { try? Data(contentsOf: $0) }.flatMap { try? LocalPhotoStore.saveImageData($0) }
+                trip.setCoverPhoto(storagePath: coverPath)
+                try await store.create(trip)
+                // 하루 한 장: 타이베이는 -uiDemoPhotoDir의 taipei-1~5.jpg(design/app-store/screenshots/photos), 나머지는 대표 사진을 첫날에.
+                let dayPaths = spec.photo == "tw-taipei" ? demoPhotoPaths(prefix: "taipei", count: 5) : [coverPath].compactMap { $0 }
+                for (offset, path) in dayPaths.enumerated() {
+                    try await store.upsert(DailyPhoto(
+                        id: UUID().uuidString, tripID: trip.id, tripDayIndex: offset + 1, storagePath: path,
+                        selection: .manual, dayReaction: nil, createdAt: day(from + offset, now)
+                    ))
+                }
+            }
+            try await store.saveWantedTiers(tiers)
+            try await store.updateCityState { $0.lastRecord = storeRecord(now: now); $0.understandingSeen = true }
+            let generation = store.dataGeneration.current
+            _ = try await store.updateChatState(ifGeneration: generation) { $0.upsert(storeConversation(now: now)) }
         case .saved:
             try await store.updateCityState {
                 $0.save(card(of: "jp-kyoto"), conditionSummary: "Culture & History · November", now: day(-3, now))
@@ -118,7 +149,23 @@ enum UIDemoSeed {
         session.onboardingPhase = .completed
     }
 
-    // l10n-ignore-begin
+    private static func storeConversation(now: Date) -> ChatConversation {
+        let question = text("Osaka for 3 nights, mostly to eat. Where should I stay?", "오사카 3박, 먹는 여행이면 어디에 묵으면 좋을까요?")
+        let answer = text(
+            "For a food trip, staying near **Namba and Dotonbori** is easiest.\n- You can walk to markets and small restaurants in the side streets.\n- Kuromon Market is close by.\n- If you want a quieter hotel, one stop away works well too.",
+            "먹는 여행이라면 **난바·도톤보리** 근처가 편해요.\n- 시장과 골목 식당을 걸어서 다닐 수 있어요.\n- 구로몬 시장도 가까워요.\n- 조용한 숙소를 원하면 한 정거장 떨어진 곳도 괜찮아요."
+        )
+        let question2 = text("Is it easy to do a day trip to Kyoto from there?", "거기서 교토 당일치기도 쉬워요?")
+        let answer2 = text(
+            "Yes. From Namba, the train to Kyoto takes about an hour.\n- Leave early to see the temples before the crowds.\n- Come back in the evening and eat in Dotonbori.",
+            "네, 난바에서 교토까지 전철로 1시간 정도예요.\n- 아침 일찍 나서면 붐비기 전에 사찰을 볼 수 있어요.\n- 저녁에 돌아와 도톤보리에서 식사하면 돼요."
+        )
+        let messages = [question, answer, question2, answer2].enumerated().map { ChatMessage(role: $0.offset.isMultiple(of: 2) ? .user : .assistant, text: $0.element, date: now) }
+        // 평가를 담지 않은 대화여야 평가 전송 동의 없이도 이어서 쓸 수 있는 화면으로 나온다.
+        let context = ChatContextSnapshot(text: text("Asked from: Recommendations", "묻는 곳: 추천 탭"), builtAt: now, includesRatings: false)
+        return ChatConversation(id: UUID(), tab: .recommendation, title: text("Where to stay in Osaka", "오사카 숙소 위치"), createdAt: now, updatedAt: now, context: context, messages: messages)
+    }
+
     private static func chatConversation(now: Date) -> ChatConversation {
         let pairs: [(String, String)] = [
             ("발리에서 푹 쉬고 싶어요", "푹 쉬는 게 목적이라면 **누사두아**가 잘 맞아요.\n- 리조트가 모여 있고 해변이 잔잔해요.\n- 우붓은 자연 속 리조트가 많지만 바다는 없어요."),
@@ -133,7 +180,6 @@ enum UIDemoSeed {
         let context = ChatContextSnapshot(text: "묻는 곳: 추천 탭(새 여행지를 고르는 중)", builtAt: now, includesRatings: false)
         return ChatConversation(id: UUID(), tab: .recommendation, title: "답 형식 확인", createdAt: now, updatedAt: now, context: context, messages: messages)
     }
-    // l10n-ignore-end
 
     /// 지난 해 1월 1일에서 `n`일 뒤가 오늘로부터 며칠 전인지(음수). 올해가 바뀌어도 "지난 해"로 남도록 `now`에서 계산한다.
     private static func lastYearOffset(_ n: Int, _ now: Date) -> Int {
@@ -161,7 +207,7 @@ enum UIDemoSeed {
 
     private static func evaluated(
         _ country: String, _ city: String, from: Int, to: Int, _ primary: TripConcept,
-        secondary: [TripConcept] = [], stars: Int, now: Date
+        secondary: [TripConcept] = [], stars: Int, liked: String? = nil, disliked: String? = nil, now: Date
     ) throws -> Trip {
         var trip = try trip(country, city, from: from, to: to, primary, secondary: secondary, now: now)
         try trip.start(at: day(from, now))
@@ -171,7 +217,8 @@ enum UIDemoSeed {
                 satisfaction: stars, wouldRepeat: stars >= 4,
                 cityReviews: [CityReview(
                     countryCode: country, city: city, rating: stars,
-                    liked: "Great for walking, and lots of places to eat", disliked: stars <= 3 ? "Too crowded" : nil
+                    liked: liked ?? text("Great for walking, and lots of places to eat", "걷기 좋고 먹을 곳이 많았어요"),
+                    disliked: disliked ?? (stars <= 3 ? text("Too crowded", "너무 붐볐어요") : nil)
                 )],
                 source: .postTrip
             ),
@@ -188,6 +235,28 @@ enum UIDemoSeed {
         ("GB", "London", .cityExploration, [.cultureHistory], 4),
         ("JP", "Kyoto", .food, [.cultureHistory], 5)
     ]
+
+    /// 스크린샷용 지난 여행. 추천 카드(오사카·도쿄·후쿠오카)와 겹치지 않게 일본은 교토만 둔다.
+    private static var storeTrips: [(country: String, city: String, concept: TripConcept, secondary: [TripConcept], stars: Int, liked: String?, photo: String)] {
+        [
+            ("TW", text("Taipei", "타이베이"), .food, [.cityExploration], 5, text("Loved the night market street food", "야시장 길거리 음식이 정말 좋았어요"), "tw-taipei"),
+            ("IT", text("Rome", "로마"), .cultureHistory, [.food], 4, nil, "it-rome"),
+            ("NZ", text("Queenstown", "퀸스타운"), .natureScenery, [.activities], 5, nil, "nz-queenstown"),
+            ("TH", text("Phuket", "푸껫"), .relaxation, [], 3, nil, "th-phuket-island"),
+            ("GB", text("London", "런던"), .cityExploration, [.cultureHistory], 4, nil, "gb-london"),
+            ("JP", text("Kyoto", "교토"), .cultureHistory, [.food], 5, nil, "jp-kyoto")
+        ]
+    }
+
+    /// 스크린샷용 사진은 앱 번들에 넣지 않고 실행 인자로 받은 Mac 폴더에서 읽는다(시뮬레이터 전용).
+    private static func demoPhotoPaths(prefix: String, count: Int) -> [String] {
+        let args = ProcessInfo.processInfo.arguments
+        guard let index = args.firstIndex(of: "-uiDemoPhotoDir"), args.indices.contains(index + 1) else { return [] }
+        let dir = URL(fileURLWithPath: args[index + 1])
+        return (1...count).compactMap { n in
+            (try? Data(contentsOf: dir.appendingPathComponent("\(prefix)-\(n).jpg"))).flatMap { try? LocalPhotoStore.saveImageData($0) }
+        }
+    }
 
     private static func seedTrips(_ store: any AppStore, now: Date) async throws {
         try await store.create(evaluated("JP", "Kyoto", from: -200, to: -196, .cultureHistory, stars: 5, now: now))
@@ -320,6 +389,24 @@ enum UIDemoSeed {
         )
     }
 
+    /// 스크린샷용: 세 카드 모두 꼭 지킬 조건을 충족해 "추가 확인 필요"가 나오지 않는다. 3장보다 적으면 복원할 때 풀에서 채운다.
+    private static func storeRecord(now: Date) -> CityRecommendationRecord {
+        let met = [ConditionResult(condition: japanOnly, status: .met), ConditionResult(condition: shortFlight, status: .met)]
+        return record(
+            request(),
+            cards: [
+                card(of: "jp-osaka", reason: text("Like the night markets you loved in Taipei, it's a city for eating your way through alleys and markets.", "타이베이에서 좋았던 야시장 먹거리처럼, 골목과 시장을 걸으며 먹는 재미가 큰 도시예요."),
+                     cost: cost(900_000, 1_300_000), conditions: met),
+                card(of: "jp-tokyo", reason: text("Small restaurants on every side street make it easy to fill several days with food.", "골목마다 작은 식당이 많아 먹는 여행으로 며칠을 채우기 좋아요."),
+                     cost: cost(1_100_000, 1_500_000), conditions: met),
+                card(of: "jp-fukuoka", reason: text("Riverside food stalls and a compact center, easy for a short trip.", "강가 포장마차와 가까운 시내 덕분에 짧은 여행에 편한 도시예요."),
+                     cost: cost(800_000, 1_200_000), conditions: met)
+            ],
+            conditions: [japanOnly, shortFlight],
+            understanding: text("You're looking for a Japan trip in November, 3 nights, centered on the joy of eating.", "11월에 3박으로, 먹는 즐거움을 중심에 둔 일본 여행을 찾고 있어요."), now: now
+        )
+    }
+
     private static func photoRecord(now: Date) -> CityRecommendationRecord {
         var request = request(budget: nil)
         request.wants = ""
@@ -353,4 +440,5 @@ enum UIDemoSeed {
         )
     }
 }
+// l10n-ignore-end
 #endif

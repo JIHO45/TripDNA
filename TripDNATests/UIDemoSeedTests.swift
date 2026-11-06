@@ -12,7 +12,7 @@ struct UIDemoSeedTests {
 
         #expect(session.isReadyForMainApp)
         let state = try await dependencies.store.cityState()
-        let hasRecord = [.recoResult, .recoPhotos, .recoZero, .recoHomeExcluded].contains(scenario)
+        let hasRecord = [.recoResult, .recoPhotos, .recoZero, .recoHomeExcluded, .appStore].contains(scenario)
         #expect((state.lastRecord != nil) == hasRecord)
         if scenario == .recoZero {
             #expect(state.lastRecord?.cards.isEmpty == true)

@@ -259,3 +259,13 @@ joe45dev@gmail.com
   - iPad 헤더: x 250~4980, y 360~1780. 위 가운데(x 2140~3076, y 625까지)는 탭 메뉴에 가린다.
   - 그래서 문구와 추천 카드는 가운데 띠(x 1230~4020, y 650~1780)에 둔다. 처음 시안은 비율로 계산한 범위에 맞춰 문구가 잘렸다. 아이콘·이름 줄은 App Store가 바로 아래 보여주므로 뺐다.
 - 2026-11-07 수정본을 App Store Connect에 올려 미리보기로 확인했다(사용자 확인, 문제 없음). 위 범위 값은 미리보기 화면에서 잰 근사치다.
+
+### 필수 스크린샷 (2026-11-07)
+
+- 위치: `design/app-store/screenshots/out/` — `{번호}-{ko|en}-{iphone|ipad}.png` 24장. iPhone 6.9인치 1320×2868, iPad 13인치 2064×2752, 투명도 없음.
+- 순서: 1 추천 결과 → 2 여행 평가(하루 한 장) → 3 AI 대화 → 4 도시 상세 → 5 여행 지문 → 6 Wrapped 사진. 1번 추천 이유가 2번 타이베이 평가를 근거로 쓴다.
+- 모양: 단색 배경 + 두 줄 문구. iPhone은 휴대폰 틀 안에 실제 화면, iPad는 기기 틀 없이 실제 화면에서 잘라낸 핵심 영역을 사각 카드로 넣는다(잘라낸 화면이 기기 전체 화면처럼 보이지 않게).
+- 캡처: `-uiDemo appStore -uiDemoPhotoDir <저장소>/design/app-store/screenshots/photos`로 띄운 시뮬레이터(iPhone 18 Pro Max, iPad Pro 13-inch M5), 시계 9:41. iPad 3번만 iOS 글자 크기를 "아주 크게"로 찍었다(대화 글자를 읽히게).
+- 하루 한 장 사진 5장은 Unsplash에서 받았고 출처는 `design/app-store/screenshots/photos/sources.csv`. 앱 번들에는 넣지 않는다.
+- 다시 만들기: `design/app-store/screenshots/`에서 `python3 make.py` 후 `out/*.html`을 Chrome headless로 렌더링(iPhone `--window-size=1320,2868`, iPad `2064,2752`). 가끔 오른쪽 아래가 검게 깨져 나오면 다시 렌더링한다.
+- 이 작업 중 고친 앱 화면: iPad에서 탭 화면 내용 폭을 700pt로 제한(시작값), 도시 사진 높이가 폭에 맞춰 늘어나게, 추천 카드 이유가 "…"로 잘리지 않고 두 줄까지 보이게(카드와 글 모두 필요한 높이를 쓰게 함), Wrapped를 전체 화면으로 열고 사진이 칸을 넘치지 않게.

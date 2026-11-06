@@ -199,15 +199,23 @@ enum UIDemoSeed {
         tiers.tier1 = [.food, .cultureHistory]
         tiers.tier2 = [.cityExploration]
         tiers.tier3 = [.relaxation]
-        tiers.avoidNote = "I'd like to avoid places that are too crowded"
+        tiers.avoidNote = text("I'd like to avoid places that are too crowded", "너무 붐비는 곳은 피하고 싶어요")
         return tiers
     }()
 
     // MARK: 추천 기록
 
+    /// 실제로는 LLM이 앱 언어로 쓰는 문장. 스크린샷이 한 언어로 나오게 앱 언어에 맞춰 고른다.
+    private static func text(_ en: String, _ ko: String) -> String { AppLanguage.isKorean ? ko : en }
+
+    /// 금액은 원화로 적고, 영어면 USD로 1/1000 해서 쓴다(150만 원 → $1,500). 같은 비율이라 예산 컷 결과는 같다.
+    private static let currency = AppLanguage.isKorean ? BudgetCurrency.krw : "USD"
+    private static func money(_ krw: Int) -> Int { AppLanguage.isKorean ? krw : krw / 1000 }
+    private static func cost(_ low: Int, _ high: Int) -> CostRange { .init(low: money(low), high: money(high)) }
+
     private static func card(
-        of cityID: String, reason: String = "A city of long days spent wandering alleys and markets and eating your way through them.",
-        caveat: String = "It gets crowded in peak season.", cost: CostRange? = nil, conditions: [ConditionResult] = []
+        of cityID: String, reason: String = text("A city of long days spent wandering alleys and markets and eating your way through them.", "골목과 시장을 하루 종일 걸으며 먹는 즐거움을 누리는 도시예요."),
+        caveat: String = text("It gets crowded in peak season.", "성수기에는 붐벼요."), cost: CostRange? = nil, conditions: [ConditionResult] = []
     ) -> CityRecommendationRecord.Card {
         let city = CityCatalog.load()?.cities.first { $0.id == cityID }
         return .init(
@@ -218,22 +226,22 @@ enum UIDemoSeed {
     }
 
     private static let japanOnly = CityCondition(
-        id: "c1", text: "Japan", quote: "Japan", level: .required, kind: .country, target: "JP"
+        id: "c1", text: text("Japan", "일본"), quote: text("Japan", "일본"), level: .required, kind: .country, target: "JP"
     )
     private static let shortFlight = CityCondition(
-        id: "c2", text: "Within a 5-hour flight", quote: "Within a 5-hour flight", level: .required, kind: .other
+        id: "c2", text: text("Within a 5-hour flight", "비행 5시간 이내"), quote: text("within a 5-hour flight", "비행 5시간 이내"), level: .required, kind: .other
     )
 
     /// 후보 풀은 서비스의 `replay`와 같은 입력으로 순위를 다시 계산해 만든다. 그래야 저장된 응답을 믿고
     /// 예산 컷·채우기가 풀 일치 검사를 통과한다. 응답은 풀 전체를 덮고, 비용은 정해 둔 값(없으면 풀 순서 기준)을 쓴다.
     private static let demoCosts: [String: CostRange] = [
-        "jp-osaka": .init(low: 900_000, high: 1_300_000), "jp-fukuoka": .init(low: 800_000, high: 1_200_000),
-        "jp-kyoto": .init(low: 1_000_000, high: 1_400_000), "jp-sapporo": .init(low: 1_800_000, high: 2_300_000),
-        "it-rome": .init(low: 1_100_000, high: 1_450_000), "es-barcelona": .init(low: 1_000_000, high: 1_400_000)
+        "jp-osaka": cost(900_000, 1_300_000), "jp-fukuoka": cost(800_000, 1_200_000),
+        "jp-kyoto": cost(1_000_000, 1_400_000), "jp-sapporo": cost(1_800_000, 2_300_000),
+        "it-rome": cost(1_100_000, 1_450_000), "es-barcelona": cost(1_000_000, 1_400_000)
     ]
 
     private static func demoCost(_ cityID: String, index: Int) -> CostRange {
-        demoCosts[cityID] ?? .init(low: 900_000 + 100_000 * (index % 8), high: 1_500_000 + 100_000 * (index % 8))
+        demoCosts[cityID] ?? cost(900_000 + 100_000 * (index % 8), 1_500_000 + 100_000 * (index % 8))
     }
 
     private static func rankedCities(
@@ -291,8 +299,9 @@ enum UIDemoSeed {
         request.month = 11
         request.year = Calendar.current.component(.year, from: .now)
         request.nights = 3
-        request.budgetMax = budget
-        request.wants = "Japan, within a 5-hour flight"
+        request.budgetMax = budget.map(money)
+        request.budgetCurrency = currency
+        request.wants = text("Japan, within a 5-hour flight", "일본, 비행 5시간 이내")
         return request
     }
 
@@ -302,12 +311,12 @@ enum UIDemoSeed {
         return record(
             request(),
             cards: [
-                card(of: "jp-osaka", cost: .init(low: 900_000, high: 1_300_000), conditions: [met]),
-                card(of: "jp-fukuoka", cost: .init(low: 800_000, high: 1_200_000), conditions: [met, unconfirmed]),
-                card(of: "jp-kyoto", cost: .init(low: 1_000_000, high: 1_400_000), conditions: [met])
+                card(of: "jp-osaka", cost: cost(900_000, 1_300_000), conditions: [met]),
+                card(of: "jp-fukuoka", cost: cost(800_000, 1_200_000), conditions: [met, unconfirmed]),
+                card(of: "jp-kyoto", cost: cost(1_000_000, 1_400_000), conditions: [met])
             ],
             conditions: [japanOnly, shortFlight],
-            understanding: "You're looking for a Japan trip in November, 3 nights, centered on the joy of eating.", now: now
+            understanding: text("You're looking for a Japan trip in November, 3 nights, centered on the joy of eating.", "11월에 3박으로, 먹는 즐거움을 중심에 둔 일본 여행을 찾고 있어요."), now: now
         )
     }
 
@@ -340,7 +349,7 @@ enum UIDemoSeed {
                 card(of: item.city.id, cost: demoCost(item.city.id, index: index))
             },
             excludedCountries: ["JP"], homeCountry: "JP",
-            understanding: "You're looking for a trip in November, 3 nights, centered on the joy of eating.", now: now
+            understanding: text("You're looking for a trip in November, 3 nights, centered on the joy of eating.", "11월에 3박으로, 먹는 즐거움을 중심에 둔 여행을 찾고 있어요."), now: now
         )
     }
 }

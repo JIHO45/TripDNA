@@ -257,6 +257,8 @@ struct ChatTests {
         let large = AIUsageLimit(reason: .tooLarge, resetAt: Self.now, subscribed: false, share: 0.5)
         #expect(free.message != sub.message)
         #expect(large.message != free.message && large.message != sub.message)
+        // 예약분이 모자라 막힌 무료 사용자도 구독 안내를 받는다.
+        #expect(large.offersSubscription && free.offersSubscription && !sub.offersSubscription)
     }
 
     @Test func proxyDecodesChatLimitAndUsage() throws {

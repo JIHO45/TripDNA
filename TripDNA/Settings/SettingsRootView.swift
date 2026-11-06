@@ -76,12 +76,15 @@ struct SettingsRootView: View {
                         }
                         .foregroundStyle(Color.dnaTextPrimary)
                     }
-                    // 약관 주소가 정해지기 전까지 이동하지 않는 자리표시자다.
-                    Text("Terms of Use").foregroundStyle(Color.dnaTextPrimary)
+                    // 구독 화면과 같은 Apple 표준 EULA.
+                    Link(destination: Subscription.termsURL) {
+                        LabeledContent("Terms of Use") {
+                            Image(systemName: "arrow.up.right").foregroundStyle(Color.dnaTextSecondary)
+                        }
+                        .foregroundStyle(Color.dnaTextPrimary)
+                    }
                     LabeledContent("Version", value: Self.versionText)
                         .foregroundStyle(Color.dnaTextPrimary)
-                } footer: {
-                    Text("Terms of Use are coming soon.")
                 }
                 .listRowBackground(Color.dnaSurface1)
             }

@@ -32,7 +32,8 @@ nonisolated struct AIUsageLimit: Equatable, Sendable {
     enum Reason: String, Sendable {
         /// 다 썼다.
         case exhausted
-        /// 남았지만 이 요청을 처리하기에는 모자란다(긴 대화·긴 질문).
+        /// 남았지만 이 요청의 예약분보다 적다. 예약분은 검색·출력 상한이 대부분이라 질문을 줄여도 거의 줄지 않으므로,
+        /// 사실상 이번 기간 사용량에 닿은 것으로 안내한다.
         case tooLarge
     }
     let reason: Reason
@@ -40,12 +41,17 @@ nonisolated struct AIUsageLimit: Equatable, Sendable {
     let subscribed: Bool
     let share: Double?
 
-    /// 무료는 업그레이드 안내, 구독은 다시 채워지는 날짜만. 남았지만 모자란 경우는 줄이거나 새 대화를 권한다.
+    /// 무료면 두 경우 모두 구독 화면을 연다. 구독자에게는 열지 않는다(추가 구매가 없다).
+    var offersSubscription: Bool { !subscribed }
+
+    /// 무료는 업그레이드 안내, 구독은 다시 채워지는 날짜만.
     var message: String {
         let time = resetAt.formatted(.dateTime.month().day().hour().minute())
         switch (reason, subscribed) {
-        case (.tooLarge, _):
-            return String(localized: "There isn't enough AI usage left for this request. Try a shorter question or start a new conversation.")
+        case (.tooLarge, true):
+            return String(localized: "There isn't enough AI usage left this period for this request. It refills on \(time).")
+        case (.tooLarge, false):
+            return String(localized: "There isn't enough free AI usage left this month for this request. It refills on \(time). Subscribe to use more.")
         case (.exhausted, true):
             return String(localized: "You've used up this period's AI usage. It refills on \(time).")
         case (.exhausted, false):
@@ -94,6 +100,9 @@ nonisolated struct CityLLMConfiguration: Sendable {
     static let maxTokens = 16000
     /// 응답에 사용자 조건·평가 메모가 담기므로 디스크 캐시를 남기지 않는다(`.shared`는 응답을 앱 캐시 폴더에 저장했다).
     static let session = URLSession(configuration: .ephemeral)
+    /// 프록시 요청 대기 시간. 서버 함수 제한(180초, functions/index.js TIMEOUT_SECONDS)보다 길게 둔다.
+    /// 앱이 먼저 끊으면 서버는 끝까지 호출하고 사용량을 차감해, 사용자는 답 없이 사용량만 잃는다.
+    static let proxyTimeout: TimeInterval = 190
 
     /// 프록시 주소가 있으면 프록시, 없으면 DEBUG 빌드의 Keychain 키, 둘 다 없으면 nil.
     /// `usageID`는 추천받기 한 번의 ID다. 프록시는 이 ID로 추천 1회를 센다.
@@ -135,7 +144,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient, ChatClie
     var usageID = UUID().uuidString
 
     func completeWithSearch(system: String, user: String, maxUses: Int) async throws -> CitySearchReply {
-        var request = URLRequest(url: url, timeoutInterval: 90)
+        var request = URLRequest(url: url, timeoutInterval: CityLLMConfiguration.proxyTimeout)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
@@ -150,7 +159,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient, ChatClie
     }
 
     func chat(system: String, turns: [ChatTurn], purpose: ChatPurpose, searchUses: Int?) async throws -> ChatReply {
-        var request = URLRequest(url: url, timeoutInterval: 120)
+        var request = URLRequest(url: url, timeoutInterval: CityLLMConfiguration.proxyTimeout)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONSerialization.data(withJSONObject: Self.chatBody(
@@ -173,8 +182,7 @@ nonisolated struct CityLLMProxyClient: CityLLMClient, CitySearchClient, ChatClie
     }
 
     func complete(system: String, user: String) async throws -> String {
-        // 직접 호출과 같은 120초. 생각 토큰을 포함한 16000토큰 응답은 60초를 넘을 수 있다.
-        var request = URLRequest(url: url, timeoutInterval: 120)
+        var request = URLRequest(url: url, timeoutInterval: CityLLMConfiguration.proxyTimeout)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONEncoder().encode(

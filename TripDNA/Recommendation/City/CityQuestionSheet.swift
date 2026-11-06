@@ -60,8 +60,7 @@ final class CityQuestionModel {
                 status = .failed(question: text, message: String(localized: "The AI connection isn't set up yet. A proxy URL (CityLLMProxyURL) or a development key is required."))
             } catch CityLLMError.usageLimit(let limit) {
                 status = .failed(question: text, message: limit.message)
-                // 구독자에게는 구독 화면을 열지 않는다(추가 구매가 없다). 남았지만 모자란 경우도 열지 않는다.
-                showsSubscription = limit.reason == .exhausted && !limit.subscribed
+                showsSubscription = limit.offersSubscription
             } catch CityLLMError.quotaExceeded(let resetAt) {
                 // 새 서버를 배포하기 전의 횟수 한도 응답.
                 let subscribed = await Subscription.isActive()

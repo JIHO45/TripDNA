@@ -115,7 +115,9 @@ nonisolated struct CloudKitBackupRemote: BackupRemote {
             let results = try await database.records(for: [Self.manifestID], desiredKeys: Self.manifestKeys)
             guard let result = results[Self.manifestID] else { return nil }
             record = try result.get()
-        } catch let error as CKError where error.code == .unknownItem || error.code == .zoneNotFound {
+        } catch let error as CKError where Self.isMissing(error) {
+            // ponytail: 사용자가 iOS 설정에서 지운 영역(userDeletedZone)도 "백업 없음"으로 보고 다음 백업이 영역을 다시 만든다.
+            // 이렇게 하지 않으면 백업이 영영 막힌다. Apple은 다시 올리기 전에 묻기를 권하므로, 불만이 나오면 확인 단계를 둔다.
             return nil
         }
         guard let createdAt = record["createdAt"] as? Date,
@@ -134,7 +136,7 @@ nonisolated struct CloudKitBackupRemote: BackupRemote {
         let record: CKRecord
         do {
             record = try await database.record(for: Self.manifestID)
-        } catch let error as CKError where error.code == .unknownItem || error.code == .zoneNotFound {
+        } catch let error as CKError where Self.isMissing(error) {
             throw BackupError.notFound
         }
         guard let url = (record["snapshot"] as? CKAsset)?.fileURL else { throw BackupError.notFound }
@@ -198,9 +200,14 @@ nonisolated struct CloudKitBackupRemote: BackupRemote {
         do {
             let (_, deleted) = try await database.modifyRecordZones(saving: [], deleting: [Self.zoneID])
             _ = try deleted[Self.zoneID]?.get()
-        } catch let error as CKError where error.code == .zoneNotFound || error.code == .unknownItem {
-            return
+        } catch let error as CKError where Self.isMissing(error) {
+            return // 이미 없다(사용자가 iOS 설정에서 지운 경우 포함).
         }
+    }
+
+    /// 백업이 없다는 뜻의 오류. 사용자가 iOS 설정 › iCloud에서 앱 데이터를 지우면 userDeletedZone이 온다.
+    private static func isMissing(_ error: CKError) -> Bool {
+        [.unknownItem, .zoneNotFound, .userDeletedZone].contains(error.code)
     }
 }
 
@@ -241,6 +248,7 @@ final class ICloudBackup {
     /// 사진 파일 폴더. 테스트는 기기의 실제 사진을 건드리지 않도록 임시 폴더를 넘긴다.
     private let photoFolder: URL
     private var running: Task<Void, Never>?
+    @ObservationIgnored private var backgroundTask = UIBackgroundTaskIdentifier.invalid
 
     private enum Keys {
         static let enabled = "backup.enabled"
@@ -278,11 +286,22 @@ final class ICloudBackup {
 
     /// 앱이 뒤로 갈 때. 시스템이 잠깐 시간을 더 주는 동안 올린다.
     func backUpInBackground() {
-        let taskID = UIApplication.shared.beginBackgroundTask(withName: "iCloud backup")
+        guard backgroundTask == .invalid else { return }
+        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "iCloud backup") { [weak self] in
+            // 시간이 다 되면 멈추고 바로 끝낸다. 끝내지 않으면 시스템이 앱을 강제로 종료한다. 남은 사진은 다음 백업이 올린다.
+            self?.running?.cancel()
+            self?.endBackgroundTask()
+        }
         Task {
             await backUpIfNeeded()
-            UIApplication.shared.endBackgroundTask(taskID)
+            endBackgroundTask()
         }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTask != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(backgroundTask)
+        backgroundTask = .invalid
     }
 
     /// 다른 기기의 백업을 이 기기 기록으로 바꾼다(사용자가 고른 경우만).

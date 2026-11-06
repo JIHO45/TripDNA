@@ -148,10 +148,9 @@ final class ChatModel {
         case ChatError.readOnly:
             return .failed(question: question, message: String(localized: "Sending trip ratings is off. Start a new conversation."), canRetry: false)
         case CityLLMError.usageLimit(let limit):
-            // 구독자에게는 구독 화면을 열지 않는다(추가 구매가 없다). 남았지만 모자란 경우도 열지 않는다.
-            showsSubscription = limit.reason == .exhausted && !limit.subscribed
+            showsSubscription = limit.offersSubscription
             if let share = limit.share { state.usage = AIUsage(share: share, resetAt: limit.resetAt, subscribed: limit.subscribed) }
-            return .failed(question: question, message: limit.message, canRetry: limit.reason == .tooLarge)
+            return .failed(question: question, message: limit.message, canRetry: false)
         case CityLLMError.quotaExceeded(let resetAt):
             // 새 서버를 배포하기 전의 횟수 한도 응답.
             return .failed(question: question, message: CityLLMProxyClient.quotaMessage(String(localized: "questions"), resetAt: resetAt), canRetry: false)

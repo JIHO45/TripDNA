@@ -45,14 +45,17 @@ enum EvaluationNotificationService {
         try await center.add(request)
     }
 
+    /// 예약된 알림과 이미 도착한 알림을 함께 거둔다. 지운 여행의 알림을 눌러 빈 평가 화면이 열리지 않게 한다.
     static func cancel(for tripID: String) {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: [notificationID(for: tripID)]
-        )
+        let center = UNUserNotificationCenter.current()
+        let ids = [notificationID(for: tripID)]
+        center.removePendingNotificationRequests(withIdentifiers: ids)
+        center.removeDeliveredNotifications(withIdentifiers: ids)
     }
 
     static func clearAll() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         AppStorageLocation.defaults.removeObject(forKey: enabledKey)
         AppStorageLocation.defaults.removeObject(forKey: TripRegistrationViewModel.notificationPrimingShownKey)
     }

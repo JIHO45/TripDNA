@@ -11,6 +11,7 @@ struct EvaluationView: View {
     @State private var showingConceptSheet = false
     @State private var showingCoverPicker = false
     @State private var showingShare = false
+    @State private var loaded = false
 
     var body: some View {
         ZStack {
@@ -19,6 +20,16 @@ struct EvaluationView: View {
             case .cityReview(let index):
                 if viewModel.cityReviews.indices.contains(index) {
                     cityReviewStep(index)
+                } else if loaded {
+                    // 지운 여행의 알림을 누른 경우 등. 닫을 길 없이 빈 화면에 갇히지 않게 한다.
+                    EmptyStateView(
+                        systemImage: "suitcase",
+                        title: String(localized: "Trip Not Found"),
+                        message: String(localized: "This trip may have been deleted."),
+                        actionTitle: String(localized: "Close"),
+                        action: { dismiss() }
+                    )
+                    .padding(DNASpacing.gutter)
                 }
             case .processing:
                 processingStep
@@ -28,7 +39,10 @@ struct EvaluationView: View {
         }
         .toolbarBackground(.hidden, for: .navigationBar)
         .sensoryFeedback(.success, trigger: viewModel.didSubmit) { _, submitted in submitted }
-        .task { await viewModel.load(tripID: tripID, dependencies: dependencies) }
+        .task {
+            await viewModel.load(tripID: tripID, dependencies: dependencies)
+            loaded = true
+        }
         .sheet(isPresented: $showingConceptSheet) {
             TripConceptEditSheet(
                 primary: $viewModel.primaryConcept,

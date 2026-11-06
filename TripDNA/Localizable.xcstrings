@@ -3161,12 +3161,12 @@
         }
       }
     },
-    "Couldn't get recommendations. Please try again. (%@)" : {
+    "Couldn't get recommendations. Check your internet connection and try again." : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "추천을 받지 못했어요. 다시 시도해 주세요. (%@)"
+            "value" : "추천을 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."
           }
         }
       }
@@ -8515,16 +8515,6 @@
         }
       }
     },
-    "Terms of Use are coming soon." : {
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이용약관은 준비 중이에요."
-          }
-        }
-      }
-    },
     "That's okay. You can continue another way." : {
       "localizations" : {
         "ko" : {
@@ -8635,12 +8625,22 @@
         }
       }
     },
-    "There isn't enough AI usage left for this request. Try a shorter question or start a new conversation." : {
+    "There isn't enough AI usage left this period for this request. It refills on %@." : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "남은 AI 사용량으로 이 요청을 처리하기 어려워요. 질문을 줄이거나 새 대화를 시작해 주세요."
+            "value" : "이번 기간 남은 AI 사용량으로는 이 요청을 처리할 수 없어요. %@에 다시 채워져요."
+          }
+        }
+      }
+    },
+    "There isn't enough free AI usage left this month for this request. It refills on %@. Subscribe to use more." : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이번 달 남은 무료 AI 사용량으로는 이 요청을 처리할 수 없어요. %@에 다시 채워져요. 구독하면 더 쓸 수 있어요."
           }
         }
       }
@@ -8861,6 +8861,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "이번 결과는 예산 없이 받아서 예산으로 다시 거를 수 없어요."
+          }
+        }
+      }
+    },
+    "This trip may have been deleted." : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지운 여행일 수 있어요."
           }
         }
       }
@@ -9103,6 +9113,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "여행 컨셉"
+          }
+        }
+      }
+    },
+    "Trip Not Found" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "여행을 찾을 수 없어요"
           }
         }
       }

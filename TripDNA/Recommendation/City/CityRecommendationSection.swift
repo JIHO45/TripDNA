@@ -277,7 +277,12 @@ final class CityRecommendationViewModel {
                 state = .failed(CityLLMProxyClient.quotaMessage(String(localized: "recommendations"), resetAt: resetAt, subscribed: subscribed))
                 showsSubscription = !subscribed
             default:
-                state = .failed(String(localized: "Couldn't get recommendations. Please try again. (\(String(describing: error)))"))
+                #if DEBUG
+                state = .failed(String("Couldn't get recommendations. (\(String(describing: error)))"))
+                #else
+                // 내부 오류 문자열은 보이지 않는다. 기록(error)에는 남는다.
+                state = .failed(String(localized: "Couldn't get recommendations. Check your internet connection and try again."))
+                #endif
                 await dependencies.track(.cityRecommendationFailed)
             }
         }

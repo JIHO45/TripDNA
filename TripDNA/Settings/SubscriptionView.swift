@@ -42,6 +42,9 @@ enum Subscription {
 /// 구독하지 않았으면 혜택을 앞세운 구매 화면, 구독 중이면 받는 혜택과 구독 관리.
 struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
+    /// 앱 언어의 locale. SubscriptionStoreView는 안쪽 locale을 App Store 지역 것(예: en_US)으로 바꾸므로,
+    /// 우리가 넣은 안내 문구에는 이 값을 다시 준다. 상품 이름·가격·구독 버튼은 App Store 지역을 따른다.
+    @Environment(\.locale) private var locale
     @State private var plan: SubscribedPlan?
     @State private var loaded = false
 
@@ -74,6 +77,7 @@ struct SubscriptionView: View {
                 SubscriptionBenefits()
             }
             .padding(.bottom, DNASpacing.md)
+            .environment(\.locale, locale)
         }
         .subscriptionStoreControlStyle(.prominentPicker)
         .subscriptionStoreButtonLabel(.multiline)

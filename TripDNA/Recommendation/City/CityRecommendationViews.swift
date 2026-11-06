@@ -707,6 +707,16 @@ struct CityDetailView: View {
                             .foregroundStyle(Color.dnaTextSecondary)
                     }
                 }
+                // 추천을 받은 뒤의 링크라 후보 선택에는 영향이 없다(docs/affiliates.md 원칙 1).
+                if dependencies.affiliateActivitiesEnabled {
+                    AffiliateActivitySection(
+                        title: String(localized: "What to Do Here"),
+                        links: dependencies.affiliateLinkService.links(
+                            city: card.cityName, countryCode: card.country, concept: request?.primary
+                        )
+                    )
+                    .padding(.top, DNASpacing.section - DNASpacing.md)
+                }
             }
             .padding(DNASpacing.lg)
             // 떠 있는 질문 버튼이 마지막 문단을 덮지 않게 그 높이만큼 더 내린다.

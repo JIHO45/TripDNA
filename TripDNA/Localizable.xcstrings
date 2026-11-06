@@ -9813,6 +9813,16 @@
         }
       }
     },
+    "What to Do Here" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 도시에서 할 거리"
+          }
+        }
+      }
+    },
     "What to do in this country" : {
       "localizations" : {
         "ko" : {

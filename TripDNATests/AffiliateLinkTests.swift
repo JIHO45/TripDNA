@@ -7,7 +7,7 @@ struct AffiliateLinkTests {
 
     @Test func plannedTripActivityLinkUsesCityDdayAndSubID() throws {
         let store = InMemoryAppStore()
-        let service = AffiliateLinkService(events: store, calendar: calendar)
+        let service = AffiliateLinkService(events: store, calendar: calendar, isKorean: true)
         let leg = try TripLeg(
             countryCode: "JP",
             cities: ["도쿄", "오사카"],
@@ -44,7 +44,8 @@ struct AffiliateLinkTests {
     @Test func inactiveConfigurationLinksStraightToSearchWithoutPartnerID() throws {
         let configuration = AffiliateProviderConfiguration(
             providerName: "Klook",
-            searchBaseURL: try #require(URL(string: "https://www.klook.com/ko/search/result/")),
+            searchBaseURL: try #require(URL(string: "https://www.klook.com/search/result/")),
+            koreanSearchBaseURL: try #require(URL(string: "https://www.klook.com/ko/search/result/")),
             redirectURL: try #require(URL(string: "https://affiliate.klook.com/redirect")),
             partnerID: nil,
             tripAdID: "1",
@@ -61,6 +62,28 @@ struct AffiliateLinkTests {
         #expect(first.url.host == "www.klook.com")
         #expect(items.map(\.name) == ["query"])
         #expect(!first.isAffiliateActive)
+    }
+
+    @Test func cityRecommendationLinksUseConceptThenHighlightsInAppLanguage() throws {
+        func targets(isKorean: Bool, concept: TripConcept?) throws -> [String] {
+            let service = AffiliateLinkService(events: InMemoryAppStore(), isKorean: isKorean)
+            return try service.links(city: "Osaka", countryCode: "jp", concept: concept).map { link in
+                #expect(link.entryPoint == .city)
+                #expect(link.subID == "rec_city_JP_osaka")
+                let items = try #require(URLComponents(url: link.url, resolvingAgainstBaseURL: false)?.queryItems)
+                #expect(items.first { $0.name == "aff_adid" }?.value == "1535735")
+                return try #require(items.first { $0.name == "k_site" }?.value)
+            }
+        }
+
+        #expect(try targets(isKorean: false, concept: .food) == [
+            "https://www.klook.com/search/result/?query=Osaka%20food%20tour",
+            "https://www.klook.com/search/result/?query=Osaka%20things%20to%20do"
+        ])
+        #expect(try targets(isKorean: true, concept: .food).allSatisfy { $0.hasPrefix("https://www.klook.com/ko/search/result/") })
+        // 맞는 분류가 없는 컨셉과 컨셉이 없는 경우는 인기 액티비티 하나만.
+        #expect(try targets(isKorean: false, concept: .cityExploration).count == 1)
+        #expect(try targets(isKorean: false, concept: nil).count == 1)
     }
 
     @Test func recommendationActivityLinksUseExplanationTagsWithoutChangingRecommendation() throws {

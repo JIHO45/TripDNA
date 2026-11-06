@@ -272,12 +272,9 @@ final class AppDependencies {
         (try? await store.definitions()) ?? []
     }
 
+    /// Klook 제휴 ID를 넣어 Release에서도 켠다(2026-11-06). 실기기 귀속 검증은 출시 후로 미뤘다.
     static var defaultAffiliateActivitiesEnabled: Bool {
-        #if DEBUG
         !ProcessInfo.processInfo.arguments.contains("-disableAffiliateActivities")
-        #else
-        false
-        #endif
     }
 
     func allTrips() async -> [Trip] {

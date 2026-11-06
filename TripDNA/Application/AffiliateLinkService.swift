@@ -3,6 +3,8 @@ import Foundation
 nonisolated enum AffiliateEntryPoint: Equatable, Sendable {
     case trip(daysUntilDeparture: Int)
     case recommendation(slot: RecommendationSlot)
+    /// 도시 추천 상세.
+    case city
 
     var subIDComponent: String {
         switch self {
@@ -10,13 +12,15 @@ nonisolated enum AffiliateEntryPoint: Equatable, Sendable {
             return "trip_d\(max(0, days))"
         case .recommendation(let slot):
             return "rec_\(slot.rawValue.replacingOccurrences(of: "_", with: ""))"
+        case .city:
+            return "rec_city"
         }
     }
 
     var analyticsValue: String {
         switch self {
         case .trip: "trip"
-        case .recommendation: "recommendation"
+        case .recommendation, .city: "recommendation"
         }
     }
 }
@@ -35,6 +39,20 @@ nonisolated enum ActivityCategory: String, CaseIterable, Sendable {
 
     init?(tagID: String) {
         self.init(rawValue: tagID)
+    }
+
+    /// 사용자가 고른 여행 컨셉에 맞는 검색 분류. 맞는 분류가 없으면 nil.
+    init?(concept: TripConcept) {
+        switch concept {
+        case .food: self = .food
+        case .natureScenery: self = .outdoor
+        case .relaxation: self = .wellness
+        case .cultureHistory: self = .culture
+        case .shopping: self = .shopping
+        case .nightlife: self = .nightlife
+        case .event: self = .sportsAndEvents
+        case .cityExploration, .activities, .meetingPeople: return nil
+        }
     }
 
     var label: String {
@@ -85,7 +103,10 @@ nonisolated enum ActivityCategory: String, CaseIterable, Sendable {
 
 nonisolated struct AffiliateProviderConfiguration: Equatable, Sendable {
     let providerName: String
+    /// 언어 경로가 없는 주소. 언어는 Klook이 사용자 브라우저에 맞춰 정한다.
     let searchBaseURL: URL
+    /// 앱 언어가 한국어일 때 쓰는 주소.
+    let koreanSearchBaseURL: URL
     /// 제휴 링크는 이 주소를 거쳐 `k_site`로 이동한다.
     let redirectURL: URL
     let partnerID: String?
@@ -102,7 +123,7 @@ nonisolated struct AffiliateProviderConfiguration: Equatable, Sendable {
     func adID(for entryPoint: AffiliateEntryPoint) -> String {
         switch entryPoint {
         case .trip: tripAdID
-        case .recommendation: recommendationAdID
+        case .recommendation, .city: recommendationAdID
         }
     }
 
@@ -110,7 +131,8 @@ nonisolated struct AffiliateProviderConfiguration: Equatable, Sendable {
     /// 광고 1535734는 여행 상세, 1535735는 추천 상세 위치다.
     nonisolated static let klook = AffiliateProviderConfiguration(
         providerName: "Klook",
-        searchBaseURL: URL(string: "https://www.klook.com/ko/search/result/")!,
+        searchBaseURL: URL(string: "https://www.klook.com/search/result/")!,
+        koreanSearchBaseURL: URL(string: "https://www.klook.com/ko/search/result/")!,
         redirectURL: URL(string: "https://affiliate.klook.com/redirect")!,
         partnerID: "141494",
         tripAdID: "1535734",
@@ -136,15 +158,29 @@ nonisolated struct AffiliateLinkService {
     let events: any EventRepository
     let configuration: AffiliateProviderConfiguration
     let calendar: Calendar
+    let isKorean: Bool
 
     init(
         events: any EventRepository,
         configuration: AffiliateProviderConfiguration = .klook,
-        calendar: Calendar = Calendar(identifier: .gregorian)
+        calendar: Calendar = Calendar(identifier: .gregorian),
+        isKorean: Bool = AppLanguage.isKorean
     ) {
         self.events = events
         self.configuration = configuration
         self.calendar = calendar
+        self.isKorean = isKorean
+    }
+
+    /// 도시 추천 상세의 링크. 고른 컨셉에 맞는 분류와 인기 액티비티 두 개.
+    /// 추천 결과를 받은 뒤에 만들며 후보 선택에는 관여하지 않는다.
+    func links(city: String, countryCode: String, concept: TripConcept?) -> [AffiliateActivityLink] {
+        let categories = [concept.flatMap(ActivityCategory.init(concept:)), .highlights]
+            .compactMap { $0 }
+            .uniqued()
+        return categories.compactMap {
+            makeLink(countryCode: countryCode, city: city, category: $0, entryPoint: .city)
+        }
     }
 
     func links(for trip: Trip, now: Date = Date()) -> [AffiliateActivityLink] {
@@ -216,7 +252,7 @@ nonisolated struct AffiliateLinkService {
             .joined(separator: "_")
 
         guard var components = URLComponents(
-            url: configuration.searchBaseURL,
+            url: isKorean ? configuration.koreanSearchBaseURL : configuration.searchBaseURL,
             resolvingAgainstBaseURL: false
         ) else { return nil }
         var queryItems = components.queryItems ?? []

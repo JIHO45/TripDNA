@@ -29,19 +29,19 @@ final class TripDNAUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["여행"].waitForExistence(timeout: 20))
         app.tabBars.buttons["여행"].tap()
-        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "리스본")).firstMatch
+        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Lisbon")).firstMatch
         XCTAssertTrue(trip.waitForExistence(timeout: 10))
         trip.tap()
         openEdit(app)
         let city = app.textFields["도시 (예: 교토, 오사카)"]
         XCTAssertTrue(city.waitForExistence(timeout: 10))
-        XCTAssertEqual(city.value as? String, "리스본")
+        XCTAssertEqual(city.value as? String, "Lisbon")
         city.tap()
         city.typeText(", Porto")
         app.buttons["변경 저장"].tap()
         openEdit(app)
         XCTAssertTrue(city.waitForExistence(timeout: 10))
-        XCTAssertEqual(city.value as? String, "리스본, Porto")
+        XCTAssertEqual(city.value as? String, "Lisbon, Porto")
         app.buttons["취소"].tap()
         let activity = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Porto · 인기 액티비티")).firstMatch
         for _ in 0..<5 where !activity.isHittable { app.swipeUp() }
@@ -57,7 +57,7 @@ final class TripDNAUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["여행"].waitForExistence(timeout: 20))
         app.tabBars.buttons["여행"].tap()
-        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "리스본")).firstMatch
+        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Lisbon")).firstMatch
         XCTAssertTrue(trip.waitForExistence(timeout: 10))
         trip.tap()
         XCTAssertTrue(app.buttons["여행 관리"].waitForExistence(timeout: 10))

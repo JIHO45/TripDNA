@@ -23,7 +23,7 @@ final class ShareFlowTests: XCTestCase {
     @MainActor func testTripSharing() throws {
         let app = launch()
         app.tabBars.buttons["여행"].tap()
-        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "교토")).firstMatch
+        let trip = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Kyoto")).firstMatch
         reveal(trip, in: app)
         trip.tap()
         let share = app.buttons["trip.sharePreview"]

@@ -42,7 +42,7 @@
           "introductoryOffers" : [],
           "localizations" : [
             {
-              "description" : "30 recommendations and 30 questions a month",
+              "description" : "30 recommendations a month and 15x more AI chat",
               "displayName" : "TripDNA Yearly",
               "locale" : "en_US"
             }
@@ -65,7 +65,7 @@
           "introductoryOffers" : [],
           "localizations" : [
             {
-              "description" : "30 recommendations and 30 questions a month",
+              "description" : "30 recommendations a month and 15x more AI chat",
               "displayName" : "TripDNA Monthly",
               "locale" : "en_US"
             }

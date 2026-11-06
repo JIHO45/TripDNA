@@ -1431,12 +1431,42 @@
         }
       }
     },
-    "30 recommendations and 30 questions a month" : {
+    "15× free" : {
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "매달 추천 30회, 질문 30회"
+            "value" : "무료의 15배"
+          }
+        }
+      }
+    },
+    "3 a month" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "월 3회"
+          }
+        }
+      }
+    },
+    "30 a month" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "월 30회"
+          }
+        }
+      }
+    },
+    "30 recommendations a month · 15× the AI chat usage of free" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매달 추천 30회 · 무료 대비 AI 대화 사용량 15배"
           }
         }
       }
@@ -1567,6 +1597,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI 대화"
+          }
+        }
+      }
+    },
+    "AI chat usage" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 대화 사용량"
           }
         }
       }
@@ -2323,6 +2363,16 @@
         }
       }
     },
+    "Basic" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본"
+          }
+        }
+      }
+    },
     "Beach & Relaxation" : {
       "localizations" : {
         "ko" : {
@@ -2569,6 +2619,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld일째 사진 바꾸기"
+          }
+        }
+      }
+    },
+    "Change plans or cancel in your App Store subscriptions." : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "요금제 변경과 해지는 App Store 구독 관리에서 할 수 있어요."
+          }
+        }
+      }
+    },
+    "Change your conditions and compare cities" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "조건을 바꿔 가며 도시를 비교해 보세요"
           }
         }
       }
@@ -2851,6 +2921,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "도시 이름"
+          }
+        }
+      }
+    },
+    "City picks" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "도시 추천"
           }
         }
       }
@@ -4003,6 +4083,16 @@
         }
       }
     },
+    "Ends on %@. Benefits stay until then." : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에 끝나요. 그때까지 혜택은 그대로예요."
+          }
+        }
+      }
+    },
     "Energy" : {
       "localizations" : {
         "ko" : {
@@ -4319,6 +4409,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "이번 여행에서는"
+          }
+        }
+      }
+    },
+    "Free" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무료"
           }
         }
       }
@@ -5273,6 +5373,16 @@
         }
       }
     },
+    "Manage Subscription" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독 관리"
+          }
+        }
+      }
+    },
     "Manage Trip" : {
       "localizations" : {
         "ko" : {
@@ -5349,6 +5459,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "더 보기"
+          }
+        }
+      }
+    },
+    "More trips matched to your taste" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내 취향에 맞는 여행지, 더 많이"
           }
         }
       }
@@ -7107,6 +7227,16 @@
         }
       }
     },
+    "Refills monthly from your billing date, yearly plan too" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "결제일부터 매달 다시 채워져요(연 구독 포함)"
+          }
+        }
+      }
+    },
     "Refills on %@. As of your last AI answer." : {
       "localizations" : {
         "ko" : {
@@ -7273,6 +7403,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "나라 제외를 풀어도 따로 정한 도시 제외는 남아요. 도시를 열어보거나 저장해도 제외가 풀리지 않아요."
+          }
+        }
+      }
+    },
+    "Renews on %@" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@에 자동 갱신돼요"
           }
         }
       }
@@ -9007,6 +9147,16 @@
         }
       }
     },
+    "Trip records, fingerprint, and Wrapped stay free" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "여행 기록·지문·Wrapped는 계속 무료예요"
+          }
+        }
+      }
+    },
     "TripDNA" : {
       "localizations" : {
         "ko" : {
@@ -10289,6 +10439,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "올해는 %@ 한 번 떠났어요"
+          }
+        }
+      }
+    },
+    "You're subscribed" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독 중이에요"
           }
         }
       }

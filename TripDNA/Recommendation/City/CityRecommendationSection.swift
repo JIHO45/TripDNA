@@ -277,12 +277,13 @@ final class CityRecommendationViewModel {
                 state = .failed(CityLLMProxyClient.quotaMessage(String(localized: "recommendations"), resetAt: resetAt, subscribed: subscribed))
                 showsSubscription = !subscribed
             default:
+                // 내부 오류 문자열은 출시 빌드에 보이지 않는다. 기록(error)에는 남는다.
+                // 문구를 두 빌드가 함께 써야 DEBUG 빌드의 문자열 추출이 이 항목을 stale로 표시하지 않는다.
+                var message = String(localized: "Couldn't get recommendations. Check your internet connection and try again.")
                 #if DEBUG
-                state = .failed(String("Couldn't get recommendations. (\(String(describing: error)))"))
-                #else
-                // 내부 오류 문자열은 보이지 않는다. 기록(error)에는 남는다.
-                state = .failed(String(localized: "Couldn't get recommendations. Check your internet connection and try again."))
+                message += " (\(String(describing: error)))"
                 #endif
+                state = .failed(message)
                 await dependencies.track(.cityRecommendationFailed)
             }
         }

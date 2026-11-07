@@ -74,6 +74,10 @@ LLM 관련 (위 목록에 없던 것):
 - [ ] **설치 링크:** 2026-10-31 사용자 결정: 운영자가 연결 대상을 바꿀 수 있는 Firebase Hosting 주소를 쓴다. 앱 `TripDNAShareURL` = `https://tripdna-8a073.web.app`(지문·여행·Wrapped 공유 카드의 QR과 주소). `hosting/index.html`은 연결할 링크가 생기기 전의 짧은 소개 페이지다. TestFlight 공개 링크나 App Store 주소가 생기면 `firebase.json`의 `hosting.redirects`에 `{"source": "/", "destination": "<링크>", "type": 302}`를 넣고 다시 배포한다(넘겨주기가 정적 페이지보다 먼저 적용된다). 302를 쓰는 것은 브라우저가 연결 대상을 영구 기억하지 않게 하기 위해서다. 검사: `ShareCardRenderingTests` 통과(세 카드 QR에 주소가 들어감). 같은 날 사용자가 Hosting을 배포했고 주소가 200으로 소개 페이지를 돌려주는 것을 확인했다. 남은 것: TestFlight 공개 링크나 App Store 주소가 생기면 넘겨주기 추가.
 - [ ] **출시 후 관측 경로:** [계측](evaluation/metrics.md#출시-후-관측-경로r5-2026-10-31), 출시 문서 R5. 2026-10-31 사용자 결정: 익명 일별 합계 + 카드 메뉴 "틀린 내용 알리기"(메일). 구현: 함수 `metric`(App Check만 확인, Firestore `metrics/{날짜}`에 이벤트별 수), 앱 `ServerMetricsSink`(출시 빌드만, 이벤트 10개), 카드 메뉴 메일 신고, 처리방침 5·6절과 프라이버시 선언 초안에 "이용 합계"(비연결·Analytics) 추가. 검사: Node 테스트 11개, `TripDNATests` 193개 통과(iPhone 17), 시뮬레이터 빌드. 2026-10-31 사용자가 `metric`을 배포했고, 배포본에 GET 405·토큰 없는 POST 401을 확인했다. 같은 날 콘솔의 Firestore 규칙이 모든 문서의 직접 읽기·쓰기를 막는 것(`allow read, write: if false`)을 사용자가 보여 줬다(저장소에 규칙 파일은 없다. 함수는 관리자 권한이라 규칙과 무관). 사용자가 바뀐 `privacy-policy.md`를 Notion에 붙여넣었다. 남은 것: 출시 빌드에서 실제 합계가 쌓이는지 확인, 카드 메뉴 신고 화면 확인(시뮬레이터에는 메일 앱이 없다), 합계 끄기 설정(넣지 않음).
 
+### 출시 후 작업
+
+- [ ] **무료 한도 재충전 기준 수정:** 지금은 무료 한도가 매달 1일 00:00 UTC(한국 오전 9시)에 채워진다(`functions/index.js`의 `monthOf`·`resetAtOf`, 2026-10-23 결정). 월말에 처음 쓴 사람은 며칠 만에, 월초에 다 쓴 사람은 한 달 가까이 기다린다. 구독이 끝나면 그 달 남은 무료 한도로 돌아가므로, 구독 전에 무료를 다 썼으면 만료 직후 바로 소진으로 보인다(2026-11-07 TestFlight에서 확인, 안내 시각 12월 1일 오전 9:00). 2026-11-07 사용자가 수정하기로 했다. 바꿀 기준은 미정이다. 제약: DeviceCheck는 기기마다 달(YYYY-MM)만 기록하므로, 첫 사용일 기준으로 바꾸면 재설치 우회 방지와 다시 맞춰야 한다.
+
 ## 디자인 F 앱 반영 — 2026-10-24~31
 
 `design-f-app` 브랜치(b900a72부터). 시안은 [Claude Design 캔버스](https://claude.ai/artifact/69c73GvvKVRtUMpjgWQZW3).
